@@ -1,0 +1,24 @@
+# Stand-in local de Eureka — ver EurekaServerApplication.java
+
+spring:
+  application:
+    name: eureka-server
+
+server:
+  port: ${SERVER_PORT:8761}
+
+eureka:
+  client:
+    # Es el único nodo — no se registra a sí mismo ni busca otros Eureka.
+    register-with-eureka: false
+    fetch-registry: false
+  server:
+    # Modo dev: no esperar el período de espera de auto-preservación al arrancar solo.
+    enable-self-preservation: false
+    wait-time-in-ms-when-sync-empty: 0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info

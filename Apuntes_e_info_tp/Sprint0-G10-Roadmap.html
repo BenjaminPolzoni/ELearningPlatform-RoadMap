@@ -1,0 +1,203 @@
+<title>Sprint 0 · Roadmap G10</title>
+<meta name="description" content="Propuesta inicial de Sprint 0 del Grupo 10 (Roadmap y Progreso): DoD, capacidad, épicas e historias de usuario.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chivo:wght@700;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f4f5f8; --panel:#ffffff; --panel-2:#eef0f5; --ink:#1a1d26; --muted:#5a6072;
+  --line:#dcdfe8; --accent:#4f46e5; --accent-soft:#e7e6fb;
+  --s-block:#8a90a2; --s-open:#2563c9; --s-done:#0e9f6e; --s-fail:#d64550;
+  --shadow:0 1px 2px rgba(20,24,40,.05),0 8px 24px rgba(20,24,40,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1117; --panel:#171a22; --panel-2:#1e222c; --ink:#eceef4; --muted:#9aa2b5;
+  --line:#2a2f3b; --accent:#8b85ff; --accent-soft:#241f47;
+  --s-block:#6b7285; --s-open:#5b9bff; --s-done:#34d399; --s-fail:#f0707c;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1117; --panel:#171a22; --panel-2:#1e222c; --ink:#eceef4; --muted:#9aa2b5;
+  --line:#2a2f3b; --accent:#8b85ff; --accent-soft:#241f47;
+  --s-block:#6b7285; --s-open:#5b9bff; --s-done:#34d399; --s-fail:#f0707c;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;line-height:1.55;
+  -webkit-font-smoothing:antialiased;padding:clamp(16px,4vw,48px)}
+.wrap{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+h1,h2,h3{font-family:"Chivo",sans-serif;text-wrap:balance;margin:0;letter-spacing:-.02em}
+h1{font-size:clamp(30px,5vw,46px);font-weight:900;line-height:1.02}
+h2{font-size:20px;font-weight:700}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:600}
+/* header */
+header{border-bottom:2px solid var(--ink);padding-bottom:22px;display:flex;flex-direction:column;gap:14px}
+.htop{display:flex;flex-wrap:wrap;gap:16px 24px;align-items:flex-end;justify-content:space-between}
+.lede{color:var(--muted);max-width:60ch;font-size:15px}
+.meta{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:"IBM Plex Mono",monospace;font-size:12px;border:1px solid var(--line);background:var(--panel);
+  border-radius:999px;padding:5px 11px;color:var(--muted)}
+.chip b{color:var(--ink);font-weight:600}
+/* sections */
+section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,3vw,28px);box-shadow:var(--shadow)}
+.shead{display:flex;align-items:baseline;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.snum{font-family:"IBM Plex Mono",monospace;font-weight:600;color:var(--accent);font-size:14px}
+.note{color:var(--muted);font-size:13px}
+/* tables */
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:520px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+tbody tr:last-child td{border-bottom:0}
+td.id,td.sp{font-family:"IBM Plex Mono",monospace;white-space:nowrap;font-variant-numeric:tabular-nums}
+td.sp{text-align:center;font-weight:600}
+.rf{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted)}
+/* DoD list */
+.dod{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.dod li{display:flex;gap:10px;align-items:flex-start;background:var(--panel-2);border-radius:9px;padding:11px 13px;font-size:13.5px}
+.dod .n{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-weight:600;flex:none}
+/* legend */
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.state{display:inline-flex;align-items:center;gap:7px;font-family:"IBM Plex Mono",monospace;font-size:12px;
+  border:1px solid var(--line);border-radius:8px;padding:5px 10px;background:var(--panel-2)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+/* epics grid */
+.epics{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.epic{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:13px 15px;background:var(--panel-2)}
+.epic .k{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent);font-weight:600}
+.epic h3{font-size:15px;margin:3px 0 6px}
+/* HU cards */
+.hus{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.hu{border:1px solid var(--line);border-radius:11px;padding:14px 16px;background:var(--panel-2);display:flex;flex-direction:column;gap:7px}
+.hu .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hu .id{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent);font-weight:600}
+.hu .pts{font-family:"IBM Plex Mono",monospace;font-size:12px;background:var(--accent-soft);color:var(--accent);
+  padding:2px 9px;border-radius:999px;font-weight:600}
+.hu p{margin:0;font-size:13.5px}
+.hu .ca{font-size:12.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:7px}
+.hu .ca b{color:var(--ink);font-weight:600}
+/* callout */
+.callout{background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:16px 20px}
+.callout h2{color:var(--ink)}
+.callout ul{margin:10px 0 0;padding-left:18px;font-size:13.5px;display:flex;flex-direction:column;gap:5px}
+.formula{font-family:"IBM Plex Mono",monospace;font-size:13px;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:8px;padding:10px 13px;display:inline-block;margin-bottom:14px}
+footer{color:var(--muted);font-size:12px;text-align:center;padding-top:4px}
+a{color:var(--accent)}
+@media(max-width:520px){h1{font-size:28px}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Sprint 0 · Propuesta inicial</span>
+    <div class="htop">
+      <h1>Roadmap y Progreso<br>Grupo 10 — Tema 10</h1>
+      <div class="meta">
+        <span class="chip"><b>Stack</b> Angular · Nx · Three.js</span>
+        <span class="chip"><b>Back</b> Spring Boot · Kafka</span>
+        <span class="chip"><b>MVP</b> escritorio · español</span>
+      </div>
+    </div>
+    <p class="lede">Plataforma de aprendizaje gamificado (TUP · UTN-FRC). Nuestro módulo: el mapa 3D del curso, el motor de XP/niveles/vidas, el ranking P90/P10 y el cierre académico. Borrador para revisar el lunes.</p>
+  </header>
+
+  <section>
+    <div class="shead"><span class="snum">01</span><h2>Definition of Done del equipo</h2><span class="note">Una HU está "Done" solo si cumple todo.</span></div>
+    <ul class="dod">
+      <li><span class="n">01</span><span>Rama propia + PR aprobado por ≥1 revisor distinto del autor.</span></li>
+      <li><span class="n">02</span><span>Compila: <span class="mono">nx build</span> ok · <span class="mono">mvn verify</span> ok.</span></li>
+      <li><span class="n">03</span><span>Sin acceso directo a DB ajena: todo por API Gateway (sync) o Kafka (async).</span></li>
+      <li><span class="n">04</span><span>Toda entidad propia con <span class="mono">curso_cohorte_id</span> y borrado lógico (RF-NFR-01).</span></li>
+      <li><span class="n">05</span><span>Tests unitarios + cobertura JaCoCo ≥ 95% en lo tocado.</span></li>
+      <li><span class="n">06</span><span>Idempotencia al consumir eventos (dedupe por <span class="mono">origen_evento_id</span>).</span></li>
+      <li><span class="n">07</span><span>Cero parámetros hardcodeados: PAR-XX leídos de Backoffice en runtime.</span></li>
+      <li><span class="n">08</span><span>Trazada a su RF. "Si no está trazado, no está hecho."</span></li>
+      <li><span class="n">09</span><span>Desktop-only: en móvil informa "requiere una computadora" (RF-NFR-05/06).</span></li>
+      <li><span class="n">10</span><span>Endpoint o evento actualizado en el contrato del equipo.</span></li>
+      <li><span class="n">11</span><span>Merge a <span class="mono">develop</span> sin romper el build general.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="shead"><span class="snum">02</span><h2>Cálculo de capacidad</h2><span class="note">Plantilla + ejemplo — ajustar con el Excel de la cátedra.</span></div>
+    <div class="formula">hs_netas = días_hábiles × hs_día × factor_foco &nbsp;·&nbsp; capacidad (SP) ≈ hs_netas ÷ hs_por_punto</div>
+    <div class="scroll">
+    <table>
+      <thead><tr><th>Integrante activo</th><th>Legajo</th><th>Días</th><th>hs/día</th><th>Foco</th><th>hs netas</th></tr></thead>
+      <tbody>
+        <tr><td>Diego, Lautaro J.</td><td class="id">404903</td><td class="sp">10</td><td class="sp">3</td><td class="sp">0,6</td><td class="sp">18</td></tr>
+        <tr><td>Polzoni, Benjamín</td><td class="id">412056</td><td class="sp">10</td><td class="sp">3</td><td class="sp">0,6</td><td class="sp">18</td></tr>
+        <tr><td>Rodriguez Teruel, Baltasar</td><td class="id">421439</td><td class="sp">10</td><td class="sp">3</td><td class="sp">0,6</td><td class="sp">18</td></tr>
+        <tr><td>Lorenzo, Araujo</td><td class="id">404909</td><td class="sp">10</td><td class="sp">3</td><td class="sp">0,6</td><td class="sp">18</td></tr>
+        <tr><td>Camacho Luengo, Gabriela A.</td><td class="id">412016</td><td class="sp">10</td><td class="sp">3</td><td class="sp">0,6</td><td class="sp">18</td></tr>
+        <tr><td>… resto según materia (PIV/MSII)</td><td class="id">—</td><td class="sp">—</td><td class="sp">—</td><td class="sp">—</td><td class="sp">—</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note" style="margin-top:12px">Sprint = 2 semanas (10 días hábiles). Foco 0,6 por ser el primer sprint. Punto de partida: <b>1 SP ≈ 4 hs</b> (recalibrar por velocity real). Descontar ceremonias (planning, review, retro, dailys). Definir por persona quién cursa PIV, MSII o ambas — Delgado Costa figura de baja en MSII.</p>
+  </section>
+
+  <section>
+    <div class="shead"><span class="snum">03</span><h2>Primeras épicas</h2><span class="note">Del alcance de Roadmap y Progreso.</span></div>
+    <div class="legend" aria-label="Estados de nodo del mapa">
+      <span class="state"><span class="dot" style="background:var(--s-block)"></span>bloqueado</span>
+      <span class="state"><span class="dot" style="background:var(--s-open)"></span>habilitado</span>
+      <span class="state"><span class="dot" style="background:var(--s-done)"></span>completado</span>
+      <span class="state"><span class="dot" style="background:var(--s-fail)"></span>fallado</span>
+    </div>
+    <div class="epics">
+      <div class="epic"><span class="k">E1</span><h3>Grafo + editor de roadmap</h3><span class="rf">RF-CUR-04/05/06 · PROFESOR</span></div>
+      <div class="epic"><span class="k">E2</span><h3>Mapa 3D del alumno</h3><span class="rf">RF-CUR-01 · Three.js</span></div>
+      <div class="epic"><span class="k">E3</span><h3>Motor de XP (historial)</h3><span class="rf">RF-CFG-06 · PAR-01/05</span></div>
+      <div class="epic"><span class="k">E4</span><h3>Vidas · reintentos · recuperación</h3><span class="rf">RF-DES-07 · RF-REC-04/06</span></div>
+      <div class="epic"><span class="k">E5</span><h3>Niveles (derivados de XP)</h3><span class="rf">RF-NIV-03/04/05 · PAR-09</span></div>
+      <div class="epic"><span class="k">E6</span><h3>Ranking + P90/P10</h3><span class="rf">RF-RNK-01/03/05/09/11</span></div>
+      <div class="epic"><span class="k">E7</span><h3>Cierre de curso</h3><span class="rf">RF-RNK-10/13 · RF-ENC-11</span></div>
+      <div class="epic"><span class="k">E8</span><h3>Integración Gateway + Kafka</h3><span class="rf">Arquitectura común</span></div>
+      <div class="epic"><span class="k">E9</span><h3>Librería UI compartida</h3><span class="rf">/libs/shared/ui · con G2</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><span class="snum">04</span><h2>Primeras historias de usuario</h2><span class="note">Candidatas al Sprint 1 · SP a validar en planning.</span></div>
+    <div class="hus">
+      <div class="hu"><div class="top"><span class="id">HU-01 · E1</span><span class="pts">5 SP</span></div>
+        <p>Como <b>PROFESOR</b> quiero crear un roadmap con secciones y su umbral de XP para estructurar el curso.</p>
+        <div class="ca"><b>CA:</b> CRUD sección; default PAR-08; persiste con <span class="mono">curso_cohorte_id</span>.</div></div>
+      <div class="hu"><div class="top"><span class="id">HU-02 · E1</span><span class="pts">8 SP</span></div>
+        <p>Como <b>PROFESOR</b> quiero crear y conectar nodos (desafío/hito) para armar el grafo.</p>
+        <div class="ca"><b>CA:</b> vincula <span class="mono">desafio_id</span>; <span class="mono">es_obligatorio</span> + <span class="mono">reintentos_permitidos</span>; baja lógica.</div></div>
+      <div class="hu"><div class="top"><span class="id">HU-03 · E2</span><span class="pts">8 SP</span></div>
+        <p>Como <b>ALUMNO</b> quiero ver el mapa 3D con el estado de cada nodo para saber por dónde avanzar.</p>
+        <div class="ca"><b>CA:</b> color por estado; lazy-load del módulo 3D; fallback desktop-only.</div></div>
+      <div class="hu"><div class="top"><span class="id">HU-04 · E3</span><span class="pts">5 SP</span></div>
+        <p>Como <b>sistema</b> quiero registrar un MovimientoXP al recibir <span class="mono">DesafioCompletadoEvent</span> (éxito).</p>
+        <div class="ca"><b>CA:</b> idempotente por <span class="mono">origen_evento_id</span>; <span class="mono">xp_total</span> = suma de movimientos.</div></div>
+      <div class="hu"><div class="top"><span class="id">HU-05 · E4</span><span class="pts">5 SP</span></div>
+        <p>Como <b>sistema</b> quiero descontar 1 vida al agotar reintentos y volver a fallar (RF-DES-07).</p>
+        <div class="ca"><b>CA:</b> personalizados LLM no restan; <span class="mono">vidas_vigentes</span> vs <span class="mono">vidas_perdidas_historico</span>.</div></div>
+      <div class="hu"><div class="top"><span class="id">HU-06 · E6</span><span class="pts">8 SP</span></div>
+        <p>Como <b>ALUMNO</b> quiero ver el ranking con mi vista filtrada (top3/bottom3/propio/cortes).</p>
+        <div class="ca"><b>CA:</b> percentiles solo si ≥10 inscriptos; cascada de desempate; sin identidades ajenas.</div></div>
+      <div class="hu"><div class="top"><span class="id">HU-07 · E8</span><span class="pts">3 SP</span></div>
+        <p>Como <b>equipo</b> quiero suscribir el consumidor Kafka de <span class="mono">DesafioCompletadoEvent</span>.</p>
+        <div class="ca"><b>CA:</b> dedupe; reproceso seguro ante reintento del bus.</div></div>
+      <div class="hu"><div class="top"><span class="id">HU-08 · E9</span><span class="pts">5 SP</span></div>
+        <p>Como <b>equipos</b> quiero componentes compartidos (barra XP, vidas, avatar) en la librería común.</p>
+        <div class="ca"><b>CA:</b> standalone; consumibles por otros grupos; consistencia con G2.</div></div>
+    </div>
+    <p class="note" style="margin-top:14px"><b>Spikes:</b> SPK-1 PoC Three.js dentro de Nx (perf + lazy-load) · SPK-2 esqueleto Spring Boot + Kafka + JaCoCo.</p>
+  </section>
+
+  <section class="callout">
+    <h2>Pendiente antes del lunes</h2>
+    <ul>
+      <li>Incorporar la <b>estructura exacta del Excel de capacidad</b> del aula virtual y completar días/hs por persona.</li>
+      <li>Abrir el <span class="mono">Sprint 0 – Propuesta inicial.docx</span> (está bloqueado en Word) para alinear formato.</li>
+      <li>Cerrar dudas que afectan HU: nodo <b>fallado</b> ¿definitivo o reintentable?, rol <b>"responsable"</b>, dueño del pool de recuperación, desmatriculación a mitad de cuatrimestre.</li>
+    </ul>
+  </section>
+
+  <footer>Borrador de trabajo · Grupo 10 Roadmap y Progreso · TUP UTN-FRC · sujeto a revisión de la cátedra</footer>
+</div>

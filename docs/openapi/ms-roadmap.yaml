@@ -1,0 +1,516 @@
+openapi: 3.0.3
+info:
+  title: roadmap-service — Tema 10 · Grupo 10
+  description: >
+    Contrato de "Roadmap y Progreso". Fuente de verdad del front (ver
+    path/01-arquitectura-y-stack.md §4 — contract-first). Cada path indica su estado:
+    `[IMPLEMENTADO]` ya existe en el código, `[PLANEADO]` es el contrato objetivo de
+    fases futuras — el front puede mockear contra él desde ya.
+  version: "0.1.0"
+servers:
+  - url: /api/roadmap
+    description: >
+      Prefijo externo servido por el Gateway (deck Tema 01). El Gateway reenvía el path
+      completo sin reescribir — este servidor es también el base path del controller.
+
+tags:
+  - name: grafo
+    description: Editor y navegación del roadmap (RF-CUR)
+  - name: progreso
+    description: Estado de cada nodo por alumno
+  - name: xp
+    description: Historial de movimientos de XP (RF-CFG-06)
+  - name: vidas
+    description: ⚠️ Alcance a confirmar — ver path/README.md §1.2
+  - name: niveles
+    description: Curva de niveles (RF-NIV)
+  - name: insignias
+    description: Logros ganados (RF-RNK-11)
+  - name: ranking
+    description: Comparativas de cohorte (RF-RNK)
+  - name: cierre
+    description: ⚠️ Alcance a confirmar — cierre académico del curso
+
+paths:
+  # ── Grafo del roadmap ──────────────────────────────────────────────
+  /roadmaps:
+    post:
+      summary: "[IMPLEMENTADO] Crear el roadmap de un curso"
+      tags: [grafo]
+      security: [{ bearerAuth: [PROFESOR] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cursoCohorteId]
+              properties:
+                cursoCohorteId: { type: string, format: uuid }
+      responses:
+        "201":
+          description: Roadmap creado en estado BORRADOR
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Roadmap" }
+        "409":
+          description: Ya existe un roadmap activo para ese curso
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+
+  /roadmaps/{cc}:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+    get:
+      summary: "[IMPLEMENTADO] Traer el grafo (editor) o filtrado por progreso (alumno)"
+      tags: [grafo]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Roadmap" }
+        "404":
+          description: No existe roadmap para ese curso
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+    put:
+      summary: "[PLANEADO] Editar metadata, cambiar borrador ↔ publicado"
+      tags: [grafo]
+      security: [{ bearerAuth: [PROFESOR] }]
+      responses:
+        "200": { description: OK }
+
+  /roadmaps/{cc}/secciones:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+    post:
+      summary: "[PLANEADO] Crear unidad con su umbral_xp_desbloqueo"
+      tags: [grafo]
+      security: [{ bearerAuth: [PROFESOR] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NuevaSeccion" }
+      responses:
+        "201":
+          description: Creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Seccion" }
+
+  /roadmaps/{cc}/secciones/{id}:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+      - $ref: "#/components/parameters/id"
+    put:
+      summary: "[PLANEADO] Editar umbral u orden"
+      tags: [grafo]
+      security: [{ bearerAuth: [PROFESOR] }]
+      responses: { "200": { description: OK } }
+    delete:
+      summary: "[PLANEADO] Baja lógica de la unidad"
+      tags: [grafo]
+      security: [{ bearerAuth: [PROFESOR] }]
+      responses: { "204": { description: Sin contenido } }
+
+  /roadmaps/{cc}/nodos:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+    post:
+      summary: "[PLANEADO] Crear actividad — vincula desafio_id, es_obligatorio, reintentos_permitidos"
+      tags: [grafo]
+      security: [{ bearerAuth: [PROFESOR] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NuevoNodo" }
+      responses:
+        "201":
+          description: Creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Nodo" }
+
+  /roadmaps/{cc}/nodos/{id}:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+      - $ref: "#/components/parameters/id"
+    put:
+      summary: "[PLANEADO] Editar atributos del nodo"
+      tags: [grafo]
+      security: [{ bearerAuth: [PROFESOR] }]
+      responses: { "200": { description: OK } }
+    delete:
+      summary: "[PLANEADO] Baja lógica del nodo"
+      tags: [grafo]
+      security: [{ bearerAuth: [PROFESOR] }]
+      responses: { "204": { description: Sin contenido } }
+
+  /roadmaps/{cc}/conexiones:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+    post:
+      summary: "[PLANEADO] Conectar dos nodos (prerequisito)"
+      tags: [grafo]
+      security: [{ bearerAuth: [PROFESOR] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NuevaConexion" }
+      responses:
+        "201":
+          description: Creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Conexion" }
+
+  # ── Progreso ───────────────────────────────────────────────────────
+  /alumnos/{aid}/progreso:
+    parameters:
+      - $ref: "#/components/parameters/alumnoId"
+      - $ref: "#/components/parameters/cursoCohorteIdQuery"
+    get:
+      summary: "[PLANEADO] Estado de cada nodo para ese alumno"
+      tags: [progreso]
+      security: [{ bearerAuth: [ALUMNO, PROFESOR] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ProgresoNodo" }
+
+  # ── XP ─────────────────────────────────────────────────────────────
+  /alumnos/{aid}/xp:
+    parameters:
+      - $ref: "#/components/parameters/alumnoId"
+      - $ref: "#/components/parameters/cursoCohorteIdQuery"
+    get:
+      summary: "[PLANEADO] Historial de movimientos + total"
+      tags: [xp]
+      security: [{ bearerAuth: [ALUMNO, PROFESOR] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/XpResumen" }
+
+  /alumnos/{aid}/xp/ajustes:
+    parameters:
+      - $ref: "#/components/parameters/alumnoId"
+    post:
+      summary: "[PLANEADO] Corrección manual excepcional — queda auditada"
+      tags: [xp]
+      security: [{ bearerAuth: [ADMIN] }]
+      responses: { "201": { description: Movimiento registrado } }
+
+  # ── Vidas ⚠️ alcance a confirmar ──────────────────────────────────
+  /alumnos/{aid}/vidas:
+    parameters:
+      - $ref: "#/components/parameters/alumnoId"
+      - $ref: "#/components/parameters/cursoCohorteIdQuery"
+    get:
+      summary: "[PLANEADO] ⚠️ Vidas vigentes + histórico de pérdidas"
+      tags: [vidas]
+      security: [{ bearerAuth: [ALUMNO, PROFESOR] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/VidasEstado" }
+
+  /alumnos/{aid}/vidas/recuperacion:
+    parameters:
+      - $ref: "#/components/parameters/alumnoId"
+    post:
+      summary: "[PLANEADO] ⚠️ Iniciar el desafío de recuperación (RF-REC-04)"
+      tags: [vidas]
+      security: [{ bearerAuth: [ALUMNO] }]
+      responses: { "200": { description: Desafío de recuperación asignado } }
+
+  /alumnos/{aid}/vidas/compra:
+    parameters:
+      - $ref: "#/components/parameters/alumnoId"
+    post:
+      summary: "[PLANEADO] ⚠️ Registrar MovimientoVida tipo comprada (lo confirma Banco vía Gateway)"
+      tags: [vidas]
+      security: [{ bearerAuth: [] }]
+      responses: { "201": { description: Movimiento registrado } }
+
+  # ── Niveles ────────────────────────────────────────────────────────
+  /roadmaps/{cc}/niveles:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+    get:
+      summary: "[PLANEADO] Curva de niveles vigente del curso"
+      tags: [niveles]
+      security: [{ bearerAuth: [PROFESOR, ALUMNO] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Nivel" }
+    post:
+      summary: "[PLANEADO] Definir niveles custom (máx. 10, RF-NIV-04)"
+      tags: [niveles]
+      security: [{ bearerAuth: [PROFESOR] }]
+      responses: { "201": { description: Creado } }
+
+  # ── Insignias ──────────────────────────────────────────────────────
+  /alumnos/{aid}/insignias:
+    parameters:
+      - $ref: "#/components/parameters/alumnoId"
+      - $ref: "#/components/parameters/cursoCohorteIdQuery"
+    get:
+      summary: "[PLANEADO] Insignias ganadas en el curso"
+      tags: [insignias]
+      security: [{ bearerAuth: [ALUMNO, PROFESOR] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Insignia" }
+
+  # ── Ranking ────────────────────────────────────────────────────────
+  /roadmaps/{cc}/ranking:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+    get:
+      summary: >
+        [PLANEADO] Tabla de posiciones. ALUMNO recibe vista filtrada (top3/bottom3/propio/
+        cortes anónimos, RF-RNK-03/07) — el filtrado se hace en el servidor.
+      tags: [ranking]
+      security: [{ bearerAuth: [ALUMNO, PROFESOR] }]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RankingEntrada" }
+
+  /roadmaps/{cc}/ranking/candidatos:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+    get:
+      summary: "[PLANEADO] Lista de candidatos P90/P10 para el cierre"
+      tags: [ranking]
+      security: [{ bearerAuth: [PROFESOR] }]
+      responses: { "200": { description: OK } }
+
+  # ── Cierre de curso ⚠️ alcance a confirmar ────────────────────────
+  /roadmaps/{cc}/cierre/candidatos:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+    get:
+      summary: "[PLANEADO] ⚠️ Candidatos a confirmar antes de archivar"
+      tags: [cierre]
+      security: [{ bearerAuth: [PROFESOR] }]
+      responses: { "200": { description: OK } }
+
+  /roadmaps/{cc}/cierre/confirmar:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+    post:
+      summary: "[PLANEADO] ⚠️ Confirmar estado académico final por alumno (RF-RNK-10)"
+      tags: [cierre]
+      security: [{ bearerAuth: [PROFESOR] }]
+      responses: { "200": { description: OK } }
+
+  /roadmaps/{cc}/cierre/reporte:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+    get:
+      summary: "[PLANEADO] ⚠️ Exportar reporte de cierre (RF-RNK-13)"
+      tags: [cierre]
+      security: [{ bearerAuth: [PROFESOR, ADMIN] }]
+      responses: { "200": { description: OK } }
+
+  /roadmaps/{cc}/cierre/estado:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+    get:
+      summary: "[PLANEADO] ⚠️ Precondición síncrona para archivar (RF-CUR-08b) — la consulta Cursos"
+      tags: [cierre]
+      security: [{ bearerAuth: [] }]
+      responses: { "200": { description: OK } }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >
+        Validado por el Gateway (401 si falla). Nosotros leemos X-User-Roles ya
+        verificado y decidimos el negocio (403) — ver 06-contrato-api.md §0.3.
+
+  parameters:
+    cursoCohorteId:
+      name: cc
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    cursoCohorteIdQuery:
+      name: curso_cohorte_id
+      in: query
+      required: true
+      schema: { type: string, format: uuid }
+    alumnoId:
+      name: aid
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+
+  schemas:
+    ProblemDetail:
+      type: object
+      description: RFC 9457 — ver 06-contrato-api.md §0.5
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        traceId: { type: string }
+
+    Roadmap:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        cursoCohorteId: { type: string, format: uuid }
+        estado: { type: string, enum: [BORRADOR, PUBLICADO] }
+        creadoEn: { type: string, format: date-time }
+        actualizadoEn: { type: string, format: date-time }
+
+    NuevaSeccion:
+      type: object
+      required: [nombre, umbralXpDesbloqueo, orden]
+      properties:
+        nombre: { type: string }
+        umbralXpDesbloqueo: { type: integer }
+        orden: { type: integer }
+
+    Seccion:
+      allOf:
+        - $ref: "#/components/schemas/NuevaSeccion"
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            roadmapId: { type: string, format: uuid }
+
+    NuevoNodo:
+      type: object
+      required: [seccionId, tipo, posicionX, posicionY]
+      properties:
+        seccionId: { type: string, format: uuid }
+        tipo:
+          type: string
+          description: "⚠️ Extensión propuesta sobre el modelo original — ver 02-modelo-de-datos.md §4"
+          enum: [TEORIA, PRACTICA, DESAFIO_TEORICO, DESAFIO_PRACTICO, RECUPERACION, HITO, BOSS]
+        desafioId: { type: string, format: uuid, nullable: true }
+        posicionX: { type: number }
+        posicionY: { type: number }
+        esObligatorio: { type: boolean, default: true }
+        reintentosPermitidos: { type: integer, minimum: 0, maximum: 3, default: 0 }
+
+    Nodo:
+      allOf:
+        - $ref: "#/components/schemas/NuevoNodo"
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            estado:
+              type: string
+              enum: [BLOQUEADO, HABILITADO, COMPLETADO, FALLADO]
+
+    NuevaConexion:
+      type: object
+      required: [nodoOrigenId, nodoDestinoId]
+      properties:
+        nodoOrigenId: { type: string, format: uuid }
+        nodoDestinoId: { type: string, format: uuid }
+
+    Conexion:
+      allOf:
+        - $ref: "#/components/schemas/NuevaConexion"
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            roadmapId: { type: string, format: uuid }
+
+    ProgresoNodo:
+      type: object
+      properties:
+        nodoId: { type: string, format: uuid }
+        estado: { type: string, enum: [BLOQUEADO, HABILITADO, COMPLETADO, FALLADO] }
+        intentosUsados: { type: integer }
+        completadoEn: { type: string, format: date-time, nullable: true }
+
+    XpResumen:
+      type: object
+      properties:
+        xpTotal: { type: integer }
+        movimientos:
+          type: array
+          items:
+            type: object
+            properties:
+              tipo:
+                type: string
+                enum: [OTORGADO_DESAFIO, AJUSTE_USO_IA, AJUSTE_APELACION, DESAFIO_PERSONALIZADO]
+              monto: { type: integer, description: "Puede ser negativo (RF-IA-18)" }
+              registradoEn: { type: string, format: date-time }
+
+    VidasEstado:
+      type: object
+      description: "⚠️ Alcance a confirmar — ver README.md §1.2"
+      properties:
+        vidasVigentes: { type: integer }
+        vidasPerdidasHistorico: { type: integer, description: "Nunca decrece (RF-RNK-05)" }
+
+    Nivel:
+      type: object
+      properties:
+        nombre: { type: string }
+        umbralXp: { type: integer }
+        orden: { type: integer }
+
+    Insignia:
+      type: object
+      properties:
+        insigniaId: { type: string, format: uuid }
+        otorgadaEn: { type: string, format: date-time }
+
+    RankingEntrada:
+      type: object
+      description: >
+        Datos propios únicamente — el nombre/avatar/monedas los agrega el BFF
+        (no nuestro) al armar la pantalla. Ver 06-contrato-api.md §6.2.
+      properties:
+        alumnoId: { type: string, format: uuid }
+        xpTotal: { type: integer }
+        posicion: { type: integer }
+        percentil: { type: number, nullable: true }
+        zona: { type: string, enum: [NINGUNA, P90, P10] }
+        insigniasCount: { type: integer }
+        vidasPerdidasHistorico: { type: integer }
+        ejerciciosCompletados: { type: integer }

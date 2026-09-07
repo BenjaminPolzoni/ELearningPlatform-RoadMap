@@ -1,0 +1,88 @@
+# roadmap-service — Tema 10 · Grupo 10
+# Convención de nombres y contrato de borde: ver path/06-contrato-api.md §0
+
+spring:
+  application:
+    name: roadmap-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:roadmap}
+    username: ${DB_USER:roadmap}
+    password: ${DB_PASSWORD:roadmap}
+
+  jpa:
+    # Flyway es dueño del esquema — Hibernate solo valida que las entidades calcen.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: roadmap-service
+      auto-offset-reset: earliest
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: ar.utn.frc.tup.roadmap.infrastructure.messaging.dto
+        # TODO: esto fuerza UN solo tipo para toda la ConsumerFactory autoconfigurada.
+        # Con un solo listener alcanza; el segundo tipo de evento que escuchemos
+        # (CursoArchivadoEvent, ScoreIAApeladoEvent) necesita un ConsumerFactory /
+        # @KafkaListener(containerFactory=...) propio en vez de este default global.
+        spring.json.value.default.type: ar.utn.frc.tup.roadmap.infrastructure.messaging.dto.DesafioCompletadoEventDto
+
+server:
+  port: ${SERVER_PORT:8081}
+
+# ── Eureka (deck Tema 01, slide 23) ─────────────────────────────────────
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    # Llamamos a otros servicios vía Gateway por DNS interno del compose — no necesitamos
+    # descubrir al Gateway por Eureka (regla del deck, slide 23).
+    fetch-registry: false
+    healthcheck:
+      enabled: true
+  instance:
+    prefer-ip-address: true
+
+# ── Actuator: liveness/readiness que Eureka y Docker healthcheck consultan ──
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, prometheus, info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+# ── Propiedades propias del servicio ────────────────────────────────────
+app:
+  api:
+    # El Gateway reenvía el path completo sin reescribir (deck Tema 01, slide 25).
+    base-path: /api/roadmap
+  kafka:
+    topics:
+      # ⚠️ Nombre asumido — el Tema 11 define el contrato de eventos real de la
+      # plataforma. Confirmar antes de integrar contra el Motor de Desafíos de verdad.
+      desafio-completado: desafio-completado
+
+logging:
+  level:
+    ar.utn.frc.tup.roadmap: INFO

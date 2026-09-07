@@ -1,0 +1,38 @@
+# ── Node / Angular ──────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+npm-debug.log*
+*.tsbuildinfo
+
+# ── Java / Maven ────────────────────────────────
+# OJO: NO ignorar .mvn/ ni *.jar en bloque — .mvn/wrapper/maven-wrapper.jar y
+# mvnw/mvnw.cmd se COMMITEAN a propósito, para que cualquiera pueda compilar sin
+# tener Maven instalado. Ver backend/*/mvnw.
+target/
+*.class
+
+# ── IDE ──────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+.vs/
+*.swp
+*.swo
+
+# ── OS ───────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Docker / entorno ─────────────────────────────
+.env
+.env.local
+*.local.yml
+
+# ── Logs ─────────────────────────────────────────
+*.log
+logs/
+
+# ── Postgres local (si se monta volumen a disco) ─
+pgdata/

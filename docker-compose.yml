@@ -1,0 +1,100 @@
+# Stack local del Grupo 10 — Roadmap y Progreso (Tema 10).
+# Ver path/01-arquitectura-y-stack.md para el detalle de cada decisión.
+#
+# `gateway` y `eureka` son STAND-INS de desarrollo local, no la infraestructura real de
+# la plataforma (esa la mantiene el Tema 01). El `bff` tampoco es nuestro y no tiene
+# contenedor acá — el frontend pega directo al `gateway`. Ver 06-contrato-api.md §0.
+#
+# Uso:
+#   docker compose up --build
+#   Frontend:        http://localhost
+#   Gateway (debug): http://localhost:8080/api/roadmap/...
+#   Eureka (debug):  http://localhost:8761
+
+services:
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: roadmap
+      POSTGRES_PASSWORD: roadmap
+      POSTGRES_DB: roadmap
+    ports:
+      - "5432:5432"
+    volumes:
+      - roadmap_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roadmap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kafka:
+    image: apache/kafka:3.9.2
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+
+  eureka:
+    build: ./backend/eureka-server
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  ms-roadmap:
+    build: ./backend/ms-roadmap
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: roadmap
+      DB_USER: roadmap
+      DB_PASSWORD: roadmap
+      EUREKA_URL: http://eureka:8761/eureka/
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SERVER_PORT: 8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    # Sin puertos publicados: el Gateway lo alcanza por red interna vía lb://ROADMAP-SERVICE
+    # (regla no negociable — nadie accede a un microservicio salteando el Gateway).
+    expose:
+      - "8081"
+
+  gateway:
+    build: ./backend/gateway
+    environment:
+      EUREKA_URL: http://eureka:8761/eureka/
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      eureka:
+        condition: service_healthy
+      ms-roadmap:
+        condition: service_started
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway
+
+volumes:
+  roadmap_pgdata:
