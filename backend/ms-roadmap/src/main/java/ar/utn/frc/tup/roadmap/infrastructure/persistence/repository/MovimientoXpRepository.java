@@ -20,4 +20,13 @@ public interface MovimientoXpRepository extends JpaRepository<MovimientoXpEntity
         WHERE m.alumnoId = :alumnoId AND m.nodoId IN :nodoIds
         """)
     int sumarMontoPorAlumnoYNodos(@Param("alumnoId") UUID alumnoId, @Param("nodoIds") List<UUID> nodoIds);
+
+    /** XP total (suma de movimientos vigentes) de cada alumno del curso — insumo del ranking. */
+    @Query("""
+        SELECT m.alumnoId AS alumnoId, COALESCE(SUM(m.monto), 0) AS total
+        FROM MovimientoXpEntity m
+        WHERE m.cursoCohorteId = :cursoCohorteId
+        GROUP BY m.alumnoId
+        """)
+    List<ConteoPorAlumno> sumarXpPorAlumno(@Param("cursoCohorteId") UUID cursoCohorteId);
 }

@@ -427,8 +427,11 @@ paths:
       - $ref: "#/components/parameters/cursoCohorteId"
     get:
       summary: >
-        [PLANEADO] Tabla de posiciones. ALUMNO recibe vista filtrada (top3/bottom3/propio/
-        cortes anónimos, RF-RNK-03/07) — el filtrado se hace en el servidor.
+        [IMPLEMENTADO] Tabla de posiciones. PROFESOR (o dev local sin Gateway) recibe el
+        array completo de RankingEntrada. ALUMNO (X-User-Roles=ALUMNO, sin PROFESOR)
+        recibe VistaRankingAlumno: su fila + top3 + bottom3, con las filas ajenas sin
+        alumnoId y los cortes de XP P90/P10 (RF-RNK-03/07). El filtrado es del servidor.
+        Calculado en caliente desde las tablas base (no materializado — ver V1 / Fase 3).
       tags: [ranking]
       security: [{ bearerAuth: [ALUMNO, PROFESOR] }]
       responses:
@@ -437,17 +440,47 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items: { $ref: "#/components/schemas/RankingEntrada" }
+                oneOf:
+                  - type: array
+                    items: { $ref: "#/components/schemas/RankingEntrada" }
+                  - $ref: "#/components/schemas/VistaRankingAlumno"
+        "400":
+          description: "X-User-Roles=ALUMNO sin X-User-Id"
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+        "404":
+          description: No existe roadmap para ese curso
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
 
   /roadmaps/{cc}/ranking/candidatos:
     parameters:
       - $ref: "#/components/parameters/cursoCohorteId"
     get:
-      summary: "[PLANEADO] Lista de candidatos P90/P10 para el cierre"
+      summary: "[IMPLEMENTADO] Candidatos a promoción (RF-RNK-05) y en riesgo de regularidad (RF-RNK-06)"
       tags: [ranking]
       security: [{ bearerAuth: [PROFESOR] }]
-      responses: { "200": { description: OK } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  promocion:
+                    type: array
+                    items: { $ref: "#/components/schemas/RankingEntrada" }
+                  riesgoRegularidad:
+                    type: array
+                    items: { $ref: "#/components/schemas/RankingEntrada" }
+        "404":
+          description: No existe roadmap para ese curso
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
 
   # ── Cierre de curso ⚠️ alcance a confirmar ────────────────────────
   /roadmaps/{cc}/cierre/candidatos:
@@ -681,13 +714,30 @@ components:
       type: object
       description: >
         Datos propios únicamente — el nombre/avatar/monedas los agrega el BFF
-        (no nuestro) al armar la pantalla. Ver 06-contrato-api.md §6.2.
+        (no nuestro) al armar la pantalla. Ver 06-contrato-api.md §6.2. En la vista de
+        ALUMNO, alumnoId es null en las filas ajenas (RF-RNK-07).
       properties:
-        alumnoId: { type: string, format: uuid }
+        alumnoId: { type: string, format: uuid, nullable: true }
         xpTotal: { type: integer }
         posicion: { type: integer }
-        percentil: { type: number, nullable: true }
+        percentil: { type: number, nullable: true, description: "null con < 10 inscriptos activos (RF-RNK-09)" }
         zona: { type: string, enum: [NINGUNA, P90, P10] }
         insigniasCount: { type: integer }
         vidasPerdidasHistorico: { type: integer }
         ejerciciosCompletados: { type: integer }
+        candidatoPromocion: { type: boolean, description: "RF-RNK-05" }
+        riesgoRegularidad: { type: boolean, description: "RF-RNK-06" }
+
+    VistaRankingAlumno:
+      type: object
+      description: "Lo que ve el ALUMNO en GET /ranking (RF-RNK-03/07)."
+      properties:
+        miFila: { $ref: "#/components/schemas/RankingEntrada" }
+        top3:
+          type: array
+          items: { $ref: "#/components/schemas/RankingEntrada" }
+        bottom3:
+          type: array
+          items: { $ref: "#/components/schemas/RankingEntrada" }
+        corteXpP90: { type: integer, nullable: true }
+        corteXpP10: { type: integer, nullable: true }

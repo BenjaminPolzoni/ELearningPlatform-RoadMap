@@ -23,11 +23,11 @@ el momento, no se archiva acá.
 | [tarea-deuda-01-arquitectura-y-stack.md](tarea-deuda-01-arquitectura-y-stack.md) | `01-arquitectura-y-stack.md` | 1 | 0 |
 | [tarea-deuda-02-modelo-de-datos.md](tarea-deuda-02-modelo-de-datos.md) | `02-modelo-de-datos.md` | 2 | 0 |
 | [tarea-deuda-03-plan-de-implementacion.md](tarea-deuda-03-plan-de-implementacion.md) | `03-plan-de-implementacion.md` | 2 | 0 |
-| [tarea-deuda-06-contrato-api.md](tarea-deuda-06-contrato-api.md) | `06-contrato-api.md` | 5 | 1 |
+| [tarea-deuda-06-contrato-api.md](tarea-deuda-06-contrato-api.md) | `06-contrato-api.md` | 7 | 1 |
 
-**Total: 10 ítems abiertos, 1 pagado.** Última revisión: al implementar el CRUD del
-grafo (Fase 1) — se sumaron los ítems #5 (vista de ALUMNO filtrada por progreso en
-`GET /roadmaps/{cc}`) y #6 (409 por curso archivado, atado al Camino 6) a
+**Total: 12 ítems abiertos, 1 pagado.** Última revisión: al implementar el ranking
+(percentiles + cascada de desempate) — se sumaron los ítems #7 (`inscriptos_activos`
+real desde Cursos) y #8 (ranking materializado / recálculo por evento) a
 `06-contrato-api.md`.
 
 > 📄 Ver [`AGENTS.md`](AGENTS.md) en esta misma carpeta — la convención completa
