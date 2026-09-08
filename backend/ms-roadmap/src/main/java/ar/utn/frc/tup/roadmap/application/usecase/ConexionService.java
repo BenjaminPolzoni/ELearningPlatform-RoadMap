@@ -35,9 +35,11 @@ public class ConexionService {
     private final RoadmapNodoRepository nodoRepository;
     private final RoadmapConexionRepository conexionRepository;
     private final DetectorCiclos detectorCiclos;
+    private final GuardaCursoArchivado guardaCursoArchivado;
 
     @Transactional
     public RoadmapConexionEntity crear(UUID cursoCohorteId, UUID nodoOrigenId, UUID nodoDestinoId) {
+        guardaCursoArchivado.exigirNoArchivado(cursoCohorteId);
         RoadmapEntity roadmap = requerirRoadmap(cursoCohorteId);
 
         if (nodoOrigenId.equals(nodoDestinoId)) {
@@ -71,6 +73,7 @@ public class ConexionService {
 
     @Transactional
     public void eliminar(UUID cursoCohorteId, UUID conexionId) {
+        guardaCursoArchivado.exigirNoArchivado(cursoCohorteId);
         RoadmapEntity roadmap = requerirRoadmap(cursoCohorteId);
         RoadmapConexionEntity conexion = conexionRepository.findByIdAndActivoTrue(conexionId)
             .orElseThrow(() -> new ConexionNoEncontradaException(conexionId));

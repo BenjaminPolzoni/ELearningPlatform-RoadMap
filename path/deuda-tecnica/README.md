@@ -23,12 +23,11 @@ el momento, no se archiva acá.
 | [tarea-deuda-01-arquitectura-y-stack.md](tarea-deuda-01-arquitectura-y-stack.md) | `01-arquitectura-y-stack.md` | 1 | 0 |
 | [tarea-deuda-02-modelo-de-datos.md](tarea-deuda-02-modelo-de-datos.md) | `02-modelo-de-datos.md` | 2 | 0 |
 | [tarea-deuda-03-plan-de-implementacion.md](tarea-deuda-03-plan-de-implementacion.md) | `03-plan-de-implementacion.md` | 2 | 0 |
-| [tarea-deuda-06-contrato-api.md](tarea-deuda-06-contrato-api.md) | `06-contrato-api.md` | 8 | 1 |
+| [tarea-deuda-06-contrato-api.md](tarea-deuda-06-contrato-api.md) | `06-contrato-api.md` | 7 | 2 |
 
-**Total: 13 ítems abiertos, 1 pagado.** Última revisión: al implementar el cierre de curso — se sumó el ítem #9 (gates de encuesta y scores IA en cierre/estado). Antes: ranking
-(percentiles + cascada de desempate) — se sumaron los ítems #7 (`inscriptos_activos`
-real desde Cursos) y #8 (ranking materializado / recálculo por evento) a
-`06-contrato-api.md`.
+**Total: 12 ítems abiertos, 2 pagados.** Última revisión: al implementar el Camino 6
+(`CursoArchivadoEvent` → modo lectura) — pagó el ítem #6 de `06-contrato-api.md` (409 por
+curso archivado). Antes: cierre de curso (ítem #9) y ranking (ítems #7 y #8).
 
 > 📄 Ver [`AGENTS.md`](AGENTS.md) en esta misma carpeta — la convención completa
 > (cuándo aplica, nombrado, template, workflow) para cualquier agente que trabaje acá.

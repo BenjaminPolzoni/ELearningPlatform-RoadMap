@@ -33,6 +33,8 @@ class CierreServiceTest {
     @Mock private EstadoAcademicoFinalRepository estadoFinalRepository;
     @Mock private RankingService rankingService;
 
+    @org.mockito.Mock private ar.utn.frc.tup.roadmap.application.usecase.GuardaCursoArchivado guardaCursoArchivado;
+
     private CierreService service;
 
     private final UUID cc = UUID.randomUUID();
@@ -41,7 +43,7 @@ class CierreServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new CierreService(roadmapRepository, estadoFinalRepository, rankingService);
+        service = new CierreService(roadmapRepository, estadoFinalRepository, rankingService, guardaCursoArchivado);
         lenient().when(roadmapRepository.findByCursoCohorteIdAndActivoTrue(cc))
             .thenReturn(Optional.of(new RoadmapEntity()));
     }

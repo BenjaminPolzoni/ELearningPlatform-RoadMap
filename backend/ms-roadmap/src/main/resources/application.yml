@@ -83,6 +83,7 @@ app:
       # plataforma. Confirmar antes de integrar contra el Motor de Desafíos de verdad.
       desafio-completado: desafio-completado
       recuperacion-completada: recuperacion-completada
+      curso-archivado: curso-archivado
 
 logging:
   level:

@@ -30,6 +30,7 @@ public class CierreService {
     private final RoadmapRepository roadmapRepository;
     private final EstadoAcademicoFinalRepository estadoFinalRepository;
     private final RankingService rankingService;
+    private final GuardaCursoArchivado guardaCursoArchivado;
 
     /** RF-RNK-10: la pantalla de confirmación — cada alumno con su situación y lo ya confirmado. */
     @Transactional(readOnly = true)
@@ -50,6 +51,7 @@ public class CierreService {
     @Transactional
     public void confirmar(UUID cursoCohorteId, List<ItemConfirmacion> items, UUID confirmadoPor) {
         exigirRoadmap(cursoCohorteId);
+        guardaCursoArchivado.exigirNoArchivado(cursoCohorteId);
         Instant ahora = Instant.now();
         for (ItemConfirmacion item : items) {
             EstadoAcademicoFinalEntity fila = estadoFinalRepository

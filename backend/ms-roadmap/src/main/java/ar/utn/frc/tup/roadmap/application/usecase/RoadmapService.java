@@ -33,6 +33,7 @@ public class RoadmapService {
     private final RoadmapSeccionRepository seccionRepository;
     private final RoadmapNodoRepository nodoRepository;
     private final RoadmapConexionRepository conexionRepository;
+    private final GuardaCursoArchivado guardaCursoArchivado;
 
     @Transactional
     public RoadmapEntity crear(UUID cursoCohorteId) {
@@ -57,6 +58,7 @@ public class RoadmapService {
      */
     @Transactional
     public RoadmapEntity actualizarEstado(UUID cursoCohorteId, EstadoRoadmap nuevoEstado) {
+        guardaCursoArchivado.exigirNoArchivado(cursoCohorteId);
         RoadmapEntity roadmap = requerir(cursoCohorteId);
         roadmap.setEstado(nuevoEstado);
         return roadmapRepository.save(roadmap);

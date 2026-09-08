@@ -3,6 +3,7 @@ package ar.utn.frc.tup.roadmap.infrastructure.rest;
 import ar.utn.frc.tup.roadmap.domain.exception.ConexionInvalidaException;
 import ar.utn.frc.tup.roadmap.domain.exception.ConexionNoEncontradaException;
 import ar.utn.frc.tup.roadmap.domain.exception.ConexionYaExisteException;
+import ar.utn.frc.tup.roadmap.domain.exception.CursoArchivadoException;
 import ar.utn.frc.tup.roadmap.domain.exception.NodoInvalidoException;
 import ar.utn.frc.tup.roadmap.domain.exception.NodoNoEncontradoException;
 import ar.utn.frc.tup.roadmap.domain.exception.PoolRecuperacionVacioException;
@@ -38,6 +39,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
         RoadmapYaExisteException.class,
         ConexionYaExisteException.class,
+        CursoArchivadoException.class,
         RecuperacionNoCorrespondeException.class,
         PoolRecuperacionVacioException.class
     })

@@ -39,13 +39,13 @@ class RoadmapServiceTest {
     @Mock private RoadmapNodoRepository nodoRepository;
     @Mock private RoadmapConexionRepository conexionRepository;
 
+    @org.mockito.Mock private ar.utn.frc.tup.roadmap.application.usecase.GuardaCursoArchivado guardaCursoArchivado;
+
     private RoadmapService service;
 
     @BeforeEach
     void setUp() {
-        service = new RoadmapService(
-            roadmapRepository, seccionRepository, nodoRepository, conexionRepository
-        );
+        service = new RoadmapService(roadmapRepository, seccionRepository, nodoRepository, conexionRepository, guardaCursoArchivado);
     }
 
     @Test
