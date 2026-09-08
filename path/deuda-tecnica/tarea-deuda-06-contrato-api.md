@@ -112,3 +112,40 @@ nunca llega a `archivado`. El chequeo sin la fuente que lo dispare sería códig
 **Cómo se paga:** junto con el Camino 6 (`CursoArchivadoEvent` → congelar Roadmap y
 Ranking en modo lectura). Ahí se agrega un guard compartido que las 4 escrituras del
 grafo (y las de progreso) consultan antes de mutar.
+
+---
+
+## 🔴 7. Ranking: `inscriptos_activos` no viene de Cursos
+
+**Qué falta:** RF-RNK-09 activa los percentiles P90/P10 solo con ≥ 10 **inscriptos**.
+`RankingService.inscriptosActivos` lee ese número del cache `CursoCohorteContexto`, pero
+nadie lo alimenta todavía, así que cae a un fallback: el nº de alumnos con actividad en
+el curso (y loguea la degradación).
+
+**Dónde vive:** `RankingService.inscriptosActivos(...)` — el `orElseGet` con el `log.warn`.
+
+**Por qué no bloquea la tarea actual:** para el curso seed (12 alumnos, todos con
+actividad) el fallback da el mismo resultado. La diferencia importa solo cuando hay
+inscriptos que todavía no tocaron nada.
+
+**Cómo se paga:** cuando exista la consulta síncrona a Cursos (T02) por inscriptos
+activos (06-contrato-api.md §6.1) o el evento que alimente `CursoCohorteContexto`.
+
+---
+
+## 🔴 8. Ranking calculado en caliente, no materializado ni recalculado por evento
+
+**Qué falta:** el contrato §7.4 y 02-modelo-de-datos.md §1.4 dicen que `RankingEntrada`
+es una vista **materializada** que se recalcula por evento. Hoy `RankingService` la
+calcula entera en cada `GET` a partir de las tablas base.
+
+**Dónde vive:** `RankingService` completo; la nota al pie de `V1__init_schema.sql`.
+
+**Por qué no bloquea la tarea actual:** V1 lo deja explícito — "query en caliente vs.
+MATERIALIZED VIEW real es decisión de Fase 3". Con volúmenes de mock (≤ ~12 alumnos,
+~30 nodos) el costo por request es despreciable y el resultado es idéntico.
+
+**Cómo se paga:** en Fase 3, cuando se decida la estrategia (tabla `ranking_entrada` +
+listeners de XP/vida/insignia/progreso que la recalculan, o `MATERIALIZED VIEW` con
+`REFRESH`). También ahí entra la emisión de `AlumnoEntra/SaleZonaEvent` a Notificaciones,
+que hoy no se emite porque no hay "corrida anterior" contra la cual comparar.

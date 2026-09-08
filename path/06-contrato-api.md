@@ -334,7 +334,13 @@ son **testeables sin levantar Spring**, y ese es el punto.
       fallo), no solo el que genera un movimiento. Cada tipo de evento con su propio
       `ConsumerFactory`/`containerFactory` (`KafkaConsumerConfig`) — resuelve la deuda
       anotada en `deuda-tecnica/tarea-deuda-06-contrato-api.md` #3
-- [ ] Cálculo de ranking con percentiles y cascada de desempate (Fase 3)
+- [x] Cálculo de ranking con percentiles y cascada de desempate — `CalculadoraRanking`
+      (dominio puro: orden por XP + cascada RF-RNK-11, percentil `100·(n-pos)/(n-1)`,
+      zona P90/P10 solo con ≥10 inscriptos RF-RNK-09) + `RankingService` (arma insumos
+      desde las tablas base **en caliente**, no materializado — V1 lo deja para Fase 3).
+      `GET /roadmaps/{cc}/ranking` (respuesta según rol: completa vs. vista de alumno
+      anónima RF-RNK-03/07) y `GET .../ranking/candidatos` (RF-RNK-05/06). Deudas nuevas:
+      inscriptos_activos reales de Cursos, y materialización/recálculo por evento.
 - [x] Tests unitarios de dominio sin contexto de Spring — 60 tests — `MotorDesbloqueo`/
       `MotorXp`/`MotorVidas`/`EstadoNodo`/`SelectorRecuperacion` se instancian reales,
       Mockito solo en los repositorios

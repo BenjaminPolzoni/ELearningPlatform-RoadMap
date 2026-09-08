@@ -17,6 +17,17 @@ public interface MovimientoVidaRepository extends JpaRepository<MovimientoVidaEn
         UUID alumnoId, UUID cursoCohorteId
     );
 
+    /** Conteo de movimientos de un tipo por alumno del curso — ej. PERDIDA para `vidas_perdidas_historico`. */
+    @Query("""
+        SELECT m.alumnoId AS alumnoId, COUNT(m) AS total
+        FROM MovimientoVidaEntity m
+        WHERE m.cursoCohorteId = :cursoCohorteId AND m.tipo = :tipo
+        GROUP BY m.alumnoId
+        """)
+    List<ConteoPorAlumno> contarPorTipoPorAlumno(
+        @Param("cursoCohorteId") UUID cursoCohorteId, @Param("tipo") TipoMovimientoVida tipo
+    );
+
     /** RF-REC-06: qué desafíos del pool ya resolvió, para no repetírselos mientras haya otros. */
     @Query("""
         SELECT m.desafioRecuperacionId FROM MovimientoVidaEntity m

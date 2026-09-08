@@ -17,6 +17,14 @@ public interface RoadmapNodoRepository extends JpaRepository<RoadmapNodoEntity, 
     /** Todos los nodos activos de un conjunto de secciones — para armar el grafo del editor. */
     List<RoadmapNodoEntity> findBySeccionIdInAndActivoTrue(List<UUID> seccionIds);
 
+    /** IDs de los nodos obligatorios y activos del roadmap — denominador de "% obligatorios aprobados" (RF-RNK-05). */
+    @Query("""
+        SELECT n.id FROM RoadmapNodoEntity n, RoadmapSeccionEntity s
+        WHERE n.seccionId = s.id AND s.roadmapId = :roadmapId
+        AND s.activo = true AND n.activo = true AND n.esObligatorio = true
+        """)
+    List<UUID> findIdsObligatoriosDeRoadmap(@Param("roadmapId") UUID roadmapId);
+
     /**
      * Nodos "raíz" de una sección: sin ninguna conexión entrante activa. Son los que se
      * habilitan directo cuando la SECCIÓN se desbloquea por umbral de XP (RF-CUR-06) —
