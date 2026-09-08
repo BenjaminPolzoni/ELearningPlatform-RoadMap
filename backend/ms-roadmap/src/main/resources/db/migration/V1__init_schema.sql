@@ -95,15 +95,28 @@ CREATE TABLE movimiento_xp (
 CREATE INDEX idx_movimiento_xp_alumno_curso ON movimiento_xp(alumno_id, curso_cohorte_id);
 
 CREATE TABLE movimiento_vida (
-    id               UUID PRIMARY KEY,
-    alumno_id        UUID NOT NULL,
-    curso_cohorte_id UUID NOT NULL,
-    nodo_id          UUID,
-    tipo             VARCHAR(20) NOT NULL,
-    origen_evento_id UUID,
-    registrado_en    TIMESTAMPTZ NOT NULL
+    id                      UUID PRIMARY KEY,
+    alumno_id               UUID NOT NULL,
+    curso_cohorte_id        UUID NOT NULL,
+    nodo_id                 UUID,
+    desafio_recuperacion_id UUID,
+    tipo                    VARCHAR(20) NOT NULL,
+    origen_evento_id        UUID,
+    registrado_en           TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX idx_movimiento_vida_alumno_curso ON movimiento_vida(alumno_id, curso_cohorte_id);
+
+-- RF-REC-06: pool de desafíos de recuperación de vida, por curso.
+CREATE TABLE desafio_recuperacion (
+    id               UUID PRIMARY KEY,
+    curso_cohorte_id UUID NOT NULL,
+    desafio_id       UUID NOT NULL,
+    creado_en        TIMESTAMPTZ NOT NULL,
+    actualizado_en   TIMESTAMPTZ NOT NULL,
+    activo           BOOLEAN NOT NULL DEFAULT TRUE,
+    baja_en          TIMESTAMPTZ
+);
+CREATE INDEX idx_desafio_recuperacion_curso ON desafio_recuperacion(curso_cohorte_id);
 
 -- Patrón Inbox: gate único de idempotencia para todo consumidor de eventos del bus,
 -- independiente de qué llegue a escribir el use case (ver EventoProcesadoEntity.java).

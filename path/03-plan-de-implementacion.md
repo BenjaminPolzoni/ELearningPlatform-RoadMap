@@ -35,18 +35,28 @@
 > **Objetivo:** que cualquier integrante clone el repo, corra un comando y vea algo.
 
 ### Repositorio
-- [ ] `git init`, `.gitignore` (Node, Java, IDE), estructura de carpetas
-- [ ] Ramas protegidas: `main` ← `develop` ← `feature/*`
-- [ ] Plantilla de Pull Request con el checklist de la DoD
+- [x] `git init`, `.gitignore` (Node, Java, IDE), estructura de carpetas
+- [x] Ramas protegidas: `main` ← `pruebas` ← `feature/*` — ver `AGENTS.md` raíz. `pruebas`
+      creada y en uso como staging
+- [x] Plantilla de Pull Request con el checklist de la DoD
 
 ### Frontend
-- [ ] `ng new frontend --style css` con Angular 22
-- [ ] Tailwind 4 + daisyUI 5 + `.postcssrc.json` (pasos exactos en `01-arquitectura-y-stack.md`)
-- [ ] **Tema arcade custom** — claro y oscuro, derivados de `Fotos_y_conceptos/`
-- [ ] Shell: layout, navbar, selector de tema, guard desktop-only (RF-NFR-05)
-- [ ] Login mock con **selector de rol** (PROFESOR / ALUMNO / ADMIN)
-- [ ] `RoadmapDataPort` + `InMemoryRoadmapAdapter`
-- [ ] **Seed del curso de ejemplo** — 4 unidades, ~6 actividades c/u, 12 alumnos
+- [x] `ng new frontend` con Angular 22.1.5 (`--style=css --routing --ssr=false`),
+      standalone components + lazy loading
+- [x] Tailwind 4.3.3 + daisyUI 5.7.28 + `.postcssrc.json` (pasos de `01-arquitectura-y-stack.md` §5)
+- [x] **Tema arcade custom** `arcade-dark` / `arcade-light` en `styles.css` (paleta de
+      `05-design-system.md` §2) + tipografías Google Fonts con fallback real. Toggle en runtime
+      vía `ThemeService` (`data-theme` en `<html>`)
+- [x] Shell (`App`): navbar con badge de rol + toggle de tema + salir, y gate desktop-only
+      (RF-NFR-05) por `@HostListener('window:resize')`
+- [x] Login mock (`AuthMockService`) con **selector de rol** (PROFESOR / ALUMNO / ADMIN),
+      persistido en `localStorage`; `sesionGuard` redirige a `/login` sin rol
+- [x] `RoadmapDataPort` (abstract) + `InMemoryRoadmapAdapter` (seed + mutación en memoria +
+      `localStorage`), cableado en `app.config.ts` — una línea para swap a HTTP en Fase 3
+- [x] **Seed del curso de ejemplo** (`mocks/seed.ts`) — 4 unidades, 6 actividades c/u (24),
+      12 alumnos, progreso de arranque. Landing `Home` lo muestra como prueba de vida
+- [ ] i18n (RF-NFR-07, sin strings hardcodeados) — diferido: hoy los textos del shell están
+      en español directo. Lo encara Squad UI al armar `shared/ui`
 
 ### Backend
 - [ ] Esqueleto `ms-roadmap` con Boot 4.1.1 + Java 21
@@ -67,29 +77,38 @@ tema arcade y el curso seed cargado en memoria.
 > momento que hay que llegar a mostrar.
 
 ### Squad Editor
-- [ ] Pantalla de gestión del curso — layout serio y denso, pensado para navegabilidad
-- [ ] **CRUD de unidades**: alta, edición, reordenamiento, baja lógica
-- [ ] Campos por unidad: nombre, `umbral_xp_desbloqueo` (default PAR-08), orden
-- [ ] Validaciones y sugerencias de buenas prácticas de gamificación (RF-CUR-07)
-- [ ] Preview en vivo: el mapa se actualiza mientras se edita
+- [x] Pantalla de gestión del curso — `features/profesor/editor.ts`, tabla densa (§6)
+- [x] **CRUD de unidades**: alta y baja vía `RoadmapStore` → `RoadmapDataPort`. Falta
+      edición inline y reordenamiento (Fase 2)
+- [x] Campos por unidad: nombre + `umbral_xp_desbloqueo`; `orden` lo asigna el adapter
+- [x] Sugerencia RF-CUR-07 no bloqueante — badge "sin actividades" en unidades vacías
+- [x] Preview en vivo: `<app-mapa [preview]="true">` embebido, se actualiza al agregar/quitar
+      (store compartido) — **es el momento de la demo**
 
 ### Squad Engine
+- [x] *Placeholder* del mapa — `features/alumno/mapa.ts`: SVG con layout serpenteante
+      (4 islas/fila, dirección alternada), caminos punteados, click en isla → detalle.
+      Reemplaza al engine real three.js pieza por pieza (mismo `RoadmapStore`)
 - [ ] Escena three.js con `OrthographicCamera` en ángulo isométrico
-- [ ] **Layout procedural sobre spline serpenteante** — N unidades se acomodan solas
 - [ ] Islas como quads texturizados con **placeholders** (programmer-art)
 - [ ] Caminos neón generados en engine + bloom aditivo
 - [ ] Paneo horizontal de cámara + botón *"siguiente zona"*
-- [ ] Click en isla → entra a la unidad
+- [x] Click en isla → panel de detalle con las actividades de la unidad
 
 ### Squad UI
 - [ ] `shared/ui`: botones, cards, modales, badges — con estados normal/hover/pressed/disabled
-- [ ] **HUD del alumno**: avatar, barra de XP, nivel, corazones de vidas
-- [ ] Estados visuales de nodo: bloqueado · habilitado · completado · fallado
+- [~] **HUD del alumno**: hoy solo XP + vidas en el header del mapa. Falta avatar, nivel,
+      barra de XP como componente
+- [x] Estados visuales de isla: bloqueada (candado gris) · disponible (cyan) · completada
+      (verde) · "acá estás" (borde violeta). Ícono además de color (accesibilidad §7)
 
 ### Squad Backend
-- [ ] Endpoints del grafo: crear roadmap, CRUD de secciones y nodos, conexiones
-- [ ] Persistencia real contra Postgres
-- [ ] Tests unitarios del dominio
+- [x] Endpoints del grafo: crear roadmap, CRUD de secciones y nodos, conexiones —
+      11 paths del contrato §1, con baja lógica en cascada y grafo de prerequisitos
+      forzado a DAG (ver `06-contrato-api.md` §1.1)
+- [ ] Persistencia real contra Postgres — el código está, falta correrlo contra la base
+      de verdad (`docker compose up`, mismo pendiente que la deuda 03 #2)
+- [x] Tests unitarios del dominio — `DetectorCiclos` + los `*ServiceTest` del CRUD
 
 **Sale de esta fase:** demo end-to-end del mock — agrego unidad en el editor, aparece la isla.
 
@@ -100,10 +119,19 @@ tema arcade y el curso seed cargado en memoria.
 > **Objetivo:** que el mapa tenga reglas, no solo dibujo.
 
 ### Squad Editor
-- [ ] **CRUD de actividades** dentro de la unidad: tipo, `es_obligatorio`, `reintentos_permitidos` (0-3)
-- [ ] Vinculación de `desafio_id` externo (con catálogo stub del Tema 03)
-- [ ] Editor de conexiones entre actividades (prerequisitos)
+- [x] **CRUD de actividades** dentro de la unidad (front, estilo Moodle) —
+      `features/profesor/unidad-editor.ts`, ruta `/profesor/unidad/:id`. Sube material
+      teórico/práctico (nombre + descripción + recurso URL/texto) y crea desafíos
+      teóricos/prácticos con dificultad (BASICO/MEDIO/AVANZADO → 100/250/500 XP, PAR-01),
+      `es_obligatorio` (RF-DES-06) y `reintentos_permitidos` 0-3 (RF-DES-07). Alta, edición,
+      baja y reordenamiento arriba/abajo. Todo por `RoadmapDataPort` (mock in-memory)
+- [x] Vinculación de `desafio_id` — el adapter genera un id stub al crear un desafío
+      (en producción lo referencia el catálogo del Motor de Desafíos, T03)
+- [ ] Editor de conexiones entre actividades (prerequisitos) — el grafo lineal alcanza para
+      la demo; las bifurcaciones quedan para cuando el mock tenga edición de conexiones
 - [ ] Pool de actividades de recuperación por curso (RF-REC-06)
+      ⚠️ **Subir archivos de material es un stub**: el mock guarda una URL o texto, no un
+      binario (no hay storage). Se cablea en Fase 3 junto con el `HttpRoadmapAdapter`.
 
 ### Squad UI
 - [ ] **Mapa interno de unidad** en SVG/Canvas, estilo Mario 3
@@ -121,7 +149,11 @@ tema arcade y el curso seed cargado en memoria.
 - [ ] **Motor de vidas**: `vidas_vigentes` vs `vidas_perdidas_historico` (PAR-12)
 - [ ] **Máquina de estados del nodo** con la regla de reintentos (RF-DES-07)
 - [ ] **Motor de desbloqueo** por umbral de XP de sección (RF-CUR-06)
-- [ ] Niveles derivados de XP, máximo 10 (RF-NIV-04, PAR-09)
+- [x] Niveles derivados de XP, máximo 10 (RF-NIV-04, PAR-09) — `CurvaNiveles` (dominio
+      puro: valida ≤10 / arranque en 0 / estrictamente creciente, deriva nivel ← XP sin
+      techo RF-NIV-05) + `NivelesService` (curva por defecto PAR-09 si no hay custom,
+      reemplazo con baja lógica) + `NivelesController` (`GET`/`POST /roadmaps/{cc}/niveles`,
+      contrato §3). Falta exponer el nivel del alumno para el HUD (deuda #10)
 - [ ] Consumidor idempotente de `DesafioCompletadoEvent` (dedupe por `origen_evento_id`)
 
 **Sale de esta fase:** el alumno no puede saltear unidades ni nodos, y perder vidas tiene consecuencia.
@@ -144,9 +176,11 @@ tema arcade y el curso seed cargado en memoria.
 - [ ] Detalle de fila con visibilidad diferenciada (RF-RNK-07)
 
 ### Cierre de curso
-- [ ] Pantalla de confirmación de estado académico final (RF-RNK-10)
-- [ ] Exportación del reporte de cierre (RF-RNK-13)
-- [ ] Bloqueo por encuesta pendiente (RF-ENC-11) y por scores diferidos (RF-IA-34)
+- [x] Backend de confirmación de estado académico final (RF-RNK-10) — `cierre/candidatos`
+      + `cierre/confirmar` (upsert). Falta la pantalla (Squad Editor).
+- [x] Exportación del reporte de cierre (RF-RNK-13) — `cierre/reporte`, datos propios
+- [ ] Bloqueo por encuesta pendiente (RF-ENC-11) y por scores diferidos (RF-IA-34) —
+      `cierre/estado` hoy solo bloquea por alumnos sin confirmar (deuda #9)
 
 ### Integración
 - [ ] Swap de `InMemoryRoadmapAdapter` → `HttpRoadmapAdapter`

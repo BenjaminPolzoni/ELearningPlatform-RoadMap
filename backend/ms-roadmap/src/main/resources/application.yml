@@ -82,6 +82,9 @@ app:
       # ⚠️ Nombre asumido — el Tema 11 define el contrato de eventos real de la
       # plataforma. Confirmar antes de integrar contra el Motor de Desafíos de verdad.
       desafio-completado: desafio-completado
+      recuperacion-completada: recuperacion-completada
+      curso-archivado: curso-archivado
+      alumno-inscripto: alumno-inscripto
 
 logging:
   level:

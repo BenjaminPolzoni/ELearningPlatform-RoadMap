@@ -5,11 +5,15 @@ import ar.utn.frc.tup.roadmap.domain.service.CalculadoraXp;
 import ar.utn.frc.tup.roadmap.domain.service.CalculadoraXpAjusteApelacion;
 import ar.utn.frc.tup.roadmap.domain.service.CalculadoraXpAjusteUsoIa;
 import ar.utn.frc.tup.roadmap.domain.service.CalculadoraXpDesafioPersonalizado;
+import ar.utn.frc.tup.roadmap.domain.service.CalculadoraRanking;
 import ar.utn.frc.tup.roadmap.domain.service.CalculadoraXpOtorgadoDesafio;
+import ar.utn.frc.tup.roadmap.domain.service.DetectorCiclos;
 import ar.utn.frc.tup.roadmap.domain.service.MotorDesbloqueo;
 import ar.utn.frc.tup.roadmap.domain.service.MotorVidas;
 import ar.utn.frc.tup.roadmap.domain.service.MotorXp;
+import ar.utn.frc.tup.roadmap.domain.service.SelectorRecuperacion;
 import java.util.List;
+import java.util.Random;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -42,5 +46,20 @@ public class MotoresConfig {
     @Bean
     public MotorDesbloqueo motorDesbloqueo() {
         return new MotorDesbloqueo();
+    }
+
+    @Bean
+    public DetectorCiclos detectorCiclos() {
+        return new DetectorCiclos();
+    }
+
+    @Bean
+    public CalculadoraRanking calculadoraRanking() {
+        return new CalculadoraRanking();
+    }
+
+    @Bean
+    public SelectorRecuperacion selectorRecuperacion() {
+        return new SelectorRecuperacion(new Random());
     }
 }

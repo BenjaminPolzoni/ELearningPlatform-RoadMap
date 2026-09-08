@@ -97,6 +97,36 @@ Registrarse en Eureka **no** alcanza. El Gateway usa una *allowlist* (`include-e
 | `POST /roadmaps/{cc}/conexiones` | PROFESOR | Conectar dos nodos (prerequisito) |
 | `DELETE /roadmaps/{cc}/conexiones/{id}` | PROFESOR | Quitar prerequisito |
 
+> **Estado:** los 11 paths están **[IMPLEMENTADO]** (Fase 1). Detalle exacto de forma y
+> códigos de error en `docs/openapi/ms-roadmap.yaml`.
+
+### 1.1 Decisiones tomadas al implementar el CRUD del grafo
+
+- **`GET /roadmaps/{cc}` devuelve el grafo entero** — metadata + `secciones[]` (ordenadas
+  por `orden`, cada una con `nodos[]`) + `conexiones[]`. Es la "vista de editor" que el
+  contrato siempre nombró; la Fase 0 solo devolvía la metadata como stub. La "vista de
+  ALUMNO filtrada por progreso" sigue pendiente (ver `deuda-tecnica/`).
+- **Baja lógica en cascada** (RF-NFR-01): `DELETE` de una sección da de baja además sus
+  nodos activos y toda conexión que los toque; `DELETE` de un nodo da de baja las
+  conexiones que lo tienen de origen o destino. Nada se borra físico.
+- **El grafo de prerequisitos es un DAG.** `POST /conexiones` rechaza (400) el auto-lazo
+  y cualquier arista que cerraría un ciclo (`A→…→A` dejaría esos nodos imposibles de
+  desbloquear — se deduce de la máquina de estados, 02-modelo-de-datos.md §5). El
+  duplicado activo es 409. La detección de ciclos vive en `domain.service.DetectorCiclos`
+  (dominio puro, testeable sin Spring).
+- **`PUT` de sección y de nodo son reemplazo completo** de los campos editables, no
+  PATCH. En el nodo, `seccionId` viaja siempre y permite mover la actividad a otra unidad
+  del mismo roadmap.
+- **`HITO` no lleva `desafioId`** (marcador sin evaluación) — se rechaza con 400 si viene.
+- **`estado` del nodo no está en el grafo del editor**: es por alumno y vive en
+  `ProgresoNodo` (`GET /alumnos/{aid}/progreso`).
+- **Pertenencia**: toda sección/nodo/conexión se valida contra el roadmap del `{cc}` del
+  path; si el recurso existe pero es de otro curso se responde 404 (no se filtra su
+  existencia).
+- **Curso archivado → 409** en toda escritura del grafo y en `cierre/confirmar`
+  (`GuardaCursoArchivado`, RF-CUR-09). El estado `ARCHIVADO` lo setea el Camino 6
+  (`CursoArchivadoEvent`). Las lecturas y el ranking siguen respondiendo.
+
 ---
 
 ## 2. Progreso, XP y vidas
@@ -146,6 +176,17 @@ Registrarse en Eureka **no** alcanza. El Gateway usa una *allowlist* (`include-e
 | `GET /roadmaps/{cc}/cierre/reporte` | PROFESOR · ADMIN | Exportar reporte (RF-RNK-13) |
 | `GET /roadmaps/{cc}/cierre/estado` | interno | **Precondición síncrona para archivar** (RF-CUR-08b) — la consulta Cursos |
 
+> **Estado:** los 4 paths **[IMPLEMENTADO]** (`CierreService` + `CierreController`).
+> Roadmap NO archiva el curso — solo confirma el estado final por alumno (upsert en
+> `estado_academico_final`) y responde la precondición. Decisiones:
+> - **Estado sugerido, no impuesto:** `cierre/candidatos` sugiere `PROMOCIONADO` para el
+>   candidato RF-RNK-05 y `REGULAR` para el resto; `NO_REGULAR`/`ABANDONO` solo a mano.
+> - **`cierre/estado`** hoy solo bloquea por "falta confirmar algún alumno". Los gates por
+>   encuesta de cierre (RF-ENC-11) y por scores de IA diferidos (RF-IA-34) dependen de
+>   servicios que no consultamos todavía → `deuda-tecnica/`.
+> - **Reporte:** devuelve datos propios (alumnoId, estado, XP, insignias); legajo y nombre
+>   los agrega el BFF (RF-RNK-13, §6.2).
+
 ---
 
 ## 5. Eventos (Kafka)
@@ -158,7 +199,9 @@ Cada tipo de evento es un *topic*; `ms-roadmap` es productor y consumidor.
 | Evento | Origen | Efecto |
 |---|---|---|
 | `DesafioCompletadoEvent` | Motor de Desafíos (T03, G9) | Registra `MovimientoXP`, actualiza `ProgresoNodo`, evalúa desbloqueo, recalcula ranking |
-| `CursoArchivadoEvent` | Cursos (T02, G1) | Actualiza `CursoCohorteContexto` → congela Roadmap y Ranking en modo lectura |
+| `RecuperacionCompletadaEvent` | Motor de Desafíos (T03, G9) | Éxito: registra `MovimientoVida` tipo `recuperada` (RF-REC-04). Fallo: no hace nada — reintentable sin límite |
+| `CursoArchivadoEvent` | Cursos (T02, G1) | **[IMPLEMENTADO]** Actualiza `CursoCohorteContexto` a `ARCHIVADO` → `GuardaCursoArchivado` congela toda escritura del grafo y del cierre (409). Camino 6, listener con `ConsumerFactory` propio |
+| `AlumnoInscriptoEvent` | Cursos (T02, G1) | **[IMPLEMENTADO]** Bootstrapping (README §6.8): habilita las raíces de la **primera** sección del roadmap para ese alumno (`ProcesarAlumnoInscriptoUseCase` → `EvaluarDesbloqueoService.habilitarRaicesDeSeccion`). ⚠️ nombre/forma del evento a confirmar |
 | `ScoreIAApeladoEvent` | Evaluación LLM (T07) | Registra `MovimientoXP` tipo `ajuste_apelacion` y recalcula |
 
 ### Emitimos
@@ -268,7 +311,18 @@ son **testeables sin levantar Spring**, y ese es el punto.
 - [x] Dockerfile multi-stage + `docker-compose.yml` — `docker compose config` valida sin errores
 - [x] Gateway con ruteo hacia `ms-roadmap` — stand-in local, ruteo estático `/api/roadmap/** → lb://ROADMAP-SERVICE`
 - [x] Slice vertical de referencia (`POST`/`GET /roadmaps`) — el patrón a calcar para el resto del CRUD
-- [ ] CRUD completo del grafo: secciones, nodos, conexiones (Fase 1)
+- [x] CRUD completo del grafo: secciones, nodos, conexiones (Fase 1) —
+      `SeccionService` / `NodoService` / `ConexionService` calcando el patrón de
+      `RoadmapService`. `RoadmapController` cubre ahora los 11 paths de §1. Decisiones
+      tomadas al implementar (ver también §1.1 más abajo):
+      · `GET /roadmaps/{cc}` devuelve el **grafo entero** (secciones con nodos +
+        conexiones), no solo la metadata — era lo que el contrato siempre pidió para el
+        editor; la Fase 0 lo tenía como stub.
+      · **Baja lógica en cascada**: borrar una sección da de baja sus nodos y las
+        conexiones que los tocan; borrar un nodo da de baja sus conexiones (RF-NFR-01).
+      · El grafo de prerequisitos se mantiene **DAG**: se rechaza el auto-lazo y toda
+        arista que cerraría un ciclo (`DetectorCiclos`, dominio puro), y el duplicado.
+      · `estado` del nodo no viaja en el grafo del editor — es por alumno (`ProgresoNodo`).
 - [x] `MotorXp` (Strategy) — 4 `CalculadoraXp`, tests sin Spring
 - [x] `MotorVidas` — regla RF-DES-07 vía el resultado de `EstadoNodo.alFallar`
 - [x] `MotorDesbloqueo` — umbral de XP, alcance MVP (RF-CUR-06)
@@ -276,16 +330,50 @@ son **testeables sin levantar Spring**, y ese es el punto.
       del propio modelo documentado (ver 02-modelo-de-datos.md §5, nota de corrección)
 - [x] `EspecificacionesRanking` (Specification) — RF-RNK-05/06, listo para cuando se arme el ranking
 - [x] `ProcesarDesafioCompletadoUseCase` — Camino 1 (éxito) y Camino 2 (fallo) del BPMN,
-      orquestando State + Strategy + los dos motores. **No** cubre: desbloqueo en cascada
-      (falta resolver bootstrapping de `ProgresoNodo`, ver README §6.8) ni nodos `RECUPERACION`
-      (Camino 3, rechazado explícitamente por ahora)
-- [x] Consumidor idempotente de `DesafioCompletadoEvent` — patrón Inbox (`EventoProcesadoEntity`),
-      cubre ambos caminos (éxito y fallo), no solo el que genera `MovimientoXp`
-- [ ] Cálculo de ranking con percentiles y cascada de desempate (Fase 3)
-- [x] Tests unitarios de dominio sin contexto de Spring — 37 tests, `RoadmapServiceTest`,
-      `EstadoNodoTest`, `MotorXpTest`, `MotorVidasTest`, `MotorDesbloqueoTest`,
-      `EspecificacionesRankingTest`, `ProcesarDesafioCompletadoUseCaseTest` (Mockito solo en
-      los repositorios; los motores de dominio se instancian reales)
+      orquestando State + Strategy + los dos motores
+- [x] `EvaluarDesbloqueoService` — cascada de desbloqueo: sucesor directo por grafo
+      (`RoadmapConexion`, con soporte para nodos de fusión con más de un prerequisito) +
+      nodos raíz de la siguiente sección por umbral de XP (RF-CUR-06). Resuelve la mitad
+      "sección ya en curso" de la duda de bootstrapping (README §6.8) — la mitad "alumno
+      arranca el curso" sigue abierta
+- [x] Camino 3 (recuperación de vida, RF-REC-04/06) — `IniciarRecuperacionUseCase` +
+      `ProcesarRecuperacionCompletadaUseCase`, `DesafioRecuperacionEntity` como pool por
+      curso (no un nodo del mapa — ver corrección en 02-modelo-de-datos.md §4),
+      `SelectorRecuperacion` (elige al azar priorizando no resueltos) y
+      `MotorVidas.calcularVidasVigentes` (techo PAR-12 aplicado en cada paso). Endpoint
+      `POST /alumnos/{aid}/vidas/recuperacion` implementado
+- [x] Consumidor idempotente de `DesafioCompletadoEvent`, `RecuperacionCompletadaEvent`,
+      `CursoArchivadoEvent` y `AlumnoInscriptoEvent` — patrón Inbox
+      (`EventoProcesadoEntity`), cubre todos los caminos de cada uno. Cada tipo de evento
+      con su propio `ConsumerFactory`/`containerFactory` (`KafkaConsumerConfig`, con
+      `baseProps` común) — resuelve la deuda #3
+- [x] Bootstrapping de `ProgresoNodo` (README §6.8) completo: `AlumnoInscriptoEvent` →
+      `ProcesarAlumnoInscriptoUseCase` habilita las raíces de la primera sección
+      (`EvaluarDesbloqueoService.habilitarRaicesDeSeccion`). Cierra la mitad "el alumno
+      arranca el curso" que quedaba abierta
+- [x] Camino 6 del BPMN: `CursoArchivadoEvent` → `ProcesarCursoArchivadoUseCase` marca
+      `CursoCohorteContexto` = `ARCHIVADO`; `GuardaCursoArchivado` (guard compartido)
+      hace fallar con 409 toda escritura del grafo y `cierre/confirmar` (RF-CUR-09).
+      Resuelve la deuda #6
+- [x] Cálculo de ranking con percentiles y cascada de desempate — `CalculadoraRanking`
+      (dominio puro: orden por XP + cascada RF-RNK-11, percentil `100·(n-pos)/(n-1)`,
+      zona P90/P10 solo con ≥10 inscriptos RF-RNK-09) + `RankingService` (arma insumos
+      desde las tablas base **en caliente**, no materializado — V1 lo deja para Fase 3).
+      `GET /roadmaps/{cc}/ranking` (respuesta según rol: completa vs. vista de alumno
+      anónima RF-RNK-03/07) y `GET .../ranking/candidatos` (RF-RNK-05/06). Deudas nuevas:
+      inscriptos_activos reales de Cursos, y materialización/recálculo por evento.
+- [x] Curva de niveles (§3, RF-NIV-03/04/05, RF-CFG-05) — `CurvaNiveles` (dominio puro:
+      value object inmutable, valida las invariantes de RF-NIV-04 —entre 1 y 10 niveles,
+      arranque en umbral 0, estrictamente creciente— y deriva `nivelPara(xp)` sin techo
+      RF-NIV-05) + `NivelesService` (curva PAR-09 por defecto si el curso no definió una;
+      `definirCurva` reemplaza con baja lógica) + `NivelesController`
+      (`GET`/`POST /roadmaps/{cc}/niveles`). El nivel del alumno todavía **no se expone** en
+      ningún endpoint — lo consume el HUD del front, que no arrancó (deuda #10). Nombres de
+      la curva PAR-09 provisorios: RF-NIV-03 promete un set nombrado que la cátedra no dio
+      (README §6).
+- [x] Tests unitarios de dominio sin contexto de Spring — 60 tests — `MotorDesbloqueo`/
+      `MotorXp`/`MotorVidas`/`EstadoNodo`/`SelectorRecuperacion` se instancian reales,
+      Mockito solo en los repositorios
 - [ ] Bindear `maven-failsafe-plugin` a integration-test/verify para que `MsRoadmapApplicationIT`
       corra en CI contra infraestructura real (hoy `mvn test` da verde sin necesitarla — a propósito)
 - [ ] Clientes stub de Backoffice / Identidad / Banco — hoy solo existe `LectorParametrosStubAdapter`,

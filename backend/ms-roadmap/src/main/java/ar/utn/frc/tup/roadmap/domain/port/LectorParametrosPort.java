@@ -14,4 +14,7 @@ public interface LectorParametrosPort {
 
     /** PAR-02: XP de un desafío personalizado por LLM (menor, sin monedas). */
     int xpDesafioPersonalizado();
+
+    /** PAR-12: techo de vidas vigentes por curso (default de referencia: 3). */
+    int techoVidas();
 }

@@ -46,6 +46,9 @@ class ProcesarDesafioCompletadoUseCaseTest {
     @Mock private ProgresoNodoRepository progresoRepository;
     @Mock private MovimientoXpRepository movimientoXpRepository;
     @Mock private MovimientoVidaRepository movimientoVidaRepository;
+    // Mockeado a propósito: su propia lógica de cascada tiene su test dedicado
+    // (EvaluarDesbloqueoServiceTest) — acá solo importa que SE LLAME al completar.
+    @Mock private EvaluarDesbloqueoService evaluarDesbloqueoService;
 
     private ProcesarDesafioCompletadoUseCase useCase;
 
@@ -60,13 +63,15 @@ class ProcesarDesafioCompletadoUseCaseTest {
                 return switch (d) { case BASICO -> 100; case MEDIO -> 250; case AVANZADO -> 500; };
             }
             @Override public int xpDesafioPersonalizado() { return 30; }
+            @Override public int techoVidas() { return 3; }
         };
         MotorXp motorXp = new MotorXp(List.of(new CalculadoraXpOtorgadoDesafio(parametros)));
         MotorVidas motorVidas = new MotorVidas();
 
         useCase = new ProcesarDesafioCompletadoUseCase(
             eventoProcesadoRepository, nodoRepository, progresoRepository,
-            movimientoXpRepository, movimientoVidaRepository, motorXp, motorVidas
+            movimientoXpRepository, movimientoVidaRepository, motorXp, motorVidas,
+            evaluarDesbloqueoService
         );
     }
 
@@ -115,20 +120,6 @@ class ProcesarDesafioCompletadoUseCaseTest {
     }
 
     @Test
-    void nodoRecuperacion_seRechazaExplicitamente_tieneReglasPropias() {
-        var cmd = comando(true);
-        RoadmapNodoEntity recuperacion = nodoNormal(0);
-        recuperacion.setTipo(TipoNodo.RECUPERACION);
-        recuperacion.setActivo(true);
-        when(eventoProcesadoRepository.existsById(cmd.origenEventoId())).thenReturn(false);
-        when(nodoRepository.findById(NODO_ID)).thenReturn(Optional.of(recuperacion));
-
-        assertThatThrownBy(() -> useCase.procesar(cmd))
-            .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("RECUPERACION");
-    }
-
-    @Test
     void exito_sobreNodoHabilitado_otorgaXpSegunDificultadYCompletaElNodo() {
         var cmd = comando(true);
         RoadmapNodoEntity nodo = nodoNormal(1);
@@ -151,6 +142,7 @@ class ProcesarDesafioCompletadoUseCaseTest {
 
         verify(eventoProcesadoRepository).save(any());
         verify(movimientoVidaRepository, never()).save(any());
+        verify(evaluarDesbloqueoService).evaluarTrasCompletar(ALUMNO_ID, CURSO_ID, nodo);
     }
 
     @Test
@@ -184,6 +176,7 @@ class ProcesarDesafioCompletadoUseCaseTest {
         assertThat(progresoCaptor.getValue().getEstado()).isEqualTo(EstadoNodo.HABILITADO);
         assertThat(progresoCaptor.getValue().getIntentosUsados()).isEqualTo(1);
         verify(movimientoVidaRepository, never()).save(any());
+        verify(evaluarDesbloqueoService, never()).evaluarTrasCompletar(any(), any(), any());
     }
 
     @Test

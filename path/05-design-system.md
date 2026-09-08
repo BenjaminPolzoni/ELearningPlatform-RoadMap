@@ -235,12 +235,14 @@ para el alumno; el profesor necesita trabajar rápido.
 
 ## 8. Checklist del squad
 
-- [ ] Tema `arcade-dark` y `arcade-light` con toggle funcionando
-- [ ] Tipografías cargadas con fallback real
+- [x] Tema `arcade-dark` y `arcade-light` con toggle funcionando — `styles.css` +
+      `ThemeService` (Fase 0)
+- [x] Tipografías cargadas con fallback real — Press Start 2P / Chivo / IBM Plex Mono vía
+      Google Fonts, con stack de fallback en `@theme` (Fase 0)
 - [ ] Componentes base de `shared/ui` con sus 4 estados
 - [ ] Componentes de dominio (`xp-bar`, `lives`, `avatar`, `node-icon`, `hud`)
 - [ ] Mapa interno SVG con nodos, caminos y avatar animado
 - [ ] Pantalla de ranking con resaltes P90/P10
-- [ ] Guard desktop-only
+- [x] Guard desktop-only — overlay RF-NFR-05 en el shell (`App`), reactivo al resize (Fase 0)
 - [ ] Revisión de contraste en ambos temas
 - [ ] Estados comunicados con ícono además de color

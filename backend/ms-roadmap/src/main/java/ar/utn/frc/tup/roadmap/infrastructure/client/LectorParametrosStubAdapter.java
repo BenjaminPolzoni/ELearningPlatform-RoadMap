@@ -33,4 +33,9 @@ public class LectorParametrosStubAdapter implements LectorParametrosPort {
         // todavía. Placeholder explícito, no una suposición disfrazada de dato real.
         return 30;
     }
+
+    @Override
+    public int techoVidas() {
+        return 3; // PAR-12, default de referencia (path/README.md §3.6)
+    }
 }
