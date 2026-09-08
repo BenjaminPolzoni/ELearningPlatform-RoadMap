@@ -36,18 +36,27 @@
 
 ### Repositorio
 - [x] `git init`, `.gitignore` (Node, Java, IDE), estructura de carpetas
-- [ ] Ramas protegidas: `main` ← `pruebas` ← `feature/*` — ver `AGENTS.md` raíz para el
-      modelo completo. **Pendiente**: crear `pruebas` (hoy solo existe `main`)
+- [x] Ramas protegidas: `main` ← `pruebas` ← `feature/*` — ver `AGENTS.md` raíz. `pruebas`
+      creada y en uso como staging
 - [x] Plantilla de Pull Request con el checklist de la DoD
 
 ### Frontend
-- [ ] `ng new frontend --style css` con Angular 22
-- [ ] Tailwind 4 + daisyUI 5 + `.postcssrc.json` (pasos exactos en `01-arquitectura-y-stack.md`)
-- [ ] **Tema arcade custom** — claro y oscuro, derivados de `Fotos_y_conceptos/`
-- [ ] Shell: layout, navbar, selector de tema, guard desktop-only (RF-NFR-05)
-- [ ] Login mock con **selector de rol** (PROFESOR / ALUMNO / ADMIN)
-- [ ] `RoadmapDataPort` + `InMemoryRoadmapAdapter`
-- [ ] **Seed del curso de ejemplo** — 4 unidades, ~6 actividades c/u, 12 alumnos
+- [x] `ng new frontend` con Angular 22.1.5 (`--style=css --routing --ssr=false`),
+      standalone components + lazy loading
+- [x] Tailwind 4.3.3 + daisyUI 5.7.28 + `.postcssrc.json` (pasos de `01-arquitectura-y-stack.md` §5)
+- [x] **Tema arcade custom** `arcade-dark` / `arcade-light` en `styles.css` (paleta de
+      `05-design-system.md` §2) + tipografías Google Fonts con fallback real. Toggle en runtime
+      vía `ThemeService` (`data-theme` en `<html>`)
+- [x] Shell (`App`): navbar con badge de rol + toggle de tema + salir, y gate desktop-only
+      (RF-NFR-05) por `@HostListener('window:resize')`
+- [x] Login mock (`AuthMockService`) con **selector de rol** (PROFESOR / ALUMNO / ADMIN),
+      persistido en `localStorage`; `sesionGuard` redirige a `/login` sin rol
+- [x] `RoadmapDataPort` (abstract) + `InMemoryRoadmapAdapter` (seed + mutación en memoria +
+      `localStorage`), cableado en `app.config.ts` — una línea para swap a HTTP en Fase 3
+- [x] **Seed del curso de ejemplo** (`mocks/seed.ts`) — 4 unidades, 6 actividades c/u (24),
+      12 alumnos, progreso de arranque. Landing `Home` lo muestra como prueba de vida
+- [ ] i18n (RF-NFR-07, sin strings hardcodeados) — diferido: hoy los textos del shell están
+      en español directo. Lo encara Squad UI al armar `shared/ui`
 
 ### Backend
 - [ ] Esqueleto `ms-roadmap` con Boot 4.1.1 + Java 21

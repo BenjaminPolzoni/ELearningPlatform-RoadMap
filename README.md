@@ -59,13 +59,14 @@ docker compose down -v
 
 ### 3. Stack completo con frontend
 
-`docker compose up --build` a secas levanta también el `frontend` en http://localhost,
-pero **falla hasta que exista el scaffold de Angular**. Generarlo una vez (Fase 0, ver
-[`path/01-arquitectura-y-stack.md`](path/01-arquitectura-y-stack.md)):
-
 ```bash
-cd frontend && npx @angular/cli@22 new frontend --directory . --style css --routing
+docker compose up --build
 ```
+
+Levanta también el `frontend` (Angular 22 + Nginx) en http://localhost. Post-login
+(selector de rol PROFESOR / ALUMNO / ADMIN) se ve el shell arcade y la landing de Fase 0
+con el curso seed cargado desde el `InMemoryRoadmapAdapter`. El editor, el mapa y el
+ranking reales son Fase 1.
 
 > `gateway` y `eureka` son **stand-ins de desarrollo local** — no la infraestructura real
 > de la plataforma (esa la mantiene el Tema 01). Existen para poder probar el flujo
@@ -86,13 +87,18 @@ docker compose up -d postgres kafka   # las únicas dependencias de arranque
 Postgres es obligatorio (Flyway migra al arrancar y JPA valida el esquema). Sin Kafka
 arranca igual, con reintentos de conexión en el log.
 
-### Frontend — Angular 22 (una vez scaffoldeado)
+### Frontend — Angular 22
 
 ```bash
 cd frontend
 npm install
 npm start        # ng serve en http://localhost:4200
+npm run build    # build de producción a dist/frontend/browser
+npm test         # unitarios (vitest headless)
 ```
+
+El front usa `InMemoryRoadmapAdapter` (seed en `src/app/mocks/`, persistido en
+localStorage) hasta Fase 3 — no necesita el backend levantado.
 
 ## Estructura
 
