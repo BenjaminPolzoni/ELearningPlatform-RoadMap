@@ -88,9 +88,12 @@ tema arcade y el curso seed cargado en memoria.
 - [ ] Estados visuales de nodo: bloqueado · habilitado · completado · fallado
 
 ### Squad Backend
-- [ ] Endpoints del grafo: crear roadmap, CRUD de secciones y nodos, conexiones
-- [ ] Persistencia real contra Postgres
-- [ ] Tests unitarios del dominio
+- [x] Endpoints del grafo: crear roadmap, CRUD de secciones y nodos, conexiones —
+      11 paths del contrato §1, con baja lógica en cascada y grafo de prerequisitos
+      forzado a DAG (ver `06-contrato-api.md` §1.1)
+- [ ] Persistencia real contra Postgres — el código está, falta correrlo contra la base
+      de verdad (`docker compose up`, mismo pendiente que la deuda 03 #2)
+- [x] Tests unitarios del dominio — `DetectorCiclos` + los `*ServiceTest` del CRUD
 
 **Sale de esta fase:** demo end-to-end del mock — agrego unidad en el editor, aparece la isla.
 

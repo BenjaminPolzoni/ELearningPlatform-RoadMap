@@ -1,11 +1,18 @@
 package ar.utn.frc.tup.roadmap.infrastructure.rest;
 
+import ar.utn.frc.tup.roadmap.domain.exception.ConexionInvalidaException;
+import ar.utn.frc.tup.roadmap.domain.exception.ConexionNoEncontradaException;
+import ar.utn.frc.tup.roadmap.domain.exception.ConexionYaExisteException;
+import ar.utn.frc.tup.roadmap.domain.exception.NodoInvalidoException;
+import ar.utn.frc.tup.roadmap.domain.exception.NodoNoEncontradoException;
 import ar.utn.frc.tup.roadmap.domain.exception.PoolRecuperacionVacioException;
 import ar.utn.frc.tup.roadmap.domain.exception.RecuperacionNoCorrespondeException;
 import ar.utn.frc.tup.roadmap.domain.exception.RoadmapNoEncontradoException;
 import ar.utn.frc.tup.roadmap.domain.exception.RoadmapYaExisteException;
+import ar.utn.frc.tup.roadmap.domain.exception.SeccionNoEncontradaException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
@@ -13,29 +20,47 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Todo error va como {@code application/problem+json} (RFC 9457) — path/06-contrato-api.md §0.5.
- * El 401 lo emite el Gateway, no nosotros; acá solo 403/404/409 de negocio.
+ * El 401 lo emite el Gateway, no nosotros; acá solo 400/403/404/409 de negocio.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(RoadmapNoEncontradoException.class)
-    public ProblemDetail manejarNoEncontrado(RoadmapNoEncontradoException ex, WebRequest req) {
+    @ExceptionHandler({
+        RoadmapNoEncontradoException.class,
+        SeccionNoEncontradaException.class,
+        NodoNoEncontradoException.class,
+        ConexionNoEncontradaException.class
+    })
+    public ProblemDetail manejarNoEncontrado(RuntimeException ex, WebRequest req) {
         return construir(HttpStatus.NOT_FOUND, ex.getMessage(), req);
     }
 
-    @ExceptionHandler(RoadmapYaExisteException.class)
-    public ProblemDetail manejarConflicto(RoadmapYaExisteException ex, WebRequest req) {
+    @ExceptionHandler({
+        RoadmapYaExisteException.class,
+        ConexionYaExisteException.class,
+        RecuperacionNoCorrespondeException.class,
+        PoolRecuperacionVacioException.class
+    })
+    public ProblemDetail manejarConflicto(RuntimeException ex, WebRequest req) {
         return construir(HttpStatus.CONFLICT, ex.getMessage(), req);
     }
 
-    @ExceptionHandler(RecuperacionNoCorrespondeException.class)
-    public ProblemDetail manejarRecuperacionNoCorresponde(RecuperacionNoCorrespondeException ex, WebRequest req) {
-        return construir(HttpStatus.CONFLICT, ex.getMessage(), req);
+    @ExceptionHandler({
+        ConexionInvalidaException.class,
+        NodoInvalidoException.class
+    })
+    public ProblemDetail manejarReglaViolada(RuntimeException ex, WebRequest req) {
+        return construir(HttpStatus.BAD_REQUEST, ex.getMessage(), req);
     }
 
-    @ExceptionHandler(PoolRecuperacionVacioException.class)
-    public ProblemDetail manejarPoolVacio(PoolRecuperacionVacioException ex, WebRequest req) {
-        return construir(HttpStatus.CONFLICT, ex.getMessage(), req);
+    /** Falla de {@code @Valid} en un @RequestBody — también sale como problem+json. */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail manejarBodyInvalido(MethodArgumentNotValidException ex, WebRequest req) {
+        String detalle = ex.getBindingResult().getFieldErrors().stream()
+            .map(fe -> fe.getField() + " " + fe.getDefaultMessage())
+            .reduce((a, b) -> a + "; " + b)
+            .orElse("cuerpo de la petición inválido");
+        return construir(HttpStatus.BAD_REQUEST, detalle, req);
     }
 
     @ExceptionHandler(ResponseStatusException.class)

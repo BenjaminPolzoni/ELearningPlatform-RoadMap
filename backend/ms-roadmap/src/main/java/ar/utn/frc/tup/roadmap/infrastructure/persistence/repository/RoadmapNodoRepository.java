@@ -2,6 +2,7 @@ package ar.utn.frc.tup.roadmap.infrastructure.persistence.repository;
 
 import ar.utn.frc.tup.roadmap.infrastructure.persistence.entity.RoadmapNodoEntity;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,6 +11,11 @@ import org.springframework.data.repository.query.Param;
 public interface RoadmapNodoRepository extends JpaRepository<RoadmapNodoEntity, UUID> {
 
     List<RoadmapNodoEntity> findBySeccionIdAndActivoTrue(UUID seccionId);
+
+    Optional<RoadmapNodoEntity> findByIdAndActivoTrue(UUID id);
+
+    /** Todos los nodos activos de un conjunto de secciones — para armar el grafo del editor. */
+    List<RoadmapNodoEntity> findBySeccionIdInAndActivoTrue(List<UUID> seccionIds);
 
     /**
      * Nodos "raíz" de una sección: sin ninguna conexión entrante activa. Son los que se

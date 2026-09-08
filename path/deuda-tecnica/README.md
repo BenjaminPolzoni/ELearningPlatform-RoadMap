@@ -23,11 +23,12 @@ el momento, no se archiva acá.
 | [tarea-deuda-01-arquitectura-y-stack.md](tarea-deuda-01-arquitectura-y-stack.md) | `01-arquitectura-y-stack.md` | 1 | 0 |
 | [tarea-deuda-02-modelo-de-datos.md](tarea-deuda-02-modelo-de-datos.md) | `02-modelo-de-datos.md` | 2 | 0 |
 | [tarea-deuda-03-plan-de-implementacion.md](tarea-deuda-03-plan-de-implementacion.md) | `03-plan-de-implementacion.md` | 2 | 0 |
-| [tarea-deuda-06-contrato-api.md](tarea-deuda-06-contrato-api.md) | `06-contrato-api.md` | 3 | 1 |
+| [tarea-deuda-06-contrato-api.md](tarea-deuda-06-contrato-api.md) | `06-contrato-api.md` | 5 | 1 |
 
-**Total: 8 ítems abiertos, 1 pagado.** Última revisión: al implementar Camino 3
-(recuperación de vida) — pagó el ítem #3 de `06-contrato-api.md` (ConsumerFactory único
-de Kafka) al necesitar un segundo tipo de evento real.
+**Total: 10 ítems abiertos, 1 pagado.** Última revisión: al implementar el CRUD del
+grafo (Fase 1) — se sumaron los ítems #5 (vista de ALUMNO filtrada por progreso en
+`GET /roadmaps/{cc}`) y #6 (409 por curso archivado, atado al Camino 6) a
+`06-contrato-api.md`.
 
 > 📄 Ver [`AGENTS.md`](AGENTS.md) en esta misma carpeta — la convención completa
 > (cuándo aplica, nombrado, template, workflow) para cualquier agente que trabaje acá.

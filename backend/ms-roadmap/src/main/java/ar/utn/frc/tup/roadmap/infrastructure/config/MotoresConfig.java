@@ -6,6 +6,7 @@ import ar.utn.frc.tup.roadmap.domain.service.CalculadoraXpAjusteApelacion;
 import ar.utn.frc.tup.roadmap.domain.service.CalculadoraXpAjusteUsoIa;
 import ar.utn.frc.tup.roadmap.domain.service.CalculadoraXpDesafioPersonalizado;
 import ar.utn.frc.tup.roadmap.domain.service.CalculadoraXpOtorgadoDesafio;
+import ar.utn.frc.tup.roadmap.domain.service.DetectorCiclos;
 import ar.utn.frc.tup.roadmap.domain.service.MotorDesbloqueo;
 import ar.utn.frc.tup.roadmap.domain.service.MotorVidas;
 import ar.utn.frc.tup.roadmap.domain.service.MotorXp;
@@ -44,6 +45,11 @@ public class MotoresConfig {
     @Bean
     public MotorDesbloqueo motorDesbloqueo() {
         return new MotorDesbloqueo();
+    }
+
+    @Bean
+    public DetectorCiclos detectorCiclos() {
+        return new DetectorCiclos();
     }
 
     @Bean
