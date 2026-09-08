@@ -77,24 +77,30 @@ tema arcade y el curso seed cargado en memoria.
 > momento que hay que llegar a mostrar.
 
 ### Squad Editor
-- [ ] Pantalla de gestión del curso — layout serio y denso, pensado para navegabilidad
-- [ ] **CRUD de unidades**: alta, edición, reordenamiento, baja lógica
-- [ ] Campos por unidad: nombre, `umbral_xp_desbloqueo` (default PAR-08), orden
-- [ ] Validaciones y sugerencias de buenas prácticas de gamificación (RF-CUR-07)
-- [ ] Preview en vivo: el mapa se actualiza mientras se edita
+- [x] Pantalla de gestión del curso — `features/profesor/editor.ts`, tabla densa (§6)
+- [x] **CRUD de unidades**: alta y baja vía `RoadmapStore` → `RoadmapDataPort`. Falta
+      edición inline y reordenamiento (Fase 2)
+- [x] Campos por unidad: nombre + `umbral_xp_desbloqueo`; `orden` lo asigna el adapter
+- [x] Sugerencia RF-CUR-07 no bloqueante — badge "sin actividades" en unidades vacías
+- [x] Preview en vivo: `<app-mapa [preview]="true">` embebido, se actualiza al agregar/quitar
+      (store compartido) — **es el momento de la demo**
 
 ### Squad Engine
+- [x] *Placeholder* del mapa — `features/alumno/mapa.ts`: SVG con layout serpenteante
+      (4 islas/fila, dirección alternada), caminos punteados, click en isla → detalle.
+      Reemplaza al engine real three.js pieza por pieza (mismo `RoadmapStore`)
 - [ ] Escena three.js con `OrthographicCamera` en ángulo isométrico
-- [ ] **Layout procedural sobre spline serpenteante** — N unidades se acomodan solas
 - [ ] Islas como quads texturizados con **placeholders** (programmer-art)
 - [ ] Caminos neón generados en engine + bloom aditivo
 - [ ] Paneo horizontal de cámara + botón *"siguiente zona"*
-- [ ] Click en isla → entra a la unidad
+- [x] Click en isla → panel de detalle con las actividades de la unidad
 
 ### Squad UI
 - [ ] `shared/ui`: botones, cards, modales, badges — con estados normal/hover/pressed/disabled
-- [ ] **HUD del alumno**: avatar, barra de XP, nivel, corazones de vidas
-- [ ] Estados visuales de nodo: bloqueado · habilitado · completado · fallado
+- [~] **HUD del alumno**: hoy solo XP + vidas en el header del mapa. Falta avatar, nivel,
+      barra de XP como componente
+- [x] Estados visuales de isla: bloqueada (candado gris) · disponible (cyan) · completada
+      (verde) · "acá estás" (borde violeta). Ícono además de color (accesibilidad §7)
 
 ### Squad Backend
 - [x] Endpoints del grafo: crear roadmap, CRUD de secciones y nodos, conexiones —
