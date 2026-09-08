@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { RoadmapDataPort } from './roadmap-data.port';
-import { NuevaUnidad, Roadmap } from './roadmap.models';
+import { NuevaActividad, NuevaUnidad, Roadmap, Unidad } from './roadmap.models';
 import { CURSO_SEED_ID } from '../../mocks/seed';
 
 /**
@@ -31,5 +31,25 @@ export class RoadmapStore {
 
   quitarUnidad(unidadId: string): void {
     this.port.removeUnidad(CURSO_SEED_ID, unidadId).subscribe(() => this.recargar());
+  }
+
+  unidadPorId(unidadId: string): Unidad | undefined {
+    return this.unidades().find((u) => u.id === unidadId);
+  }
+
+  agregarActividad(unidadId: string, dto: NuevaActividad): void {
+    this.port.addActividad(CURSO_SEED_ID, unidadId, dto).subscribe(() => this.recargar());
+  }
+
+  editarActividad(unidadId: string, actividadId: string, dto: NuevaActividad): void {
+    this.port.updateActividad(CURSO_SEED_ID, unidadId, actividadId, dto).subscribe(() => this.recargar());
+  }
+
+  quitarActividad(unidadId: string, actividadId: string): void {
+    this.port.removeActividad(CURSO_SEED_ID, unidadId, actividadId).subscribe(() => this.recargar());
+  }
+
+  moverActividad(unidadId: string, actividadId: string, direccion: 'arriba' | 'abajo'): void {
+    this.port.moverActividad(CURSO_SEED_ID, unidadId, actividadId, direccion).subscribe(() => this.recargar());
   }
 }

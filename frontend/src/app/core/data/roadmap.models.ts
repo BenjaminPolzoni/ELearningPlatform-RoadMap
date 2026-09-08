@@ -5,6 +5,11 @@
 export type EstadoNodo = 'bloqueado' | 'habilitado' | 'completado' | 'fallado';
 export type TipoNodo = 'teoria' | 'practica' | 'desafio' | 'boss' | 'hito';
 
+// PAR-01: XP base por dificultad (100 / 250 / 500). Espejo de Dificultad del backend.
+export type Dificultad = 'BASICO' | 'MEDIO' | 'AVANZADO';
+// Un desafío puede ser teórico o práctico (RF-CUR-04).
+export type Modalidad = 'teorico' | 'practico';
+
 export interface Actividad {
   id: string;
   nombre: string;
@@ -12,6 +17,24 @@ export interface Actividad {
   esObligatorio: boolean;
   reintentosPermitidos: number; // 0-3 (RF-DES-07)
   desafioId?: string;
+  // Material (tipo teoria/practica): contenido que el alumno lee/practica.
+  descripcion?: string;
+  recurso?: string; // URL o texto — ver nota de "subir material" en unidad-editor.ts
+  // Desafío (tipo desafio/boss): se evalúa y otorga XP.
+  dificultad?: Dificultad;
+  modalidad?: Modalidad;
+}
+
+/** Alta/edición de actividad desde el editor del profesor (Fase 2). */
+export interface NuevaActividad {
+  nombre: string;
+  tipo: TipoNodo;
+  esObligatorio: boolean;
+  reintentosPermitidos: number;
+  descripcion?: string;
+  recurso?: string;
+  dificultad?: Dificultad;
+  modalidad?: Modalidad;
 }
 
 export interface Unidad {

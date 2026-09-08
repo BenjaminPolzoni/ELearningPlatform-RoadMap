@@ -102,6 +102,9 @@ const Y0 = 90;
               <li class="flex items-center gap-2">
                 <span class="badge badge-outline badge-sm ui-font">{{ a.tipo }}</span>
                 <span>{{ a.nombre }}</span>
+                @if (a.dificultad) {
+                  <span class="badge badge-sm badge-primary badge-outline">{{ a.dificultad }}</span>
+                }
                 @if (a.esObligatorio) {
                   <span class="badge badge-warning badge-sm">obligatorio</span>
                 }
