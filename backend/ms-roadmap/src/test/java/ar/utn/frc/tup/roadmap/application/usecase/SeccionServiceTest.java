@@ -35,6 +35,8 @@ class SeccionServiceTest {
     @Mock private RoadmapNodoRepository nodoRepository;
     @Mock private RoadmapConexionRepository conexionRepository;
 
+    @org.mockito.Mock private ar.utn.frc.tup.roadmap.application.usecase.GuardaCursoArchivado guardaCursoArchivado;
+
     private SeccionService service;
 
     private final UUID cursoCohorteId = UUID.randomUUID();
@@ -42,9 +44,7 @@ class SeccionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SeccionService(
-            roadmapRepository, seccionRepository, nodoRepository, conexionRepository
-        );
+        service = new SeccionService(roadmapRepository, seccionRepository, nodoRepository, conexionRepository, guardaCursoArchivado);
     }
 
     private RoadmapEntity roadmapActivo() {

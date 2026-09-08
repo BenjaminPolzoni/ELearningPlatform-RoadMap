@@ -32,12 +32,14 @@ public class NodoService {
     private final RoadmapSeccionRepository seccionRepository;
     private final RoadmapNodoRepository nodoRepository;
     private final RoadmapConexionRepository conexionRepository;
+    private final GuardaCursoArchivado guardaCursoArchivado;
 
     @Transactional
     public RoadmapNodoEntity crear(
         UUID cursoCohorteId, UUID seccionId, TipoNodo tipo, UUID desafioId,
         double posicionX, double posicionY, boolean esObligatorio, int reintentosPermitidos
     ) {
+        guardaCursoArchivado.exigirNoArchivado(cursoCohorteId);
         RoadmapEntity roadmap = requerirRoadmap(cursoCohorteId);
         requerirSeccionEnRoadmap(seccionId, roadmap.getId());
         validarCoherencia(tipo, desafioId);
@@ -53,6 +55,7 @@ public class NodoService {
         UUID cursoCohorteId, UUID nodoId, UUID seccionId, TipoNodo tipo, UUID desafioId,
         double posicionX, double posicionY, boolean esObligatorio, int reintentosPermitidos
     ) {
+        guardaCursoArchivado.exigirNoArchivado(cursoCohorteId);
         RoadmapEntity roadmap = requerirRoadmap(cursoCohorteId);
         RoadmapNodoEntity nodo = requerirNodoEnRoadmap(nodoId, roadmap.getId());
         // La sección destino (puede ser la misma o una mudanza a otra unidad) también
@@ -71,6 +74,7 @@ public class NodoService {
      */
     @Transactional
     public void eliminar(UUID cursoCohorteId, UUID nodoId) {
+        guardaCursoArchivado.exigirNoArchivado(cursoCohorteId);
         RoadmapEntity roadmap = requerirRoadmap(cursoCohorteId);
         RoadmapNodoEntity nodo = requerirNodoEnRoadmap(nodoId, roadmap.getId());
 

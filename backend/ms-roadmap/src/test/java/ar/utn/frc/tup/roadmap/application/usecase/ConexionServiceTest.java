@@ -37,6 +37,8 @@ class ConexionServiceTest {
     @Mock private RoadmapNodoRepository nodoRepository;
     @Mock private RoadmapConexionRepository conexionRepository;
 
+    @org.mockito.Mock private ar.utn.frc.tup.roadmap.application.usecase.GuardaCursoArchivado guardaCursoArchivado;
+
     private ConexionService service;
 
     private final UUID cursoCohorteId = UUID.randomUUID();
@@ -47,9 +49,7 @@ class ConexionServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ConexionService(
-            roadmapRepository, seccionRepository, nodoRepository, conexionRepository, new DetectorCiclos()
-        );
+        service = new ConexionService(roadmapRepository, seccionRepository, nodoRepository, conexionRepository, new DetectorCiclos(), guardaCursoArchivado);
     }
 
     private void roadmapConDosNodos() {

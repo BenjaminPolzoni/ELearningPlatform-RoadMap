@@ -30,9 +30,11 @@ public class SeccionService {
     private final RoadmapSeccionRepository seccionRepository;
     private final RoadmapNodoRepository nodoRepository;
     private final RoadmapConexionRepository conexionRepository;
+    private final GuardaCursoArchivado guardaCursoArchivado;
 
     @Transactional
     public RoadmapSeccionEntity crear(UUID cursoCohorteId, String nombre, int umbralXpDesbloqueo, int orden) {
+        guardaCursoArchivado.exigirNoArchivado(cursoCohorteId);
         RoadmapEntity roadmap = requerirRoadmap(cursoCohorteId);
 
         RoadmapSeccionEntity seccion = new RoadmapSeccionEntity();
@@ -47,6 +49,7 @@ public class SeccionService {
     public RoadmapSeccionEntity actualizar(
         UUID cursoCohorteId, UUID seccionId, String nombre, int umbralXpDesbloqueo, int orden
     ) {
+        guardaCursoArchivado.exigirNoArchivado(cursoCohorteId);
         RoadmapSeccionEntity seccion = requerirSeccionDe(cursoCohorteId, seccionId);
         seccion.setNombre(nombre);
         seccion.setUmbralXpDesbloqueo(umbralXpDesbloqueo);
@@ -62,6 +65,7 @@ public class SeccionService {
      */
     @Transactional
     public void eliminar(UUID cursoCohorteId, UUID seccionId) {
+        guardaCursoArchivado.exigirNoArchivado(cursoCohorteId);
         RoadmapSeccionEntity seccion = requerirSeccionDe(cursoCohorteId, seccionId);
 
         List<RoadmapNodoEntity> nodos = nodoRepository.findBySeccionIdAndActivoTrue(seccionId);

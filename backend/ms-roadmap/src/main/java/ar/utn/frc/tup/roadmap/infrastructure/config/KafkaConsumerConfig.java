@@ -1,5 +1,6 @@
 package ar.utn.frc.tup.roadmap.infrastructure.config;
 
+import ar.utn.frc.tup.roadmap.infrastructure.messaging.dto.CursoArchivadoEventDto;
 import ar.utn.frc.tup.roadmap.infrastructure.messaging.dto.RecuperacionCompletadaEventDto;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,9 +19,7 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
  * Resuelve la deuda anotada en path/deuda-tecnica/tarea-deuda-06-contrato-api.md #3:
  * {@code spring.json.value.default.type} en application.yml solo alcanza para UN tipo de
  * evento en la ConsumerFactory autoconfigurada (la usa {@code DesafioCompletadoListener}).
- * Este segundo listener ({@code RecuperacionCompletadaListener}) necesita la suya propia
- * — el próximo evento (ej. {@code CursoArchivadoEvent}) sigue el mismo patrón: una
- * factory nombrada más acá, no tocar la autoconfigurada.
+ * Cada listener extra trae su factory nombrada acá — nunca se toca la autoconfigurada.
  */
 @Configuration
 public class KafkaConsumerConfig {
@@ -28,8 +27,8 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-    @Bean
-    public ConsumerFactory<String, RecuperacionCompletadaEventDto> recuperacionConsumerFactory() {
+    /** Props comunes de todos los consumers propios, con el tipo de valor por defecto ya fijado. */
+    private Map<String, Object> baseProps(Class<?> valueDefaultType) {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "roadmap-service");
@@ -37,8 +36,21 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class.getName());
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "ar.utn.frc.tup.roadmap.infrastructure.messaging.dto");
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, RecuperacionCompletadaEventDto.class.getName());
-        return new DefaultKafkaConsumerFactory<>(props);
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, valueDefaultType.getName());
+        return props;
+    }
+
+    private <T> ConcurrentKafkaListenerContainerFactory<String, T> factory(ConsumerFactory<String, T> cf) {
+        ConcurrentKafkaListenerContainerFactory<String, T> f = new ConcurrentKafkaListenerContainerFactory<>();
+        f.setConsumerFactory(cf);
+        return f;
+    }
+
+    // ── Camino 3: RecuperacionCompletadaEvent ────────────────────────────
+
+    @Bean
+    public ConsumerFactory<String, RecuperacionCompletadaEventDto> recuperacionConsumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(baseProps(RecuperacionCompletadaEventDto.class));
     }
 
     @Bean
@@ -46,9 +58,21 @@ public class KafkaConsumerConfig {
             recuperacionKafkaListenerContainerFactory(
         ConsumerFactory<String, RecuperacionCompletadaEventDto> recuperacionConsumerFactory
     ) {
-        ConcurrentKafkaListenerContainerFactory<String, RecuperacionCompletadaEventDto> factory =
-            new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(recuperacionConsumerFactory);
-        return factory;
+        return factory(recuperacionConsumerFactory);
+    }
+
+    // ── Camino 6: CursoArchivadoEvent ───────────────────────────────────
+
+    @Bean
+    public ConsumerFactory<String, CursoArchivadoEventDto> cursoArchivadoConsumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(baseProps(CursoArchivadoEventDto.class));
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, CursoArchivadoEventDto>
+            cursoArchivadoKafkaListenerContainerFactory(
+        ConsumerFactory<String, CursoArchivadoEventDto> cursoArchivadoConsumerFactory
+    ) {
+        return factory(cursoArchivadoConsumerFactory);
     }
 }

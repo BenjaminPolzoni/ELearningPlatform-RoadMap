@@ -123,8 +123,9 @@ Registrarse en Eureka **no** alcanza. El Gateway usa una *allowlist* (`include-e
 - **Pertenencia**: toda sección/nodo/conexión se valida contra el roadmap del `{cc}` del
   path; si el recurso existe pero es de otro curso se responde 404 (no se filtra su
   existencia).
-- **Todavía NO se chequea** el 409 por "roadmap de curso archivado" (contrato §0.5) —
-  depende del Camino 6 del BPMN (`CursoArchivadoEvent`). Anotado en `deuda-tecnica/`.
+- **Curso archivado → 409** en toda escritura del grafo y en `cierre/confirmar`
+  (`GuardaCursoArchivado`, RF-CUR-09). El estado `ARCHIVADO` lo setea el Camino 6
+  (`CursoArchivadoEvent`). Las lecturas y el ranking siguen respondiendo.
 
 ---
 
@@ -199,7 +200,7 @@ Cada tipo de evento es un *topic*; `ms-roadmap` es productor y consumidor.
 |---|---|---|
 | `DesafioCompletadoEvent` | Motor de Desafíos (T03, G9) | Registra `MovimientoXP`, actualiza `ProgresoNodo`, evalúa desbloqueo, recalcula ranking |
 | `RecuperacionCompletadaEvent` | Motor de Desafíos (T03, G9) | Éxito: registra `MovimientoVida` tipo `recuperada` (RF-REC-04). Fallo: no hace nada — reintentable sin límite |
-| `CursoArchivadoEvent` | Cursos (T02, G1) | Actualiza `CursoCohorteContexto` → congela Roadmap y Ranking en modo lectura |
+| `CursoArchivadoEvent` | Cursos (T02, G1) | **[IMPLEMENTADO]** Actualiza `CursoCohorteContexto` a `ARCHIVADO` → `GuardaCursoArchivado` congela toda escritura del grafo y del cierre (409). Camino 6, listener con `ConsumerFactory` propio |
 | `ScoreIAApeladoEvent` | Evaluación LLM (T07) | Registra `MovimientoXP` tipo `ajuste_apelacion` y recalcula |
 
 ### Emitimos
@@ -340,11 +341,15 @@ son **testeables sin levantar Spring**, y ese es el punto.
       `SelectorRecuperacion` (elige al azar priorizando no resueltos) y
       `MotorVidas.calcularVidasVigentes` (techo PAR-12 aplicado en cada paso). Endpoint
       `POST /alumnos/{aid}/vidas/recuperacion` implementado
-- [x] Consumidor idempotente de `DesafioCompletadoEvent` y de `RecuperacionCompletadaEvent`
-      — patrón Inbox (`EventoProcesadoEntity`), cubre ambos caminos de cada uno (éxito y
-      fallo), no solo el que genera un movimiento. Cada tipo de evento con su propio
-      `ConsumerFactory`/`containerFactory` (`KafkaConsumerConfig`) — resuelve la deuda
-      anotada en `deuda-tecnica/tarea-deuda-06-contrato-api.md` #3
+- [x] Consumidor idempotente de `DesafioCompletadoEvent`, `RecuperacionCompletadaEvent` y
+      `CursoArchivadoEvent` — patrón Inbox (`EventoProcesadoEntity`), cubre todos los
+      caminos de cada uno. Cada tipo de evento con su propio
+      `ConsumerFactory`/`containerFactory` (`KafkaConsumerConfig`, con `baseProps` común)
+      — resuelve la deuda #3
+- [x] Camino 6 del BPMN: `CursoArchivadoEvent` → `ProcesarCursoArchivadoUseCase` marca
+      `CursoCohorteContexto` = `ARCHIVADO`; `GuardaCursoArchivado` (guard compartido)
+      hace fallar con 409 toda escritura del grafo y `cierre/confirmar` (RF-CUR-09).
+      Resuelve la deuda #6
 - [x] Cálculo de ranking con percentiles y cascada de desempate — `CalculadoraRanking`
       (dominio puro: orden por XP + cascada RF-RNK-11, percentil `100·(n-pos)/(n-1)`,
       zona P90/P10 solo con ≥10 inscriptos RF-RNK-09) + `RankingService` (arma insumos

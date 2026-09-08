@@ -96,22 +96,18 @@ haga el `left join` con `ProgresoNodo` y, si el token es de ALUMNO, devolver esa
 
 ---
 
-## 🔴 6. Las mutaciones del grafo no chequean "curso archivado" (409)
+## 🟢 6. ~~Las mutaciones del grafo no chequean "curso archivado" (409)~~
 
-**Qué falta:** el contrato §0.5 lista un 409 para "editar un roadmap de curso
-archivado". Hoy `SeccionService` / `NodoService` / `ConexionService` / `RoadmapService`
-no consultan `CursoCohorteContexto.estado` antes de escribir.
+**Qué faltaba:** el contrato §0.5 lista un 409 para "editar un roadmap de curso
+archivado". `SeccionService` / `NodoService` / `ConexionService` / `RoadmapService` no
+consultaban `CursoCohorteContexto.estado` antes de escribir.
 
-**Dónde vive:** los 4 servicios del CRUD del grafo (`application/usecase/*Service.java`).
-El cache `CursoCohorteContextoEntity` ya existe pero nadie lo alimenta todavía.
+**Dónde vivía:** los servicios del CRUD del grafo (`application/usecase/*Service.java`).
 
-**Por qué no bloquea la tarea actual:** nada archiva cursos todavía en el sistema — el
-`CursoArchivadoEvent` (Camino 6 del BPMN) aún no se consume, así que `CursoCohorteContexto`
-nunca llega a `archivado`. El chequeo sin la fuente que lo dispare sería código muerto.
-
-**Cómo se paga:** junto con el Camino 6 (`CursoArchivadoEvent` → congelar Roadmap y
-Ranking en modo lectura). Ahí se agrega un guard compartido que las 4 escrituras del
-grafo (y las de progreso) consultan antes de mutar.
+**Pagada:** al implementar el Camino 6 (`feat: Camino 6 — CursoArchivadoEvent → modo
+lectura`). `ProcesarCursoArchivadoUseCase` marca el contexto como `ARCHIVADO` y el guard
+compartido `GuardaCursoArchivado.exigirNoArchivado(cc)` se llama al inicio de toda
+escritura del grafo y de `cierre/confirmar` — lanza `CursoArchivadoException` → 409.
 
 ---
 

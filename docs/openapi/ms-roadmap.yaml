@@ -6,7 +6,11 @@ info:
     path/01-arquitectura-y-stack.md §4 — contract-first). Cada path indica su estado:
     `[IMPLEMENTADO]` ya existe en el código, `[PLANEADO]` es el contrato objetivo de
     fases futuras — el front puede mockear contra él desde ya.
-  version: "0.1.0"
+
+    Regla transversal (Camino 6, RF-CUR-09): si el curso está ARCHIVADO
+    (`CursoArchivadoEvent` ya consumido), toda escritura del grafo y `cierre/confirmar`
+    responden **409**; las lecturas y el ranking siguen respondiendo normal.
+  version: "0.2.0"
 servers:
   - url: /api/roadmap
     description: >
