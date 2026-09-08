@@ -119,10 +119,19 @@ tema arcade y el curso seed cargado en memoria.
 > **Objetivo:** que el mapa tenga reglas, no solo dibujo.
 
 ### Squad Editor
-- [ ] **CRUD de actividades** dentro de la unidad: tipo, `es_obligatorio`, `reintentos_permitidos` (0-3)
-- [ ] Vinculación de `desafio_id` externo (con catálogo stub del Tema 03)
-- [ ] Editor de conexiones entre actividades (prerequisitos)
+- [x] **CRUD de actividades** dentro de la unidad (front, estilo Moodle) —
+      `features/profesor/unidad-editor.ts`, ruta `/profesor/unidad/:id`. Sube material
+      teórico/práctico (nombre + descripción + recurso URL/texto) y crea desafíos
+      teóricos/prácticos con dificultad (BASICO/MEDIO/AVANZADO → 100/250/500 XP, PAR-01),
+      `es_obligatorio` (RF-DES-06) y `reintentos_permitidos` 0-3 (RF-DES-07). Alta, edición,
+      baja y reordenamiento arriba/abajo. Todo por `RoadmapDataPort` (mock in-memory)
+- [x] Vinculación de `desafio_id` — el adapter genera un id stub al crear un desafío
+      (en producción lo referencia el catálogo del Motor de Desafíos, T03)
+- [ ] Editor de conexiones entre actividades (prerequisitos) — el grafo lineal alcanza para
+      la demo; las bifurcaciones quedan para cuando el mock tenga edición de conexiones
 - [ ] Pool de actividades de recuperación por curso (RF-REC-06)
+      ⚠️ **Subir archivos de material es un stub**: el mock guarda una URL o texto, no un
+      binario (no hay storage). Se cablea en Fase 3 junto con el `HttpRoadmapAdapter`.
 
 ### Squad UI
 - [ ] **Mapa interno de unidad** en SVG/Canvas, estilo Mario 3

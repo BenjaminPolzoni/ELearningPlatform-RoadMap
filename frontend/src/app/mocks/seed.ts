@@ -1,4 +1,14 @@
-import { Alumno, EstadoNodo, Progreso, ProgresoNodo, Roadmap, TipoNodo } from '../core/data/roadmap.models';
+import {
+  Actividad,
+  Alumno,
+  Dificultad,
+  EstadoNodo,
+  Modalidad,
+  Progreso,
+  ProgresoNodo,
+  Roadmap,
+  TipoNodo,
+} from '../core/data/roadmap.models';
 
 // Curso de ejemplo (03-plan-de-implementacion.md, Fase 0): 4 unidades, 6 actividades
 // c/u, 12 alumnos. Es lo que desacopla a los 4 squads — nadie espera a nadie.
@@ -8,14 +18,31 @@ export const CURSO_SEED_ID = '11111111-1111-1111-1111-111111111111';
 const NOMBRES_UNIDAD = ['Fundamentos', 'Estructuras de control', 'Funciones', 'Estructuras de datos'];
 const UMBRALES = [0, 500, 1200, 2000];
 
+interface Fila {
+  nombre: string;
+  tipo: TipoNodo;
+  esObligatorio: boolean;
+  reintentos: number;
+  descripcion?: string;
+  recurso?: string;
+  dificultad?: Dificultad;
+  modalidad?: Modalidad;
+}
+
 // 6 actividades por unidad: teoría → 3 prácticas → desafío → boss.
-const PLANTILLA: { nombre: string; tipo: TipoNodo; esObligatorio: boolean; reintentos: number }[] = [
-  { nombre: 'Teoría', tipo: 'teoria', esObligatorio: true, reintentos: 0 },
-  { nombre: 'Práctica guiada', tipo: 'practica', esObligatorio: true, reintentos: 3 },
-  { nombre: 'Práctica libre', tipo: 'practica', esObligatorio: false, reintentos: 3 },
-  { nombre: 'Ejercicio integrador', tipo: 'practica', esObligatorio: true, reintentos: 2 },
-  { nombre: 'Desafío', tipo: 'desafio', esObligatorio: true, reintentos: 1 },
-  { nombre: 'Boss', tipo: 'boss', esObligatorio: true, reintentos: 1 },
+const PLANTILLA: Fila[] = [
+  { nombre: 'Teoría', tipo: 'teoria', esObligatorio: true, reintentos: 0,
+    descripcion: 'Material teórico de la unidad.', recurso: 'https://ejemplo.edu/teoria' },
+  { nombre: 'Práctica guiada', tipo: 'practica', esObligatorio: true, reintentos: 0,
+    descripcion: 'Ejercicios resueltos paso a paso.' },
+  { nombre: 'Práctica libre', tipo: 'practica', esObligatorio: false, reintentos: 0,
+    descripcion: 'Ejercitación adicional opcional.' },
+  { nombre: 'Ejercicio integrador', tipo: 'practica', esObligatorio: true, reintentos: 0,
+    descripcion: 'Combina los temas de la unidad.' },
+  { nombre: 'Desafío', tipo: 'desafio', esObligatorio: true, reintentos: 1,
+    dificultad: 'MEDIO', modalidad: 'practico' },
+  { nombre: 'Boss', tipo: 'boss', esObligatorio: true, reintentos: 1,
+    dificultad: 'AVANZADO', modalidad: 'practico' },
 ];
 
 export function roadmapSeed(): Roadmap {
@@ -27,14 +54,21 @@ export function roadmapSeed(): Roadmap {
       nombre,
       umbralXpDesbloqueo: UMBRALES[i],
       orden: i + 1,
-      actividades: PLANTILLA.map((p, j) => ({
-        id: `u${i + 1}-a${j + 1}`,
-        nombre: p.nombre,
-        tipo: p.tipo,
-        esObligatorio: p.esObligatorio,
-        reintentosPermitidos: p.reintentos,
-        desafioId: p.tipo === 'desafio' || p.tipo === 'boss' ? `desafio-ext-${i + 1}-${j + 1}` : undefined,
-      })),
+      actividades: PLANTILLA.map((p, j): Actividad => {
+        const esDesafio = p.tipo === 'desafio' || p.tipo === 'boss';
+        return {
+          id: `u${i + 1}-a${j + 1}`,
+          nombre: p.nombre,
+          tipo: p.tipo,
+          esObligatorio: p.esObligatorio,
+          reintentosPermitidos: p.reintentos,
+          desafioId: esDesafio ? `desafio-ext-${i + 1}-${j + 1}` : undefined,
+          descripcion: p.descripcion,
+          recurso: p.recurso,
+          dificultad: p.dificultad,
+          modalidad: p.modalidad,
+        };
+      }),
     })),
   };
 }

@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { RoadmapStore } from '../../core/data/roadmap.store';
 import { Mapa } from '../alumno/mapa';
 
@@ -11,7 +12,7 @@ import { Mapa } from '../alumno/mapa';
  */
 @Component({
   selector: 'app-editor',
-  imports: [FormsModule, Mapa],
+  imports: [FormsModule, RouterLink, Mapa],
   template: `
     <h2 class="title-font text-primary text-xs mb-4">EDITOR DEL CURSO</h2>
 
@@ -31,14 +32,15 @@ import { Mapa } from '../alumno/mapa';
               <tr>
                 <td class="tabular">{{ u.orden }}</td>
                 <td>
-                  {{ u.nombre }}
+                  <a [routerLink]="['/profesor/unidad', u.id]" class="link link-primary">{{ u.nombre }}</a>
                   @if (u.actividades.length === 0) {
                     <span class="badge badge-warning badge-sm ml-2" title="RF-CUR-07">sin actividades</span>
                   }
                 </td>
                 <td class="text-right tabular">{{ u.umbralXpDesbloqueo }}</td>
                 <td class="text-right tabular">{{ u.actividades.length }}</td>
-                <td class="text-right">
+                <td class="text-right whitespace-nowrap">
+                  <a [routerLink]="['/profesor/unidad', u.id]" class="btn btn-xs btn-outline btn-primary">contenido</a>
                   <button class="btn btn-xs btn-outline btn-error" (click)="store.quitarUnidad(u.id)">
                     quitar
                   </button>
