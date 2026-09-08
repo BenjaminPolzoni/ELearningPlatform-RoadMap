@@ -148,9 +148,11 @@ tema arcade y el curso seed cargado en memoria.
 - [ ] Detalle de fila con visibilidad diferenciada (RF-RNK-07)
 
 ### Cierre de curso
-- [ ] Pantalla de confirmación de estado académico final (RF-RNK-10)
-- [ ] Exportación del reporte de cierre (RF-RNK-13)
-- [ ] Bloqueo por encuesta pendiente (RF-ENC-11) y por scores diferidos (RF-IA-34)
+- [x] Backend de confirmación de estado académico final (RF-RNK-10) — `cierre/candidatos`
+      + `cierre/confirmar` (upsert). Falta la pantalla (Squad Editor).
+- [x] Exportación del reporte de cierre (RF-RNK-13) — `cierre/reporte`, datos propios
+- [ ] Bloqueo por encuesta pendiente (RF-ENC-11) y por scores diferidos (RF-IA-34) —
+      `cierre/estado` hoy solo bloquea por alumnos sin confirmar (deuda #9)
 
 ### Integración
 - [ ] Swap de `InMemoryRoadmapAdapter` → `HttpRoadmapAdapter`
