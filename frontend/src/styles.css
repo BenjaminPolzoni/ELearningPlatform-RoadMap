@@ -1,0 +1,99 @@
+/* Tipografías (05-design-system.md §3). Fallbacks reales en cada nivel. */
+@import url("https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=IBM+Plex+Mono:wght@400;600&family=Press+Start+2P&display=swap");
+
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* ---------- ARCADE OSCURO (default) ---------- */
+@plugin "daisyui/theme" {
+  name: "arcade-dark";
+  default: true;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: #0D0B1E;
+  --color-base-200: #161230;
+  --color-base-300: #221C4A;
+  --color-base-content: #E8E6FF;
+
+  --color-primary: #00E5FF;
+  --color-primary-content: #001A1F;
+  --color-secondary: #B85CF6;
+  --color-secondary-content: #14042A;
+  --color-accent: #FF2E93;
+  --color-accent-content: #2A0016;
+  --color-neutral: #221C4A;
+  --color-neutral-content: #E8E6FF;
+
+  --color-info: #00E5FF;
+  --color-info-content: #001A1F;
+  --color-success: #39FF88;
+  --color-success-content: #002E14;
+  --color-warning: #FFD60A;
+  --color-warning-content: #2A2200;
+  --color-error: #FF2E93;
+  --color-error-content: #2A0016;
+
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --border: 2px;
+  --depth: 1;
+}
+
+/* ---------- ARCADE CLARO ---------- */
+@plugin "daisyui/theme" {
+  name: "arcade-light";
+  default: false;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: #F5F3FF;
+  --color-base-200: #E9E4FF;
+  --color-base-300: #D6CEFF;
+  --color-base-content: #14103A;
+
+  --color-primary: #00B8D4;
+  --color-primary-content: #FFFFFF;
+  --color-secondary: #8B3FD9;
+  --color-secondary-content: #FFFFFF;
+  --color-accent: #E01A7A;
+  --color-accent-content: #FFFFFF;
+  --color-neutral: #14103A;
+  --color-neutral-content: #F5F3FF;
+
+  --color-info: #00B8D4;
+  --color-info-content: #FFFFFF;
+  --color-success: #0E9F6E;
+  --color-success-content: #FFFFFF;
+  --color-warning: #D9A400;
+  --color-warning-content: #2A2200;
+  --color-error: #E01A7A;
+  --color-error-content: #FFFFFF;
+
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --border: 2px;
+  --depth: 1;
+}
+
+/* colores de estado de nodo, disponibles como utilidades (05-design-system.md §1) */
+@theme {
+  --color-node-locked: #6B7285;
+  --color-node-open:   #00E5FF;
+  --color-node-done:   #39FF88;
+  --color-node-failed: #FF2E93;
+
+  --font-title: "Press Start 2P", system-ui, sans-serif;
+  --font-body:  "Chivo", system-ui, sans-serif;
+  --font-ui:    "IBM Plex Mono", ui-monospace, monospace;
+}
+
+html { font-family: var(--font-body); }
+
+.title-font { font-family: var(--font-title); }
+.ui-font { font-family: var(--font-ui); }
+
+/* XP, posiciones y contadores: tabular para que no bailen al actualizar (§3) */
+.tabular { font-variant-numeric: tabular-nums; }
