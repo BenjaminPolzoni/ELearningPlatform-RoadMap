@@ -362,6 +362,15 @@ son **testeables sin levantar Spring**, y ese es el punto.
       `GET /roadmaps/{cc}/ranking` (respuesta según rol: completa vs. vista de alumno
       anónima RF-RNK-03/07) y `GET .../ranking/candidatos` (RF-RNK-05/06). Deudas nuevas:
       inscriptos_activos reales de Cursos, y materialización/recálculo por evento.
+- [x] Curva de niveles (§3, RF-NIV-03/04/05, RF-CFG-05) — `CurvaNiveles` (dominio puro:
+      value object inmutable, valida las invariantes de RF-NIV-04 —entre 1 y 10 niveles,
+      arranque en umbral 0, estrictamente creciente— y deriva `nivelPara(xp)` sin techo
+      RF-NIV-05) + `NivelesService` (curva PAR-09 por defecto si el curso no definió una;
+      `definirCurva` reemplaza con baja lógica) + `NivelesController`
+      (`GET`/`POST /roadmaps/{cc}/niveles`). El nivel del alumno todavía **no se expone** en
+      ningún endpoint — lo consume el HUD del front, que no arrancó (deuda #10). Nombres de
+      la curva PAR-09 provisorios: RF-NIV-03 promete un set nombrado que la cátedra no dio
+      (README §6).
 - [x] Tests unitarios de dominio sin contexto de Spring — 60 tests — `MotorDesbloqueo`/
       `MotorXp`/`MotorVidas`/`EstadoNodo`/`SelectorRecuperacion` se instancian reales,
       Mockito solo en los repositorios

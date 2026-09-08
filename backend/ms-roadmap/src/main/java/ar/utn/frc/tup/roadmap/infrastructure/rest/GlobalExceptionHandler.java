@@ -3,6 +3,7 @@ package ar.utn.frc.tup.roadmap.infrastructure.rest;
 import ar.utn.frc.tup.roadmap.domain.exception.ConexionInvalidaException;
 import ar.utn.frc.tup.roadmap.domain.exception.ConexionNoEncontradaException;
 import ar.utn.frc.tup.roadmap.domain.exception.ConexionYaExisteException;
+import ar.utn.frc.tup.roadmap.domain.exception.CurvaNivelesInvalidaException;
 import ar.utn.frc.tup.roadmap.domain.exception.CursoArchivadoException;
 import ar.utn.frc.tup.roadmap.domain.exception.NodoInvalidoException;
 import ar.utn.frc.tup.roadmap.domain.exception.NodoNoEncontradoException;
@@ -49,7 +50,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({
         ConexionInvalidaException.class,
-        NodoInvalidoException.class
+        NodoInvalidoException.class,
+        CurvaNivelesInvalidaException.class
     })
     public ProblemDetail manejarReglaViolada(RuntimeException ex, WebRequest req) {
         return construir(HttpStatus.BAD_REQUEST, ex.getMessage(), req);

@@ -125,7 +125,11 @@ tema arcade y el curso seed cargado en memoria.
 - [ ] **Motor de vidas**: `vidas_vigentes` vs `vidas_perdidas_historico` (PAR-12)
 - [ ] **Máquina de estados del nodo** con la regla de reintentos (RF-DES-07)
 - [ ] **Motor de desbloqueo** por umbral de XP de sección (RF-CUR-06)
-- [ ] Niveles derivados de XP, máximo 10 (RF-NIV-04, PAR-09)
+- [x] Niveles derivados de XP, máximo 10 (RF-NIV-04, PAR-09) — `CurvaNiveles` (dominio
+      puro: valida ≤10 / arranque en 0 / estrictamente creciente, deriva nivel ← XP sin
+      techo RF-NIV-05) + `NivelesService` (curva por defecto PAR-09 si no hay custom,
+      reemplazo con baja lógica) + `NivelesController` (`GET`/`POST /roadmaps/{cc}/niveles`,
+      contrato §3). Falta exponer el nivel del alumno para el HUD (deuda #10)
 - [ ] Consumidor idempotente de `DesafioCompletadoEvent` (dedupe por `origen_evento_id`)
 
 **Sale de esta fase:** el alumno no puede saltear unidades ni nodos, y perder vidas tiene consecuencia.

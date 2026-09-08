@@ -301,6 +301,11 @@ Estas condicionan cómo se escriben las Historias de Usuario. Hay que cerrarlas 
    contrato de eventos real de la plataforma; `DesafioCompletadoEventDto` en nuestro código es
    una **hipótesis de trabajo**, no algo confirmado con el Grupo 9. Validar campos y nombre del
    tópico antes de integrar de verdad.
+10. **Nombres del set de niveles predefinido (RF-NIV-03)** — ⚠️ *surgida al implementar.*
+    PAR-09 da la **curva de XP** de los 10 niveles pero RF-NIV-03 habla de un "set
+    predefinido del sistema" del que no tenemos los **nombres**. La curva por defecto
+    (`CurvaNiveles.par09()`) usa `"Nivel 1"..."Nivel 10"` como placeholder. ¿Hay un set
+    nombrado oficial (temático, tipo rangos), o los nombres los pone siempre el profesor?
 
 > **Duda ya cerrada:** un nodo que agota reintentos **no** queda bloqueado para siempre.
 > El alumno puede seguir intentando **sobre ese mismo nodo** y pierde 1 vida en cada fallo
