@@ -1,5 +1,6 @@
 package ar.utn.frc.tup.roadmap.infrastructure.config;
 
+import ar.utn.frc.tup.roadmap.infrastructure.messaging.dto.AlumnoInscriptoEventDto;
 import ar.utn.frc.tup.roadmap.infrastructure.messaging.dto.CursoArchivadoEventDto;
 import ar.utn.frc.tup.roadmap.infrastructure.messaging.dto.RecuperacionCompletadaEventDto;
 import java.util.HashMap;
@@ -74,5 +75,20 @@ public class KafkaConsumerConfig {
         ConsumerFactory<String, CursoArchivadoEventDto> cursoArchivadoConsumerFactory
     ) {
         return factory(cursoArchivadoConsumerFactory);
+    }
+
+    // ── Bootstrapping (README §6.8): AlumnoInscriptoEvent ───────────────
+
+    @Bean
+    public ConsumerFactory<String, AlumnoInscriptoEventDto> alumnoInscriptoConsumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(baseProps(AlumnoInscriptoEventDto.class));
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, AlumnoInscriptoEventDto>
+            alumnoInscriptoKafkaListenerContainerFactory(
+        ConsumerFactory<String, AlumnoInscriptoEventDto> alumnoInscriptoConsumerFactory
+    ) {
+        return factory(alumnoInscriptoConsumerFactory);
     }
 }
