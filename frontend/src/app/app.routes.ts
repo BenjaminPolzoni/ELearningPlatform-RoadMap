@@ -7,6 +7,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/login/login').then((m) => m.Login),
   },
   {
+    path: 'profesor',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/profesor/editor').then((m) => m.Editor),
+  },
+  {
+    path: 'alumno',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/alumno/mapa').then((m) => m.Mapa),
+  },
+  {
     path: '',
     canActivate: [sesionGuard],
     loadComponent: () => import('./features/home/home').then((m) => m.Home),

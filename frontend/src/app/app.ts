@@ -1,12 +1,12 @@
 import { Component, HostListener, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthMockService } from './core/auth/auth-mock.service';
 import { ThemeService } from './core/theme.service';
 
 /** Shell: navbar (solo con sesión) + outlet + gate desktop-only (RF-NFR-05). */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './app.html',
   styleUrl: './app.css',
 })

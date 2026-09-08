@@ -2,6 +2,15 @@
   <header class="navbar bg-base-200 border-b-2 border-primary px-4 gap-3">
     <a routerLink="/" class="text-primary title-font text-xs">ROADMAP</a>
     <span class="badge badge-secondary badge-outline ui-font">{{ auth.rol() }}</span>
+
+    @if (auth.rol() === 'PROFESOR') {
+      <a routerLink="/profesor" routerLinkActive="text-primary" class="btn btn-sm btn-ghost">Editor</a>
+      <a routerLink="/alumno" routerLinkActive="text-primary" class="btn btn-sm btn-ghost">Ver mapa</a>
+    }
+    @if (auth.rol() === 'ALUMNO') {
+      <a routerLink="/alumno" routerLinkActive="text-primary" class="btn btn-sm btn-ghost">Mi mapa</a>
+    }
+
     <div class="flex-1"></div>
     <button class="btn btn-sm btn-ghost" (click)="theme.toggle()">
       {{ theme.tema() === 'arcade-dark' ? '☀ claro' : '☾ oscuro' }}
@@ -10,7 +19,7 @@
   </header>
 }
 
-<main class="p-6 max-w-5xl mx-auto">
+<main class="p-6 max-w-6xl mx-auto">
   <router-outlet />
 </main>
 
