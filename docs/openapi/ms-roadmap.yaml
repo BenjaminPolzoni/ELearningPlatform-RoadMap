@@ -63,8 +63,35 @@ paths:
     parameters:
       - $ref: "#/components/parameters/cursoCohorteId"
     get:
-      summary: "[IMPLEMENTADO] Traer el grafo (editor) o filtrado por progreso (alumno)"
+      summary: >
+        [IMPLEMENTADO] Grafo completo del editor: metadata del roadmap + secciones
+        ordenadas con sus nodos + conexiones. La vista de ALUMNO filtrada por progreso
+        todavía no está (ver deuda-tecnica/tarea-deuda-06-contrato-api.md).
       tags: [grafo]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GrafoRoadmap" }
+        "404":
+          description: No existe roadmap para ese curso
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+    put:
+      summary: "[IMPLEMENTADO] Cambiar estado del roadmap (borrador ↔ publicado)"
+      tags: [grafo]
+      security: [{ bearerAuth: [PROFESOR] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [estado]
+              properties:
+                estado: { type: string, enum: [BORRADOR, PUBLICADO] }
       responses:
         "200":
           description: OK
@@ -76,21 +103,16 @@ paths:
           content:
             application/problem+json:
               schema: { $ref: "#/components/schemas/ProblemDetail" }
-    put:
-      summary: "[PLANEADO] Editar metadata, cambiar borrador ↔ publicado"
-      tags: [grafo]
-      security: [{ bearerAuth: [PROFESOR] }]
-      responses:
-        "200": { description: OK }
 
   /roadmaps/{cc}/secciones:
     parameters:
       - $ref: "#/components/parameters/cursoCohorteId"
     post:
-      summary: "[PLANEADO] Crear unidad con su umbral_xp_desbloqueo"
+      summary: "[IMPLEMENTADO] Crear unidad con su umbral_xp_desbloqueo"
       tags: [grafo]
       security: [{ bearerAuth: [PROFESOR] }]
       requestBody:
+        required: true
         content:
           application/json:
             schema: { $ref: "#/components/schemas/NuevaSeccion" }
@@ -100,30 +122,59 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Seccion" }
+        "404":
+          description: No existe roadmap para ese curso
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
 
   /roadmaps/{cc}/secciones/{id}:
     parameters:
       - $ref: "#/components/parameters/cursoCohorteId"
       - $ref: "#/components/parameters/id"
     put:
-      summary: "[PLANEADO] Editar umbral u orden"
+      summary: "[IMPLEMENTADO] Editar nombre, umbral u orden (reemplazo completo)"
       tags: [grafo]
       security: [{ bearerAuth: [PROFESOR] }]
-      responses: { "200": { description: OK } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NuevaSeccion" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Seccion" }
+        "404":
+          description: No existe el roadmap, o la sección no es de este roadmap
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
     delete:
-      summary: "[PLANEADO] Baja lógica de la unidad"
+      summary: >
+        [IMPLEMENTADO] Baja lógica de la unidad. En cascada da de baja también sus
+        nodos activos y toda conexión que los toque (RF-NFR-01).
       tags: [grafo]
       security: [{ bearerAuth: [PROFESOR] }]
-      responses: { "204": { description: Sin contenido } }
+      responses:
+        "204": { description: Sin contenido }
+        "404":
+          description: No existe el roadmap, o la sección no es de este roadmap
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
 
   /roadmaps/{cc}/nodos:
     parameters:
       - $ref: "#/components/parameters/cursoCohorteId"
     post:
-      summary: "[PLANEADO] Crear actividad — vincula desafio_id, es_obligatorio, reintentos_permitidos"
+      summary: "[IMPLEMENTADO] Crear actividad — vincula desafio_id, es_obligatorio, reintentos_permitidos"
       tags: [grafo]
       security: [{ bearerAuth: [PROFESOR] }]
       requestBody:
+        required: true
         content:
           application/json:
             schema: { $ref: "#/components/schemas/NuevoNodo" }
@@ -133,30 +184,72 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Nodo" }
+        "400":
+          description: "Atributos incoherentes (ej. HITO con desafioId)"
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+        "404":
+          description: No existe el roadmap, o la sección no es de este roadmap
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
 
   /roadmaps/{cc}/nodos/{id}:
     parameters:
       - $ref: "#/components/parameters/cursoCohorteId"
       - $ref: "#/components/parameters/id"
     put:
-      summary: "[PLANEADO] Editar atributos del nodo"
+      summary: >
+        [IMPLEMENTADO] Editar atributos del nodo (reemplazo completo). Permite mover la
+        actividad a otra sección del mismo roadmap vía seccionId.
       tags: [grafo]
       security: [{ bearerAuth: [PROFESOR] }]
-      responses: { "200": { description: OK } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NuevoNodo" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Nodo" }
+        "400":
+          description: "Atributos incoherentes (ej. HITO con desafioId)"
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+        "404":
+          description: No existe el roadmap, o el nodo/sección no son de este roadmap
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
     delete:
-      summary: "[PLANEADO] Baja lógica del nodo"
+      summary: "[IMPLEMENTADO] Baja lógica del nodo y de las conexiones que lo tocan"
       tags: [grafo]
       security: [{ bearerAuth: [PROFESOR] }]
-      responses: { "204": { description: Sin contenido } }
+      responses:
+        "204": { description: Sin contenido }
+        "404":
+          description: No existe el roadmap, o el nodo no es de este roadmap
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
 
   /roadmaps/{cc}/conexiones:
     parameters:
       - $ref: "#/components/parameters/cursoCohorteId"
     post:
-      summary: "[PLANEADO] Conectar dos nodos (prerequisito)"
+      summary: >
+        [IMPLEMENTADO] Conectar dos nodos (prerequisito). El grafo de prerequisitos se
+        mantiene como DAG: se rechaza el auto-lazo y cualquier arista que cerraría un
+        ciclo (400), y el duplicado (409).
       tags: [grafo]
       security: [{ bearerAuth: [PROFESOR] }]
       requestBody:
+        required: true
         content:
           application/json:
             schema: { $ref: "#/components/schemas/NuevaConexion" }
@@ -166,6 +259,37 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Conexion" }
+        "400":
+          description: "Auto-lazo, nodo de otro roadmap, o la arista cerraría un ciclo"
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+        "404":
+          description: No existe roadmap para ese curso
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+        "409":
+          description: Ya existe una conexión activa con ese origen y destino
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+
+  /roadmaps/{cc}/conexiones/{id}:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+      - $ref: "#/components/parameters/id"
+    delete:
+      summary: "[IMPLEMENTADO] Quitar el prerequisito (baja lógica)"
+      tags: [grafo]
+      security: [{ bearerAuth: [PROFESOR] }]
+      responses:
+        "204": { description: Sin contenido }
+        "404":
+          description: No existe el roadmap, o la conexión no es de este roadmap
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
 
   # ── Progreso ───────────────────────────────────────────────────────
   /alumnos/{aid}/progreso:
@@ -407,12 +531,39 @@ components:
 
     Roadmap:
       type: object
+      description: Metadata del roadmap. La devuelve POST /roadmaps y PUT /roadmaps/{cc}.
       properties:
         id: { type: string, format: uuid }
         cursoCohorteId: { type: string, format: uuid }
         estado: { type: string, enum: [BORRADOR, PUBLICADO] }
         creadoEn: { type: string, format: date-time }
         actualizadoEn: { type: string, format: date-time }
+
+    GrafoRoadmap:
+      type: object
+      description: >
+        Vista de editor de GET /roadmaps/{cc}: la metadata del roadmap más el grafo
+        entero en un viaje. Secciones ordenadas por `orden`, cada una con sus nodos;
+        conexiones a nivel roadmap.
+      properties:
+        id: { type: string, format: uuid }
+        cursoCohorteId: { type: string, format: uuid }
+        estado: { type: string, enum: [BORRADOR, PUBLICADO] }
+        creadoEn: { type: string, format: date-time }
+        actualizadoEn: { type: string, format: date-time }
+        secciones:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/Seccion"
+              - type: object
+                properties:
+                  nodos:
+                    type: array
+                    items: { $ref: "#/components/schemas/Nodo" }
+        conexiones:
+          type: array
+          items: { $ref: "#/components/schemas/Conexion" }
 
     NuevaSeccion:
       type: object
@@ -437,9 +588,16 @@ components:
         seccionId: { type: string, format: uuid }
         tipo:
           type: string
-          description: "⚠️ Extensión propuesta sobre el modelo original — ver 02-modelo-de-datos.md §4"
-          enum: [TEORIA, PRACTICA, DESAFIO_TEORICO, DESAFIO_PRACTICO, RECUPERACION, HITO, BOSS]
-        desafioId: { type: string, format: uuid, nullable: true }
+          description: >
+            ⚠️ Extensión propuesta sobre el modelo original — ver 02-modelo-de-datos.md §4.
+            RECUPERACION ya NO es un tipo de nodo: el pool de recuperación es por curso
+            (DesafioRecuperacion), no un nodo del mapa.
+          enum: [TEORIA, PRACTICA, DESAFIO_TEORICO, DESAFIO_PRACTICO, HITO, BOSS]
+        desafioId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Nulo obligatoriamente para HITO; opcional para el resto."
         posicionX: { type: number }
         posicionY: { type: number }
         esObligatorio: { type: boolean, default: true }
@@ -451,9 +609,9 @@ components:
         - type: object
           properties:
             id: { type: string, format: uuid }
-            estado:
-              type: string
-              enum: [BLOQUEADO, HABILITADO, COMPLETADO, FALLADO]
+      description: >
+        El estado del nodo (BLOQUEADO/HABILITADO/…) NO viaja acá: es por alumno y vive en
+        ProgresoNodo (GET /alumnos/{aid}/progreso), no en el grafo del editor.
 
     NuevaConexion:
       type: object

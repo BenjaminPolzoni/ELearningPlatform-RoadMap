@@ -97,6 +97,35 @@ Registrarse en Eureka **no** alcanza. El Gateway usa una *allowlist* (`include-e
 | `POST /roadmaps/{cc}/conexiones` | PROFESOR | Conectar dos nodos (prerequisito) |
 | `DELETE /roadmaps/{cc}/conexiones/{id}` | PROFESOR | Quitar prerequisito |
 
+> **Estado:** los 11 paths están **[IMPLEMENTADO]** (Fase 1). Detalle exacto de forma y
+> códigos de error en `docs/openapi/ms-roadmap.yaml`.
+
+### 1.1 Decisiones tomadas al implementar el CRUD del grafo
+
+- **`GET /roadmaps/{cc}` devuelve el grafo entero** — metadata + `secciones[]` (ordenadas
+  por `orden`, cada una con `nodos[]`) + `conexiones[]`. Es la "vista de editor" que el
+  contrato siempre nombró; la Fase 0 solo devolvía la metadata como stub. La "vista de
+  ALUMNO filtrada por progreso" sigue pendiente (ver `deuda-tecnica/`).
+- **Baja lógica en cascada** (RF-NFR-01): `DELETE` de una sección da de baja además sus
+  nodos activos y toda conexión que los toque; `DELETE` de un nodo da de baja las
+  conexiones que lo tienen de origen o destino. Nada se borra físico.
+- **El grafo de prerequisitos es un DAG.** `POST /conexiones` rechaza (400) el auto-lazo
+  y cualquier arista que cerraría un ciclo (`A→…→A` dejaría esos nodos imposibles de
+  desbloquear — se deduce de la máquina de estados, 02-modelo-de-datos.md §5). El
+  duplicado activo es 409. La detección de ciclos vive en `domain.service.DetectorCiclos`
+  (dominio puro, testeable sin Spring).
+- **`PUT` de sección y de nodo son reemplazo completo** de los campos editables, no
+  PATCH. En el nodo, `seccionId` viaja siempre y permite mover la actividad a otra unidad
+  del mismo roadmap.
+- **`HITO` no lleva `desafioId`** (marcador sin evaluación) — se rechaza con 400 si viene.
+- **`estado` del nodo no está en el grafo del editor**: es por alumno y vive en
+  `ProgresoNodo` (`GET /alumnos/{aid}/progreso`).
+- **Pertenencia**: toda sección/nodo/conexión se valida contra el roadmap del `{cc}` del
+  path; si el recurso existe pero es de otro curso se responde 404 (no se filtra su
+  existencia).
+- **Todavía NO se chequea** el 409 por "roadmap de curso archivado" (contrato §0.5) —
+  depende del Camino 6 del BPMN (`CursoArchivadoEvent`). Anotado en `deuda-tecnica/`.
+
 ---
 
 ## 2. Progreso, XP y vidas
@@ -269,7 +298,18 @@ son **testeables sin levantar Spring**, y ese es el punto.
 - [x] Dockerfile multi-stage + `docker-compose.yml` — `docker compose config` valida sin errores
 - [x] Gateway con ruteo hacia `ms-roadmap` — stand-in local, ruteo estático `/api/roadmap/** → lb://ROADMAP-SERVICE`
 - [x] Slice vertical de referencia (`POST`/`GET /roadmaps`) — el patrón a calcar para el resto del CRUD
-- [ ] CRUD completo del grafo: secciones, nodos, conexiones (Fase 1)
+- [x] CRUD completo del grafo: secciones, nodos, conexiones (Fase 1) —
+      `SeccionService` / `NodoService` / `ConexionService` calcando el patrón de
+      `RoadmapService`. `RoadmapController` cubre ahora los 11 paths de §1. Decisiones
+      tomadas al implementar (ver también §1.1 más abajo):
+      · `GET /roadmaps/{cc}` devuelve el **grafo entero** (secciones con nodos +
+        conexiones), no solo la metadata — era lo que el contrato siempre pidió para el
+        editor; la Fase 0 lo tenía como stub.
+      · **Baja lógica en cascada**: borrar una sección da de baja sus nodos y las
+        conexiones que los tocan; borrar un nodo da de baja sus conexiones (RF-NFR-01).
+      · El grafo de prerequisitos se mantiene **DAG**: se rechaza el auto-lazo y toda
+        arista que cerraría un ciclo (`DetectorCiclos`, dominio puro), y el duplicado.
+      · `estado` del nodo no viaja en el grafo del editor — es por alumno (`ProgresoNodo`).
 - [x] `MotorXp` (Strategy) — 4 `CalculadoraXp`, tests sin Spring
 - [x] `MotorVidas` — regla RF-DES-07 vía el resultado de `EstadoNodo.alFallar`
 - [x] `MotorDesbloqueo` — umbral de XP, alcance MVP (RF-CUR-06)

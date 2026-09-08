@@ -10,6 +10,8 @@ public interface RoadmapSeccionRepository extends JpaRepository<RoadmapSeccionEn
 
     List<RoadmapSeccionEntity> findByRoadmapIdAndActivoTrueOrderByOrdenAsc(UUID roadmapId);
 
+    Optional<RoadmapSeccionEntity> findByIdAndActivoTrue(UUID id);
+
     /** RF-CUR-06: "sección 2 requiere 500 XP en sección 1" — la que sigue en orden. */
     Optional<RoadmapSeccionEntity> findFirstByRoadmapIdAndOrdenGreaterThanAndActivoTrueOrderByOrdenAsc(
         UUID roadmapId, Integer orden
