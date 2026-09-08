@@ -390,7 +390,11 @@ paths:
     parameters:
       - $ref: "#/components/parameters/cursoCohorteId"
     get:
-      summary: "[PLANEADO] Curva de niveles vigente del curso"
+      summary: >
+        [IMPLEMENTADO] Curva de niveles vigente del curso. Si el profesor no definió una
+        curva custom devuelve la por defecto del sistema (PAR-09, 10 niveles). El nivel del
+        alumno se DERIVA de esta curva contra su XP total (RF-NIV-05, sin techo) — no hay
+        endpoint que lo devuelva todavía (deuda-tecnica #10).
       tags: [niveles]
       security: [{ bearerAuth: [PROFESOR, ALUMNO] }]
       responses:
@@ -401,11 +405,60 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/Nivel" }
+        "404":
+          description: No existe roadmap para ese curso
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
     post:
-      summary: "[PLANEADO] Definir niveles custom (máx. 10, RF-NIV-04)"
+      summary: >
+        [IMPLEMENTADO] Definir la curva de niveles del curso (RF-CFG-05). Reemplaza la
+        anterior por completo (baja lógica). El orden lo asigna el servidor por umbral
+        ascendente; la curva debe arrancar en umbral_xp=0, ser estrictamente creciente y
+        tener entre 1 y 10 niveles (RF-NIV-04).
       tags: [niveles]
       security: [{ bearerAuth: [PROFESOR] }]
-      responses: { "201": { description: Creado } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [niveles]
+              properties:
+                niveles:
+                  type: array
+                  minItems: 1
+                  maxItems: 10
+                  items:
+                    type: object
+                    required: [nombre, umbralXp]
+                    properties:
+                      nombre: { type: string }
+                      umbralXp: { type: integer, minimum: 0 }
+      responses:
+        "201":
+          description: Curva creada — devuelve la curva vigente
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Nivel" }
+        "400":
+          description: Curva inválida (vacía, > 10, no arranca en 0, o no estrictamente creciente)
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+        "404":
+          description: No existe roadmap para ese curso
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+        "409":
+          description: Curso archivado (RF-CUR-09)
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
 
   # ── Insignias ──────────────────────────────────────────────────────
   /alumnos/{aid}/insignias:

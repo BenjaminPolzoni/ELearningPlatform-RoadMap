@@ -165,3 +165,24 @@ verdadero, arbitrario.
 
 **Cómo se paga:** cuando existan esos clientes/consultas, sumar los dos chequeos al
 `EstadoCierre` (un `bloqueos: List<String>` en vez de solo `alumnosSinConfirmar`).
+
+---
+
+## 🔴 10. El nivel derivado del alumno no se expone en ningún endpoint
+
+**Qué falta:** el HUD del alumno (RF-NIV, épica E6) muestra su nivel, pero el contrato §3
+solo tiene `GET /roadmaps/{cc}/niveles` (la curva del curso), no un
+`GET /alumnos/{aid}/nivel` ni un campo `nivel` en el ranking o el grafo. Hoy la derivación
+existe y está testeada (`CurvaNiveles.nivelPara(xp)`), pero nada la llama en producción.
+
+**Dónde vive:** `domain/service/CurvaNiveles.java` (la lógica, lista) — falta el
+service + endpoint que la ate al XP total del alumno (`MovimientoXpRepository.sumarXpPorAlumno`
+ya da el insumo).
+
+**Por qué no bloquea la tarea actual:** el front no arrancó (Node estaba por debajo del
+mínimo de Angular CLI). Sin consumidor, el endpoint sería código muerto. La curva del
+curso —lo que sí pide el contrato §3— ya está.
+
+**Cómo se paga:** cuando el Squad UI encare el HUD, agregar `GET /roadmaps/{cc}/alumnos/{aid}/nivel`
+(o sumar `nivel` a la fila del ranking del propio alumno) llamando a
+`curvaVigente(cc).nivelPara(xpTotalDelAlumno)`. Es ~10 líneas.
