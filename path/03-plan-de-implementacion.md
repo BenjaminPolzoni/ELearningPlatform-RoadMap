@@ -35,9 +35,10 @@
 > **Objetivo:** que cualquier integrante clone el repo, corra un comando y vea algo.
 
 ### Repositorio
-- [ ] `git init`, `.gitignore` (Node, Java, IDE), estructura de carpetas
-- [ ] Ramas protegidas: `main` ← `develop` ← `feature/*`
-- [ ] Plantilla de Pull Request con el checklist de la DoD
+- [x] `git init`, `.gitignore` (Node, Java, IDE), estructura de carpetas
+- [ ] Ramas protegidas: `main` ← `pruebas` ← `feature/*` — ver `AGENTS.md` raíz para el
+      modelo completo. **Pendiente**: crear `pruebas` (hoy solo existe `main`)
+- [x] Plantilla de Pull Request con el checklist de la DoD
 
 ### Frontend
 - [ ] `ng new frontend --style css` con Angular 22

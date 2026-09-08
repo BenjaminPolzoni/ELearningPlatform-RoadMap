@@ -278,18 +278,24 @@ Estas condicionan cómo se escriben las Historias de Usuario. Hay que cerrarlas 
 1. **Alcance de "Vidas"** — no figura en el resumen oficial del Tema 10, pero la arquitectura las asigna a nuestro tema y el Tema 03 lo dice explícitamente. ¿Confirmamos que son núcleo nuestro, o se recortan del MVP? Bloquea las épicas E5 y parte del ranking (RF-RNK-05 usa `vidas_perdidas_historico`).
 1. **Rol "responsable"** — aparece en la propuesta de arquitectura sin definición. Bloquea la matriz de permisos completa.
 2. **Insignias** — tres preguntas encadenadas (ver 3.5): (a) ¿el otorgamiento por desafío viaja dentro del `DesafioCompletadoEvent` o es un evento propio? (b) ¿las insignias son siempre **por curso-cohorte** o existe una capa de logros global que hoy nadie posee? (c) ¿quién emite el hecho de los disparadores externos como "días conectados" — Identidad o Social?
-3. **Dueño del pool de recuperación de vida** — ¿Roadmap o Motor de Desafíos?
+3. **Dueño del pool de recuperación de vida** — ¿Roadmap o Motor de Desafíos? **Implementado
+   asumiendo que es Roadmap** (`DesafioRecuperacionEntity`, por coherencia con cómo ya
+   referenciamos `desafio_id` en `RoadmapNodo`) — es una decisión nuestra, no una
+   confirmación del equipo. Si la cátedra o Motor de Desafíos dicen lo contrario, el cambio
+   se limita a esa tabla y a `IniciarRecuperacionUseCase`, no al resto del módulo.
 4. **Desmatriculación a mitad de cuatrimestre** — qué pasa con el progreso, las vidas y el puesto en el ranking. Afecta a los Temas 02, 08, 09 y 10 a la vez.
 5. **Vidas en nodos opcionales** — ¿el consumo de vidas aplica solo a obligatorios o también a opcionales?
 6. **`template_id`** — lo usa Cursos pero vive en Roadmap; falta definir el contrato.
 7. **Bloqueo con 0 vidas** — ¿lo impide Roadmap (navegación) o Motor de Desafíos (inicio del desafío)?
-8. **Bootstrapping de `ProgresoNodo`** — ⚠️ *surgida al implementar, no estaba en la lista original.*
-   Cuando una sección se desbloquea (o un alumno arranca el curso), ¿quién crea las primeras
-   filas de `ProgresoNodo` en `HABILITADO` para los nodos de esa sección? Hoy
-   `ProcesarDesafioCompletadoUseCase` explota a propósito (`TransicionInvalidaException`) si
-   llega un evento para un nodo sin fila previa — es el comportamiento correcto mientras esto
-   no se resuelva, pero bloquea terminar el flujo de desbloqueo (`MotorDesbloqueo` ya existe,
-   falta la cascada que lo conecta con crear/actualizar filas).
+8. **Bootstrapping de `ProgresoNodo` — parcialmente resuelto.** La mitad "cuando una
+   sección se desbloquea" ya está implementada: `EvaluarDesbloqueoService` es quien crea
+   las filas en `HABILITADO`, tanto para el sucesor directo de un nodo completado (grafo,
+   `RoadmapConexion`) como para los nodos raíz de la sección siguiente (umbral de XP,
+   RF-CUR-06). **Sigue abierta** la otra mitad: "cuando un alumno arranca el curso" — la
+   primerísima sección de un roadmap no tiene una sección anterior de la cual acumular
+   XP, así que nada dispara todavía el desbloqueo inicial de sus nodos raíz. Probablemente
+   se resuelve escuchando un evento de inscripción de Cursos (Tema 02) que hoy no
+   consumimos — a definir en la sesión de integración.
 9. **Contrato de `DesafioCompletadoEvent`** — ⚠️ *surgida al implementar.* El Tema 11 define el
    contrato de eventos real de la plataforma; `DesafioCompletadoEventDto` en nuestro código es
    una **hipótesis de trabajo**, no algo confirmado con el Grupo 9. Validar campos y nombre del
@@ -332,6 +338,7 @@ Una Historia de Usuario está *Done* solo si cumple **todo**:
 | [`04-engine-2-5d.md`](04-engine-2-5d.md) | Squad Engine |
 | [`05-design-system.md`](05-design-system.md) | Squad UI |
 | [`06-contrato-api.md`](06-contrato-api.md) | Squad Backend |
+| [`deuda-tecnica/`](deuda-tecnica/README.md) | Todo el equipo — lo que quedó pendiente sin bloquear nada |
 
 ---
 

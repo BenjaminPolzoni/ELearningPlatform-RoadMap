@@ -5,7 +5,6 @@ import ar.utn.frc.tup.roadmap.domain.model.EstadoNodo;
 import ar.utn.frc.tup.roadmap.domain.model.OtorgamientoPorDesafio;
 import ar.utn.frc.tup.roadmap.domain.model.TipoMovimientoVida;
 import ar.utn.frc.tup.roadmap.domain.model.TipoMovimientoXp;
-import ar.utn.frc.tup.roadmap.domain.model.TipoNodo;
 import ar.utn.frc.tup.roadmap.domain.service.MotorVidas;
 import ar.utn.frc.tup.roadmap.domain.service.MotorXp;
 import ar.utn.frc.tup.roadmap.infrastructure.persistence.entity.EventoProcesadoEntity;
@@ -26,16 +25,12 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Camino 1 (éxito) y Camino 2 (fallo) del BPMN de Roadmap — el flujo central de todo
  * el módulo. Orquesta lo que los motores de dominio deciden; no decide nada él mismo.
+ * El éxito dispara además la cascada de desbloqueo — ver {@link EvaluarDesbloqueoService}.
  *
- * <p>Lo que NO hace todavía, a propósito:
- * <ul>
- *   <li>No evalúa desbloqueo de la siguiente sección (falta resolver cómo se inicializan
- *       las primeras filas de {@code ProgresoNodo} de una sección recién desbloqueada —
- *       duda abierta, ver path/README.md §6).</li>
- *   <li>No maneja nodos {@code RECUPERACION} (Camino 3, RF-REC-04 tiene reglas distintas:
- *       otorga vida en vez de XP, nunca resta vida) — rechaza el evento explícitamente
- *       en vez de aplicarles mal las reglas de un nodo normal.</li>
- * </ul>
+ * <p>El Camino 3 (recuperación de vida, RF-REC-04) es un flujo aparte —
+ * {@link IniciarRecuperacionUseCase} / {@link ProcesarRecuperacionCompletadaUseCase} —
+ * porque opera sobre {@code DesafioRecuperacionEntity} (un pool por curso), no sobre
+ * {@code RoadmapNodoEntity}. No comparten tipo de evento ni de progreso.
  */
 @Slf4j
 @Service
@@ -50,6 +45,7 @@ public class ProcesarDesafioCompletadoUseCase {
     private final MovimientoVidaRepository movimientoVidaRepository;
     private final MotorXp motorXp;
     private final MotorVidas motorVidas;
+    private final EvaluarDesbloqueoService evaluarDesbloqueoService;
 
     public void procesar(ProcesarDesafioCompletadoCommand cmd) {
         // 1. Idempotencia — gate único, antes de decidir nada (patrón Inbox).
@@ -62,17 +58,11 @@ public class ProcesarDesafioCompletadoUseCase {
             .filter(RoadmapNodoEntity::isActivo)
             .orElseThrow(() -> new NodoNoEncontradoException(cmd.nodoId()));
 
-        if (nodo.getTipo() == TipoNodo.RECUPERACION) {
-            throw new IllegalStateException(
-                "Nodo " + cmd.nodoId() + " es RECUPERACION — RF-REC-04 tiene reglas propias "
-                    + "(Camino 3, no implementado). No se procesa con las reglas de un nodo normal.");
-        }
-
         ProgresoNodoEntity progreso = progresoRepository.findByAlumnoIdAndNodoId(cmd.alumnoId(), cmd.nodoId())
             .orElseGet(() -> nuevoProgreso(cmd));
 
         if (cmd.exito()) {
-            procesarExito(cmd, progreso);
+            procesarExito(cmd, nodo, progreso);
         } else {
             procesarFallo(cmd, nodo, progreso);
         }
@@ -84,7 +74,9 @@ public class ProcesarDesafioCompletadoUseCase {
         eventoProcesadoRepository.save(marca);
     }
 
-    private void procesarExito(ProcesarDesafioCompletadoCommand cmd, ProgresoNodoEntity progreso) {
+    private void procesarExito(
+        ProcesarDesafioCompletadoCommand cmd, RoadmapNodoEntity nodo, ProgresoNodoEntity progreso
+    ) {
         // State: si el nodo estaba BLOQUEADO (nunca se le creó progreso habilitado),
         // esto explota con TransicionInvalidaException — correcto: no debería llegar un
         // "éxito" para un nodo que el alumno nunca pudo empezar.
@@ -106,7 +98,9 @@ public class ProcesarDesafioCompletadoUseCase {
         movimiento.setOrigenEventoId(cmd.origenEventoId());
         movimientoXpRepository.save(movimiento);
 
-        // TODO Fase 2: MotorDesbloqueo.debeDesbloquear(xpAcumuladoEnSeccion, umbral) acá.
+        // Cascada de desbloqueo: sucesores directos + posible siguiente sección.
+        // Necesita el XP recién guardado arriba, por eso va DESPUÉS del save.
+        evaluarDesbloqueoService.evaluarTrasCompletar(cmd.alumnoId(), cmd.cursoCohorteId(), nodo);
     }
 
     private void procesarFallo(

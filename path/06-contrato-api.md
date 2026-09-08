@@ -158,6 +158,7 @@ Cada tipo de evento es un *topic*; `ms-roadmap` es productor y consumidor.
 | Evento | Origen | Efecto |
 |---|---|---|
 | `DesafioCompletadoEvent` | Motor de Desafíos (T03, G9) | Registra `MovimientoXP`, actualiza `ProgresoNodo`, evalúa desbloqueo, recalcula ranking |
+| `RecuperacionCompletadaEvent` | Motor de Desafíos (T03, G9) | Éxito: registra `MovimientoVida` tipo `recuperada` (RF-REC-04). Fallo: no hace nada — reintentable sin límite |
 | `CursoArchivadoEvent` | Cursos (T02, G1) | Actualiza `CursoCohorteContexto` → congela Roadmap y Ranking en modo lectura |
 | `ScoreIAApeladoEvent` | Evaluación LLM (T07) | Registra `MovimientoXP` tipo `ajuste_apelacion` y recalcula |
 
@@ -276,16 +277,27 @@ son **testeables sin levantar Spring**, y ese es el punto.
       del propio modelo documentado (ver 02-modelo-de-datos.md §5, nota de corrección)
 - [x] `EspecificacionesRanking` (Specification) — RF-RNK-05/06, listo para cuando se arme el ranking
 - [x] `ProcesarDesafioCompletadoUseCase` — Camino 1 (éxito) y Camino 2 (fallo) del BPMN,
-      orquestando State + Strategy + los dos motores. **No** cubre: desbloqueo en cascada
-      (falta resolver bootstrapping de `ProgresoNodo`, ver README §6.8) ni nodos `RECUPERACION`
-      (Camino 3, rechazado explícitamente por ahora)
-- [x] Consumidor idempotente de `DesafioCompletadoEvent` — patrón Inbox (`EventoProcesadoEntity`),
-      cubre ambos caminos (éxito y fallo), no solo el que genera `MovimientoXp`
+      orquestando State + Strategy + los dos motores
+- [x] `EvaluarDesbloqueoService` — cascada de desbloqueo: sucesor directo por grafo
+      (`RoadmapConexion`, con soporte para nodos de fusión con más de un prerequisito) +
+      nodos raíz de la siguiente sección por umbral de XP (RF-CUR-06). Resuelve la mitad
+      "sección ya en curso" de la duda de bootstrapping (README §6.8) — la mitad "alumno
+      arranca el curso" sigue abierta
+- [x] Camino 3 (recuperación de vida, RF-REC-04/06) — `IniciarRecuperacionUseCase` +
+      `ProcesarRecuperacionCompletadaUseCase`, `DesafioRecuperacionEntity` como pool por
+      curso (no un nodo del mapa — ver corrección en 02-modelo-de-datos.md §4),
+      `SelectorRecuperacion` (elige al azar priorizando no resueltos) y
+      `MotorVidas.calcularVidasVigentes` (techo PAR-12 aplicado en cada paso). Endpoint
+      `POST /alumnos/{aid}/vidas/recuperacion` implementado
+- [x] Consumidor idempotente de `DesafioCompletadoEvent` y de `RecuperacionCompletadaEvent`
+      — patrón Inbox (`EventoProcesadoEntity`), cubre ambos caminos de cada uno (éxito y
+      fallo), no solo el que genera un movimiento. Cada tipo de evento con su propio
+      `ConsumerFactory`/`containerFactory` (`KafkaConsumerConfig`) — resuelve la deuda
+      anotada en `deuda-tecnica/tarea-deuda-06-contrato-api.md` #3
 - [ ] Cálculo de ranking con percentiles y cascada de desempate (Fase 3)
-- [x] Tests unitarios de dominio sin contexto de Spring — 37 tests, `RoadmapServiceTest`,
-      `EstadoNodoTest`, `MotorXpTest`, `MotorVidasTest`, `MotorDesbloqueoTest`,
-      `EspecificacionesRankingTest`, `ProcesarDesafioCompletadoUseCaseTest` (Mockito solo en
-      los repositorios; los motores de dominio se instancian reales)
+- [x] Tests unitarios de dominio sin contexto de Spring — 60 tests — `MotorDesbloqueo`/
+      `MotorXp`/`MotorVidas`/`EstadoNodo`/`SelectorRecuperacion` se instancian reales,
+      Mockito solo en los repositorios
 - [ ] Bindear `maven-failsafe-plugin` a integration-test/verify para que `MsRoadmapApplicationIT`
       corra en CI contra infraestructura real (hoy `mvn test` da verde sin necesitarla — a propósito)
 - [ ] Clientes stub de Backoffice / Identidad / Banco — hoy solo existe `LectorParametrosStubAdapter`,
