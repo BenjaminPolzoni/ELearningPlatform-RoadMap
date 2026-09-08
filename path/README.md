@@ -287,15 +287,16 @@ Estas condicionan cómo se escriben las Historias de Usuario. Hay que cerrarlas 
 5. **Vidas en nodos opcionales** — ¿el consumo de vidas aplica solo a obligatorios o también a opcionales?
 6. **`template_id`** — lo usa Cursos pero vive en Roadmap; falta definir el contrato.
 7. **Bloqueo con 0 vidas** — ¿lo impide Roadmap (navegación) o Motor de Desafíos (inicio del desafío)?
-8. **Bootstrapping de `ProgresoNodo` — parcialmente resuelto.** La mitad "cuando una
-   sección se desbloquea" ya está implementada: `EvaluarDesbloqueoService` es quien crea
-   las filas en `HABILITADO`, tanto para el sucesor directo de un nodo completado (grafo,
-   `RoadmapConexion`) como para los nodos raíz de la sección siguiente (umbral de XP,
-   RF-CUR-06). **Sigue abierta** la otra mitad: "cuando un alumno arranca el curso" — la
-   primerísima sección de un roadmap no tiene una sección anterior de la cual acumular
-   XP, así que nada dispara todavía el desbloqueo inicial de sus nodos raíz. Probablemente
-   se resuelve escuchando un evento de inscripción de Cursos (Tema 02) que hoy no
-   consumimos — a definir en la sesión de integración.
+8. **Bootstrapping de `ProgresoNodo` — resuelto (contrato del evento a confirmar).**
+   Ambas mitades están: (a) "cuando una sección se desbloquea" —
+   `EvaluarDesbloqueoService` crea las filas en `HABILITADO` para el sucesor directo por
+   grafo y para las raíces de la sección siguiente por umbral de XP (RF-CUR-06); (b)
+   "cuando un alumno arranca el curso" — `ProcesarAlumnoInscriptoUseCase` consume
+   `AlumnoInscriptoEvent` de Cursos (T02) y habilita las raíces de la **primera** sección
+   vía `EvaluarDesbloqueoService.habilitarRaicesDeSeccion`. ⚠️ Lo único abierto: el
+   nombre/forma de ese evento es una hipótesis (`AlumnoInscriptoEventDto`), a validar con
+   el G1 y el Tema 11. Límite conocido: si el alumno se inscribe **antes** de que el
+   profesor arme la primera sección, ese caso todavía no re-dispara el desbloqueo.
 9. **Contrato de `DesafioCompletadoEvent`** — ⚠️ *surgida al implementar.* El Tema 11 define el
    contrato de eventos real de la plataforma; `DesafioCompletadoEventDto` en nuestro código es
    una **hipótesis de trabajo**, no algo confirmado con el Grupo 9. Validar campos y nombre del

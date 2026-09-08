@@ -50,6 +50,19 @@ public class EvaluarDesbloqueoService {
         habilitarSiguienteSeccionSiCorresponde(alumnoId, cursoCohorteId, nodoCompletado.getSeccionId());
     }
 
+    /**
+     * Bootstrapping — la otra mitad de la duda de README §6.8: cuando un alumno <b>arranca
+     * el curso</b>, la primera sección no tiene una sección anterior de la cual acumular XP,
+     * así que nada dispara el desbloqueo de sus nodos raíz. Lo dispara la inscripción
+     * (evento de Cursos, T02): esta operación habilita las raíces de esa sección para ese
+     * alumno. Reusa exactamente la misma lógica que el desbloqueo por umbral.
+     */
+    public void habilitarRaicesDeSeccion(UUID alumnoId, UUID cursoCohorteId, UUID seccionId) {
+        for (RoadmapNodoEntity raiz : nodoRepository.findNodosRaizDeSeccion(seccionId)) {
+            habilitarSiEstaBloqueado(alumnoId, cursoCohorteId, raiz.getId());
+        }
+    }
+
     private void habilitarSucesoresDirectos(UUID alumnoId, UUID cursoCohorteId, UUID nodoCompletadoId) {
         List<RoadmapConexionEntity> salientes = conexionRepository.findByNodoOrigenIdAndActivoTrue(nodoCompletadoId);
 

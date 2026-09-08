@@ -84,6 +84,7 @@ app:
       desafio-completado: desafio-completado
       recuperacion-completada: recuperacion-completada
       curso-archivado: curso-archivado
+      alumno-inscripto: alumno-inscripto
 
 logging:
   level:

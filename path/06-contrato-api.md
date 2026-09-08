@@ -201,6 +201,7 @@ Cada tipo de evento es un *topic*; `ms-roadmap` es productor y consumidor.
 | `DesafioCompletadoEvent` | Motor de Desafíos (T03, G9) | Registra `MovimientoXP`, actualiza `ProgresoNodo`, evalúa desbloqueo, recalcula ranking |
 | `RecuperacionCompletadaEvent` | Motor de Desafíos (T03, G9) | Éxito: registra `MovimientoVida` tipo `recuperada` (RF-REC-04). Fallo: no hace nada — reintentable sin límite |
 | `CursoArchivadoEvent` | Cursos (T02, G1) | **[IMPLEMENTADO]** Actualiza `CursoCohorteContexto` a `ARCHIVADO` → `GuardaCursoArchivado` congela toda escritura del grafo y del cierre (409). Camino 6, listener con `ConsumerFactory` propio |
+| `AlumnoInscriptoEvent` | Cursos (T02, G1) | **[IMPLEMENTADO]** Bootstrapping (README §6.8): habilita las raíces de la **primera** sección del roadmap para ese alumno (`ProcesarAlumnoInscriptoUseCase` → `EvaluarDesbloqueoService.habilitarRaicesDeSeccion`). ⚠️ nombre/forma del evento a confirmar |
 | `ScoreIAApeladoEvent` | Evaluación LLM (T07) | Registra `MovimientoXP` tipo `ajuste_apelacion` y recalcula |
 
 ### Emitimos
@@ -341,11 +342,15 @@ son **testeables sin levantar Spring**, y ese es el punto.
       `SelectorRecuperacion` (elige al azar priorizando no resueltos) y
       `MotorVidas.calcularVidasVigentes` (techo PAR-12 aplicado en cada paso). Endpoint
       `POST /alumnos/{aid}/vidas/recuperacion` implementado
-- [x] Consumidor idempotente de `DesafioCompletadoEvent`, `RecuperacionCompletadaEvent` y
-      `CursoArchivadoEvent` — patrón Inbox (`EventoProcesadoEntity`), cubre todos los
-      caminos de cada uno. Cada tipo de evento con su propio
-      `ConsumerFactory`/`containerFactory` (`KafkaConsumerConfig`, con `baseProps` común)
-      — resuelve la deuda #3
+- [x] Consumidor idempotente de `DesafioCompletadoEvent`, `RecuperacionCompletadaEvent`,
+      `CursoArchivadoEvent` y `AlumnoInscriptoEvent` — patrón Inbox
+      (`EventoProcesadoEntity`), cubre todos los caminos de cada uno. Cada tipo de evento
+      con su propio `ConsumerFactory`/`containerFactory` (`KafkaConsumerConfig`, con
+      `baseProps` común) — resuelve la deuda #3
+- [x] Bootstrapping de `ProgresoNodo` (README §6.8) completo: `AlumnoInscriptoEvent` →
+      `ProcesarAlumnoInscriptoUseCase` habilita las raíces de la primera sección
+      (`EvaluarDesbloqueoService.habilitarRaicesDeSeccion`). Cierra la mitad "el alumno
+      arranca el curso" que quedaba abierta
 - [x] Camino 6 del BPMN: `CursoArchivadoEvent` → `ProcesarCursoArchivadoUseCase` marca
       `CursoCohorteContexto` = `ARCHIVADO`; `GuardaCursoArchivado` (guard compartido)
       hace fallar con 409 toda escritura del grafo y `cierre/confirmar` (RF-CUR-09).
