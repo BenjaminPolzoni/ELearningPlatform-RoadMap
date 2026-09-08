@@ -487,37 +487,102 @@ paths:
     parameters:
       - $ref: "#/components/parameters/cursoCohorteId"
     get:
-      summary: "[PLANEADO] ⚠️ Candidatos a confirmar antes de archivar"
+      summary: >
+        [IMPLEMENTADO] ⚠️ Pantalla de confirmación (RF-RNK-10): cada alumno con su
+        situación de ranking, un estado sugerido y el estado ya confirmado si lo hay.
       tags: [cierre]
       security: [{ bearerAuth: [PROFESOR] }]
-      responses: { "200": { description: OK } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CandidatoCierre" }
+        "404":
+          description: No existe roadmap para ese curso
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
 
   /roadmaps/{cc}/cierre/confirmar:
     parameters:
       - $ref: "#/components/parameters/cursoCohorteId"
     post:
-      summary: "[PLANEADO] ⚠️ Confirmar estado académico final por alumno (RF-RNK-10)"
+      summary: "[IMPLEMENTADO] ⚠️ Confirmar (upsert) el estado académico final de N alumnos (RF-RNK-10)"
       tags: [cierre]
       security: [{ bearerAuth: [PROFESOR] }]
-      responses: { "200": { description: OK } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [alumnoId, estado]
+                    properties:
+                      alumnoId: { type: string, format: uuid }
+                      estado: { type: string, enum: [PROMOCIONADO, REGULAR, NO_REGULAR, ABANDONO] }
+      responses:
+        "204": { description: Confirmado }
+        "400":
+          description: Body inválido
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+        "404":
+          description: No existe roadmap para ese curso
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
 
   /roadmaps/{cc}/cierre/reporte:
     parameters:
       - $ref: "#/components/parameters/cursoCohorteId"
     get:
-      summary: "[PLANEADO] ⚠️ Exportar reporte de cierre (RF-RNK-13)"
+      summary: >
+        [IMPLEMENTADO] ⚠️ Reporte de cierre (RF-RNK-13): datos propios (alumnoId, estado
+        final, XP, insignias). El BFF le agrega legajo y nombre.
       tags: [cierre]
       security: [{ bearerAuth: [PROFESOR, ADMIN] }]
-      responses: { "200": { description: OK } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FilaReporteCierre" }
 
   /roadmaps/{cc}/cierre/estado:
     parameters:
       - $ref: "#/components/parameters/cursoCohorteId"
     get:
-      summary: "[PLANEADO] ⚠️ Precondición síncrona para archivar (RF-CUR-08b) — la consulta Cursos"
+      summary: >
+        [IMPLEMENTADO] ⚠️ Precondición síncrona para archivar (RF-CUR-08b) — la consulta
+        Cursos. Hoy el único bloqueo chequeado es "falta confirmar algún alumno"; los
+        gates por encuesta (RF-ENC-11) y scores de IA (RF-IA-34) son deuda.
       tags: [cierre]
       security: [{ bearerAuth: [] }]
-      responses: { "200": { description: OK } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  listoParaArchivar: { type: boolean }
+                  alumnosSinConfirmar:
+                    type: array
+                    items: { type: string, format: uuid }
 
 components:
   securitySchemes:
@@ -727,6 +792,33 @@ components:
         ejerciciosCompletados: { type: integer }
         candidatoPromocion: { type: boolean, description: "RF-RNK-05" }
         riesgoRegularidad: { type: boolean, description: "RF-RNK-06" }
+
+    CandidatoCierre:
+      type: object
+      description: "Fila de la pantalla de confirmación de cierre (RF-RNK-10)."
+      properties:
+        alumnoId: { type: string, format: uuid }
+        xpTotal: { type: integer }
+        zona: { type: string, enum: [NINGUNA, P90, P10] }
+        candidatoPromocion: { type: boolean }
+        riesgoRegularidad: { type: boolean }
+        estadoSugerido: { type: string, enum: [PROMOCIONADO, REGULAR, NO_REGULAR, ABANDONO] }
+        estadoConfirmado:
+          type: string
+          nullable: true
+          enum: [PROMOCIONADO, REGULAR, NO_REGULAR, ABANDONO]
+
+    FilaReporteCierre:
+      type: object
+      description: "Fila del reporte de cierre (RF-RNK-13). Legajo y nombre los agrega el BFF."
+      properties:
+        alumnoId: { type: string, format: uuid }
+        estadoFinal:
+          type: string
+          nullable: true
+          enum: [PROMOCIONADO, REGULAR, NO_REGULAR, ABANDONO]
+        xpTotal: { type: integer }
+        insigniasCount: { type: integer }
 
     VistaRankingAlumno:
       type: object

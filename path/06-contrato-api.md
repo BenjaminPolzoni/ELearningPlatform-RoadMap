@@ -175,6 +175,17 @@ Registrarse en Eureka **no** alcanza. El Gateway usa una *allowlist* (`include-e
 | `GET /roadmaps/{cc}/cierre/reporte` | PROFESOR · ADMIN | Exportar reporte (RF-RNK-13) |
 | `GET /roadmaps/{cc}/cierre/estado` | interno | **Precondición síncrona para archivar** (RF-CUR-08b) — la consulta Cursos |
 
+> **Estado:** los 4 paths **[IMPLEMENTADO]** (`CierreService` + `CierreController`).
+> Roadmap NO archiva el curso — solo confirma el estado final por alumno (upsert en
+> `estado_academico_final`) y responde la precondición. Decisiones:
+> - **Estado sugerido, no impuesto:** `cierre/candidatos` sugiere `PROMOCIONADO` para el
+>   candidato RF-RNK-05 y `REGULAR` para el resto; `NO_REGULAR`/`ABANDONO` solo a mano.
+> - **`cierre/estado`** hoy solo bloquea por "falta confirmar algún alumno". Los gates por
+>   encuesta de cierre (RF-ENC-11) y por scores de IA diferidos (RF-IA-34) dependen de
+>   servicios que no consultamos todavía → `deuda-tecnica/`.
+> - **Reporte:** devuelve datos propios (alumnoId, estado, XP, insignias); legajo y nombre
+>   los agrega el BFF (RF-RNK-13, §6.2).
+
 ---
 
 ## 5. Eventos (Kafka)

@@ -149,3 +149,23 @@ MATERIALIZED VIEW real es decisión de Fase 3". Con volúmenes de mock (≤ ~12 
 listeners de XP/vida/insignia/progreso que la recalculan, o `MATERIALIZED VIEW` con
 `REFRESH`). También ahí entra la emisión de `AlumnoEntra/SaleZonaEvent` a Notificaciones,
 que hoy no se emite porque no hay "corrida anterior" contra la cual comparar.
+
+---
+
+## 🔴 9. Cierre: faltan los gates por encuesta (RF-ENC-11) y por scores de IA (RF-IA-34)
+
+**Qué falta:** `GET /roadmaps/{cc}/cierre/estado` debe devolver `listoParaArchivar = false`
+también si la encuesta de cierre no está cumplida (RF-ENC-11) o si hay scores de IA
+pendientes de cálculo diferido (RF-IA-34). Hoy solo chequea que todos los alumnos tengan
+estado académico confirmado.
+
+**Dónde vive:** `CierreService.estadoParaArchivar` — el `EstadoCierre` solo mira
+`estado_academico_final`.
+
+**Por qué no bloquea la tarea actual:** los dos datos vienen de afuera —
+Encuestas (T04, §6.1 ya lo lista como consulta a hacer) y Evaluación LLM (T07) — y no
+hay cliente para ninguno todavía. El chequeo sin la fuente sería siempre falso o siempre
+verdadero, arbitrario.
+
+**Cómo se paga:** cuando existan esos clientes/consultas, sumar los dos chequeos al
+`EstadoCierre` (un `bloqueos: List<String>` en vez de solo `alumnosSinConfirmar`).
