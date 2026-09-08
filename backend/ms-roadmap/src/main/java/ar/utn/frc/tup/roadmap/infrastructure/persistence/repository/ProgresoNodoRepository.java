@@ -11,4 +11,7 @@ public interface ProgresoNodoRepository extends JpaRepository<ProgresoNodoEntity
     List<ProgresoNodoEntity> findByAlumnoIdAndCursoCohorteIdAndActivoTrue(UUID alumnoId, UUID cursoCohorteId);
 
     Optional<ProgresoNodoEntity> findByAlumnoIdAndNodoId(UUID alumnoId, UUID nodoId);
+
+    /** Para chequear en batch el estado de varios prerequisitos de un nodo a la vez. */
+    List<ProgresoNodoEntity> findByAlumnoIdAndNodoIdIn(UUID alumnoId, List<UUID> nodoIds);
 }

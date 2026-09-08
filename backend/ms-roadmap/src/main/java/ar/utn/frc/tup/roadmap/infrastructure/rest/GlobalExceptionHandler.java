@@ -1,5 +1,7 @@
 package ar.utn.frc.tup.roadmap.infrastructure.rest;
 
+import ar.utn.frc.tup.roadmap.domain.exception.PoolRecuperacionVacioException;
+import ar.utn.frc.tup.roadmap.domain.exception.RecuperacionNoCorrespondeException;
 import ar.utn.frc.tup.roadmap.domain.exception.RoadmapNoEncontradoException;
 import ar.utn.frc.tup.roadmap.domain.exception.RoadmapYaExisteException;
 import org.springframework.http.HttpStatus;
@@ -23,6 +25,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RoadmapYaExisteException.class)
     public ProblemDetail manejarConflicto(RoadmapYaExisteException ex, WebRequest req) {
+        return construir(HttpStatus.CONFLICT, ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(RecuperacionNoCorrespondeException.class)
+    public ProblemDetail manejarRecuperacionNoCorresponde(RecuperacionNoCorrespondeException ex, WebRequest req) {
+        return construir(HttpStatus.CONFLICT, ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(PoolRecuperacionVacioException.class)
+    public ProblemDetail manejarPoolVacio(PoolRecuperacionVacioException ex, WebRequest req) {
         return construir(HttpStatus.CONFLICT, ex.getMessage(), req);
     }
 

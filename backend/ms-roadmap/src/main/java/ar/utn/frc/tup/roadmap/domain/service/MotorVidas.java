@@ -1,6 +1,8 @@
 package ar.utn.frc.tup.roadmap.domain.service;
 
 import ar.utn.frc.tup.roadmap.domain.model.EstadoNodo;
+import ar.utn.frc.tup.roadmap.domain.model.TipoMovimientoVida;
+import java.util.List;
 
 /**
  * RF-DES-07: se descuenta 1 vida cuando (y solo cuando) el nodo termina en FALLADO —
@@ -17,5 +19,25 @@ public class MotorVidas {
             return false;
         }
         return estadoResultante == EstadoNodo.FALLADO;
+    }
+
+    /**
+     * {@code vidas_vigentes}: suma y resta según el historial, con techo PAR-12 aplicado
+     * en CADA paso (no solo al final) — si el alumno ya está en el techo, recuperar o
+     * comprar una vida de más no la hace acumular por encima de él. Nunca negativo.
+     *
+     * <p>Recibe los movimientos YA ordenados cronológicamente — el orden lo decide quien
+     * los lee de la base (ver {@code MovimientoVidaRepository}), no este método.
+     */
+    public int calcularVidasVigentes(List<TipoMovimientoVida> movimientosOrdenados, int techo) {
+        int vidas = 0;
+        for (TipoMovimientoVida tipo : movimientosOrdenados) {
+            vidas += switch (tipo) {
+                case INICIAL, RECUPERADA, COMPRADA -> 1;
+                case PERDIDA -> -1;
+            };
+            vidas = Math.clamp(vidas, 0, techo);
+        }
+        return vidas;
     }
 }

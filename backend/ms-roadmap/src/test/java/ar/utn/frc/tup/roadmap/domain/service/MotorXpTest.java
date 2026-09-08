@@ -34,6 +34,11 @@ class MotorXpTest {
         public int xpDesafioPersonalizado() {
             return 30;
         }
+
+        @Override
+        public int techoVidas() {
+            return 3;
+        }
     }
 
     private final MotorXp motor = new MotorXp(List.of(

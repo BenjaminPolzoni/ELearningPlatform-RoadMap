@@ -61,11 +61,19 @@ MovimientoXP                ← historial, nunca se sobrescribe
   rubric_version, origen_evento_id, registrado_en
 
 MovimientoVida              ← historial, nunca se sobrescribe
-  id, alumno_id, curso_cohorte_id, nodo_id, tipo, registrado_en
+  id, alumno_id, curso_cohorte_id, nodo_id, desafio_recuperacion_id, tipo,
+  origen_evento_id, registrado_en
 
 VidasEstado                 «vista calculada»
   alumno_id, curso_cohorte_id, vidas_vigentes, vidas_perdidas_historico
+
+DesafioRecuperacion         ← pool por curso (RF-REC-06), no un nodo del mapa
+  id, curso_cohorte_id, desafio_id
 ```
+
+> `nodo_id` y `desafio_recuperacion_id` en `MovimientoVida` son campos separados a
+> propósito: apuntan a tablas distintas y nunca se llenan los dos a la vez — mezclarlos en
+> una sola columna habría hecho ambiguo a qué tabla mirar después.
 
 ### Niveles, insignias, ranking y cierre
 
@@ -112,17 +120,22 @@ EstadoCursoCohorte  : draft | activo | archivado
 ### ⚠️ Extensión propuesta de `TipoNodo`
 
 El modelo original define solo `TipoNodo { desafio, hito }`. El mock necesita distinguir el
-material del ejercicio y marcar la recuperación, así que se propone:
+material del ejercicio, así que se propone:
 
 ```
 TipoNodo : teoria              ← material teórico (lectura)
          | practica            ← material práctico (guía, ejemplo)
          | desafio_teorico     ← actividad evaluada, Tema 04
          | desafio_practico    ← actividad evaluada con IDE, Tema 05
-         | recuperacion        ← desafío de recuperación de vida (RF-REC-04)
          | hito                ← marcador sin evaluación
          | boss                ← desafío de cierre de unidad
 ```
+
+> **Corrección:** `recuperacion` vivió acá como un valor más hasta implementar el Camino 3
+> en serio. RF-REC-06 describe un **pool por curso** ("cargado por el profesor"), no un
+> nodo posicionado en el mapa — modelarlo como `TipoNodo` hubiera forzado cada desafío de
+> recuperación a tener una sección y una posición (x,y) sin sentido para algo que nunca se
+> dibuja en el grafo. Ver `DesafioRecuperacionEntity` más abajo.
 
 > **Estado: propuesta.** Es un cambio de contrato que hay que validar con el equipo antes de
 > cerrarlo, porque afecta lo que el Motor de Desafíos (T03) espera recibir en `desafio_id`.

@@ -229,11 +229,24 @@ paths:
   /alumnos/{aid}/vidas/recuperacion:
     parameters:
       - $ref: "#/components/parameters/alumnoId"
+      - $ref: "#/components/parameters/cursoCohorteIdQuery"
     post:
-      summary: "[PLANEADO] ⚠️ Iniciar el desafío de recuperación (RF-REC-04)"
+      summary: "[IMPLEMENTADO] Iniciar el desafío de recuperación (RF-REC-04)"
       tags: [vidas]
       security: [{ bearerAuth: [ALUMNO] }]
-      responses: { "200": { description: Desafío de recuperación asignado } }
+      responses:
+        "200":
+          description: Desafío de recuperación asignado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecuperacionAsignada" }
+        "409":
+          description: >
+            El alumno todavía tiene vidas (RecuperacionNoCorrespondeException) o el pool
+            del curso está vacío (PoolRecuperacionVacioException)
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
 
   /alumnos/{aid}/vidas/compra:
     parameters:
@@ -486,6 +499,12 @@ components:
       properties:
         vidasVigentes: { type: integer }
         vidasPerdidasHistorico: { type: integer, description: "Nunca decrece (RF-RNK-05)" }
+
+    RecuperacionAsignada:
+      type: object
+      description: "RF-REC-04 — el desafioId externo que el alumno debe resolver"
+      properties:
+        desafioId: { type: string, format: uuid }
 
     Nivel:
       type: object

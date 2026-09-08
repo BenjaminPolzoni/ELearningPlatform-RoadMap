@@ -31,8 +31,19 @@ public class MovimientoVidaEntity extends MovimientoBase {
     @Column(name = "curso_cohorte_id", nullable = false)
     private UUID cursoCohorteId;
 
+    /** Solo para movimientos ligados a un nodo del mapa (ej. {@code PERDIDA} por RF-DES-07). */
     @Column(name = "nodo_id")
     private UUID nodoId;
+
+    /**
+     * Solo para {@code RECUPERADA} — qué desafío del pool (RF-REC-06) se resolvió.
+     * Campo separado de {@code nodoId} a propósito: apuntan a tablas distintas
+     * ({@code DesafioRecuperacionEntity} vs {@code RoadmapNodoEntity}) y nunca se llenan
+     * los dos a la vez — mezclarlos en una sola columna habría hecho ambiguo a qué tabla
+     * mirar después.
+     */
+    @Column(name = "desafio_recuperacion_id")
+    private UUID desafioRecuperacionId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
