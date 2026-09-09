@@ -1,5 +1,5 @@
 /* Tipografías (05-design-system.md §3). Fallbacks reales en cada nivel. */
-@import url("https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=IBM+Plex+Mono:wght@400;600&family=Press+Start+2P&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=IBM+Plex+Mono:wght@400;600&family=Press+Start+2P&family=VT323&display=swap");
 
 @import "tailwindcss";
 @plugin "daisyui";
@@ -88,12 +88,971 @@
   --font-title: "Press Start 2P", system-ui, sans-serif;
   --font-body:  "Chivo", system-ui, sans-serif;
   --font-ui:    "IBM Plex Mono", ui-monospace, monospace;
+  /* Consola CRT del ranking (E8) — números grandes del gabinete. */
+  --font-console: "VT323", ui-monospace, "Courier New", monospace;
 }
 
 html { font-family: var(--font-body); }
 
 .title-font { font-family: var(--font-title); }
 .ui-font { font-family: var(--font-ui); }
+.console-font { font-family: var(--font-console); }
 
 /* XP, posiciones y contadores: tabular para que no bailen al actualizar (§3) */
 .tabular { font-variant-numeric: tabular-nums; }
+
+
+/* ============================================================
+   RANKING · tema arcade (E8). Clases con prefijo `rk-` — no
+   pisan nada del resto de la app. Rellenos sólidos con tokens
+   del tema (arcade-dark / arcade-light); los brillos neón usan
+   rgba fijos de la paleta arcade (cian/magenta/violeta/oro/verde).
+   No se usa color-mix(): con los tokens oklch de daisyUI 5 la
+   declaración quedaba inválida y el panel salía transparente.
+   Tokens propios `--rk-*` con switch por [data-theme] — no
+   dependemos de cómo daisyUI cascadea sus variables.
+   ============================================================ */
+
+:root,
+:root[data-theme='arcade-dark'] {
+  --rk-bg: #0d0b1e;
+  --rk-bg2: #161230;
+  --rk-bg3: #221c4a;
+  --rk-ink: #e8e6ff;
+  --rk-cyan: #00e5ff;
+  --rk-magenta: #ff2e93;
+  --rk-yellow: #ffd60a;
+  --rk-green: #39ff88;
+  /* Estado académico del ranking (RF-RNK-05/06) — verde promoción / rojo riesgo. */
+  --rk-promo: #10b981;
+  --rk-risk: #ef4444;
+}
+:root[data-theme='arcade-light'] {
+  --rk-bg: #f5f3ff;
+  --rk-bg2: #e9e4ff;
+  --rk-bg3: #d6ceff;
+  --rk-ink: #14103a;
+  --rk-cyan: #0093ab;
+  --rk-magenta: #d11a76;
+  --rk-yellow: #a97c00;
+  --rk-green: #0e9f6e;
+  --rk-promo: #10b981;
+  --rk-risk: #ef4444;
+}
+
+/* — util de brillo neón reutilizable — */
+.rk-neon-primary {
+  color: var(--rk-cyan);
+  text-shadow:
+    0 0 4px var(--rk-cyan),
+    0 0 14px rgba(0, 229, 255, 0.55);
+}
+.rk-neon-accent {
+  color: var(--rk-magenta);
+  text-shadow:
+    0 0 4px var(--rk-magenta),
+    0 0 14px rgba(255, 46, 147, 0.55);
+}
+.rk-neon-success {
+  color: var(--rk-green);
+  text-shadow:
+    0 0 4px var(--rk-green),
+    0 0 12px rgba(57, 255, 136, 0.55);
+}
+
+/* — backdrop: sala de arcade en penumbra — */
+.rk-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5vh 2vw;
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(184, 92, 246, 0.18), transparent 58%),
+    radial-gradient(ellipse at 50% 108%, rgba(0, 229, 255, 0.1), transparent 55%),
+    rgba(5, 4, 12, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: rk-fade 0.22s ease;
+}
+
+/* — gabinete: bisel + halo violeta — */
+.rk-cabinet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(660px, 96vw);
+  max-height: 92vh;
+  padding: 10px;
+  font-family: var(--font-console);
+  background: var(--rk-bg);
+  border: 2px solid var(--rk-bg3);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -5px 0 rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(184, 92, 246, 0.45),
+    0 18px 50px rgba(0, 0, 0, 0.55),
+    0 0 44px rgba(184, 92, 246, 0.32);
+  overflow: hidden;
+  animation: rk-enter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rk-cabinet__scanlines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.09) 0 1px, transparent 1px 3px);
+}
+
+/* — marquee: cartel iluminado — */
+.rk-marquee {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 3rem;
+  border: 2px solid var(--rk-bg3);
+  border-radius: 10px;
+  background: var(--rk-bg2);
+  box-shadow:
+    inset 0 0 22px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 4px 18px rgba(255, 46, 147, 0.14);
+}
+/* cabecera del detalle: INFO centrado, VOLVER anclado a la izquierda */
+.rk-marquee--back {
+  flex-direction: row;
+}
+.rk-marquee__back {
+  position: absolute;
+  left: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.rk-marquee__bulbs {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 5px;
+  bottom: 5px;
+  pointer-events: none;
+}
+.rk-marquee__bulbs::before,
+.rk-marquee__bulbs::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: radial-gradient(circle, var(--rk-yellow) 0 1.4px, transparent 1.9px) 0 0 / 13px 4px
+    repeat-x;
+  opacity: 0.8;
+  filter: drop-shadow(0 0 3px rgba(255, 214, 10, 0.8));
+}
+.rk-marquee__bulbs::before {
+  top: 0;
+}
+.rk-marquee__bulbs::after {
+  bottom: 0;
+}
+.rk-marquee__word {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: clamp(1rem, 4.2vw, 1.55rem);
+  line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--rk-cyan);
+  text-shadow:
+    2px 2px 0 var(--rk-bg),
+    0 0 12px rgba(255, 46, 147, 0.5),
+    0 0 22px rgba(0, 229, 255, 0.4);
+}
+.rk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-title);
+  font-size: 0.44rem;
+  letter-spacing: 0.08em;
+  color: var(--rk-ink);
+  background: var(--rk-bg3);
+  border: 2px solid var(--rk-cyan);
+  border-radius: 2px;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  transition:
+    box-shadow 0.12s ease,
+    transform 0.12s ease;
+}
+.rk-chip:hover {
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+  transform: translateY(1px);
+}
+
+/* — pantalla CRT hundida — */
+.rk-screen {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.2rem 1rem 1rem;
+  border: 2px solid #05040c;
+  border-radius: 10px;
+  background: var(--rk-bg);
+  box-shadow: inset 0 0 38px rgba(0, 0, 0, 0.45);
+  scrollbar-width: none;
+}
+.rk-screen::-webkit-scrollbar {
+  display: none;
+}
+
+/* — deck de control — */
+.rk-deck {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.5rem 0.95rem;
+  border: 2px solid var(--rk-bg3);
+  border-radius: 10px;
+  background: var(--rk-bg2);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -4px 10px rgba(0, 0, 0, 0.35);
+}
+.rk-deck__text {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-title);
+  font-size: 0.44rem;
+  letter-spacing: 0.16em;
+}
+/* variante accionable: "IR A TU POSICIÓN · PRESS START" */
+.rk-deck__text--btn {
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  padding: 0.4rem 0.5rem;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+.rk-deck__text--btn:hover {
+  background: rgba(16, 185, 129, 0.12);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.45);
+}
+.rk-deck__text--btn:active {
+  transform: translateY(1px);
+}
+.rk-deck__text--btn:focus-visible {
+  outline: 2px solid var(--rk-yellow);
+  outline-offset: 2px;
+}
+.rk-joystick {
+  position: relative;
+  flex-shrink: 0;
+  width: 13px;
+  height: 20px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, #7a7a86, #3a3a44);
+}
+.rk-joystick::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -11px;
+  width: 18px;
+  height: 18px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #ff9d9d, #e11d1d 55%, #7c0d0d);
+  box-shadow: 0 0 10px rgba(225, 29, 29, 0.55);
+}
+.rk-btn-round {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition:
+    transform 0.1s ease,
+    filter 0.12s ease;
+}
+.rk-btn-round:hover {
+  transform: translateY(1px) scale(1.08);
+  filter: brightness(1.15);
+}
+.rk-btn-round--a {
+  background: radial-gradient(circle at 34% 30%, #9df1ff, #00b4d8 58%, #045c78);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.55);
+}
+.rk-btn-round--b {
+  background: radial-gradient(circle at 34% 30%, #ffe79a, #ffd60a 55%, #a9760c);
+  box-shadow: 0 0 8px rgba(255, 214, 10, 0.55);
+}
+
+/* — botón cerrar — */
+.rk-close {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  z-index: 10;
+  width: 2.3rem;
+  height: 2.3rem;
+  border: 2px solid var(--rk-magenta);
+  border-radius: 50%;
+  background: var(--rk-bg2);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(255, 46, 147, 0.5);
+  transition: transform 0.15s ease;
+}
+/* la X dibujada con dos barras: siempre centrada y nítida */
+.rk-close::before,
+.rk-close::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.95rem;
+  height: 2px;
+  background: var(--rk-magenta);
+  border-radius: 1px;
+}
+.rk-close::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.rk-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+.rk-close:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 16px rgba(255, 46, 147, 0.7);
+}
+
+/* — banner "TU ESTADO": protagonista de la vista del alumno — */
+.rk-estado {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 0.4rem;
+  border: 2px solid var(--rk-estado-color, var(--rk-cyan));
+  border-left-width: 8px;
+  border-radius: 3px;
+  background: var(--rk-estado-fill, rgba(0, 229, 255, 0.08));
+  box-shadow:
+    inset 0 0 24px var(--rk-estado-fill, rgba(0, 229, 255, 0.08)),
+    0 0 18px var(--rk-estado-glow, rgba(0, 229, 255, 0.28));
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+button.rk-estado:hover {
+  transform: translateX(2px);
+  box-shadow:
+    inset 0 0 24px var(--rk-estado-fill, rgba(0, 229, 255, 0.08)),
+    0 0 26px var(--rk-estado-glow, rgba(0, 229, 255, 0.42));
+}
+.rk-estado--ok {
+  --rk-estado-color: var(--rk-promo);
+  --rk-estado-fill: rgba(16, 185, 129, 0.12);
+  --rk-estado-glow: rgba(16, 185, 129, 0.42);
+}
+.rk-estado--risk {
+  --rk-estado-color: var(--rk-risk);
+  --rk-estado-fill: rgba(239, 68, 68, 0.12);
+  --rk-estado-glow: rgba(239, 68, 68, 0.42);
+}
+.rk-estado--info {
+  --rk-estado-color: var(--rk-cyan);
+  --rk-estado-fill: rgba(0, 229, 255, 0.08);
+  --rk-estado-glow: rgba(0, 229, 255, 0.28);
+}
+.rk-estado__pos {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+  color: var(--rk-estado-color);
+}
+.rk-estado__pos-num {
+  font-family: var(--font-console);
+  font-size: 2.4rem;
+}
+.rk-estado__pos-tot {
+  font-family: var(--font-console);
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+.rk-estado__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.rk-estado__tag {
+  font-family: var(--font-title);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  color: var(--rk-estado-color);
+  text-shadow: 0 0 8px var(--rk-estado-glow);
+}
+.rk-estado__sub {
+  font-family: var(--font-console);
+  font-size: 1rem;
+  color: var(--rk-ink);
+  opacity: 0.85;
+}
+.rk-estado__pctil {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-family: var(--font-console);
+  font-size: 1.5rem;
+  color: var(--rk-estado-color);
+  text-shadow: 0 0 8px var(--rk-estado-glow);
+}
+
+/* — etiqueta de estado en la fila (PROMOCIÓN / RIESGO) — */
+.rk-tag {
+  display: inline-block;
+  margin-top: 0.15rem;
+  font-family: var(--font-title);
+  font-size: 0.42rem;
+  letter-spacing: 0.06em;
+  padding: 0.28rem 0.4rem;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  line-height: 1;
+}
+.rk-tag--promo {
+  color: var(--rk-promo);
+  text-shadow: 0 0 6px rgba(16, 185, 129, 0.65);
+}
+.rk-tag--riesgo {
+  color: var(--rk-risk);
+  text-shadow: 0 0 6px rgba(239, 68, 68, 0.65);
+}
+
+/* — divisor de corte P90 / P10 — */
+.rk-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  margin: 0.35rem 0;
+}
+.rk-divider__bar {
+  flex: 1;
+  height: 2px;
+  background: var(--rk-bg3);
+}
+.rk-divider__label {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: var(--font-console);
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  padding: 0.1rem 0.7rem;
+  border: 2px solid var(--rk-bg3);
+  background: var(--rk-bg2);
+}
+.rk-divider--up .rk-divider__bar {
+  background: var(--rk-promo);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.55);
+}
+.rk-divider--up .rk-divider__label {
+  border-color: var(--rk-promo);
+  color: var(--rk-promo);
+}
+.rk-divider--down .rk-divider__bar {
+  background: var(--rk-risk);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.55);
+}
+.rk-divider--down .rk-divider__label {
+  border-color: var(--rk-risk);
+  color: var(--rk-risk);
+}
+
+/* — grilla de fila: POS | ESTUDIANTE | PCTIL | NIVEL | XP — */
+/* Tabla de high-scores: los datos CORTOS (puesto, encabezado, pctil, nivel, XP) van en
+   Press Start 2P — cadenas de 2-4 caracteres donde el pixel-font se lee nítido. El NOMBRE
+   del estudiante, que es largo, queda en VT323 (fuente CRT, igual de arcade) en mayúsculas
+   con tracking, para que sea legible sin romper la estética. */
+.rk-row,
+.rk-head {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 56px 60px 84px;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.7rem;
+}
+.rk-head {
+  background: var(--rk-bg2);
+  border: 2px solid var(--rk-bg3);
+  border-bottom-color: var(--rk-cyan);
+  font-family: var(--font-title);
+  font-size: 0.5rem;
+  line-height: 1.5;
+  letter-spacing: 0.03em;
+  color: var(--rk-cyan);
+  text-transform: uppercase;
+}
+.rk-row {
+  border: 2px solid var(--rk-bg3);
+  border-top: none;
+  background: var(--rk-bg2);
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.12s ease;
+}
+.rk-row:hover {
+  background: var(--rk-bg3);
+  border-color: var(--rk-cyan);
+  transform: translateX(2px);
+}
+/* PROMOCIÓN (RF-RNK-05): borde y resplandor neón verde #10B981. */
+.rk-row--promo {
+  border-color: var(--rk-promo);
+  background: rgba(16, 185, 129, 0.09);
+  box-shadow:
+    inset 5px 0 0 var(--rk-promo),
+    0 0 16px rgba(16, 185, 129, 0.4);
+}
+/* RIESGO (RF-RNK-06): borde y resplandor neón rojo #EF4444. */
+.rk-row--riesgo {
+  border-color: var(--rk-risk);
+  background: rgba(239, 68, 68, 0.09);
+  box-shadow:
+    inset 5px 0 0 var(--rk-risk),
+    0 0 16px rgba(239, 68, 68, 0.4);
+}
+/* La fila propia mantiene su fondo cian, pero el borde/resplandor de estado gana. */
+.rk-row--me {
+  border-color: var(--rk-cyan);
+  background: var(--rk-bg3);
+  box-shadow:
+    inset 3px 0 0 var(--rk-cyan),
+    0 0 14px rgba(0, 229, 255, 0.25);
+}
+.rk-row--me.rk-row--promo {
+  border-color: var(--rk-promo);
+  box-shadow:
+    inset 5px 0 0 var(--rk-promo),
+    0 0 16px rgba(16, 185, 129, 0.4);
+}
+.rk-row--me.rk-row--riesgo {
+  border-color: var(--rk-risk);
+  box-shadow:
+    inset 5px 0 0 var(--rk-risk),
+    0 0 16px rgba(239, 68, 68, 0.4);
+}
+.rk-row__pos {
+  font-family: var(--font-title);
+  font-size: 0.9rem;
+  text-align: center;
+  color: var(--rk-ink);
+}
+.rk-row--promo .rk-row__pos {
+  color: var(--rk-promo);
+}
+.rk-row--riesgo .rk-row__pos {
+  color: var(--rk-risk);
+}
+.rk-row--me .rk-row__pos {
+  color: var(--rk-cyan);
+}
+.rk-row__avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--rk-bg);
+  border: 1px solid var(--rk-bg3);
+  flex-shrink: 0;
+}
+.rk-row__name {
+  font-family: var(--font-console);
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rk-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rk-row__cell {
+  font-family: var(--font-title);
+  font-size: 0.5rem;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--rk-ink);
+}
+.rk-row__lv {
+  color: var(--rk-cyan);
+}
+.rk-row__xp {
+  text-align: right;
+  color: var(--rk-yellow);
+  font-family: var(--font-title);
+  font-size: 0.55rem;
+  line-height: 1.5;
+}
+
+/* — barra de XP segmentada — */
+.rk-xpbar {
+  display: block;
+  width: 100%;
+  height: 6px;
+  background: var(--rk-bg);
+  border: 1px solid var(--rk-bg3);
+  overflow: hidden;
+}
+.rk-xpbar__fill {
+  display: block;
+  height: 100%;
+  background: repeating-linear-gradient(90deg, #075063 0 3px, var(--rk-cyan) 3px 6px);
+  transition: width 0.3s ease;
+}
+
+/* — HUD del detalle — */
+.rk-hud {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 2px solid var(--rk-cyan);
+  border-radius: 4px;
+  background: var(--rk-bg2);
+  box-shadow:
+    0 0 20px rgba(0, 229, 255, 0.22),
+    inset 0 0 30px rgba(0, 0, 0, 0.3);
+  font-family: var(--font-console);
+}
+/* avatar redondo, como en el listado (con anillo neón del HUD) */
+.rk-shield {
+  display: block;
+  width: 76px;
+  height: 76px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--rk-bg);
+  border: 2px solid var(--rk-cyan);
+  padding: 3px;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.35);
+}
+.rk-shield img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--rk-bg);
+}
+/* placa de puesto: kicker "PUESTO" + "NN / total" en pixel-font */
+.rk-plate {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.45rem;
+}
+.rk-plate__k {
+  font-family: var(--font-title);
+  font-size: 0.42rem;
+  letter-spacing: 0.14em;
+  color: var(--rk-cyan);
+}
+.rk-plate__v {
+  font-family: var(--font-title);
+  font-size: 0.85rem;
+  line-height: 1;
+  color: var(--rk-ink);
+}
+.rk-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.7rem 0.8rem;
+  border: 2px solid var(--rk-bg3);
+  background: var(--rk-bg);
+}
+.rk-stat__label {
+  font-family: var(--font-title);
+  font-size: 0.44rem;
+  letter-spacing: 0.12em;
+  color: var(--rk-cyan);
+}
+.rk-stat__value {
+  font-family: var(--font-title);
+  font-size: 1.2rem;
+  line-height: 1.2;
+  color: var(--rk-ink);
+}
+/* — bloque de auditoría / cierre de curso en el detalle — */
+.rk-audit {
+  border-top: 2px solid var(--rk-bg3);
+  padding-top: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.rk-audit__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+.rk-audit__grid .rk-stat {
+  align-items: center;
+  text-align: center;
+}
+.rk-mark {
+  display: inline-block;
+  font-family: var(--font-console);
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.3rem 0.6rem;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  line-height: 1.1;
+}
+.rk-mark--promo {
+  color: var(--rk-promo);
+  text-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
+}
+.rk-mark--riesgo {
+  color: var(--rk-risk);
+  text-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+}
+.rk-mark--none {
+  color: var(--rk-ink);
+  opacity: 0.45;
+}
+.rk-heart {
+  width: 15px;
+  height: 14px;
+  display: inline-block;
+  clip-path: polygon(
+    20% 0,
+    40% 0,
+    40% 20%,
+    60% 20%,
+    60% 0,
+    80% 0,
+    80% 20%,
+    100% 20%,
+    100% 55%,
+    80% 55%,
+    80% 75%,
+    60% 75%,
+    60% 95%,
+    40% 95%,
+    40% 75%,
+    20% 75%,
+    20% 55%,
+    0 55%,
+    0 20%,
+    20% 20%
+  );
+}
+.rk-heart--on {
+  background: var(--rk-magenta);
+  box-shadow: 0 0 6px rgba(255, 46, 147, 0.7);
+}
+.rk-heart--off {
+  background: var(--rk-bg3);
+}
+/* moneda pixel-art (mismo tratamiento que .rk-heart: forma escalonada + color plano + glow) */
+.rk-coin {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  background: var(--rk-yellow);
+  clip-path: polygon(
+    33% 0,
+    67% 0,
+    67% 11%,
+    89% 11%,
+    89% 33%,
+    100% 33%,
+    100% 67%,
+    89% 67%,
+    89% 89%,
+    67% 89%,
+    67% 100%,
+    33% 100%,
+    33% 89%,
+    11% 89%,
+    11% 67%,
+    0 67%,
+    0 33%,
+    11% 33%,
+    11% 11%,
+    33% 11%
+  );
+  box-shadow: 0 0 6px rgba(255, 214, 10, 0.7);
+}
+/* banda central oscura — lee como el canto de la moneda */
+.rk-coin::before {
+  content: '';
+  position: absolute;
+  left: 39%;
+  top: 17%;
+  width: 22%;
+  height: 66%;
+  background: #b9840c;
+}
+
+/* — ícono arcade para el encabezado de "vidas perdidas históricas" en la tabla del staff — */
+.rk-ico {
+  position: relative;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+/* corazón pixel partido = vidas perdidas históricas */
+.rk-ico--heartbreak {
+  background: var(--rk-magenta);
+  clip-path: polygon(
+    20% 0,
+    40% 0,
+    40% 20%,
+    60% 20%,
+    60% 0,
+    80% 0,
+    80% 20%,
+    100% 20%,
+    100% 55%,
+    80% 55%,
+    80% 75%,
+    60% 75%,
+    60% 95%,
+    40% 95%,
+    40% 75%,
+    20% 75%,
+    20% 55%,
+    0 55%,
+    0 20%,
+    20% 20%
+  );
+  filter: drop-shadow(0 0 4px rgba(255, 46, 147, 0.55));
+}
+/* la grieta: rayo en el color del encabezado que corta el corazón al medio */
+.rk-ico--heartbreak::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--rk-bg2);
+  clip-path: polygon(46% 10%, 58% 42%, 44% 54%, 58% 74%, 50% 100%, 44% 100%, 50% 70%, 40% 50%, 52% 34%, 40% 10%);
+}
+
+/* — botón flotante "HI-SCORE" (entrada al ranking) — */
+.rk-hiscore {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 0.95rem;
+  cursor: pointer;
+  font-family: var(--font-title);
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  color: var(--rk-ink);
+  background: linear-gradient(180deg, var(--rk-bg2), var(--rk-bg));
+  border: 2px solid var(--rk-cyan);
+  border-radius: 3px;
+  box-shadow:
+    0 0 0 2px var(--rk-bg),
+    0 0 10px rgba(0, 229, 255, 0.55),
+    0 0 22px rgba(255, 46, 147, 0.4),
+    0 4px 0 rgba(0, 0, 0, 0.35);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  animation: rk-hiscore-float 2.6s ease-in-out infinite;
+}
+.rk-hiscore__mark {
+  color: var(--rk-yellow);
+  text-shadow: 0 0 6px rgba(255, 214, 10, 0.85);
+}
+.rk-hiscore__text {
+  position: relative;
+}
+.rk-hiscore__text::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.28rem;
+  height: 2px;
+  background: var(--rk-magenta);
+  box-shadow: 0 0 6px var(--rk-magenta);
+  animation: rk-hiscore-blink 1s steps(2, start) infinite;
+}
+.rk-hiscore:hover {
+  transform: scale(1.06);
+  box-shadow:
+    0 0 0 2px var(--rk-bg),
+    0 0 14px rgba(0, 229, 255, 0.85),
+    0 0 30px rgba(255, 46, 147, 0.6),
+    0 4px 0 rgba(0, 0, 0, 0.35);
+}
+.rk-hiscore:focus-visible {
+  outline: 2px solid var(--rk-yellow);
+  outline-offset: 3px;
+}
+
+@keyframes rk-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes rk-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+}
+@keyframes rk-hiscore-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+@keyframes rk-hiscore-blink {
+  50% {
+    opacity: 0.15;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rk-hiscore,
+  .rk-hiscore__text::after {
+    animation: none;
+  }
+}
