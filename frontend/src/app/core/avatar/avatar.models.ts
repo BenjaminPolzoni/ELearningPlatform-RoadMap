@@ -43,7 +43,7 @@ export interface Opcion<T extends string> {
 }
 
 /**
- * Colores de personalización: los 4 swatches de `assets/paleta.jpg` más blanco hueso y
+ * Colores de personalización: los 4 swatches de `Fotos_y_conceptos/paleta.jpg` más blanco hueso y
  * un rosa pastel derivado. Nada por fuera de la familia de marca.
  */
 export const COLORES: readonly OpcionColor[] = [

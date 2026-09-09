@@ -1,8 +1,9 @@
 # 05 · Design system
 
-> Squad **UI**. Fuente de verdad de la paleta: **`assets/paleta.jpg`** (lámina de marca).
-> Referencias visuales del mapa: `assets/estilo_roadmap.jpeg` (vista general 2.5D) y
-> `assets/estilo_mario.jpeg` (tablero interno de la unidad).
+> Squad **UI**. Fuente de verdad de la paleta: **`Fotos_y_conceptos/paleta.jpg`** (lámina
+> de marca). Referencias visuales del mapa: `Fotos_y_conceptos/estilo_roadmap.jpeg` (vista
+> general 2.5D) y `Fotos_y_conceptos/Dentro_de_los_niveles.jpeg` (tablero interno de la
+> unidad, estilo Mario 3 — la misma lámina que ya usaba este documento antes del rediseño).
 >
 > ⚠️ Las láminas `Fotos_y_conceptos/InterfazDeColores*.png` quedaron **obsoletas**: definían
 > una paleta cyan/magenta que el rediseño reemplazó por la de marca. Se conservan como
@@ -10,8 +11,8 @@
 
 ## 1. Paleta
 
-Los cuatro swatches se muestrearon píxel a píxel de `assets/paleta.jpg` — no son una
-interpretación de la lámina.
+Los cuatro swatches se muestrearon píxel a píxel de `Fotos_y_conceptos/paleta.jpg` — no
+son una interpretación de la lámina.
 
 | Color | Hex | Rol |
 |---|---|---|
@@ -162,12 +163,18 @@ los avatares ya guardados, y el DTO queda listo para viajar al perfil del BFF en
 
 ## 5. Mapa 2.5D del curso (SVG isométrico)
 
-Referencia: `assets/estilo_roadmap.jpeg`. Implementación: `features/alumno/mapa.ts` +
-`core/iso/iso.ts`. El contrato del layout es el de
-[`04-engine-2-5d.md`](04-engine-2-5d.md) §4 — acá va solo lo visual.
+Referencia: `Fotos_y_conceptos/estilo_roadmap.jpeg`. Implementación:
+`features/alumno/mapa.ts` + `core/iso/iso.ts`. El contrato del layout es el de
+[`04-engine-2-5d.md`](04-engine-2-5d.md) §4 — acá va solo lo visual. **La matemática de la
+proyección está documentada en detalle en 04 §11**, con el motivo de cada decisión; esto de
+acá es el resumen de lo que produce.
 
 - Cada unidad es una **isla flotante**: tapa en rombo + dos caras extruidas + base rocosa
-  que se afina hacia abajo, sobre una grilla isométrica de piso
+  que se afina hacia abajo, sobre una grilla isométrica de piso — los cuatro son polígonos
+  SVG (`<polygon>`), no geometría 3D; el volumen es un truco de dibujar las caras correctas
+  en el orden correcto
+- El "brillo neón" de caminos e íconos es un filtro SVG (`feGaussianBlur` + `feMerge`), el
+  equivalente casero al `UnrealBloomPass` de three.js que describe 04 §6
 - Los **caminos** son curvas cuadráticas entre islas, con tres trazos superpuestos: halo
   difuso, línea sólida, y guiones animados que fluyen en el sentido de la marcha
 - Estado por isla: bloqueada (apagada) · disponible (violeta con emblema) · completada
@@ -182,7 +189,7 @@ Referencia: `assets/estilo_roadmap.jpeg`. Implementación: `features/alumno/mapa
 
 ## 6. Tablero interno de la unidad (SVG)
 
-Referencia: `assets/estilo_mario.jpeg` — tablero plano estilo Mario 3.
+Referencia: `Fotos_y_conceptos/Dentro_de_los_niveles.jpeg` — tablero plano estilo Mario 3.
 Implementación: `features/alumno/unidad-mapa.ts`.
 
 - **SVG**, no Canvas: los nodos son elementos del DOM → accesibles, con foco y `aria-label`,
@@ -250,7 +257,7 @@ para el alumno; el profesor necesita trabajar rápido.
 
 - [x] Tema `arcade-dark` y `arcade-light` con toggle funcionando — `styles.css` +
       `ThemeService` (Fase 0)
-- [x] Paleta migrada a la lámina de marca (`assets/paleta.jpg`) — §1
+- [x] Paleta migrada a la lámina de marca (`Fotos_y_conceptos/paleta.jpg`) — §1
 - [x] Tipografías cargadas con fallback real — Chelsea Market / Comfortaa / Press Start 2P
       vía Google Fonts, con stack de fallback en `@theme`
 - [ ] Componentes base de `shared/ui` con sus 4 estados
