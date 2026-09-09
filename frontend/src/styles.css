@@ -1,74 +1,44 @@
-/* Tipografías (05-design-system.md §3). Fallbacks reales en cada nivel. */
-@import url("https://fonts.googleapis.com/css2?family=Chivo:wght@400;700&family=IBM+Plex+Mono:wght@400;600&family=Press+Start+2P&display=swap");
+/* ============================================================================
+   Design system — paleta de marca (assets/paleta.jpg), 05-design-system.md §1
+   Los 4 swatches de la lámina, muestreados del archivo:
+     #6B21C9 violeta eléctrico · #2D164A violeta profundo
+     #FF2758 rosa fuego        · #190236 negro violáceo
+   Tipografías de la lámina: Chelsea Market (títulos) + Comfortaa (texto).
+   Press Start 2P se conserva SOLO para HUD/pixel-art del mapa (05 §3).
+   ========================================================================= */
+@import url("https://fonts.googleapis.com/css2?family=Chelsea+Market&family=Comfortaa:wght@400;600;700&family=Press+Start+2P&display=swap");
 
 @import "tailwindcss";
 @plugin "daisyui";
 
-/* ---------- ARCADE OSCURO (default) ---------- */
+/* ---------- NEÓN OSCURO (default) ---------- */
 @plugin "daisyui/theme" {
   name: "arcade-dark";
   default: true;
   prefersdark: true;
   color-scheme: dark;
 
-  --color-base-100: #0D0B1E;
-  --color-base-200: #161230;
-  --color-base-300: #221C4A;
-  --color-base-content: #E8E6FF;
+  --color-base-100: #190236;
+  --color-base-200: #24103F;
+  --color-base-300: #2D164A;
+  --color-base-content: #F3EAFF;
 
-  --color-primary: #00E5FF;
-  --color-primary-content: #001A1F;
-  --color-secondary: #B85CF6;
-  --color-secondary-content: #14042A;
-  --color-accent: #FF2E93;
-  --color-accent-content: #2A0016;
-  --color-neutral: #221C4A;
-  --color-neutral-content: #E8E6FF;
-
-  --color-info: #00E5FF;
-  --color-info-content: #001A1F;
-  --color-success: #39FF88;
-  --color-success-content: #002E14;
-  --color-warning: #FFD60A;
-  --color-warning-content: #2A2200;
-  --color-error: #FF2E93;
-  --color-error-content: #2A0016;
-
-  --radius-selector: 0.25rem;
-  --radius-field: 0.25rem;
-  --radius-box: 0.5rem;
-  --border: 2px;
-  --depth: 1;
-}
-
-/* ---------- ARCADE CLARO ---------- */
-@plugin "daisyui/theme" {
-  name: "arcade-light";
-  default: false;
-  prefersdark: false;
-  color-scheme: light;
-
-  --color-base-100: #F5F3FF;
-  --color-base-200: #E9E4FF;
-  --color-base-300: #D6CEFF;
-  --color-base-content: #14103A;
-
-  --color-primary: #00B8D4;
+  --color-primary: #FF2758;
   --color-primary-content: #FFFFFF;
-  --color-secondary: #8B3FD9;
+  --color-secondary: #6B21C9;
   --color-secondary-content: #FFFFFF;
-  --color-accent: #E01A7A;
-  --color-accent-content: #FFFFFF;
-  --color-neutral: #14103A;
-  --color-neutral-content: #F5F3FF;
+  --color-accent: #A855F7;
+  --color-accent-content: #190236;
+  --color-neutral: #2D164A;
+  --color-neutral-content: #F3EAFF;
 
-  --color-info: #00B8D4;
-  --color-info-content: #FFFFFF;
-  --color-success: #0E9F6E;
+  --color-info: #A855F7;
+  --color-info-content: #190236;
+  --color-success: #8B3DF5;
   --color-success-content: #FFFFFF;
-  --color-warning: #D9A400;
-  --color-warning-content: #2A2200;
-  --color-error: #E01A7A;
+  --color-warning: #FF7BA0;
+  --color-warning-content: #2A0011;
+  --color-error: #FF2758;
   --color-error-content: #FFFFFF;
 
   --radius-selector: 0.25rem;
@@ -78,22 +48,154 @@
   --depth: 1;
 }
 
-/* colores de estado de nodo, disponibles como utilidades (05-design-system.md §1) */
-@theme {
-  --color-node-locked: #6B7285;
-  --color-node-open:   #00E5FF;
-  --color-node-done:   #39FF88;
-  --color-node-failed: #FF2E93;
+/* ---------- NEÓN CLARO ---------- */
+@plugin "daisyui/theme" {
+  name: "arcade-light";
+  default: false;
+  prefersdark: false;
+  color-scheme: light;
 
-  --font-title: "Press Start 2P", system-ui, sans-serif;
-  --font-body:  "Chivo", system-ui, sans-serif;
-  --font-ui:    "IBM Plex Mono", ui-monospace, monospace;
+  --color-base-100: #F7F2FF;
+  --color-base-200: #ECE0FF;
+  --color-base-300: #D8C4F7;
+  --color-base-content: #190236;
+
+  --color-primary: #D6053C;
+  --color-primary-content: #FFFFFF;
+  --color-secondary: #5A16AD;
+  --color-secondary-content: #FFFFFF;
+  --color-accent: #7C24D6;
+  --color-accent-content: #FFFFFF;
+  --color-neutral: #2D164A;
+  --color-neutral-content: #F7F2FF;
+
+  --color-info: #5A16AD;
+  --color-info-content: #FFFFFF;
+  --color-success: #6B21C9;
+  --color-success-content: #FFFFFF;
+  --color-warning: #C4144A;
+  --color-warning-content: #FFFFFF;
+  --color-error: #D6053C;
+  --color-error-content: #FFFFFF;
+
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --border: 2px;
+  --depth: 1;
 }
 
-html { font-family: var(--font-body); }
+@theme {
+  /* --- swatches crudos de la lámina, para el arte del mapa (no rota con el tema) --- */
+  --color-brand-void: #0E0120;
+  --color-brand-night: #190236;
+  --color-brand-deep: #2D164A;
+  --color-brand-violet: #6B21C9;
+  --color-brand-glow: #8B3DF5;
+  --color-brand-pink: #FF2758;
 
-.title-font { font-family: var(--font-title); }
-.ui-font { font-family: var(--font-ui); }
+  /* --- estado del nodo (05 §1). Sin verde: la paleta no lo tiene, así que el tramo
+         recorrido va en violeta eléctrico y el "andá por acá" en rosa fuego. --- */
+  --color-node-locked: #3C2A5E;
+  --color-node-open: #FF2758;
+  --color-node-done: #8B3DF5;
+  --color-node-failed: #9B1B3C;
 
-/* XP, posiciones y contadores: tabular para que no bailen al actualizar (§3) */
-.tabular { font-variant-numeric: tabular-nums; }
+  --font-title: "Chelsea Market", system-ui, sans-serif;
+  --font-body: "Comfortaa", system-ui, sans-serif;
+  --font-pixel: "Press Start 2P", ui-monospace, monospace;
+  /* alias histórico: el HUD arcade sigue siendo pixel */
+  --font-ui: "Press Start 2P", ui-monospace, monospace;
+}
+
+html {
+  font-family: var(--font-body);
+}
+
+.title-font {
+  font-family: var(--font-title);
+  letter-spacing: 0.02em;
+}
+.ui-font {
+  font-family: var(--font-pixel);
+}
+.pixel-font {
+  font-family: var(--font-pixel);
+}
+
+/* XP, posiciones y contadores: tabular para que no bailen al actualizarse (05 §3) */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- primitivas de arte compartidas por mapa y tablero ---------- */
+
+/* Fondo de escena: viñeta violeta sobre negro violáceo. */
+.escena-neon {
+  background:
+    radial-gradient(120% 80% at 50% 0%, #35146b 0%, transparent 60%),
+    radial-gradient(90% 70% at 15% 100%, #4a1080 0%, transparent 55%),
+    var(--color-brand-void);
+}
+
+/* Halo neón reutilizable — se aplica sobre SVG (filter) o cajas (box-shadow). */
+.glow-pink {
+  filter: drop-shadow(0 0 6px #ff2758) drop-shadow(0 0 18px #ff275899);
+}
+.glow-violet {
+  filter: drop-shadow(0 0 6px #8b3df5) drop-shadow(0 0 18px #8b3df599);
+}
+
+/* Bordes chaflanados: el look de marca es angular, nunca redondeado (05 §2). */
+.chaflan {
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+/* Sprites y tablero: nada de suavizado, es pixel-art. */
+.pixelado {
+  image-rendering: pixelated;
+  shape-rendering: crispEdges;
+}
+
+@keyframes flotar {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes latir {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+@keyframes fluir {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+.anim-flotar {
+  animation: flotar 2.8s ease-in-out infinite;
+}
+.anim-latir {
+  animation: latir 1.4s ease-in-out infinite;
+}
+.anim-fluir {
+  animation: fluir 1.2s linear infinite;
+}
+
+/* RF-NFR-05 / 05 §7: sin animación cuando el sistema la desaconseja. */
+@media (prefers-reduced-motion: reduce) {
+  .anim-flotar,
+  .anim-latir,
+  .anim-fluir {
+    animation: none !important;
+  }
+}
