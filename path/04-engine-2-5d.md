@@ -1,6 +1,19 @@
 # 04 · Engine 2.5D del mapa de islas
 
-> Squad **Engine**. Referencia visual: `Fotos_y_conceptos/VistaDeLasUnidadesRoad.jpeg`
+> Squad **Engine**. Referencia visual: `assets/estilo_roadmap.jpeg`
+> (antes `Fotos_y_conceptos/VistaDeLasUnidadesRoad.jpeg`, hoy con la paleta de marca —
+> ver [`05-design-system.md`](05-design-system.md) §1).
+
+> ⚠️ **Estado real:** el mapa que corre hoy **no usa three.js**. Está resuelto con
+> proyección isométrica calculada a mano y render SVG —
+> `frontend/src/app/core/iso/iso.ts` + `features/alumno/mapa.ts`— porque así cada isla
+> queda como nodo del DOM (foco y `aria-label`, 05 §8) y el front no carga ~600 kB de
+> three.js. **Lo que sí se respeta de este documento es el §4**: la posición siempre se
+> calcula, con ruido determinista por índice y reflow al agregar/quitar unidades; el
+> `layoutIslas()` implementado devuelve coordenadas de mundo, así que se reutiliza tal
+> cual el día que entre el engine. Registrado en
+> [`deuda-tecnica/tarea-deuda-04-engine-2-5d.md`](deuda-tecnica/tarea-deuda-04-engine-2-5d.md).
+> Las secciones §3, §5 y §6 de acá abajo describen el engine **objetivo**, no lo que corre.
 
 ## 1. Qué tiene que lograr
 
@@ -77,8 +90,19 @@ Se resuelve con `renderOrder` asignado por el índice de layout, no con `depthTe
 
 ## 4. Layout procedural — el corazón del engine
 
-Las unidades se acomodan sobre una **serpentina**: filas alternando dirección, igual que la
-referencia. Es determinista, así que la misma unidad cae siempre en el mismo lugar.
+Las unidades se acomodan sobre una **serpentina**. Es determinista, así que la misma unidad
+cae siempre en el mismo lugar.
+
+> **Corrección respecto del snippet de abajo:** el layout implementado
+> (`core/iso/iso.ts`, `layoutIslas()`) no usa filas que alternan dirección sino una **cinta
+> que avanza hacia la derecha con zig-zag vertical**, porque el mapa se recorre con paneo
+> horizontal (§9) y un bloque que crece hacia abajo pelea contra eso.
+>
+> Y una trampa que este snippet tiene y que costó encontrar: parametrizar el zig-zag
+> directo en `x`/`y` de mundo **no funciona**. Como la proyección resta (`pantallaX ∝ x − y`),
+> un offset simétrico en mundo se amplifica en horizontal y termina apilando islas encima
+> de las anteriores. El layout real se parametriza en los **ejes de pantalla** (`u = x − y`
+> horizontal, `w = x + y` vertical) y recién después convierte a mundo.
 
 ```ts
 interface LayoutOpts {
