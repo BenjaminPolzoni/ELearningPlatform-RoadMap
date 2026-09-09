@@ -22,6 +22,18 @@ export const routes: Routes = [
     loadComponent: () => import('./features/alumno/mapa').then((m) => m.Mapa),
   },
   {
+    // Personalización del avatar que recorre el mapa y el tablero.
+    path: 'alumno/avatar',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/alumno/avatar-editor').then((m) => m.AvatarEditor),
+  },
+  {
+    // Tablero interno de la unidad (estilo Mario 3) — se entra desde una isla del mapa.
+    path: 'alumno/unidad/:id',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/alumno/unidad-mapa').then((m) => m.UnidadMapa),
+  },
+  {
     path: '',
     canActivate: [sesionGuard],
     loadComponent: () => import('./features/home/home').then((m) => m.Home),

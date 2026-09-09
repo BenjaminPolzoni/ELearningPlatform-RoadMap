@@ -1,14 +1,25 @@
 @if (auth.rol()) {
-  <header class="navbar bg-base-200 border-b-2 border-primary px-4 gap-3">
-    <a routerLink="/" class="text-primary title-font text-xs">ROADMAP</a>
-    <span class="badge badge-secondary badge-outline ui-font">{{ auth.rol() }}</span>
+  <header
+    class="navbar sticky top-0 z-40 gap-3 border-b-2 border-primary bg-base-200/90 px-4 backdrop-blur"
+  >
+    <a routerLink="/" class="title-font text-lg text-primary drop-shadow-[0_0_8px_#FF2758]">ROADMAP</a>
+    <span class="badge badge-secondary badge-outline ui-font text-[8px]">{{ auth.rol() }}</span>
 
     @if (auth.rol() === 'PROFESOR') {
       <a routerLink="/profesor" routerLinkActive="text-primary" class="btn btn-sm btn-ghost">Editor</a>
       <a routerLink="/alumno" routerLinkActive="text-primary" class="btn btn-sm btn-ghost">Ver mapa</a>
     }
     @if (auth.rol() === 'ALUMNO') {
-      <a routerLink="/alumno" routerLinkActive="text-primary" class="btn btn-sm btn-ghost">Mi mapa</a>
+      <a
+        routerLink="/alumno"
+        routerLinkActive="text-primary"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="btn btn-sm btn-ghost"
+        >Mi mapa</a
+      >
+      <a routerLink="/alumno/avatar" routerLinkActive="text-primary" class="btn btn-sm btn-ghost"
+        >Mi personaje</a
+      >
     }
 
     <div class="flex-1"></div>
@@ -19,15 +30,17 @@
   </header>
 }
 
-<main class="p-6 max-w-6xl mx-auto">
+<main class="mx-auto max-w-7xl p-6">
   <router-outlet />
 </main>
 
 @if (!esDesktop()) {
-  <div class="fixed inset-0 z-50 bg-base-100 flex items-center justify-center p-8 text-center">
+  <div class="escena-neon fixed inset-0 z-50 flex items-center justify-center p-8 text-center">
     <div>
-      <p class="text-accent title-font text-base leading-loose">Esta sección requiere una computadora</p>
-      <p class="mt-4 opacity-70">RF-NFR-05 — el editor y el mapa no funcionan en pantallas chicas.</p>
+      <p class="title-font text-2xl leading-relaxed text-primary">Esta sección requiere una computadora</p>
+      <p class="ui-font mt-4 text-[9px] leading-relaxed opacity-70">
+        RF-NFR-05 — EL EDITOR Y EL MAPA NO FUNCIONAN EN PANTALLAS CHICAS.
+      </p>
     </div>
   </div>
 }
