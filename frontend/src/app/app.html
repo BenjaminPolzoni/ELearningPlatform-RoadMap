@@ -21,6 +21,9 @@
         >Mi personaje</a
       >
     }
+    @if (auth.rol() === 'ADMIN' || auth.rol() === 'PROFESOR') {
+      <a routerLink="/insignias" routerLinkActive="text-primary" class="btn btn-sm btn-ghost">Insignias</a>
+    }
 
     <div class="flex-1"></div>
     <button class="btn btn-sm btn-ghost" (click)="theme.toggle()">

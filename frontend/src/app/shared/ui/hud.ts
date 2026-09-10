@@ -3,17 +3,18 @@ import { RouterLink } from '@angular/router';
 import { AvatarService } from '../../core/avatar/avatar.service';
 import { AvatarSprite } from './avatar-sprite';
 import { Lives } from './lives';
+import { Racha } from '../../features/alumno/racha';
 import { XpBar } from './xp-bar';
 
 /**
- * HUD del alumno (05-design-system.md §4, `ui-hud`): avatar + nivel + XP + vidas.
+ * HUD del alumno (05-design-system.md §4, `ui-hud`): avatar + nivel + XP + vidas + racha.
  * Va flotando sobre el mapa 2.5D y sobre el tablero de unidad, en la misma posición en
  * ambas vistas — al entrar a una unidad el jugador no debería tener que buscarlo.
  */
 @Component({
   selector: 'ui-hud',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarSprite, XpBar, Lives, RouterLink],
+  imports: [AvatarSprite, XpBar, Lives, Racha, RouterLink],
   host: { class: 'block' },
   template: `
     <div
@@ -33,6 +34,8 @@ import { XpBar } from './xp-bar';
         <ui-xp-bar [xp]="xp()" />
         <div class="mt-2 flex items-center gap-3">
           <ui-lives [vidas]="vidas()" />
+          <!-- Racha (PR #1 insignias): venía en el header plano del mapa, que el HUD reemplazó. -->
+          <app-racha />
           <span class="ui-font text-[8px] tabular opacity-60">{{ xp() }} XP TOTAL</span>
         </div>
       </div>
