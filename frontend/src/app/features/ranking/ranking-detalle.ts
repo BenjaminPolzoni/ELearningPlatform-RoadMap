@@ -7,6 +7,7 @@ import { InsigniaCatalogo, InsigniaOtorgada } from '../../core/data/insignias.mo
 import { enRiesgoRegularidad, esCandidatoPromocion } from '../../domain/ranking/ranking.reglas';
 import { PixelIcon } from '../../shared/pixel-icon';
 import { BADGE_ICONS } from '../insignias/badge-icons';
+import { CURSO_SEED_ID } from '../../mocks/seed';
 
 type FilaDetalle = FilaRanking | FilaRankingAnon;
 
@@ -167,7 +168,7 @@ export class RankingDetalle {
   });
   protected readonly anon = computed(() => this.fila() as FilaRankingAnon);
 
-  private readonly catalogoInsignias = toSignal(this.insigniasData.getCatalogo(), {
+  private readonly catalogoInsignias = toSignal(this.insigniasData.getCatalogo(CURSO_SEED_ID), {
     initialValue: [] as InsigniaCatalogo[],
   });
   // toObservable en vez de leer this.identificada() acá directo: un input.required() todavía

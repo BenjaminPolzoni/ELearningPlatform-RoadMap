@@ -10,7 +10,7 @@
     @if (auth.rol() === 'ALUMNO') {
       <a routerLink="/alumno" routerLinkActive="text-primary" class="btn btn-sm btn-ghost">Mi mapa</a>
     }
-    @if (auth.rol() === 'ADMIN') {
+    @if (auth.rol() === 'ADMIN' || auth.rol() === 'PROFESOR') {
       <a routerLink="/insignias" routerLinkActive="text-primary" class="btn btn-sm btn-ghost">Insignias</a>
     }
 
