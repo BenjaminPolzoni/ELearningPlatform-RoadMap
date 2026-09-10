@@ -8,6 +8,7 @@ import { enRiesgoRegularidad, esCandidatoPromocion } from '../../domain/ranking/
 import { PixelIcon } from '../../shared/pixel-icon';
 import { BADGE_ICONS } from '../insignias/badge-icons';
 import { CURSO_SEED_ID } from '../../mocks/seed';
+import { Racha } from '../alumno/racha';
 
 type FilaDetalle = FilaRanking | FilaRankingAnon;
 
@@ -25,7 +26,7 @@ function esIdentificada(f: FilaDetalle): f is FilaRanking {
  */
 @Component({
   selector: 'app-ranking-detalle',
-  imports: [PixelIcon],
+  imports: [PixelIcon, Racha],
   template: `
     <div class="rk-hud">
       <!-- Perfil: escudo hexagonal + identidad -->
@@ -78,8 +79,8 @@ function esIdentificada(f: FilaDetalle): f is FilaRanking {
         </div>
       </div>
 
-      <!-- Inventario: monedas + vidas -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem">
+      <!-- Inventario: monedas + vidas + racha -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem">
         <div class="rk-stat" style="flex-direction:row;align-items:center;gap:0.6rem">
           <span class="rk-coin" aria-hidden="true"></span>
           <span class="rk-stat__label">MONEDAS</span>
@@ -102,6 +103,10 @@ function esIdentificada(f: FilaDetalle): f is FilaRanking {
               ></span>
             }
           </span>
+        </div>
+        <div class="rk-stat" style="flex-direction:row;align-items:center;gap:0.6rem">
+          <span class="rk-stat__label">RACHA</span>
+          <span style="margin-left:auto"><app-racha /></span>
         </div>
       </div>
 

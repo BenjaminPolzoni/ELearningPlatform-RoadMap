@@ -5,6 +5,7 @@ import { RoadmapStore } from '../../core/data/roadmap.store';
 import { Unidad } from '../../core/data/roadmap.models';
 import { CURSO_SEED_ID } from '../../mocks/seed';
 import { Lives } from './lives';
+import { Racha } from './racha';
 
 type EstadoIsla = 'bloqueada' | 'disponible' | 'completada';
 interface Isla {
@@ -30,7 +31,7 @@ const Y0 = 90;
  */
 @Component({
   selector: 'app-mapa',
-  imports: [Lives],
+  imports: [Lives, Racha],
   template: `
     @if (!preview()) {
       <div class="flex items-baseline gap-4 mb-4">
@@ -38,6 +39,7 @@ const Y0 = 90;
         <span class="ui-font opacity-80 inline-flex items-baseline gap-4">
           <span>XP <b class="tabular text-warning">{{ xp() }}</b></span>
           <span class="inline-flex items-center gap-2">vidas <app-lives [current]="vidas()" /></span>
+          <span class="inline-flex items-center gap-2">racha <app-racha /></span>
         </span>
       </div>
     }
