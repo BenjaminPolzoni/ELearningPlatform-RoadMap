@@ -1,11 +1,12 @@
 import { Component, computed, input } from '@angular/core';
+import { PixelGrid, PixelIcon } from '../../shared/pixel-icon';
 
 /**
  * Pixel-art heart (pixel-art-arcade-icons skill, `heart_full`/`heart_empty`), 9x9 grid,
  * used as-is — only the empty state changes color, not shape. `1` = outline, `2` = fill,
  * `3` = shine highlight, `0` = transparent.
  */
-const HEART_GRID: readonly number[][] = [
+const HEART_GRID: PixelGrid = [
   [0, 1, 1, 0, 0, 0, 1, 1, 0],
   [1, 3, 3, 1, 0, 1, 2, 2, 1],
   [1, 3, 2, 2, 1, 2, 2, 2, 1],
@@ -30,42 +31,14 @@ const EMPTY_COLORS: Record<number, string> = {
   3: 'var(--color-base-200)',
 };
 
-interface HeartPixel {
-  x: number;
-  y: number;
-  fill: string;
-}
-
-function heartPixels(colors: Record<number, string>): HeartPixel[] {
-  const pixels: HeartPixel[] = [];
-  HEART_GRID.forEach((row, y) =>
-    row.forEach((value, x) => {
-      if (value) pixels.push({ x, y, fill: colors[value] });
-    }),
-  );
-  return pixels;
-}
-
-const FULL_PIXELS = heartPixels(FULL_COLORS);
-const EMPTY_PIXELS = heartPixels(EMPTY_COLORS);
-
 /** Lives HUD (pixel-art hearts). Mirrors `ranking-detalle`'s `corazones()` logic (PAR-12: max 3). */
 @Component({
   selector: 'app-lives',
+  imports: [PixelIcon],
   template: `
     <span class="inline-flex items-center gap-1" [attr.aria-label]="label()">
       @for (filled of hearts(); track $index) {
-        <svg
-          viewBox="0 0 9 9"
-          width="14"
-          height="14"
-          shape-rendering="crispEdges"
-          aria-hidden="true"
-        >
-          @for (p of (filled ? fullPixels : emptyPixels); track p.x + '-' + p.y) {
-            <rect [attr.x]="p.x" [attr.y]="p.y" width="1" height="1" [attr.fill]="p.fill" />
-          }
-        </svg>
+        <app-pixel-icon [grid]="heartGrid" [colors]="filled ? fullColors : emptyColors" [size]="14" />
       }
     </span>
   `,
@@ -74,8 +47,9 @@ export class Lives {
   readonly current = input.required<number>();
   readonly max = input(3);
 
-  protected readonly fullPixels = FULL_PIXELS;
-  protected readonly emptyPixels = EMPTY_PIXELS;
+  protected readonly heartGrid = HEART_GRID;
+  protected readonly fullColors = FULL_COLORS;
+  protected readonly emptyColors = EMPTY_COLORS;
 
   protected readonly hearts = computed(() => {
     const total = this.max();

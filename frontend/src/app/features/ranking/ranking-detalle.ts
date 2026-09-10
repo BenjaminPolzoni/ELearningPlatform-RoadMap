@@ -1,6 +1,12 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { of, switchMap } from 'rxjs';
 import { FilaRanking, FilaRankingAnon } from '../../core/data/ranking.models';
+import { InsigniasDataPort } from '../../core/data/insignias-data.port';
+import { InsigniaCatalogo, InsigniaOtorgada } from '../../core/data/insignias.models';
 import { enRiesgoRegularidad, esCandidatoPromocion } from '../../domain/ranking/ranking.reglas';
+import { PixelIcon } from '../../shared/pixel-icon';
+import { BADGE_ICONS } from '../insignias/badge-icons';
 
 type FilaDetalle = FilaRanking | FilaRankingAnon;
 
@@ -18,6 +24,7 @@ function esIdentificada(f: FilaDetalle): f is FilaRanking {
  */
 @Component({
   selector: 'app-ranking-detalle',
+  imports: [PixelIcon],
   template: `
     <div class="rk-hud">
       <!-- Perfil: escudo hexagonal + identidad -->
@@ -104,7 +111,21 @@ function esIdentificada(f: FilaDetalle): f is FilaRanking {
           <div class="rk-audit__grid">
             <div class="rk-stat">
               <span class="rk-stat__label">INSIGNIAS</span>
-              <span class="rk-stat__value tabular">{{ f.insignias }}</span>
+              <div
+                style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;min-height:18px"
+                [attr.aria-label]="insigniasGanadas().length + ' insignias'"
+              >
+                @for (i of insigniasGanadas(); track i.insigniaId) {
+                  <app-pixel-icon
+                    [grid]="icono(i).grid"
+                    [colors]="icono(i).colors"
+                    [size]="18"
+                    [attr.title]="i.nombre"
+                  />
+                } @empty {
+                  <span class="opacity-50 tabular" style="font-size:0.7rem">—</span>
+                }
+              </div>
             </div>
             <div class="rk-stat">
               <span class="rk-stat__label">VIDAS PERD.</span>
@@ -138,11 +159,32 @@ export class RankingDetalle {
   /** Total de inscriptos de la cohorte, para el "PUESTO NN / total". */
   readonly total = input<number>(0);
 
+  private readonly insigniasData = inject(InsigniasDataPort);
+
   protected readonly identificada = computed(() => {
     const f = this.fila();
     return esIdentificada(f) ? f : null;
   });
   protected readonly anon = computed(() => this.fila() as FilaRankingAnon);
+
+  private readonly catalogoInsignias = toSignal(this.insigniasData.getCatalogo(), {
+    initialValue: [] as InsigniaCatalogo[],
+  });
+  // toObservable en vez de leer this.identificada() acá directo: un input.required() todavía
+  // no tiene valor bindeado durante la construcción del componente (NG0951) — toObservable
+  // defiere la primera lectura hasta después, cuando el input ya está seteado.
+  private readonly otorgadas = toSignal(
+    toObservable(this.identificada).pipe(
+      switchMap((f) => (f ? this.insigniasData.getGanadasPorAlumno(f.alumnoId) : of([] as InsigniaOtorgada[]))),
+    ),
+    { initialValue: [] as InsigniaOtorgada[] },
+  );
+
+  /** Cruza lo ganado (`insigniaId`) contra el catálogo para tener ícono + nombre. */
+  protected readonly insigniasGanadas = computed(() => {
+    const ids = new Set(this.otorgadas().map((o) => o.insigniaId));
+    return this.catalogoInsignias().filter((i) => ids.has(i.insigniaId));
+  });
 
   /** Progreso dentro del nodo actual: XP total sobre un tramo nominal de 700 por nodo. */
   protected readonly xpPct = computed(() => {
@@ -167,5 +209,9 @@ export class RankingDetalle {
 
   protected pad(n: number): string {
     return String(n).padStart(2, '0');
+  }
+
+  protected icono(i: InsigniaCatalogo) {
+    return BADGE_ICONS[i.codigo];
   }
 }
