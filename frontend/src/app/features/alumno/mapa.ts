@@ -4,6 +4,7 @@ import { RoadmapDataPort } from '../../core/data/roadmap-data.port';
 import { RoadmapStore } from '../../core/data/roadmap.store';
 import { Unidad } from '../../core/data/roadmap.models';
 import { CURSO_SEED_ID } from '../../mocks/seed';
+import { Lives } from './lives';
 
 type EstadoIsla = 'bloqueada' | 'disponible' | 'completada';
 interface Isla {
@@ -29,13 +30,14 @@ const Y0 = 90;
  */
 @Component({
   selector: 'app-mapa',
+  imports: [Lives],
   template: `
     @if (!preview()) {
       <div class="flex items-baseline gap-4 mb-4">
         <h2 class="title-font text-primary text-xs">MAPA DEL CURSO</h2>
-        <span class="ui-font opacity-80">
-          XP <b class="tabular text-warning">{{ xp() }}</b> ·
-          vidas <b class="tabular text-error">{{ vidas() }}</b>
+        <span class="ui-font opacity-80 inline-flex items-baseline gap-4">
+          <span>XP <b class="tabular text-warning">{{ xp() }}</b></span>
+          <span class="inline-flex items-center gap-2">vidas <app-lives [current]="vidas()" /></span>
         </span>
       </div>
     }
