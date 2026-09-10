@@ -22,6 +22,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/alumno/mapa').then((m) => m.Mapa),
   },
   {
+    path: 'insignias',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/insignias/catalogo').then((m) => m.Catalogo),
+  },
+  {
     path: '',
     canActivate: [sesionGuard],
     loadComponent: () => import('./features/home/home').then((m) => m.Home),
