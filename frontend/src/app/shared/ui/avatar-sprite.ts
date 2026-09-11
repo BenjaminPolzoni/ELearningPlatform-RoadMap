@@ -4,6 +4,7 @@ import {
   AvatarConfig,
   colorPorId,
   emblemaVisible,
+  IdAccesorio,
   IdColor,
   pielPorId,
 } from '../../core/avatar/avatar.models';
@@ -15,6 +16,9 @@ const VIOLETA_PROFUNDO = '#6B21C9';
 const GRAFITO = '#4B4A57';
 
 const esRosa = (c: IdColor) => c === 'rosa' || c === 'rosa-pastel';
+
+/** Accesorios que cubren toda la cabeza (ver `cubreCabeza`). */
+const CUBREN_CABEZA: readonly IdAccesorio[] = ['gorra', 'gorra-atras', 'beanie'];
 
 /**
  * Sprite pixel-art del alumno (05-design-system.md §4, `ui-avatar`).
@@ -106,6 +110,10 @@ export class AvatarSprite {
   protected readonly mostrarEmblema = computed(() => emblemaVisible(this.config()));
 
   protected readonly mostrarAnteojos = computed(() => anteojosVisibles(this.config()));
+
+  /** Gorra, gorra hacia atrás y beanie pintan todo el casco (filas 0-3) para que ningún
+   *  peinado los atraviese. */
+  protected readonly cubreCabeza = computed(() => CUBREN_CABEZA.includes(this.config().accesorio));
 
   /**
    * El emblema tiene que contrastar contra lo que tiene debajo, si no desaparece: la remera
