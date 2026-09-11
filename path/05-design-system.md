@@ -138,8 +138,9 @@ tiene que ser genérico y consumible por otros equipos.
 
 `ui-avatar-sprite` es un SVG de grilla **16×22** con `shape-rendering: crispEdges`: escala a
 cualquier tamaño sin perder el borde duro del pixel-art y sin necesitar un atlas de PNGs.
-El mismo componente se usa en cuatro lugares — HUD (busto recortado), isla actual del mapa
-2.5D, ficha del tablero de unidad y ranking — variando solo `alto`. El template
+El mismo componente se usa en todas las pantallas donde aparece el alumno — HUD (busto
+recortado), isla actual del mapa 2.5D, ficha del tablero de unidad, filas del ranking,
+selección de vista del login y vitrina del editor — variando solo `alto`. El template
 (`avatar-sprite.html`) pinta una capa por `<g data-capa>`, de atrás hacia adelante.
 
 La configuración vive en `core/avatar/`: el catálogo (`avatar.models.ts`) y la persistencia
