@@ -42,6 +42,15 @@ interface WalkPuff {
   y: number;
 }
 
+interface ConfettiPiece {
+  id: number;
+  left: number;
+  delay: number;
+  duration: number;
+  rotate: number;
+  color: string;
+}
+
 @Component({
   selector: 'app-unidad-mapa',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,6 +77,24 @@ interface WalkPuff {
     .map-panel.expanded .map-viewport {
       height: 100dvh;
       max-height: none;
+    }
+
+    /* Confetti del cartel "Unidad completada" */
+    @keyframes confetti-caida {
+      0%   { transform: translateY(-10%) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(650%) rotate(540deg); opacity: 0.15; }
+    }
+    .confetti-pieza {
+      position: absolute;
+      top: 0;
+      width: 8px;
+      height: 14px;
+      animation-name: confetti-caida;
+      animation-timing-function: ease-in;
+      animation-iteration-count: infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .confetti-pieza { animation: none; opacity: 0; }
     }
   `,
   template: `
@@ -312,6 +339,7 @@ interface WalkPuff {
                   [alto]="54"
                   [sombra]="true"
                   [caminando]="isWalking()"
+                  [celebrando]="celebrating()"
                   [mirando]="facing()"
                 />
               </div>
@@ -484,10 +512,62 @@ interface WalkPuff {
                   class="btn btn-primary w-full ui-font text-[9px]"
                   (click)="onCompleteActivity(c)"
                 >
-                  {{ c.id < world().mainCount && !c.optional ? 'CONTINUAR AL DESAFÍO ' + (c.id + 1) + ' →' : 'VOLVER AL MAPA →' }}
+                  {{
+                    c.optional
+                      ? 'VOLVER AL MAPA →'
+                      : c.id < world().mainCount
+                        ? 'CONTINUAR AL DESAFÍO ' + (c.id + 1) + ' →'
+                        : '¡FINALIZAR UNIDAD! →'
+                  }}
                 </button>
               }
             </div>
+          </div>
+        </div>
+      }
+
+      <!-- CARTEL DE UNIDAD COMPLETADA (al terminar el último desafío principal) -->
+      @if (showUnitComplete()) {
+        <div class="modal modal-open backdrop-blur-md z-50">
+          <div class="pointer-events-none absolute inset-0 overflow-hidden">
+            @for (p of confettiPieces(); track p.id) {
+              <span
+                class="confetti-pieza"
+                [style.left.%]="p.left"
+                [style.background]="p.color"
+                [style.animation-delay.s]="p.delay"
+                [style.animation-duration.s]="p.duration"
+                [style.rotate]="p.rotate + 'deg'"
+              ></span>
+            }
+          </div>
+          <div
+            class="modal-box relative max-w-md border-4 border-primary bg-[#1C1E2B] p-8 text-center text-white shadow-2xl chaflan"
+          >
+            <button
+              class="btn btn-ghost btn-sm absolute right-3 top-3 text-lg text-white/70 hover:text-white"
+              (click)="showUnitComplete.set(false)"
+              aria-label="Cerrar"
+            >
+              ✕
+            </button>
+            <div class="text-6xl mb-3 animate-bounce">🏆</div>
+            <span class="ui-font text-[9px] text-accent tracking-widest">¡UNIDAD COMPLETADA!</span>
+            <h2 class="title-font mt-2 text-2xl text-primary">{{ u.nombre }}</h2>
+            <p class="mt-3 text-sm text-[#E0E2EC] leading-relaxed opacity-90">
+              Superaste los {{ world().mainCount }} desafíos de esta unidad. ¡Excelente trabajo, explorador!
+            </p>
+            <div class="mt-5 flex items-center justify-center gap-4 rounded-xl border border-primary/40 bg-black/40 px-5 py-2.5">
+              <span class="ui-font text-[9px] text-white/70">XP total de la unidad:</span>
+              <strong class="ui-font text-sm text-accent">+{{ unitTotalXp() }} XP</strong>
+            </div>
+            <button
+              type="button"
+              class="btn btn-primary w-full ui-font text-[9px] mt-6"
+              routerLink="/alumno"
+            >
+              VOLVER AL ROADMAP →
+            </button>
           </div>
         </div>
       }
@@ -606,6 +686,20 @@ export class UnidadMapa {
   private readonly currentStopId = signal<number>(0);
   private animId = 0;
 
+  // Cierre de unidad (al completar el último desafío principal)
+  protected readonly celebrating = signal<boolean>(false);
+  protected readonly showUnitComplete = signal<boolean>(false);
+  protected readonly confettiPieces = signal<ConfettiPiece[]>([]);
+  private celebrateTimeoutId = 0;
+
+  protected readonly unitTotalXp = computed(() => {
+    const w = this.world();
+    const comp = this.completedIds();
+    return w.challenges
+      .filter((c) => !c.optional && comp.includes(c.id))
+      .reduce((sum, c) => sum + c.xp, 0);
+  });
+
   constructor() {
     // Al cargar o cambiar de unidad, posiciona instantáneamente al jugador en el desafío
     // habilitado más alto. `completedIds` se lee sin trackear para que completar un desafío
@@ -626,6 +720,7 @@ export class UnidadMapa {
 
     this.destroyRef.onDestroy(() => {
       if (this.animId) cancelAnimationFrame(this.animId);
+      if (this.celebrateTimeoutId) clearTimeout(this.celebrateTimeoutId);
     });
   }
 
@@ -855,7 +950,11 @@ export class UnidadMapa {
     // Recién ahora (al cerrar/continuar) se anima el recorrido hacia el próximo desafío,
     // para que el avatar no "salte" mientras el modal de la actividad seguía abierto.
     if (!wasAlreadyCompleted && !c.optional) {
-      this.advanceToNext();
+      if (c.id === this.world().mainCount) {
+        this.celebrateUnitComplete();
+      } else {
+        this.advanceToNext();
+      }
     }
   }
 
@@ -869,6 +968,34 @@ export class UnidadMapa {
     this.sel.set(null);
     this.walkRoute(this.buildRoute(target));
     this.currentStopId.set(nextId);
+  }
+
+  /** Salto de alegría + fanfarria + cartel "Unidad completada", al terminar el último desafío. */
+  private celebrateUnitComplete(): void {
+    this.sel.set(null);
+    this.confettiPieces.set(this.buildConfetti());
+    this.celebrating.set(true);
+    this.playVictoryFanfare();
+
+    if (this.celebrateTimeoutId) clearTimeout(this.celebrateTimeoutId);
+    // Deja terminar los 4 saltos (4 × 0.75s, ver .celebrando en avatar-sprite.ts) antes de
+    // tapar la escena con el cartel.
+    this.celebrateTimeoutId = window.setTimeout(() => {
+      this.showUnitComplete.set(true);
+      this.celebrating.set(false);
+    }, 3000);
+  }
+
+  private buildConfetti(): ConfettiPiece[] {
+    const colors = ['#FF2758', '#FFD447', '#3DDC97', '#4FC3F7', '#B388FF'];
+    return Array.from({ length: 28 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 0.5,
+      duration: 1.8 + Math.random() * 1.4,
+      rotate: Math.random() * 360,
+      color: colors[i % colors.length],
+    }));
   }
 
   // Navegación de Cámara
@@ -932,6 +1059,32 @@ export class UnidadMapa {
         osc.start(now);
         osc.stop(now + 0.28);
       }
+    } catch {}
+  }
+
+  /** Fanfarria de "unidad completada": arpegio ascendente más largo que el de un desafío suelto. */
+  private playVictoryFanfare(): void {
+    if (!this.soundEnabled()) return;
+    try {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AudioCtx();
+      const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        const start = ctx.currentTime + i * 0.12;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.001, start);
+        gain.gain.exponentialRampToValueAtTime(0.14, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.4);
+        osc.start(start);
+        osc.stop(start + 0.4);
+      });
     } catch {}
   }
 }

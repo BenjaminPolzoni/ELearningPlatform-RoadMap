@@ -26,11 +26,24 @@ import { AvatarConfig, colorPorId, pielPorId } from '../../core/avatar/avatar.mo
       75%      { transform: translateY(-4%) }
     }
     .caminando { animation: paso 0.42s steps(4, end) infinite }
+
+    /* Salto de alegría (unidad completada): squash-stretch tipo arcade. Va en un wrapper
+       aparte para no pelear con el scaleX(-1) que orienta el sprite sobre el propio <svg>. */
+    @keyframes salto-alegria {
+      0%   { transform: translateY(0) scaleY(1); }
+      20%  { transform: translateY(2%) scaleY(0.82); }
+      50%  { transform: translateY(-38%) scaleY(1.12); }
+      75%  { transform: translateY(0) scaleY(0.88); }
+      100% { transform: translateY(0) scaleY(1); }
+    }
+    .celebrando { display: inline-block; animation: salto-alegria 0.75s ease-in-out 4; transform-origin: 50% 100%; }
+
     @media (prefers-reduced-motion: reduce) {
-      .caminando { animation: none }
+      .caminando, .celebrando { animation: none }
     }
   `,
   template: `
+    <span [class.celebrando]="celebrando()">
     <svg
       [attr.height]="alto()"
       viewBox="0 0 16 22"
@@ -127,6 +140,7 @@ import { AvatarConfig, colorPorId, pielPorId } from '../../core/avatar/avatar.mo
         }
       }
     </svg>
+    </span>
   `,
 })
 export class AvatarSprite {
@@ -134,6 +148,8 @@ export class AvatarSprite {
   /** Alto en px del sprite; el ancho se deriva del aspect 16:22. */
   readonly alto = input(64);
   readonly caminando = input(false);
+  /** Salto de alegría (ej. al completar una unidad). Independiente de `caminando`. */
+  readonly celebrando = input(false);
   readonly mirando = input<'derecha' | 'izquierda'>('derecha');
   readonly sombra = input(false);
   readonly etiqueta = input('Tu avatar');
