@@ -121,9 +121,9 @@ export class AvatarSprite {
    */
   protected readonly colorEmblema = computed(() => {
     const { prenda, colorRopa } = this.config();
-    const fondo: IdColor =
-      prenda === 'campera' ? (colorRopa === 'hueso' ? 'noche' : 'hueso') : colorRopa;
-    return esRosa(fondo) ? HUESO : ROSA;
+    // Con la campera abierta el emblema va sobre la remera, que es hueso o noche: nunca rosa.
+    if (prenda === 'campera') return ROSA;
+    return esRosa(colorRopa) ? HUESO : ROSA;
   });
 
   /**

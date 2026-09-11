@@ -35,7 +35,10 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
   selector: 'app-avatar-editor',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AvatarSprite, RouterLink, NgTemplateOutlet],
-  host: { class: 'block w-full max-w-6xl' },
+  // El shell raíz (app.html) recorta el <router-outlet> a un cuadro fijo sin scroll (pensado
+  // para el mapa arcade del alumno) — esta vista puede ser más alta que la pantalla (barba
+  // en CUERPO), así que scrollea puertas adentro en vez de depender del documento.
+  host: { class: 'block w-full max-w-6xl h-full overflow-y-auto' },
   styles: `
     /* La muestra elegida se marca con un doble anillo, no solo con el color del borde:
        sobre swatches oscuros un borde de 2 px es indistinguible del no-seleccionado. */
@@ -109,7 +112,7 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
               [id]="'tab-' + p.id"
               [class.tab-active]="pestana() === p.id"
               [attr.aria-selected]="pestana() === p.id"
-              [attr.aria-controls]="'panel-' + p.id"
+              [attr.aria-controls]="pestana() === p.id ? 'panel-' + p.id : null"
               (click)="pestana.set(p.id)"
             >
               {{ p.nombre }}
@@ -203,7 +206,7 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
                   }
                 </div>
                 @if (avisoEmblema(); as aviso) {
-                  <p class="ui-font mt-2 text-[7px] leading-relaxed text-warning">{{ aviso }}</p>
+                  <p aria-live="polite" class="ui-font mt-2 text-[7px] leading-relaxed text-warning">{{ aviso }}</p>
                 }
               </section>
             }
@@ -230,7 +233,7 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">ANTEOJOS</h3>
                 <ng-container *ngTemplateOutlet="chips; context: { $implicit: anteojos, campo: 'anteojos' }" />
                 @if (avisoAnteojos()) {
-                  <p class="ui-font mt-2 text-[7px] leading-relaxed text-warning">EL VISOR TAPA LOS ANTEOJOS</p>
+                  <p aria-live="polite" class="ui-font mt-2 text-[7px] leading-relaxed text-warning">EL VISOR TAPA LOS ANTEOJOS</p>
                 }
               </section>
             }
@@ -242,6 +245,9 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
                 <p class="ui-font mt-2 text-[7px] leading-relaxed opacity-60">
                   LO LLEVÁS TAMBIÉN MIENTRAS CAMINÁS POR EL MAPA
                 </p>
+                @if (avisoEmblema(); as aviso) {
+                  <p aria-live="polite" class="ui-font mt-2 text-[7px] leading-relaxed text-warning">{{ aviso }}</p>
+                }
               </section>
             }
           }
