@@ -127,7 +127,7 @@ interface ConfettiPiece {
             <div class="flex items-center gap-2 rounded-lg border border-red-900/50 bg-black/40 px-3 py-1.5">
               <span class="ui-font text-[8px] text-red-400">VIDAS</span>
               <div class="flex items-center gap-1 text-base text-red-500">
-                @for (heart of [1, 2, 3, 4, 5]; track heart) {
+                @for (heart of [1, 2, 3]; track heart) {
                   <span [class.opacity-25]="heart > vidas()" class="transition-opacity">♥</span>
                 }
               </div>
@@ -673,7 +673,7 @@ export class UnidadMapa {
 
   // Sincronización de progreso y estados con RoadmapStore
   protected readonly completedIds = signal<number[]>([1]);
-  protected readonly localVidas = signal<number>(5);
+  protected readonly localVidas = signal<number>(3);
 
   protected readonly vidas = computed(() => this.store.progreso()?.vidasVigentes ?? this.localVidas());
   protected readonly xp = computed(() => this.store.progreso()?.xpTotal ?? 0);
@@ -952,8 +952,8 @@ export class UnidadMapa {
       this.store.sumarProgreso(c.xp, c.actividadId, this.localVidas());
     }
     if (c.recovery) {
-      this.localVidas.set(5);
-      this.store.sumarProgreso(0, undefined, 5);
+      this.localVidas.set(3);
+      this.store.sumarProgreso(0, undefined, 3);
     }
     this.closeActivity();
 
