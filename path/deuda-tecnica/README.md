@@ -24,10 +24,12 @@ el momento, no se archiva acá.
 | [tarea-deuda-02-modelo-de-datos.md](tarea-deuda-02-modelo-de-datos.md) | `02-modelo-de-datos.md` | 2 | 0 |
 | [tarea-deuda-03-plan-de-implementacion.md](tarea-deuda-03-plan-de-implementacion.md) | `03-plan-de-implementacion.md` | 2 | 0 |
 | [tarea-deuda-04-engine-2-5d.md](tarea-deuda-04-engine-2-5d.md) | `04-engine-2-5d.md` | 2 | 0 |
-| [tarea-deuda-05-design-system.md](tarea-deuda-05-design-system.md) | `05-design-system.md` | 4 | 0 |
+| [tarea-deuda-05-design-system.md](tarea-deuda-05-design-system.md) | `05-design-system.md` | 6 | 0 |
 | [tarea-deuda-06-contrato-api.md](tarea-deuda-06-contrato-api.md) | `06-contrato-api.md` | 8 | 2 |
 
-**Total: 19 ítems abiertos, 2 pagados.** Última revisión: al rediseñar el front sobre la
+**Total: 21 ítems abiertos, 2 pagados.** Última revisión: G6 (design system) — repintó los
+temas con la paleta oficial, entregó los `ui-*` base y abrió los ítems #5 (features sin
+migrar a `ui-*`) y #6 (hex legacy en el chrome). Antes: al rediseñar el front sobre la
 paleta de marca (mapa 2.5D isométrico + tablero de unidad + avatar personalizable) —
 abrió los dos archivos nuevos, `04-engine-2-5d.md` (el mapa quedó en SVG y no en three.js;
 falta la suite de tests de `layoutIslas()`) y `05-design-system.md` (posiciones de nodo,

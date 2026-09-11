@@ -91,3 +91,43 @@ mismo resultado que el backend para todo curso que no haya definido una curva pr
 raíz (el nivel del alumno no tiene endpoint). Cuando ese endpoint exista se borran
 `UMBRALES_PAR_09` y `nivelDe()`, y con eso se arregla además el caso que hoy queda mal: un
 curso con curva **custom** (RF-NIV-04) muestra el nivel de la curva por defecto.
+
+---
+
+## 🔴 5. Las features usan clases daisyUI directo en vez de los `ui-*` de `shared/ui`
+
+**Qué falta:** migrar los componentes reales (login, mapa, tablero, insignias, ranking…) a
+consumir `ui-button`, `ui-card`, `ui-modal`, `ui-input`, `ui-select`, etc. Hoy esas pantallas
+siguen escribiendo las clases sueltas (`btn btn-primary`, `card`, `badge-*`, `modal-*`)
+en cada template.
+
+**Dónde vive:** los `ui-*` probados en `frontend/src/app/shared/ui/{button,card,badge,input,
+textarea,select,modal}.ts`; los consumidores sin migrar son `features/*` y los componentes
+legacy de `shared/ui` (`inventory-modal.ts`, `hud.ts`).
+
+**Por qué no bloquea la tarea actual:** los `ui-*` se entregaron como infraestructura —
+"proveídos, no migrados", por decisión de G6 — para no pisar el trabajo en paralelo de los
+otros grupos. El aspecto ya queda unificado porque daisyUI deriva los tokens de los mismos
+temas, así que el valor estaba tanto en los componentes como en la paleta (ya aplicada).
+
+**Cómo se paga:** cuando cada squad toque su feature y reemplace las clases por el
+componente correspondiente; o en una iteración G6 dedicada a la migración yo mismo.
+
+---
+
+## 🔴 6. Hex de la paleta vieja hardcodeados en el chrome global
+
+**Qué falta:** tres piezas del chrome (no del arte del mapa) usan el rosa fuego heredado
+`#FF2758` en vez del acento oficial G6 `#FF2E93`. El arte del avatar y del mapa (que sí
+conservan `#FF2758` a propósito, aislados en `@theme`/catálogo) quedan fuera de este ítem.
+
+**Dónde vive:** `frontend/src/app/shared/ui/xp-bar.ts:71` (glow del relleno de la barra),
+`frontend/src/app/shared/ui/lives.ts:29-30` (relleno/trazo del corazón), y
+`frontend/src/app/features/login/login.ts:32` (halo `drop-shadow` del título).
+
+**Por qué no bloquea la tarea actual:** son brillos y detalles de 6-8px; entre `#FF2758` y
+`#FF2E93` no hay diferencia de contraste ni de significado, y las superficies (rellenos,
+textos) ya salen de los tokens del tema.
+
+**Cómo se paga:** una pasada chica de limpieza al migrar esas piezas a `ui-*` (ítem #5) o
+en cualquier retoque visual posterior.

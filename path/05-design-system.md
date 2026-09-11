@@ -1,34 +1,53 @@
 # 05 · Design system
 
-> Squad **UI**. Fuente de verdad de la paleta: **`Fotos_y_conceptos/paleta.jpg`** (lámina
-> de marca). Referencias visuales del mapa: `Fotos_y_conceptos/estilo_roadmap.jpeg` (vista
-> general 2.5D) y `Fotos_y_conceptos/Dentro_de_los_niveles.jpeg` (tablero interno de la
-> unidad, estilo Mario 3 — la misma lámina que ya usaba este documento antes del rediseño).
+> Squad **UI**. Fuente de verdad de la paleta: **Design System del grupo 6 (G6) — paleta
+> oficial**, que reemplaza a la lámina `Fotos_y_conceptos/paleta.jpg` (queda como historial).
+> Referencias visuales del mapa: `Fotos_y_conceptos/estilo_roadmap.jpeg` (vista general
+> 2.5D) y `Fotos_y_conceptos/Dentro_de_los_niveles.jpeg` (tablero interno de la unidad,
+> estilo Mario 3 — la misma lámina que ya usaba este documento antes del rediseño).
 >
 > ⚠️ Las láminas `Fotos_y_conceptos/InterfazDeColores*.png` quedaron **obsoletas**: definían
-> una paleta cyan/magenta que el rediseño reemplazó por la de marca. Se conservan como
-> historial del proyecto, no como referencia de implementación.
+> una paleta cyan/magenta que el rediseño reemplazó. Se conservan como historial del
+> proyecto, no como referencia de implementación.
 
 ## 1. Paleta
 
-Los cuatro swatches se muestrearon píxel a píxel de `Fotos_y_conceptos/paleta.jpg` — no
-son una interpretación de la lámina.
+Paleta oficial del Design System G6, mapeada a los temas daisyUI en `styles.css`. Cada
+color lleva su `*-content` (texto/íconos sobre él) con contraste AA — **el neón nunca se
+usa como texto sobre fondo claro**.
 
-| Color | Hex | Rol |
+### Dark (`arcade-dark`)
+
+| Token | Hex | Rol |
 |---|---|---|
-| 🩷 Rosa fuego | `#FF2758` | **primary** — acción principal, nodo disponible, "acá estás" |
-| 🟣 Violeta eléctrico | `#6B21C9` | **secondary** — bordes, marcos, estructura |
-| 🟪 Violeta profundo | `#2D164A` | **base-300** — superficies elevadas |
-| ⚫ Negro violáceo | `#190236` | **base-100** en tema oscuro — fondo |
-| ⚪ Blanco | `#FFFFFF` | texto sobre color, filos del pixel-art |
+| `primary` | `#8B5CF6` | acción principal, resaltados |
+| `secondary` | `#00E5FF` | cian neón — bordes, marcos, estructura |
+| `accent` | `#FF2E93` | magenta — el "encender" de la UI |
+| `warning` | `#FFD60A` | oro de amonestaciones |
+| `base-100` | `#0D0B1E` | fondo (negro de cabina) |
+| `base-content` | `#E8E6FF` | texto por defecto |
 
-Derivados de la misma familia para el arte del mapa, expuestos como utilidades en el
-`@theme` de `styles.css` y **fijos en los dos temas**: `brand-void` `#0E0120` (el vacío
-bajo las islas) y `brand-glow` `#8B3DF5` (el violeta que brilla).
+Contenidos "encima de neón" (texto oscuro, contraste alto): `primary-content` `#0D0B1E`,
+`secondary-content` `#00343B`, `accent-content` `#2A0130`, `warning-content` `#2A1E00`,
+`success` `#10B981` con `success-content` `#00271A`.
 
-### Colores de estado del nodo
+### Light (`arcade-light`)
 
-Consistentes entre el mapa 2.5D, el tablero interno y la UI:
+| Token | Hex | Rol |
+|---|---|---|
+| `primary` | `#7C3AED` | acción principal |
+| `secondary` | `#00E5FF` | cian (siempre con texto oscuro encima) |
+| `accent` | `#DB2777` | magenta |
+| `warning` | `#CA8A04` | oro oscurecido para contraste AA sobre blanco |
+| `base-100` | `#F8FAFC` | fondo |
+
+### Arte del mapa (aislado, no rota con el tema)
+
+Los tokens `--color-brand-*` / `--color-node-*` (mapa 2.5D y estados de nodo) conservan la
+paleta heredada de `paleta.jpg` y **no** siguen la G6 — el mundo nocturno no tiene versión
+clara. Viven en el `@theme` de `styles.css`, marcados como arte del mapa.
+
+### Colores de estado del nodo (arte del mapa)
 
 | Estado | Hex | Uso |
 |---|---|---|
@@ -50,9 +69,11 @@ daisyUI 5 con Tailwind 4 se configura **por CSS**, no por `tailwind.config.js`. 
 de verdad es `frontend/src/styles.css` — este documento describe las decisiones, no
 duplica el archivo.
 
-Dos temas, `arcade-dark` (default, `prefersdark`) y `arcade-light`, más un bloque `@theme`
-con lo que **no** rota con el tema: los swatches crudos, los colores de estado de nodo y
-las familias tipográficas.
+Dos temas, `arcade-dark` (default, `prefersdark`) y `arcade-light`, ambos sobre la paleta
+G6 de §1. Los componentes del chrome global **solo** usan tokens del tema (`primary`,
+`base-content`, ...) — nunca hex — y los `*-content` garantizan el contraste AA. El bloque
+`@theme` queda para lo que **no** rota: el arte del mapa (aislado) y las familias
+tipográficas.
 
 Cambio de tema en runtime: atributo `data-theme` en `<html>` (`ThemeService`).
 
@@ -111,15 +132,20 @@ Esta librería es la que **co-mantenemos con el Grupo 2** (Notificaciones). Todo
 tiene que ser genérico y consumible por otros equipos.
 
 ### Base
-| Componente | Estados |
-|---|---|
-| `ui-button` | normal · hover · pressed · disabled · variantes primary/secondary/action |
-| `ui-card` | con y sin header |
-| `ui-modal` | con backdrop, cerrable |
-| `ui-input` / `ui-textarea` | normal · error (con mensaje) |
-| `ui-select` | estilo arcade custom |
-| `ui-checkbox` / `ui-radio` | |
-| `ui-badge` | dificultad, tipo de nodo |
+| Componente | Estados | Estado |
+|---|---|---|
+| `ui-button` | primary/secondary/accent/neutral/ghost/outline/info/success/warning/error · xs/sm/md/lg · loading · disabled · block | ✅ `shared/ui/button.ts` |
+| `ui-card` | con y sin título · bordered | ✅ `shared/ui/card.ts` |
+| `ui-modal` | `<dialog>` nativo, `[(open)]`, título opcional, closable | ✅ `shared/ui/modal.ts` |
+| `ui-input` / `ui-textarea` | doble bind `[(value)]` · disabled/required/readonly | ✅ `shared/ui/input.ts` · `textarea.ts` |
+| `ui-select` | opciones proyectadas por `ng-content`, doble bind `[(value)]` | ✅ `shared/ui/select.ts` |
+| `ui-checkbox` / `ui-radio` | | ⬜ |
+| `ui-badge` | tonos del tema · outline · pill | ✅ `shared/ui/badge.ts` |
+
+> Los `ui-*` están **proveídos, no migrados**: las features siguen usando clases daisyUI
+> directo por ahora (deuda [#5](deuda-tecnica/tarea-deuda-05-design-system.md)). Cada squad
+> migra a `ui-*` cuando toque su feature; el aspecto ya queda unificado porque los `ui-*` y
+> daisyUI derivan del mismo tema.
 
 ### De dominio
 | Componente | Qué muestra | Estado |
@@ -257,10 +283,11 @@ para el alumno; el profesor necesita trabajar rápido.
 
 - [x] Tema `arcade-dark` y `arcade-light` con toggle funcionando — `styles.css` +
       `ThemeService` (Fase 0)
-- [x] Paleta migrada a la lámina de marca (`Fotos_y_conceptos/paleta.jpg`) — §1
+- [x] Temas repintados con la paleta oficial G6 y `*-content` con contraste AA — §1, §2 (G6)
 - [x] Tipografías cargadas con fallback real — Chelsea Market / Comfortaa / Press Start 2P
       vía Google Fonts, con stack de fallback en `@theme`
-- [ ] Componentes base de `shared/ui` con sus 4 estados
+- [x] Componentes base de `shared/ui` (`ui-button`/`card`/`modal`/`input`/`textarea`/
+      `select`/`badge`) con tests — G6
 - [x] Componentes de dominio `xp-bar`, `lives`, `avatar-sprite`, `hud`
 - [ ] `ui-node-icon` y `ui-ranking-row`
 - [x] Mapa 2.5D del curso con islas, caminos por progreso, paneo/zoom y avatar
