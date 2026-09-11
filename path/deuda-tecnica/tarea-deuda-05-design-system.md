@@ -91,3 +91,25 @@ mismo resultado que el backend para todo curso que no haya definido una curva pr
 raíz (el nivel del alumno no tiene endpoint). Cuando ese endpoint exista se borran
 `UMBRALES_PAR_09` y `nivelDe()`, y con eso se arregla además el caso que hoy queda mal: un
 curso con curva **custom** (RF-NIV-04) muestra el nivel de la curva por defecto.
+
+---
+
+## 🔴 5. Los textos del editor de avatar (y del resto del front) no pasan por i18n
+
+**Qué falta:** que los textos visibles del frontend se resuelvan por i18n, como pide la
+regla "Sin strings hardcodeados (RF-NFR-07)" de `path/05-design-system.md`. Hoy están
+escritos directo en los templates, y el rediseño del avatar (género + catálogo dev) sumó
+más: rótulos de pestañas y secciones, avisos del editor y el `nombre` de cada opción del
+catálogo.
+
+**Dónde vive:** `frontend/src/app/features/alumno/avatar-editor.ts` (template) y
+`frontend/src/app/core/avatar/avatar.models.ts` (campo `nombre` de cada opción). El mismo
+patrón se repite en todas las features del frontend; no hay ninguna librería de i18n
+instalada (`frontend/package.json`).
+
+**Por qué no bloquea la tarea actual:** el MVP es solo en español y el editor funciona y es
+accesible igual. Montar i18n es una decisión transversal a todo el front, no del avatar.
+
+**Cómo se paga:** sin trigger claro todavía — cuando se monte i18n en el frontend. Los
+`nombre` del catálogo pasan a ser claves de traducción indexadas por `id`, que ya son
+estables.

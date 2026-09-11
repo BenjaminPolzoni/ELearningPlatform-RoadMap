@@ -138,26 +138,47 @@ tiene que ser genérico y consumible por otros equipos.
 
 `ui-avatar-sprite` es un SVG de grilla **16×22** con `shape-rendering: crispEdges`: escala a
 cualquier tamaño sin perder el borde duro del pixel-art y sin necesitar un atlas de PNGs.
-El mismo componente se usa en tres lugares — HUD (busto recortado), isla actual del mapa
-2.5D y ficha del tablero de unidad — variando solo `alto`.
+El mismo componente se usa en cuatro lugares — HUD (busto recortado), isla actual del mapa
+2.5D, ficha del tablero de unidad y ranking — variando solo `alto`. El template
+(`avatar-sprite.html`) pinta una capa por `<g data-capa>`, de atrás hacia adelante.
 
 La configuración vive en `core/avatar/`: el catálogo (`avatar.models.ts`) y la persistencia
 (`avatar.service.ts`). Se personaliza en `/alumno/avatar`.
 
 | Parte | Opciones |
 |---|---|
+| Género | mujer · varón · indefinido — cambia la silueta (contorno, cuello, rasgos) y el peinado sugerido de RESET; **no filtra el catálogo** |
 | Piel | 6 tonos — 4 naturales + 2 estilizados de la paleta |
-| Pelo | corto · largo · cresta · rapado · afro, en 6 colores |
-| Traje | 6 colores |
-| Accesorio | ninguno · visor · gorra · corona · auriculares, en 6 colores |
+| Pelo | corto · largo · cresta · rapado · afro · rodete · coleta · despeinado, en 5 colores naturales + 6 de marca |
+| Barba | ninguna · barba · bigote · candado, del color del pelo |
+| Prenda | traje · hoodie · remera · camisa y corbata · campera abierta, en 6 colores de marca + verde terminal, grafito y negro |
+| Emblema | ninguno · ■ · `</>` · `{}` · `>_` · `λ` · `;` · `#` |
+| Accesorio | ninguno · visor · gorra · gorra hacia atrás · beanie · corona · auriculares · headset, en los colores de ropa |
+| Anteojos | ninguno · marco grueso · redondos · de sol · con código (colores fijos) |
+| Objeto en mano | ninguno · laptop · café · mate · teclado (colores fijos) |
 
-Dos reglas de contraste que el componente resuelve solo, porque si no el sprite se rompe
-con ciertas combinaciones: el **emblema del pecho** se invierte cuando el traje ya es rosa,
-y los **zapatos** van siempre en hueso (el punto de apoyo del sprite tiene que verse contra
-el suelo oscuro, y un traje "noche" dejaba al personaje sin pies).
+Reglas que el componente resuelve solo, porque si no el sprite se rompe con ciertas
+combinaciones:
+
+- **Contraste.** El emblema va en rosa, salvo sobre fondo rosa (entonces hueso); con la
+  campera abierta el fondo es la remera de abajo. Los **zapatos** van siempre en hueso —
+  son el punto de apoyo del sprite contra el suelo oscuro — salvo con traje hueso. Con
+  cualquier prenda que no sea el traje (un mono) va pantalón noche, o grafito si la ropa ya
+  es oscura.
+- **Qué tapa a qué.** Gorra, gorra hacia atrás y beanie pintan todo el casco para que
+  ningún peinado los atraviese. Con visor no se dibujan los anteojos; con camisa (la
+  corbata) o laptop (va delante del pecho) no se dibuja el emblema. El editor avisa en los
+  dos casos.
+- **Espejado.** Mirando a la izquierda el `<svg>` se espeja entero; el emblema se vuelve a
+  espejar para que `λ` o `>_` no se lean al revés.
+- **Manos fijas.** Las tres siluetas tienen las manos en el mismo lugar, así el objeto en
+  mano calza siempre.
 
 Lo que se persiste son **ids del catálogo**, nunca hex — un retoque de paleta no invalida
 los avatares ya guardados, y el DTO queda listo para viajar al perfil del BFF en Fase 3.
+Un avatar guardado antes de que existiera un campo se completa con el look clásico (traje +
+cuadro, silueta indefinido) en `sanearAvatar`, así que nadie pierde su personaje al ampliar
+el catálogo.
 
 ---
 

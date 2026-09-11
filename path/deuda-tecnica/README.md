@@ -24,10 +24,12 @@ el momento, no se archiva acá.
 | [tarea-deuda-02-modelo-de-datos.md](tarea-deuda-02-modelo-de-datos.md) | `02-modelo-de-datos.md` | 2 | 0 |
 | [tarea-deuda-03-plan-de-implementacion.md](tarea-deuda-03-plan-de-implementacion.md) | `03-plan-de-implementacion.md` | 2 | 0 |
 | [tarea-deuda-04-engine-2-5d.md](tarea-deuda-04-engine-2-5d.md) | `04-engine-2-5d.md` | 2 | 0 |
-| [tarea-deuda-05-design-system.md](tarea-deuda-05-design-system.md) | `05-design-system.md` | 4 | 0 |
+| [tarea-deuda-05-design-system.md](tarea-deuda-05-design-system.md) | `05-design-system.md` | 4 | 1 |
 | [tarea-deuda-06-contrato-api.md](tarea-deuda-06-contrato-api.md) | `06-contrato-api.md` | 8 | 2 |
 
-**Total: 19 ítems abiertos, 2 pagados.** Última revisión: al rediseñar el front sobre la
+**Total: 19 ítems abiertos, 3 pagados.** Última revisión: al rediseñar el avatar (género +
+catálogo dev): abrió el ítem #5 de 05-design-system.md (textos sin i18n) y corrigió el
+conteo del ítem #1, que ya estaba pagado. Antes: al rediseñar el front sobre la
 paleta de marca (mapa 2.5D isométrico + tablero de unidad + avatar personalizable) —
 abrió los dos archivos nuevos, `04-engine-2-5d.md` (el mapa quedó en SVG y no en three.js;
 falta la suite de tests de `layoutIslas()`) y `05-design-system.md` (posiciones de nodo,
