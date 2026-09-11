@@ -373,22 +373,27 @@ const totemSvg =
 const torchSvg =
   '<path d="M-22 42h44v8h-44zM-10-7h20v48h-20z" fill="#74718a" stroke="#292c43" stroke-width="3"/><path d="M-18-11h36v9h-36z" fill="#ab9070"/><g class="torch-flame"><path d="M-15-14v-17l9-14 5 9 6-22 11 27v17z" fill="#ed8653" stroke="#a74744" stroke-width="2"/><path d="M-7-15v-15l7-12 7 22v5z" fill="#ffe396"/></g>';
 
-export function renderWorldScenery(world: GeneratedWorld): string {
+export function renderWorldScenery(world: GeneratedWorld, completedIds: number[] = []): string {
   const { theme, worldWidth, worldHeight, roads, mainCount, challenges } = world;
   const px = ([x, y]: [number, number]) => [
     (x * worldWidth) / 100,
     (y * worldHeight) / 100,
   ];
+  // El tramo que lleva al nodo `id` ya fue recorrido (y sus monedas quedan "prendidas") en
+  // cuanto se completa el nodo anterior — el primer tramo arranca prendido, es el punto de
+  // partida. Camino interno = binario por nodo completado, no hay XP por nodo para un gradiente.
+  const lit = (id: number) => id === 1 || completedIds.includes(id - 1);
   const items: string[] = [];
 
   if (theme === 'desert') {
     for (let id = 1; id <= mainCount; id += 2) {
       if (!roads[id]) continue;
+      const litClass = lit(id) ? '' : ' unlit';
       [7, 13, 20].forEach((index, j) => {
         if (roads[id][index]) {
           const [x, y] = px(roads[id][index]);
           items.push(
-            `<g class="trail-coin" style="--delay:-${j * 0.4}s" transform="translate(${x} ${y})"><g>${coinSvg}</g></g>`,
+            `<g class="trail-coin${litClass}" style="--delay:-${j * 0.4}s" transform="translate(${x} ${y})"><g>${coinSvg}</g></g>`,
           );
         }
       });
@@ -412,11 +417,12 @@ export function renderWorldScenery(world: GeneratedWorld): string {
   } else {
     for (let id = 1; id <= mainCount; id += 2) {
       if (!roads[id]) continue;
+      const litClass = lit(id) ? '' : ' unlit';
       [8, 16, 23].forEach((step, j) => {
         if (roads[id][step]) {
           const [x, y] = px(roads[id][step]);
           items.push(
-            `<g class="trail-coin" style="--delay:-${j * 0.4}s" transform="translate(${x} ${y})"><g>${theme === 'jungle' ? bananaSvg : crystalSvg}</g></g>`,
+            `<g class="trail-coin${litClass}" style="--delay:-${j * 0.4}s" transform="translate(${x} ${y})"><g>${theme === 'jungle' ? bananaSvg : crystalSvg}</g></g>`,
           );
         }
       });
