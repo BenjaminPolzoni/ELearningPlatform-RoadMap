@@ -22,6 +22,7 @@ import { RoadmapStore } from '../../core/data/roadmap.store';
 import { EstadoNodo } from '../../core/data/roadmap.models';
 import { CURSO_SEED_ID } from '../../mocks/seed';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
+import { Lives } from './lives';
 import {
   castleArt,
   fortressArt,
@@ -54,7 +55,7 @@ interface ConfettiPiece {
 @Component({
   selector: 'app-unidad-mapa',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarSprite, RouterLink, UpperCasePipe],
+  imports: [AvatarSprite, RouterLink, UpperCasePipe, Lives],
   host: { class: 'block w-full h-full' },
   styles: `
     :host {
@@ -126,11 +127,7 @@ interface ConfettiPiece {
             <!-- Vidas -->
             <div class="flex items-center gap-2 rounded-lg border border-red-900/50 bg-black/40 px-3 py-1.5">
               <span class="ui-font text-[8px] text-red-400">VIDAS</span>
-              <div class="flex items-center gap-1 text-base text-red-500">
-                @for (heart of [1, 2, 3]; track heart) {
-                  <span [class.opacity-25]="heart > vidas()" class="transition-opacity">♥</span>
-                }
-              </div>
+              <app-lives [current]="vidas()" [size]="18" />
             </div>
 
             <!-- Racha -->
