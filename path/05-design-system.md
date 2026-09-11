@@ -179,7 +179,10 @@ Lo que se persiste son **ids del catálogo**, nunca hex — un retoque de paleta
 los avatares ya guardados, y el DTO queda listo para viajar al perfil del BFF en Fase 3.
 Un avatar guardado antes de que existiera un campo se completa con el look clásico (traje +
 cuadro, silueta indefinido) en `sanearAvatar`, así que nadie pierde su personaje al ampliar
-el catálogo.
+el catálogo. Se ve igual que antes salvo por tres diferencias buscadas: el cuello nuevo, que
+ganan las tres siluetas; el emblema sobre un traje **rosa pastel**, que ahora pasa a hueso
+porque la regla de contraste dejó de mirar solo el rosa fuego; y la **gorra**, un pixel más
+alta desde que tapa todo el casco.
 
 ---
 
