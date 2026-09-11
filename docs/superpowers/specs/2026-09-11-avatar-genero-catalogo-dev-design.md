@@ -134,11 +134,17 @@ Las tres ganan un **cuello** (`y=10`), que hoy es una fila vacía entre cabeza y
 
 ### 4.2 Orden de capas
 
-sombra en el piso → piernas y zapatos → capas traseras (capucha del hoodie, pelo largo /
-coleta) → torso según silueta y prenda → detalles de la prenda (cuello de camisa, corbata,
-cierre y solapas de campera, bolsillo del hoodie) → emblema → brazos y manos → cuello y
-cabeza → cara (ojos, cejas o pestañas, boca) → barba → pelo → anteojos → accesorio de
-cabeza → objeto en mano.
+sombra en el piso → piernas (traje: color de la ropa; otras prendas: pantalón) y zapatos
+→ torso según silueta → brazos, mangas y manos (hombros anchos del varón) → detalles de la
+prenda (capucha y cordones del hoodie, cuello de remera, cuello y corbata de camisa, remera
+y bordes de la campera abierta) → emblema → cuello y cabeza → cara (ojos, cejas o
+pestañas, boca) → barba → pelo (incluye el largo y la coleta, que asoman por los costados)
+→ anteojos → accesorio de cabeza → objeto en mano.
+
+Los brazos van antes que los detalles de la prenda para que las mangas cortas de la remera
+y los hombros del varón queden debajo del cuello de camisa y de la campera. La capucha del
+hoodie ocupa las filas `y=9..10` alrededor del cuello, así que no necesita una capa trasera
+propia: la cabeza y el cuello, que se dibujan después, la tapan donde corresponde.
 
 ### 4.3 Reglas de convivencia
 
