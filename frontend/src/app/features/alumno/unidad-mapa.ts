@@ -9,6 +9,7 @@ import {
   inject,
   input,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -606,10 +607,12 @@ export class UnidadMapa {
   private animId = 0;
 
   constructor() {
-    // Al cargar la unidad, posiciona al jugador en el desafío habilitado más alto
+    // Al cargar o cambiar de unidad, posiciona instantáneamente al jugador en el desafío
+    // habilitado más alto. `completedIds` se lee sin trackear para que completar un desafío
+    // no vuelva a disparar este salto instantáneo: ese caso lo anima `advanceToNext`.
     effect(() => {
       const w = this.world();
-      const comp = this.completedIds();
+      const comp = untracked(() => this.completedIds());
       const nextId = w.challenges.find((c) => !c.optional && !comp.includes(c.id))?.id ?? w.mainCount;
       const stop = w.stops[nextId] ?? [50, 90];
       this.playerPos.set({ x: stop[0], y: stop[1] });
@@ -838,7 +841,8 @@ export class UnidadMapa {
   }
 
   protected onCompleteActivity(c: VerticalChallenge): void {
-    if (!this.isCompleted(c)) {
+    const wasAlreadyCompleted = this.isCompleted(c);
+    if (!wasAlreadyCompleted) {
       this.completedIds.update((ids) => [...ids, c.id]);
       this.store.sumarProgreso(c.xp, c.actividadId, this.localVidas());
     }
@@ -847,6 +851,24 @@ export class UnidadMapa {
       this.store.sumarProgreso(0, undefined, 5);
     }
     this.closeActivity();
+
+    // Recién ahora (al cerrar/continuar) se anima el recorrido hacia el próximo desafío,
+    // para que el avatar no "salte" mientras el modal de la actividad seguía abierto.
+    if (!wasAlreadyCompleted && !c.optional) {
+      this.advanceToNext();
+    }
+  }
+
+  /** Camina por el camino hasta el próximo desafío principal habilitado tras completar uno. */
+  private advanceToNext(): void {
+    const w = this.world();
+    const nextId = w.challenges.find((c) => !c.optional && !this.completedIds().includes(c.id))?.id ?? w.mainCount;
+    const target = w.challenges.find((c) => c.id === nextId);
+    if (!target || nextId === this.currentStopId()) return;
+
+    this.sel.set(null);
+    this.walkRoute(this.buildRoute(target));
+    this.currentStopId.set(nextId);
   }
 
   // Navegación de Cámara
