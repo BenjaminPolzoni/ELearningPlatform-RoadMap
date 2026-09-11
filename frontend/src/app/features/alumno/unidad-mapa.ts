@@ -857,6 +857,185 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
                     <span class="flex items-center gap-1.5"><span class="h-4 w-4 rounded-full bg-purple-900/60 text-purple-400 font-bold flex items-center justify-center text-[9px]">★</span> Bonus</span>
                     <span class="flex items-center gap-1.5"><span class="h-4 w-4 rounded-full bg-red-900/60 text-red-400 font-bold flex items-center justify-center text-[9px]">♥</span> Recuperar vida</span>
                   </div>
+
+                  <!--
+                    Los modales van DENTRO de #mapPanel (no como hermanos del panel) a propósito:
+                    la Fullscreen API solo renderiza el subárbol del elemento fullscreenizado, así
+                    que si quedaran afuera, no se verían al completar un desafío en pantalla completa.
+                  -->
+                  <!-- ============================================================= -->
+                  <!-- MODALES Y DIÁLOGOS (Quiz, Celebración, Insignias, Ranking)    -->
+                  <!-- ============================================================= -->
+
+                  <!-- MODAL DE ACTIVIDAD Y PREGUNTAS (Quiz interactivo) -->
+                  @if (activeChallenge(); as c) {
+                    <div class="modal modal-open backdrop-blur-md z-50">
+                      <div class="modal-box max-w-xl border-4 border-primary bg-[#1C1E2B] p-6 text-white shadow-2xl chaflan">
+                        <div class="flex items-start justify-between gap-3 border-b-2 border-white/10 pb-3">
+                          <div>
+                            <span class="ui-font text-[8px] text-accent tracking-widest">
+                              {{ isCompleted(c) ? 'MODO REPASO' : c.recovery ? 'RECUPERACIÓN DE VIDA' : 'DESAFÍO ' + c.id }} · ACTIVIDAD
+                            </span>
+                            <h2 class="title-font mt-1 text-xl text-primary">{{ c.title }}</h2>
+                          </div>
+                          <button
+                            class="btn btn-ghost btn-sm text-lg text-white/70 hover:text-white"
+                            (click)="closeActivity()"
+                            aria-label="Cerrar actividad"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        <div class="my-4">
+                          @if (!isQuizResolved()) {
+                            <p class="text-base text-[#F3EAFF] leading-relaxed mb-4">
+                              {{ currentQuestion(c).pregunta }}
+                            </p>
+
+                            <div class="flex flex-col gap-2.5" role="group" aria-label="Opciones de respuesta">
+                              @for (opt of currentQuestion(c).opciones; track $index) {
+                                <button
+                                  type="button"
+                                  class="flex items-center justify-between rounded-lg border-2 p-3 text-left transition-all text-sm cursor-pointer"
+                                  [class.border-primary]="selectedAnswer() === $index"
+                                  [class.bg-primary/20]="selectedAnswer() === $index"
+                                  [class.border-white/10]="selectedAnswer() !== $index"
+                                  [class.bg-black/30]="selectedAnswer() !== $index"
+                                  [class.hover:border-primary/50]="selectedAnswer() !== $index"
+                                  (click)="selectedAnswer.set($index)"
+                                >
+                                  <span class="flex items-center gap-3">
+                                    <span class="ui-font text-[9px] text-accent">
+                                      {{ ['A', 'B', 'C', 'D'][$index] }}.
+                                    </span>
+                                    <span>{{ opt }}</span>
+                                  </span>
+                                  @if (selectedAnswer() === $index) {
+                                    <span class="text-primary font-bold">●</span>
+                                  }
+                                </button>
+                              }
+                            </div>
+
+                            @if (quizFeedback()) {
+                              <div class="alert alert-error mt-4 text-xs ui-font py-2.5">
+                                <span>{{ quizFeedback() }}</span>
+                              </div>
+                            }
+                          } @else {
+                            <div class="flex flex-col items-center py-6 text-center">
+                              <div class="text-5xl mb-3 animate-bounce">
+                                {{ c.recovery ? '♥' : '🏆' }}
+                              </div>
+                              <span class="ui-font text-[9px] text-accent">
+                                {{ isCompleted(c) ? '¡CONOCIMIENTO REFORZADO!' : c.recovery ? '¡VIDA RECUPERADA!' : '¡DESAFÍO COMPLETADO!' }}
+                              </span>
+                              <h3 class="title-font text-2xl text-primary mt-1">
+                                {{ c.id === world().mainCount ? '¡HAS LLEGADO A LA META!' : '¡Excelente trabajo explorador!' }}
+                              </h3>
+                              <p class="mt-3 text-sm text-[#E0E2EC] max-w-md opacity-90">
+                                {{ currentQuestion(c).explicacion }}
+                              </p>
+
+                              <div class="mt-5 flex items-center gap-4 rounded-xl border border-primary/40 bg-black/40 px-5 py-2.5">
+                                <span class="ui-font text-[9px] text-white/70">Recompensa obtenida:</span>
+                                <strong class="ui-font text-sm text-accent">
+                                  +{{ c.xp }} XP
+                                  @if (c.recovery) {
+                                    · +1 VIDA ♥
+                                  }
+                                </strong>
+                              </div>
+                            </div>
+                          }
+                        </div>
+
+                        <div class="modal-action border-t-2 border-white/10 pt-3">
+                          @if (!isQuizResolved()) {
+                            <button
+                              type="button"
+                              class="btn btn-primary w-full ui-font text-[9px]"
+                              [disabled]="selectedAnswer() === null"
+                              (click)="checkAnswer(c)"
+                            >
+                              COMPROBAR RESPUESTA →
+                            </button>
+                          } @else {
+                            <button
+                              type="button"
+                              class="btn btn-primary w-full ui-font text-[9px]"
+                              (click)="onCompleteActivity(c)"
+                            >
+                              {{
+                                c.optional
+                                  ? 'VOLVER AL MAPA →'
+                                  : c.id < world().mainCount
+                                    ? 'CONTINUAR AL DESAFÍO ' + (c.id + 1) + ' →'
+                                    : '¡FINALIZAR UNIDAD! →'
+                              }}
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- CARTEL DE UNIDAD COMPLETADA (Confetti) -->
+                  @if (showUnitComplete()) {
+                    <div class="modal modal-open backdrop-blur-md z-50">
+                      <div class="pointer-events-none absolute inset-0 overflow-hidden">
+                        @for (p of confettiPieces(); track p.id) {
+                          <span
+                            class="confetti-pieza"
+                            [style.left.%]="p.left"
+                            [style.background]="p.color"
+                            [style.animation-delay.s]="p.delay"
+                            [style.animation-duration.s]="p.duration"
+                            [style.rotate]="p.rotate + 'deg'"
+                          ></span>
+                        }
+                      </div>
+                      <div class="modal-box relative max-w-md border-4 border-primary bg-[#1C1E2B] p-8 text-center text-white shadow-2xl chaflan">
+                        <button
+                          class="btn btn-ghost btn-sm absolute right-3 top-3 text-lg text-white/70 hover:text-white"
+                          (click)="showUnitComplete.set(false)"
+                          aria-label="Cerrar"
+                        >
+                          ✕
+                        </button>
+                        <div class="text-6xl mb-3 animate-bounce">🏆</div>
+                        <span class="ui-font text-[9px] text-accent tracking-widest">¡UNIDAD COMPLETADA!</span>
+                        <h2 class="title-font mt-2 text-2xl text-primary">{{ activeUnit().nombre }}</h2>
+                        <p class="mt-3 text-sm text-[#E0E2EC] leading-relaxed opacity-90">
+                          Superaste todos los desafíos de esta unidad. ¡Excelente trabajo, explorador!
+                        </p>
+                        <div class="mt-5 flex items-center justify-center gap-4 rounded-xl border border-primary/40 bg-black/40 px-5 py-2.5">
+                          <span class="ui-font text-[9px] text-white/70">XP total de la unidad:</span>
+                          <strong class="ui-font text-sm text-accent">+{{ unitTotalXp() }} XP</strong>
+                        </div>
+                        <button
+                          type="button"
+                          class="btn btn-primary w-full ui-font text-[9px] mt-6"
+                          (click)="back()"
+                        >
+                          VOLVER AL SELECTOR DE CARTUCHOS →
+                        </button>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- MODALES DE INVENTARIO Y RANKING -->
+                  @if (inventoryModal()) {
+                    <app-inventory-modal
+                      [mode]="inventoryModal()!"
+                      (close)="inventoryModal.set(null)"
+                    />
+                  }
+
+                  @if (rankOpen()) {
+                    <app-ranking-panel (cerrar)="rankOpen.set(false)" />
+                  }
                 </div>
 
                 <!-- ÁREA DERECHA: SIDEBAR ACRÍLICO PLAYER 1 -->
@@ -1041,179 +1220,6 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
           </div>
         </div>
 
-        <!-- ============================================================= -->
-        <!-- MODALES Y DIÁLOGOS (Quiz, Celebración, Insignias, Ranking)    -->
-        <!-- ============================================================= -->
-
-        <!-- MODAL DE ACTIVIDAD Y PREGUNTAS (Quiz interactivo) -->
-        @if (activeChallenge(); as c) {
-          <div class="modal modal-open backdrop-blur-md z-50">
-            <div class="modal-box max-w-xl border-4 border-primary bg-[#1C1E2B] p-6 text-white shadow-2xl chaflan">
-              <div class="flex items-start justify-between gap-3 border-b-2 border-white/10 pb-3">
-                <div>
-                  <span class="ui-font text-[8px] text-accent tracking-widest">
-                    {{ isCompleted(c) ? 'MODO REPASO' : c.recovery ? 'RECUPERACIÓN DE VIDA' : 'DESAFÍO ' + c.id }} · ACTIVIDAD
-                  </span>
-                  <h2 class="title-font mt-1 text-xl text-primary">{{ c.title }}</h2>
-                </div>
-                <button
-                  class="btn btn-ghost btn-sm text-lg text-white/70 hover:text-white"
-                  (click)="closeActivity()"
-                  aria-label="Cerrar actividad"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div class="my-4">
-                @if (!isQuizResolved()) {
-                  <p class="text-base text-[#F3EAFF] leading-relaxed mb-4">
-                    {{ currentQuestion(c).pregunta }}
-                  </p>
-
-                  <div class="flex flex-col gap-2.5" role="group" aria-label="Opciones de respuesta">
-                    @for (opt of currentQuestion(c).opciones; track $index) {
-                      <button
-                        type="button"
-                        class="flex items-center justify-between rounded-lg border-2 p-3 text-left transition-all text-sm cursor-pointer"
-                        [class.border-primary]="selectedAnswer() === $index"
-                        [class.bg-primary/20]="selectedAnswer() === $index"
-                        [class.border-white/10]="selectedAnswer() !== $index"
-                        [class.bg-black/30]="selectedAnswer() !== $index"
-                        [class.hover:border-primary/50]="selectedAnswer() !== $index"
-                        (click)="selectedAnswer.set($index)"
-                      >
-                        <span class="flex items-center gap-3">
-                          <span class="ui-font text-[9px] text-accent">
-                            {{ ['A', 'B', 'C', 'D'][$index] }}.
-                          </span>
-                          <span>{{ opt }}</span>
-                        </span>
-                        @if (selectedAnswer() === $index) {
-                          <span class="text-primary font-bold">●</span>
-                        }
-                      </button>
-                    }
-                  </div>
-
-                  @if (quizFeedback()) {
-                    <div class="alert alert-error mt-4 text-xs ui-font py-2.5">
-                      <span>{{ quizFeedback() }}</span>
-                    </div>
-                  }
-                } @else {
-                  <div class="flex flex-col items-center py-6 text-center">
-                    <div class="text-5xl mb-3 animate-bounce">
-                      {{ c.recovery ? '♥' : '🏆' }}
-                    </div>
-                    <span class="ui-font text-[9px] text-accent">
-                      {{ isCompleted(c) ? '¡CONOCIMIENTO REFORZADO!' : c.recovery ? '¡VIDA RECUPERADA!' : '¡DESAFÍO COMPLETADO!' }}
-                    </span>
-                    <h3 class="title-font text-2xl text-primary mt-1">
-                      {{ c.id === world().mainCount ? '¡HAS LLEGADO A LA META!' : '¡Excelente trabajo explorador!' }}
-                    </h3>
-                    <p class="mt-3 text-sm text-[#E0E2EC] max-w-md opacity-90">
-                      {{ currentQuestion(c).explicacion }}
-                    </p>
-
-                    <div class="mt-5 flex items-center gap-4 rounded-xl border border-primary/40 bg-black/40 px-5 py-2.5">
-                      <span class="ui-font text-[9px] text-white/70">Recompensa obtenida:</span>
-                      <strong class="ui-font text-sm text-accent">
-                        +{{ c.xp }} XP
-                        @if (c.recovery) {
-                          · +1 VIDA ♥
-                        }
-                      </strong>
-                    </div>
-                  </div>
-                }
-              </div>
-
-              <div class="modal-action border-t-2 border-white/10 pt-3">
-                @if (!isQuizResolved()) {
-                  <button
-                    type="button"
-                    class="btn btn-primary w-full ui-font text-[9px]"
-                    [disabled]="selectedAnswer() === null"
-                    (click)="checkAnswer(c)"
-                  >
-                    COMPROBAR RESPUESTA →
-                  </button>
-                } @else {
-                  <button
-                    type="button"
-                    class="btn btn-primary w-full ui-font text-[9px]"
-                    (click)="onCompleteActivity(c)"
-                  >
-                    {{
-                      c.optional
-                        ? 'VOLVER AL MAPA →'
-                        : c.id < world().mainCount
-                          ? 'CONTINUAR AL DESAFÍO ' + (c.id + 1) + ' →'
-                          : '¡FINALIZAR UNIDAD! →'
-                    }}
-                  </button>
-                }
-              </div>
-            </div>
-          </div>
-        }
-
-        <!-- CARTEL DE UNIDAD COMPLETADA (Confetti) -->
-        @if (showUnitComplete()) {
-          <div class="modal modal-open backdrop-blur-md z-50">
-            <div class="pointer-events-none absolute inset-0 overflow-hidden">
-              @for (p of confettiPieces(); track p.id) {
-                <span
-                  class="confetti-pieza"
-                  [style.left.%]="p.left"
-                  [style.background]="p.color"
-                  [style.animation-delay.s]="p.delay"
-                  [style.animation-duration.s]="p.duration"
-                  [style.rotate]="p.rotate + 'deg'"
-                ></span>
-              }
-            </div>
-            <div class="modal-box relative max-w-md border-4 border-primary bg-[#1C1E2B] p-8 text-center text-white shadow-2xl chaflan">
-              <button
-                class="btn btn-ghost btn-sm absolute right-3 top-3 text-lg text-white/70 hover:text-white"
-                (click)="showUnitComplete.set(false)"
-                aria-label="Cerrar"
-              >
-                ✕
-              </button>
-              <div class="text-6xl mb-3 animate-bounce">🏆</div>
-              <span class="ui-font text-[9px] text-accent tracking-widest">¡UNIDAD COMPLETADA!</span>
-              <h2 class="title-font mt-2 text-2xl text-primary">{{ activeUnit().nombre }}</h2>
-              <p class="mt-3 text-sm text-[#E0E2EC] leading-relaxed opacity-90">
-                Superaste todos los desafíos de esta unidad. ¡Excelente trabajo, explorador!
-              </p>
-              <div class="mt-5 flex items-center justify-center gap-4 rounded-xl border border-primary/40 bg-black/40 px-5 py-2.5">
-                <span class="ui-font text-[9px] text-white/70">XP total de la unidad:</span>
-                <strong class="ui-font text-sm text-accent">+{{ unitTotalXp() }} XP</strong>
-              </div>
-              <button
-                type="button"
-                class="btn btn-primary w-full ui-font text-[9px] mt-6"
-                (click)="back()"
-              >
-                VOLVER AL SELECTOR DE CARTUCHOS →
-              </button>
-            </div>
-          </div>
-        }
-
-        <!-- MODALES DE INVENTARIO Y RANKING -->
-        @if (inventoryModal()) {
-          <app-inventory-modal
-            [mode]="inventoryModal()!"
-            (close)="inventoryModal.set(null)"
-          />
-        }
-
-        @if (rankOpen()) {
-          <app-ranking-panel (cerrar)="rankOpen.set(false)" />
-        }
       </div>
     }
   `,
