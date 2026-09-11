@@ -328,6 +328,15 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
             >
               <!-- Título Marquee superior izquierdo -->
               <div class="absolute top-5 left-6 z-30 text-left">
+                @if (auth.rol() === 'PROFESOR') {
+                  <a
+                    routerLink="/profesor"
+                    class="btn btn-xs border border-white/20 bg-white/10 font-['Press_Start_2P'] text-[7px] text-white hover:bg-white/20 mb-2 inline-flex"
+                    title="Volver al editor del curso"
+                  >
+                    ← EDITOR
+                  </a>
+                }
                 <div class="font-['Press_Start_2P'] text-[9px] tracking-[2px] text-[#22e0d0] drop-shadow-[0_0_8px_rgba(34,224,208,0.8)]">
                   SELECCIÓN DE UNIDAD
                 </div>
@@ -605,15 +614,6 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
                   >
                     ‹ VOLVER · ESC
                   </button>
-                  @if (auth.rol() === 'PROFESOR') {
-                    <a
-                      routerLink="/profesor"
-                      class="btn btn-xs md:btn-sm border border-white/20 bg-white/10 font-['Press_Start_2P'] text-[7px] md:text-[8px] text-white hover:bg-white/20"
-                      title="Volver al editor del curso"
-                    >
-                      ← EDITOR
-                    </a>
-                  }
                 </div>
 
                 <!-- Título central -->
