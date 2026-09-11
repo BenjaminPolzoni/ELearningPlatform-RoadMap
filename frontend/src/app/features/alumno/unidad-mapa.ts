@@ -701,21 +701,6 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
                         <!-- Escenario Procedural (Monedas, Casas Hongo, Palmeras, etc.) -->
                         <div [innerHTML]="scenerySvg()" class="pointer-events-none"></div>
 
-                        <!-- Letreros de soporte para bonus y recuperación -->
-                        @for (c of world().challenges; track c.id) {
-                          @if (c.optional) {
-                            <div
-                              class="support-sign"
-                              [class.life-sign]="c.recovery"
-                              [style.left.%]="c.x"
-                              [style.top]="'calc(' + c.y + '% + 36px)'"
-                            >
-                              {{ c.recovery ? '♥ RECUPERAR VIDA' : '★ BONUS' }}
-                              <small>{{ c.recovery ? 'Repaso · +1 corazón' : 'Desafío opcional' }}</small>
-                            </div>
-                          }
-                        }
-
                         <!-- Meta final en la cumbre -->
                         <div class="vertical-castle" [style.top.%]="castleTopPercent()">
                           <div [innerHTML]="castleGoalSvg()"></div>
@@ -735,6 +720,26 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
                           </div>
                         }
                       </div>
+
+                      <!--
+                        Letreros de soporte para bonus y recuperación: van FUERA de .vertical-terrain
+                        (que tiene z-index:1) a propósito — ahí quedaban siempre por detrás de los
+                        nodos (z-index:8) sin importar el z-index propio del letrero, y el badge del
+                        nodo (".node-sign") tapaba el título ("♥ RECUPERAR VIDA", etc.).
+                      -->
+                      @for (c of world().challenges; track c.id) {
+                        @if (c.optional) {
+                          <div
+                            class="support-sign"
+                            [class.life-sign]="c.recovery"
+                            [style.left.%]="c.x"
+                            [style.top]="'calc(' + c.y + '% + 36px)'"
+                          >
+                            {{ c.recovery ? '♥ RECUPERAR VIDA' : '★ BONUS' }}
+                            <small>{{ c.recovery ? 'Repaso · +1 corazón' : 'Desafío opcional' }}</small>
+                          </div>
+                        }
+                      }
 
                       <!-- Partículas de polvo de caminata -->
                       @for (p of walkPuffs(); track p.id) {
