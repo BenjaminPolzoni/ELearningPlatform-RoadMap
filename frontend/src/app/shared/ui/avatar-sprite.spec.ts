@@ -1,9 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import {
+  ACCESORIOS,
+  ANTEOJOS,
   AvatarConfig,
   avatarPorDefecto,
+  BARBAS,
   EMBLEMAS,
   IdGenero,
+  OBJETOS,
+  PELOS,
   PRENDAS,
 } from '../../core/avatar/avatar.models';
 import { AvatarSprite } from './avatar-sprite';
@@ -108,5 +113,84 @@ describe('AvatarSprite — emblema', () => {
       'translate(16 0) scale(-1 1)',
     );
     expect(capa(dibujar({ emblema: 'lambda' }, 'derecha'), 'emblema')!.getAttribute('transform')).toBeNull();
+  });
+});
+
+describe('AvatarSprite — cabeza y equipo', () => {
+  const capasEnOrden = (el: HTMLElement) =>
+    [...el.querySelectorAll('svg > g[data-capa]')].map((g) => g.getAttribute('data-capa'));
+
+  it.each(PELOS.map((p) => p.id))('el pelo %s se dibuja', (pelo) => {
+    expect(pixeles(dibujar({ pelo }), 'pelo')).toBeGreaterThan(0);
+  });
+
+  it.each(BARBAS.filter((b) => b.id !== 'ninguna').map((b) => b.id))(
+    'la barba %s se dibuja del color del pelo',
+    (barba) => {
+      const el = dibujar({ barba, colorPelo: 'pelirrojo' });
+      expect(pixeles(el, 'barba')).toBeGreaterThan(0);
+      expect(fills(el, 'barba').every((f) => f === '#C2502A' || f === '#853316')).toBe(true);
+    },
+  );
+
+  it('sin barba no hay capa de barba', () => {
+    expect(capa(dibujar({ barba: 'ninguna' }), 'barba')).toBeNull();
+  });
+
+  it.each(ACCESORIOS.filter((a) => a.id !== 'ninguno').map((a) => a.id))(
+    'el accesorio %s se dibuja',
+    (accesorio) => {
+      expect(pixeles(dibujar({ accesorio }), 'accesorio')).toBeGreaterThan(0);
+    },
+  );
+
+  it.each(['gorra', 'gorra-atras', 'beanie'] as const)(
+    '%s tapa todo el casco (filas 0-3) para que ningún peinado lo atraviese',
+    (accesorio) => {
+      const filasTapadas = new Set<number>();
+      for (const r of capa(dibujar({ accesorio, pelo: 'cresta' }), 'accesorio')!.querySelectorAll('rect')) {
+        const [x, y, w, h] = ['x', 'y', 'width', 'height'].map((a) => Number(r.getAttribute(a)));
+        // la cresta ocupa las columnas 6..9: la fila queda tapada si un rect las cubre enteras
+        if (x <= 6 && x + w >= 10) for (let fila = y; fila < y + h; fila++) filasTapadas.add(fila);
+      }
+      expect([0, 1, 2, 3].every((f) => filasTapadas.has(f))).toBe(true);
+    },
+  );
+
+  it.each(ANTEOJOS.filter((a) => a.id !== 'ninguno').map((a) => a.id))(
+    'los anteojos %s se dibujan',
+    (anteojos) => {
+      expect(pixeles(dibujar({ anteojos }), 'anteojos')).toBeGreaterThan(0);
+    },
+  );
+
+  it('con visor no se dibujan los anteojos', () => {
+    expect(capa(dibujar({ accesorio: 'visor', anteojos: 'sol' }), 'anteojos')).toBeNull();
+    expect(capa(dibujar({ accesorio: 'gorra', anteojos: 'sol' }), 'anteojos')).not.toBeNull();
+  });
+
+  it.each(OBJETOS.filter((o) => o.id !== 'ninguno').map((o) => o.id))(
+    'el objeto %s se dibuja por delante de todo',
+    (objeto) => {
+      const el = dibujar({ objeto });
+      expect(pixeles(el, 'objeto')).toBeGreaterThan(0);
+      expect(capasEnOrden(el).at(-1)).toBe('objeto');
+    },
+  );
+
+  it('respeta el orden de capas: barba < pelo < anteojos < accesorio', () => {
+    const el = dibujar({ prenda: 'hoodie', barba: 'barba', anteojos: 'redondos', accesorio: 'gorra' });
+    expect(capasEnOrden(el)).toEqual([
+      'piernas',
+      'torso',
+      'brazos',
+      'prenda',
+      'emblema',
+      'cabeza',
+      'barba',
+      'pelo',
+      'anteojos',
+      'accesorio',
+    ]);
   });
 });

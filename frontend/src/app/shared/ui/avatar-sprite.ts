@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import {
+  anteojosVisibles,
   AvatarConfig,
   colorPorId,
   emblemaVisible,
@@ -103,6 +104,8 @@ export class AvatarSprite {
   );
 
   protected readonly mostrarEmblema = computed(() => emblemaVisible(this.config()));
+
+  protected readonly mostrarAnteojos = computed(() => anteojosVisibles(this.config()));
 
   /**
    * El emblema tiene que contrastar contra lo que tiene debajo, si no desaparece: la remera

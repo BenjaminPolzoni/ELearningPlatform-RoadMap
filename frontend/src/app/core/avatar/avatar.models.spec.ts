@@ -1,6 +1,7 @@
 import {
   ACCESORIOS,
   ANTEOJOS,
+  anteojosVisibles,
   avatarPorDefecto,
   BARBAS,
   COLORES,
@@ -136,5 +137,18 @@ describe('emblemaVisible', () => {
     expect(emblemaVisible({ ...base, emblema: 'ninguno' })).toBe(false);
     expect(emblemaVisible({ ...base, prenda: 'camisa' })).toBe(false);
     expect(emblemaVisible({ ...base, objeto: 'laptop' })).toBe(false);
+  });
+});
+
+describe('anteojosVisibles', () => {
+  const base = avatarPorDefecto('indefinido');
+
+  it('se ven con cualquier accesorio salvo el visor, que ya tapa los ojos', () => {
+    expect(anteojosVisibles({ ...base, anteojos: 'codigo', accesorio: 'beanie' })).toBe(true);
+    expect(anteojosVisibles({ ...base, anteojos: 'codigo', accesorio: 'visor' })).toBe(false);
+  });
+
+  it('sin anteojos no hay nada que ver', () => {
+    expect(anteojosVisibles({ ...base, anteojos: 'ninguno' })).toBe(false);
   });
 });

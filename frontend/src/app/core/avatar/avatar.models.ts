@@ -342,3 +342,8 @@ export function sanearAvatar(v: AvatarGuardado | null | undefined): AvatarConfig
 export function emblemaVisible(a: AvatarConfig): boolean {
   return a.emblema !== 'ninguno' && a.prenda !== 'camisa' && a.objeto !== 'laptop';
 }
+
+/** El visor tapa los ojos: con visor, los anteojos no se dibujan (el editor lo avisa). */
+export function anteojosVisibles(a: AvatarConfig): boolean {
+  return a.anteojos !== 'ninguno' && a.accesorio !== 'visor';
+}
