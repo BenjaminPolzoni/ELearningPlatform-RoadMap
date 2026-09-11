@@ -400,6 +400,12 @@ html {
   box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
   transform: translateY(1px);
 }
+/* `.rk-marquee__back` (el "VOLVER") ya usa `transform` para centrarse verticalmente
+   (`translateY(-50%)`, está en `position: absolute`) — si dejamos que `.rk-chip:hover`
+   lo pise con `translateY(1px)` pierde el centrado y el botón "salta" al pasar el mouse. */
+.rk-marquee__back:hover {
+  transform: translateY(calc(-50% + 1px));
+}
 
 /* — pantalla CRT hundida — */
 .rk-screen {
