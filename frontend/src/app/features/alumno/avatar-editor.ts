@@ -35,7 +35,7 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
   selector: 'app-avatar-editor',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AvatarSprite, RouterLink, NgTemplateOutlet],
-  host: { class: 'block' },
+  host: { class: 'block w-full max-w-6xl' },
   styles: `
     /* La muestra elegida se marca con un doble anillo, no solo con el color del borde:
        sobre swatches oscuros un borde de 2 px es indistinguible del no-seleccionado. */
