@@ -71,11 +71,11 @@ const XP_POR_DIFICULTAD: Record<Dificultad, number> = { BASICO: 100, MEDIO: 250,
                           <span class="font-bold">{{ a.nombre }}</span>
                           <span class="badge badge-sm ui-font" [class]="badgeTipo(a.tipo)">{{ etiquetaTipo(a) }}</span>
                           @if (a.dificultad) {
-                            <span class="badge badge-sm" [class]="badgeDificultad(a.dificultad)">
+                            <span class="badge badge-sm ui-font" [class]="badgeDificultad(a.dificultad)">
                               {{ a.dificultad }} · {{ xpDe(a.dificultad) }} XP
                             </span>
                           }
-                          @if (a.esObligatorio) { <span class="badge badge-sm badge-warning">obligatorio</span> }
+                          @if (a.esObligatorio) { <span class="badge badge-sm badge-warning ui-font">obligatorio</span> }
                           @if (esDesafio(a.tipo)) {
                             <span class="badge badge-sm badge-ghost ui-font">{{ a.reintentosPermitidos }} reintentos</span>
                           }

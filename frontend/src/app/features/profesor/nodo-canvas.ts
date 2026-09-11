@@ -9,6 +9,7 @@ const NODE_W = 132;
 const NODE_H = 58;
 const PAD = 70;
 const SNAP = 20;
+const CONFIRM_OFFSET = 40;
 
 /** Distancia del centro de un nodo a su borde, siguiendo la dirección unitaria (ux,uy). */
 function bordeCaja(ux: number, uy: number): number {
@@ -183,18 +184,25 @@ interface Arrastre {
 
         <!-- confirmación inline para eliminar la conexión seleccionada, al final del SVG
              para quedar siempre por encima de nodos y líneas (ningún borrado es un solo
-             clic sin vuelta atrás — ver confirm-button.ts para el equivalente HTML) -->
+             clic sin vuelta atrás — ver confirm-button.ts para el equivalente HTML).
+             El cartel flota desplazado perpendicular a la línea, con un conector fino
+             hasta el punto original, en vez de dibujarse encima de la conexión. -->
         @if (aristaSeleccionada(); as sel) {
-          <g [attr.transform]="'translate(' + sel.mx + ',' + sel.my + ')'" (click)="$event.stopPropagation()">
-            <rect x="-72" y="-14" width="144" height="28" rx="2" fill="var(--color-base-300)" stroke="var(--color-primary)" stroke-width="1.5" />
-            <text x="-62" y="4" font-size="10" fill="var(--color-base-content)" class="ui-font">¿Eliminar?</text>
+          <line
+            [attr.x1]="sel.mx" [attr.y1]="sel.my" [attr.x2]="sel.popX" [attr.y2]="sel.popY"
+            stroke="var(--color-primary)" stroke-width="1.5" stroke-dasharray="3 3"
+          />
+          <circle [attr.cx]="sel.mx" [attr.cy]="sel.my" r="3" fill="var(--color-primary)" />
+          <g [attr.transform]="'translate(' + sel.popX + ',' + sel.popY + ')'" (click)="$event.stopPropagation()">
+            <rect x="-74" y="-14" width="148" height="28" rx="2" fill="var(--color-base-300)" stroke="var(--color-primary)" stroke-width="1.5" />
+            <text x="-64" y="4" font-size="10" fill="var(--color-base-content)" class="ui-font">¿Eliminar?</text>
             <g class="cursor-pointer" (click)="eliminarConexionSeleccionada()">
-              <rect x="8" y="-11" width="26" height="22" rx="2" fill="var(--color-error)" />
-              <text x="21" y="4" text-anchor="middle" font-size="10" fill="var(--color-error-content)" class="ui-font">Sí</text>
+              <rect x="10" y="-11" width="26" height="22" rx="2" fill="var(--color-error)" />
+              <text x="23" y="4" text-anchor="middle" font-size="10" fill="var(--color-error-content)" class="ui-font">Sí</text>
             </g>
             <g class="cursor-pointer" (click)="seleccion.set(null)">
-              <rect x="38" y="-11" width="26" height="22" rx="2" fill="var(--color-base-100)" stroke="var(--color-base-content)" stroke-width="1" stroke-opacity="0.3" />
-              <text x="51" y="4" text-anchor="middle" font-size="10" fill="var(--color-base-content)" class="ui-font">No</text>
+              <rect x="40" y="-11" width="26" height="22" rx="2" fill="var(--color-base-100)" stroke="var(--color-base-content)" stroke-width="1" stroke-opacity="0.3" />
+              <text x="53" y="4" text-anchor="middle" font-size="10" fill="var(--color-base-content)" class="ui-font">No</text>
             </g>
           </g>
         }
@@ -264,9 +272,25 @@ export class NodoCanvas {
     });
   });
 
+  /**
+   * La arista seleccionada, con el punto del cartel de confirmación desplazado
+   * perpendicular a la línea — flotando al costado en vez de dibujarse encima de la
+   * conexión y las flechas (se veía superpuesto y difícil de leer).
+   */
   protected readonly aristaSeleccionada = computed(() => {
     const id = this.seleccion();
-    return id ? (this.aristas().find((a) => a.id === id) ?? null) : null;
+    const a = id ? (this.aristas().find((x) => x.id === id) ?? null) : null;
+    if (!a) return null;
+    const dx = a.x2 - a.x1;
+    const dy = a.y2 - a.y1;
+    const dist = Math.hypot(dx, dy) || 1;
+    let px = -dy / dist;
+    let py = dx / dist;
+    if (py > 0) {
+      px = -px;
+      py = -py;
+    } // preferir flotar hacia arriba de la línea
+    return { ...a, popX: a.mx + px * CONFIRM_OFFSET, popY: a.my + py * CONFIRM_OFFSET };
   });
 
   // ---------- arrastre (posición) ----------
