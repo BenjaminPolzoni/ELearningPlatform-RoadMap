@@ -22,6 +22,7 @@ import { RoadmapStore } from '../../core/data/roadmap.store';
 import { EstadoNodo } from '../../core/data/roadmap.models';
 import { CURSO_SEED_ID } from '../../mocks/seed';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
+import { Lives } from './lives';
 import {
   castleArt,
   fortressArt,
@@ -54,7 +55,7 @@ interface ConfettiPiece {
 @Component({
   selector: 'app-unidad-mapa',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarSprite, RouterLink, UpperCasePipe],
+  imports: [AvatarSprite, RouterLink, UpperCasePipe, Lives],
   host: { class: 'block w-full h-full' },
   styles: `
     :host {
@@ -126,11 +127,7 @@ interface ConfettiPiece {
             <!-- Vidas -->
             <div class="flex items-center gap-2 rounded-lg border border-red-900/50 bg-black/40 px-3 py-1.5">
               <span class="ui-font text-[8px] text-red-400">VIDAS</span>
-              <div class="flex items-center gap-1 text-base text-red-500">
-                @for (heart of [1, 2, 3, 4, 5]; track heart) {
-                  <span [class.opacity-25]="heart > vidas()" class="transition-opacity">♥</span>
-                }
-              </div>
+              <app-lives [current]="vidas()" [size]="18" />
             </div>
 
             <!-- Racha -->
@@ -244,21 +241,6 @@ interface ConfettiPiece {
                 <!-- Escenario Procedural (Monedas, Casas Hongo, Nubes, Flores, Antorchas, etc.) -->
                 <div [innerHTML]="scenerySvg()" class="pointer-events-none"></div>
 
-                <!-- Letreros de soporte para bonus y recuperación -->
-                @for (c of world().challenges; track c.id) {
-                  @if (c.optional) {
-                    <div
-                      class="support-sign"
-                      [class.life-sign]="c.recovery"
-                      [style.left.%]="c.x"
-                      [style.top]="'calc(' + c.y + '% + 36px)'"
-                    >
-                      {{ c.recovery ? '♥ RECUPERAR VIDA' : '★ BONUS' }}
-                      <small>{{ c.recovery ? 'Repaso · +1 corazón' : 'Desafío opcional' }}</small>
-                    </div>
-                  }
-                }
-
                 <!-- Meta en la cumbre (Castillo / Templo / Fortaleza) -->
                 <div class="vertical-castle" [style.top.%]="castleTopPercent()">
                   <div [innerHTML]="castleGoalSvg()"></div>
@@ -278,6 +260,26 @@ interface ConfettiPiece {
                   </div>
                 }
               </div>
+
+              <!--
+                Letreros de soporte para bonus y recuperación: van FUERA de .vertical-terrain
+                (que tiene z-index:1) a propósito — ahí quedaban siempre por detrás de los
+                nodos (z-index:8) sin importar el z-index propio del letrero, y el badge del
+                nodo (".node-sign") tapaba el título ("♥ RECUPERAR VIDA", etc.).
+              -->
+              @for (c of world().challenges; track c.id) {
+                @if (c.optional) {
+                  <div
+                    class="support-sign"
+                    [class.life-sign]="c.recovery"
+                    [style.left.%]="c.x"
+                    [style.top]="'calc(' + c.y + '% + 36px)'"
+                  >
+                    {{ c.recovery ? '♥ RECUPERAR VIDA' : '★ BONUS' }}
+                    <small>{{ c.recovery ? 'Repaso · +1 corazón' : 'Desafío opcional' }}</small>
+                  </div>
+                }
+              }
 
               <!-- 2. Partículas de polvo de caminata -->
               @for (p of walkPuffs(); track p.id) {
@@ -362,10 +364,14 @@ interface ConfettiPiece {
                   <button
                     type="button"
                     class="encounter-action"
-                    [disabled]="isLocked(c)"
-                    (click)="openActivity(c)"
+                    [disabled]="isLocked(c) || isWalking()"
+                    (click)="onEncounterAction(c)"
                   >
-                    @if (isCompleted(c)) {
+                    @if (isWalking()) {
+                      CAMINANDO…
+                    } @else if (isWalkingNext(c) || needsWalkToOptional(c)) {
+                      ▶ CAMINAR HASTA AQUÍ →
+                    } @else if (isCompleted(c)) {
                       REPASAR ACTIVIDAD (+0 XP)
                     } @else if (isLocked(c)) {
                       🔒 DESAFÍO BLOQUEADO
@@ -668,7 +674,7 @@ export class UnidadMapa {
 
   // Sincronización de progreso y estados con RoadmapStore
   protected readonly completedIds = signal<number[]>([1]);
-  protected readonly localVidas = signal<number>(5);
+  protected readonly localVidas = signal<number>(3);
 
   protected readonly vidas = computed(() => this.store.progreso()?.vidasVigentes ?? this.localVidas());
   protected readonly xp = computed(() => this.store.progreso()?.xpTotal ?? 0);
@@ -689,7 +695,9 @@ export class UnidadMapa {
   protected readonly walkPuffs = signal<WalkPuff[]>([]);
   // Id del stop del camino principal (0..mainCount) donde está parado lógicamente el avatar
   private readonly currentStopId = signal<number>(0);
-  private animId = 0;
+  // Id del desafío opcional (bonus/recuperación) en el que está el avatar; null = en el camino principal
+  private readonly visitingOptionalId = signal<number | null>(null);
+  private walkAnimId = 0;
 
   // Cierre de unidad (al completar el último desafío principal)
   protected readonly celebrating = signal<boolean>(false);
@@ -706,16 +714,23 @@ export class UnidadMapa {
   });
 
   constructor() {
-    // Al cargar o cambiar de unidad, posiciona instantáneamente al jugador en el desafío
-    // habilitado más alto. `completedIds` se lee sin trackear para que completar un desafío
-    // no vuelva a disparar este salto instantáneo: ese caso lo anima `advanceToNext`.
+    // Al cargar o cambiar de unidad, posiciona instantáneamente al jugador en el ÚLTIMO
+    // desafío principal completado (o en el inicio si no completó ninguno) — nunca en el
+    // próximo por resolver: ese tramo lo tiene que caminar el propio jugador al tocarlo.
+    // `completedIds` se lee sin trackear para que completar un desafío no vuelva a disparar
+    // este salto instantáneo: ese caso lo anima `advanceToNext`.
     effect(() => {
       const w = this.world();
       const comp = untracked(() => this.completedIds());
-      const nextId = w.challenges.find((c) => !c.optional && !comp.includes(c.id))?.id ?? w.mainCount;
-      const stop = w.stops[nextId] ?? [50, 90];
+      let lastCompleted = 0;
+      for (let id = 1; id <= w.mainCount; id++) {
+        if (!comp.includes(id)) break;
+        lastCompleted = id;
+      }
+      const stop = w.stops[lastCompleted] ?? [50, 90];
       this.playerPos.set({ x: stop[0], y: stop[1] });
-      this.currentStopId.set(nextId);
+      this.currentStopId.set(lastCompleted);
+      this.visitingOptionalId.set(null);
     });
 
     // Centra la cámara automáticamente en la posición del personaje al entrar
@@ -724,7 +739,7 @@ export class UnidadMapa {
     });
 
     this.destroyRef.onDestroy(() => {
-      if (this.animId) cancelAnimationFrame(this.animId);
+      if (this.walkAnimId) cancelAnimationFrame(this.walkAnimId);
       if (this.celebrateTimeoutId) clearTimeout(this.celebrateTimeoutId);
     });
   }
@@ -786,6 +801,20 @@ export class UnidadMapa {
     return !this.isAvailable(c);
   }
 
+  /**
+   * Solo el desafío principal inmediatamente siguiente al que camina el avatar dispara una
+   * caminata — igual que el prototipo de referencia (`awaitingWalk`/`walkingNext`): al resto
+   * de los nodos (completados, bonus, recuperación) se entra directo, sin desplazar al avatar.
+   */
+  protected isWalkingNext(c: VerticalChallenge): boolean {
+    return !c.optional && c.id === this.currentStopId() + 1 && this.isAvailable(c);
+  }
+
+  /** Los desafíos opcionales (bonus/recuperación) también se caminan, siguiendo su ramal. */
+  protected needsWalkToOptional(c: VerticalChallenge): boolean {
+    return !!c.optional && this.isAvailable(c) && this.visitingOptionalId() !== c.id;
+  }
+
   protected nodeVerbText(c: VerticalChallenge): string {
     const status = this.isCompleted(c) ? 'completed' : this.isAvailable(c) ? 'available' : 'locked';
     return nodeVerb(this.theme(), status);
@@ -793,7 +822,7 @@ export class UnidadMapa {
 
   // Renderizadores SVG Sanitizados
   protected scenerySvg(): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(renderWorldScenery(this.world()));
+    return this.sanitizer.bypassSecurityTrustHtml(renderWorldScenery(this.world(), this.completedIds()));
   }
 
   protected castleGoalSvg(): SafeHtml {
@@ -808,88 +837,131 @@ export class UnidadMapa {
   }
 
   // Interacción y Caminata
+  /** Tocar un nodo solo abre su tarjeta de encuentro — el avatar nunca se mueve por esto. */
   protected onNodeClick(c: VerticalChallenge): void {
+    if (this.isWalking()) return;
     this.sel.set(c);
-    this.walkRoute(this.buildRoute(c));
-    this.currentStopId.set(c.optional ? (c.branchStopId ?? this.currentStopId()) : c.id);
+  }
+
+  /** Acción de la tarjeta de encuentro: caminar (si hace falta) o entrar directo. */
+  protected onEncounterAction(c: VerticalChallenge): void {
+    if (this.isLocked(c) || this.isWalking()) return;
+    if (this.isWalkingNext(c)) {
+      this.walkToNext(c);
+      return;
+    }
+    if (this.needsWalkToOptional(c)) {
+      this.walkToOptional(c);
+      return;
+    }
+    this.openActivity(c);
   }
 
   /**
-   * Arma los waypoints intermedios entre la posición actual y el nodo destino siguiendo
-   * el camino (stops del recorrido principal y, si el destino es opcional, el punto de
-   * bifurcación) en vez de cortar en línea recta a través del campo.
+   * Camina por el tramo curvo real del camino (no en línea recta) desde la posición actual
+   * hasta el próximo desafío principal, a velocidad constante — igual que `advanceExplorer`
+   * en el prototipo de referencia. Al llegar, reabre la tarjeta ya con la acción actualizada.
    */
-  private buildRoute(target: VerticalChallenge): [number, number][] {
+  private walkToNext(target: VerticalChallenge): void {
+    this.sel.set(null);
+    const segment = this.world().roads[target.id];
+    this.walkAlongRoad(segment, () => {
+      this.currentStopId.set(target.id);
+      this.sel.set(target);
+    });
+  }
+
+  /**
+   * Camina hasta un desafío opcional (bonus/recuperación) pasando por su punto de bifurcación
+   * en el camino principal, en vez de cortar en línea recta a través del mapa. Al llegar, abre
+   * la actividad directamente (no hace falta un segundo toque, como sí ocurre en el camino
+   * principal).
+   */
+  private walkToOptional(target: VerticalChallenge): void {
+    this.sel.set(null);
+    const from: [number, number] = [this.playerPos().x, this.playerPos().y];
+    const segment: [number, number][] = target.branchFrom
+      ? [from, target.branchFrom, [target.x, target.y]]
+      : [from, [target.x, target.y]];
+    this.walkAlongRoad(segment, () => {
+      this.visitingOptionalId.set(target.id);
+      this.openActivity(target);
+    });
+  }
+
+  /** Al salir de un desafío opcional, camina de vuelta al camino principal por el mismo ramal. */
+  private walkBackToPath(): void {
+    const optionalId = this.visitingOptionalId();
+    if (optionalId === null) return;
+    this.visitingOptionalId.set(null);
+
     const w = this.world();
-    const fromStopId = this.currentStopId();
-    const branchStopId = target.optional ? (target.branchStopId ?? fromStopId) : target.id;
-
-    const route: [number, number][] = [];
-    const step = branchStopId > fromStopId ? 1 : branchStopId < fromStopId ? -1 : 0;
-    for (let id = fromStopId; id !== branchStopId; id += step) {
-      route.push(w.stops[id + step] ?? w.stops[branchStopId]);
-    }
-
-    if (target.optional) {
-      if (target.branchFrom) route.push(target.branchFrom);
-      route.push([target.x, target.y]);
-    }
-
-    return route.length ? route : [[target.x, target.y]];
+    const c = w.challenges.find((ch) => ch.id === optionalId);
+    const from: [number, number] = [this.playerPos().x, this.playerPos().y];
+    const mainStop = w.stops[this.currentStopId()] ?? [50, 90];
+    const segment: [number, number][] = c?.branchFrom ? [from, c.branchFrom, mainStop] : [from, mainStop];
+    this.walkAlongRoad(segment);
   }
 
-  /** Camina en línea recta por cada waypoint de la ruta, en orden, antes de llegar al destino final. */
-  private walkRoute(points: [number, number][]): void {
-    if (this.animId) cancelAnimationFrame(this.animId);
-    this.walkLeg(points, 0);
+  /** Camina por el tramo curvo real hasta el próximo desafío, sin reabrir ninguna tarjeta. */
+  private advanceToNext(): void {
+    const w = this.world();
+    const nextId = w.challenges.find((c) => !c.optional && !this.completedIds().includes(c.id))?.id ?? w.mainCount;
+    if (nextId === this.currentStopId()) return;
+
+    this.sel.set(null);
+    const segment = w.roads[nextId];
+    this.walkAlongRoad(segment, () => this.currentStopId.set(nextId));
   }
 
-  private walkLeg(points: [number, number][], index: number): void {
-    if (index >= points.length) {
-      this.isWalking.set(false);
+  /**
+   * Anima al avatar a lo largo de un tramo del camino (33 puntos de la curva Bezier) a
+   * velocidad de suelo constante, igual que el prototipo de referencia: cada tramo dura lo
+   * que tarde en recorrerse a ~120 unidades/seg, con un piso de 1200ms para que incluso un
+   * tramo corto se sienta como una caminata y no como un salto.
+   */
+  private walkAlongRoad(segment: [number, number][], onArrive?: () => void): void {
+    if (this.walkAnimId) cancelAnimationFrame(this.walkAnimId);
+    if (!segment || segment.length < 2) {
+      onArrive?.();
       return;
     }
 
-    const [targetX, targetY] = points[index];
-    const from = this.playerPos();
-    const dx = targetX - from.x;
-    const dy = targetY - from.y;
-    const dist = Math.hypot(dx, dy);
-    if (dist < 1) {
-      this.walkLeg(points, index + 1);
-      return;
-    }
+    const w = this.world();
+    const route = measureRoute(segment, w.worldWidth, w.worldHeight);
+    const reducedMotion =
+      typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const duration = reducedMotion ? 0 : Math.max(1200, (route.distance / 120) * 1000);
 
     this.isWalking.set(true);
-    this.facing.set(dx >= 0 ? 'derecha' : 'izquierda');
-    const startT = performance.now();
-    const duration = Math.max(300, Math.min(1000, dist * 25));
+    let elapsed = 0;
+    let previousTime: number | undefined;
+    let lastFootstep = -200;
 
-    const step = (now: number) => {
-      const progress = Math.min(1, (now - startT) / duration);
-      const ease = 0.5 - Math.cos(progress * Math.PI) / 2;
-      const curX = from.x + dx * ease;
-      const curY = from.y + dy * ease;
-      this.playerPos.set({ x: curX, y: curY });
+    const step = (time: number) => {
+      if (previousTime !== undefined) elapsed += Math.min(64, time - previousTime);
+      previousTime = time;
+      const progress = duration === 0 ? 1 : Math.min(1, elapsed / duration);
+      const [x, y] = pointOnRoute(route, progress);
 
-      // Añade polvo de caminata
-      if (Math.random() < 0.25) {
-        const w = this.world();
-        const puff: WalkPuff = {
-          id: Date.now() + Math.random(),
-          x: (curX / 100) * w.worldWidth,
-          y: (curY / 100) * w.worldHeight,
-        };
+      const dx = x - this.playerPos().x;
+      if (Math.abs(dx) > 0.001) this.facing.set(dx < 0 ? 'izquierda' : 'derecha');
+      this.playerPos.set({ x, y });
+
+      if (elapsed - lastFootstep > 180) {
+        const puff: WalkPuff = { id: Date.now() + Math.random(), x: (x / 100) * w.worldWidth, y: (y / 100) * w.worldHeight };
         this.walkPuffs.update((list) => [...list.slice(-12), puff]);
+        lastFootstep = elapsed;
       }
 
       if (progress < 1) {
-        this.animId = requestAnimationFrame(step);
+        this.walkAnimId = requestAnimationFrame(step);
       } else {
-        this.walkLeg(points, index + 1);
+        this.isWalking.set(false);
+        onArrive?.();
       }
     };
-    this.animId = requestAnimationFrame(step);
+    this.walkAnimId = requestAnimationFrame(step);
   }
 
   // Desafíos y Actividad Interactiva
@@ -902,7 +974,10 @@ export class UnidadMapa {
   }
 
   protected closeActivity(): void {
+    const wasOptional = this.activeChallenge()?.optional;
     this.activeChallenge.set(null);
+    // Al salir de un bonus/recuperación, el avatar vuelve caminando al camino principal.
+    if (wasOptional) this.walkBackToPath();
   }
 
   protected currentQuestion(c: VerticalChallenge): QuestionData {
@@ -947,8 +1022,8 @@ export class UnidadMapa {
       this.store.sumarProgreso(c.xp, c.actividadId, this.localVidas());
     }
     if (c.recovery) {
-      this.localVidas.set(5);
-      this.store.sumarProgreso(0, undefined, 5);
+      this.localVidas.set(3);
+      this.store.sumarProgreso(0, undefined, 3);
     }
     this.closeActivity();
 
@@ -961,18 +1036,6 @@ export class UnidadMapa {
         this.advanceToNext();
       }
     }
-  }
-
-  /** Camina por el camino hasta el próximo desafío principal habilitado tras completar uno. */
-  private advanceToNext(): void {
-    const w = this.world();
-    const nextId = w.challenges.find((c) => !c.optional && !this.completedIds().includes(c.id))?.id ?? w.mainCount;
-    const target = w.challenges.find((c) => c.id === nextId);
-    if (!target || nextId === this.currentStopId()) return;
-
-    this.sel.set(null);
-    this.walkRoute(this.buildRoute(target));
-    this.currentStopId.set(nextId);
   }
 
   /** Salto de alegría + fanfarria + cartel "Unidad completada", al terminar el último desafío. */
@@ -1092,4 +1155,33 @@ export class UnidadMapa {
       });
     } catch {}
   }
+}
+
+interface Route {
+  points: [number, number][];
+  lengths: number[];
+  distance: number;
+}
+
+/** Mide un tramo del camino (en % del mundo) en unidades reales, usando el ancho/alto real. */
+function measureRoute(points: [number, number][], width: number, height: number): Route {
+  const lengths = points
+    .slice(1)
+    .map((point, i) => Math.hypot(((point[0] - points[i][0]) * width) / 100, ((point[1] - points[i][1]) * height) / 100));
+  return { points, lengths, distance: lengths.reduce((sum, n) => sum + n, 0) };
+}
+
+/** Punto del tramo a una fracción [0,1] del recorrido, interpolando entre los puntos de la curva. */
+function pointOnRoute(route: Route, fraction: number): [number, number] {
+  let distance = Math.max(0, Math.min(1, fraction)) * route.distance;
+  for (let i = 0; i < route.lengths.length; i++) {
+    if (distance <= route.lengths[i]) {
+      const t = route.lengths[i] ? distance / route.lengths[i] : 0;
+      const [x0, y0] = route.points[i];
+      const [x1, y1] = route.points[i + 1];
+      return [x0 + (x1 - x0) * t, y0 + (y1 - y0) * t];
+    }
+    distance -= route.lengths[i];
+  }
+  return route.points[route.points.length - 1];
 }

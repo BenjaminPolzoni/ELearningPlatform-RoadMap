@@ -9,6 +9,7 @@ import { PixelIcon } from '../../shared/pixel-icon';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 import { BADGE_ICONS } from '../insignias/badge-icons';
 import { CURSO_SEED_ID } from '../../mocks/seed';
+import { Lives } from '../alumno/lives';
 import { Racha } from '../alumno/racha';
 
 type FilaDetalle = FilaRanking | FilaRankingAnon;
@@ -27,7 +28,7 @@ function esIdentificada(f: FilaDetalle): f is FilaRanking {
  */
 @Component({
   selector: 'app-ranking-detalle',
-  imports: [PixelIcon, Racha, AvatarSprite],
+  imports: [PixelIcon, Racha, Lives, AvatarSprite],
   template: `
     <div class="rk-hud">
       <!-- Perfil: escudo hexagonal + identidad -->
@@ -91,19 +92,7 @@ function esIdentificada(f: FilaDetalle): f is FilaRanking {
         </div>
         <div class="rk-stat" style="flex-direction:row;align-items:center;gap:0.6rem">
           <span class="rk-stat__label">VIDAS</span>
-          <span
-            style="margin-left:auto;display:inline-flex;gap:5px"
-            [attr.aria-label]="fila().vidas + ' vidas'"
-          >
-            @for (on of corazones(); track $index) {
-              <span
-                class="rk-heart"
-                [class.rk-heart--on]="on"
-                [class.rk-heart--off]="!on"
-                aria-hidden="true"
-              ></span>
-            }
-          </span>
+          <span style="margin-left:auto"><app-lives [current]="fila().vidas" [size]="20" /></span>
         </div>
         <div class="rk-stat" style="flex-direction:row;align-items:center;gap:0.6rem">
           <span class="rk-stat__label">RACHA</span>
@@ -197,12 +186,6 @@ export class RankingDetalle {
   protected readonly xpPct = computed(() => {
     const xp = this.fila().xpTotal;
     return Math.round(((xp % 700) / 700) * 100);
-  });
-
-  /** 3 slots de vida (PAR-12: máximo 3). */
-  protected readonly corazones = computed(() => {
-    const v = Math.max(0, Math.min(3, this.fila().vidas));
-    return [v > 0, v > 1, v > 2];
   });
 
   protected readonly candidato = computed(() => {

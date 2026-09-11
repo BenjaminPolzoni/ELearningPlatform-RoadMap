@@ -32,7 +32,10 @@ import {
 import { CURSO_SEED_ID } from '../../mocks/seed';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 import { InventoryModal, InventoryMode } from '../../shared/ui/inventory-modal';
+import { Lives } from './lives';
+import { FIRE_COLORS, FIRE_GRID } from './racha';
 import { RankingPanel } from '../ranking/ranking-panel';
+import { PixelIcon } from '../../shared/pixel-icon';
 
 type EstadoIsla = 'bloqueada' | 'disponible' | 'completada';
 type JoyDir = 'left' | 'right' | 'up' | 'down';
@@ -64,7 +67,7 @@ const MARGEN = 90;
 @Component({
   selector: 'app-mapa',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarSprite, RouterLink, InventoryModal, RankingPanel],
+  imports: [AvatarSprite, RouterLink, InventoryModal, RankingPanel, Lives, PixelIcon],
   host: { class: 'block w-full h-full' },
   styles: `
     :host {
@@ -747,16 +750,8 @@ const MARGEN = 90;
                         style="background: radial-gradient(circle at 20% 0%, rgba(255, 46, 147, 0.18), transparent 65%);"
                       ></div>
                       <span class="silkscreen text-[9px] text-[#FF9CC8] relative">VIDAS</span>
-                      <div class="relative flex gap-3 text-3xl mt-1.5 justify-center">
-                        @for (i of [0, 1, 2]; track i) {
-                          <span
-                            [class.heart-off]="i >= vidas()"
-                            [class.heart-on]="i < vidas()"
-                            [style.animation-delay.ms]="i * 130"
-                          >
-                            ❤️
-                          </span>
-                        }
+                      <div class="relative flex gap-3 mt-1.5 justify-center">
+                        <app-lives [current]="vidas()" [size]="26" />
                       </div>
                     </div>
 
@@ -768,7 +763,7 @@ const MARGEN = 90;
                       ></div>
                       <span class="silkscreen text-[9px] text-[#FFE566] relative">RACHA</span>
                       <div class="relative flex items-baseline justify-center gap-2 mt-1.5">
-                        <span class="flame text-3xl">🔥</span>
+                        <app-pixel-icon [grid]="fireGrid" [colors]="fireColors" [size]="30" class="flame" />
                         <span class="pixel-num text-4xl text-warning leading-none">
                           {{ rachaDias() }}
                         </span>
@@ -831,6 +826,9 @@ export class Mapa implements OnDestroy {
   protected readonly SEMI_ALTO = SEMI_ALTO;
   protected readonly ESPESOR = ESPESOR;
   protected readonly BASE_LARGO = BASE_LARGO;
+
+  protected readonly fireGrid = FIRE_GRID;
+  protected readonly fireColors = FIRE_COLORS;
 
   protected readonly sel = signal<Isla | null>(null);
   protected readonly xp = computed(() => this.progreso()?.xpTotal ?? 0);
