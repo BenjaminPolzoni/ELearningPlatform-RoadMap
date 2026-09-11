@@ -38,7 +38,14 @@ const EMPTY_COLORS: Record<number, string> = {
   template: `
     <span class="inline-flex items-center gap-1" [attr.aria-label]="label()">
       @for (filled of hearts(); track $index) {
-        <app-pixel-icon [grid]="heartGrid" [colors]="filled ? fullColors : emptyColors" [size]="14" />
+        <app-pixel-icon
+          [grid]="heartGrid"
+          [colors]="filled ? fullColors : emptyColors"
+          [size]="size()"
+          [class.heart-on]="filled"
+          [class.heart-off]="!filled"
+          [style.animation-delay.ms]="filled ? $index * 130 : null"
+        />
       }
     </span>
   `,
@@ -46,6 +53,7 @@ const EMPTY_COLORS: Record<number, string> = {
 export class Lives {
   readonly current = input.required<number>();
   readonly max = input(3);
+  readonly size = input(14);
 
   protected readonly heartGrid = HEART_GRID;
   protected readonly fullColors = FULL_COLORS;

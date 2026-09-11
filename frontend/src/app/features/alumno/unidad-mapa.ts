@@ -23,6 +23,9 @@ import { RoadmapStore } from '../../core/data/roadmap.store';
 import { Unidad } from '../../core/data/roadmap.models';
 import { CURSO_SEED_ID } from '../../mocks/seed';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
+import { PixelIcon } from '../../shared/pixel-icon';
+import { Lives } from './lives';
+import { FIRE_COLORS, FIRE_GRID } from './racha';
 import { InventoryModal, InventoryMode } from '../../shared/ui/inventory-modal';
 import { RankingPanel } from '../ranking/ranking-panel';
 import {
@@ -90,7 +93,7 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
 @Component({
   selector: 'app-mapa, app-unidad-mapa',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarSprite, UpperCasePipe, InventoryModal, RankingPanel],
+  imports: [AvatarSprite, UpperCasePipe, InventoryModal, RankingPanel, Lives, PixelIcon],
   host: { class: 'block w-full h-full' },
   styles: `
     :host {
@@ -337,11 +340,7 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
                 <!-- Vidas -->
                 <div class="flex flex-col gap-1 px-3 py-2 rounded-xl bg-[#180a26b8] border border-[#ff2d6f8c] shadow-[0_0_14px_rgba(255,45,111,0.25)] backdrop-blur">
                   <span class="font-['Press_Start_2P'] text-[7px] tracking-wider text-[#ff6b9c]">VIDAS</span>
-                  <div class="flex gap-1 text-base tracking-widest text-[#ff2d6f] drop-shadow-[0_0_6px_#ff2d6f]">
-                    @for (i of [0, 1, 2]; track i) {
-                      <span [class.opacity-30]="i >= vidas()">❤️</span>
-                    }
-                  </div>
+                  <app-lives [current]="vidas()" [size]="18" />
                 </div>
 
                 <!-- XP -->
@@ -879,10 +878,8 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
                     <!-- Vidas -->
                     <div class="p-3 rounded-xl bg-[#ff2d6f14] border border-[#ff2d6f66] shadow-[inset_0_0_12px_rgba(255,45,111,0.15)]">
                       <div class="font-['Press_Start_2P'] text-[8px] text-[#ff6b9c] tracking-wider mb-1.5">VIDAS</div>
-                      <div class="flex justify-center gap-2 text-2xl drop-shadow-[0_0_6px_#ff2d6f]">
-                        @for (i of [0, 1, 2]; track i) {
-                          <span [class.opacity-25]="i >= vidas()">❤️</span>
-                        }
+                      <div class="flex justify-center gap-2 drop-shadow-[0_0_6px_#ff2d6f]">
+                        <app-lives [current]="vidas()" [size]="26" />
                       </div>
                     </div>
 
@@ -890,7 +887,7 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
                     <div class="p-3 rounded-xl bg-[#ffd21e12] border border-[#ffd21e66] shadow-[inset_0_0_12px_rgba(255,210,30,0.12)]">
                       <div class="font-['Press_Start_2P'] text-[8px] text-[#ffd21e] tracking-wider mb-1.5">RACHA</div>
                       <div class="flex items-baseline justify-center gap-2">
-                        <span class="text-2xl drop-shadow-[0_0_8px_#ff8a1e]">🔥</span>
+                        <app-pixel-icon [grid]="fireGrid" [colors]="fireColors" [size]="26" class="drop-shadow-[0_0_8px_#ff8a1e]" />
                         <span class="font-['Press_Start_2P'] text-xl text-[#ffd21e] drop-shadow-[0_0_8px_rgba(255,210,30,0.7)]">{{ rachaDias() }}</span>
                         <span class="text-xs font-semibold text-[#e0c46a]">días</span>
                       </div>
@@ -1508,6 +1505,8 @@ export class UnidadMapa {
     Math.min(100, Math.max(0, Math.round((this.xpNivelActual() / 1000) * 100))),
   );
   protected readonly rachaDias = signal(10);
+  protected readonly fireGrid = FIRE_GRID;
+  protected readonly fireColors = FIRE_COLORS;
 
   // ---------- Modales Auxiliares ----------
   readonly rankOpen = signal(false);
