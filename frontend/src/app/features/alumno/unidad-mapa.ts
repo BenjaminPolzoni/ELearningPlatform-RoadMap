@@ -28,17 +28,26 @@ interface Casillero {
   alcanzable: boolean;
 }
 
-// Tablero: serpentina ortogonal de 4 columnas — los nodos consecutivos siempre quedan
-// alineados en x o en y, que es lo que permite que el avatar camine en línea recta.
+// Serpentina de 4 columnas: fallback para actividades sin posición propia (no debería
+// pasar en la práctica — el adapter les asigna una default al crearlas — pero cubre datos
+// viejos de localStorage de antes de este editor).
 const COLS = 4;
 const CW = 168;
 const CH = 138;
 const X0 = 104;
 const Y0 = 96;
 const LADO = 72; // lado del casillero
+const MARGEN_TABLERO = 90; // aire alrededor del bounding box de los nodos posicionados
 
 /** Duración de un tramo de caminata, en ms. */
 const MS_POR_TRAMO = 420;
+
+function posicionSerpentina(indice: number): { x: number; y: number } {
+  const fila = Math.floor(indice / COLS);
+  const enFila = indice % COLS;
+  const col = fila % 2 === 0 ? enFila : COLS - 1 - enFila;
+  return { x: X0 + col * CW, y: Y0 + fila * CH };
+}
 
 const GLIFO: Record<TipoNodo, string> = {
   teoria: '≡',
@@ -56,9 +65,10 @@ const GLIFO: Record<TipoNodo, string> = {
  * SVG y no canvas a propósito: cada casillero es un elemento del DOM, con foco, rol y
  * `aria-label` (05 §5/§7).
  *
- * ⚠️ Las posiciones deberían venir de `posicion_x`/`posicion_y` que define el profesor
- * (05 §5); el editor todavía no las expone, así que acá se calculan con la serpentina.
- * Registrado en `path/deuda-tecnica/`.
+ * Las posiciones son las que el profesor definió en el editor gráfico (`posicion_x`/
+ * `posicion_y`, ver `features/profesor/nodo-canvas.ts`) — la serpentina de acá abajo es
+ * solo el fallback para una actividad que por lo que sea no tenga posición propia
+ * (deuda-tecnica/tarea-deuda-05-design-system.md #1, ya pagada).
  */
 @Component({
   selector: 'app-unidad-mapa',
@@ -311,14 +321,12 @@ export class UnidadMapa {
     const estados = new Map((this.progreso()?.nodos ?? []).map((n) => [n.nodoId, n.estado]));
 
     const items = u.actividades.map((a, i): Casillero => {
-      const fila = Math.floor(i / COLS);
-      const enFila = i % COLS;
-      const col = fila % 2 === 0 ? enFila : COLS - 1 - enFila;
+      const serpentina = posicionSerpentina(i);
       return {
         a,
         i,
-        x: X0 + col * CW,
-        y: Y0 + fila * CH,
+        x: typeof a.posicionX === 'number' ? a.posicionX : serpentina.x,
+        y: typeof a.posicionY === 'number' ? a.posicionY : serpentina.y,
         estado: estados.get(a.id) ?? 'bloqueado',
         alcanzable: false,
       };
@@ -335,10 +343,15 @@ export class UnidadMapa {
     () => this.casilleros().filter((c) => c.estado === 'completado').length,
   );
 
-  protected readonly ancho = computed(() => X0 * 2 + (COLS - 1) * CW);
+  // Bounding box de los nodos ya posicionados + margen — crece solo si el profesor arrastra
+  // uno más allá del encuadre por defecto (mismo criterio que `Mapa.encuadreBase`).
+  protected readonly ancho = computed(() => {
+    const xs = this.casilleros().map((c) => c.x);
+    return Math.max(X0 * 2, ...xs) + MARGEN_TABLERO;
+  });
   protected readonly alto = computed(() => {
-    const filas = Math.max(1, Math.ceil(this.casilleros().length / COLS));
-    return Y0 * 2 + (filas - 1) * CH;
+    const ys = this.casilleros().map((c) => c.y);
+    return Math.max(Y0 * 2, ...ys) + MARGEN_TABLERO;
   });
 
   protected readonly tramos = computed(() => {

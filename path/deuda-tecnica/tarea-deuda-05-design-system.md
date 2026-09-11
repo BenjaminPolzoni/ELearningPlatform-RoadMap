@@ -1,6 +1,6 @@
 # Deuda técnica — descubierta ejecutando `05-design-system.md`
 
-## 🔴 1. El tablero de unidad ignora `posicion_x` / `posicion_y`
+## ✅ 1. El tablero de unidad ignora `posicion_x` / `posicion_y` — pagada (G9, editor gráfico)
 
 **Qué falta:** que el tablero interno de la unidad ubique cada casillero en la posición
 que el profesor definió. Hoy calcula un layout serpenteante de 4 columnas a partir del
@@ -22,6 +22,13 @@ garantiza. El rediseño visual se puede cerrar y verificar entero sin esto.
 nodos. Ahí se agregan `posicionX`/`posicionY` a `Actividad`, y `casilleros()` pasa a
 leerlos con la serpentina como fallback para las actividades que todavía no fueron
 posicionadas.
+
+**Pagada:** `Actividad.posicionX`/`posicionY` existen desde G9 (editor gráfico del
+profesor, `features/profesor/nodo-canvas.ts`); el adapter les asigna una posición default
+no solapada al crearlas y migra los datos viejos de `localStorage`. `casilleros()` en
+`unidad-mapa.ts` las lee directo, con la serpentina como fallback defensivo si alguna
+llegara sin posición; `ancho()`/`alto()` ahora son el bounding box real de los nodos en vez
+de una grilla fija.
 
 ---
 
