@@ -108,12 +108,114 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
       0%, 100% { box-shadow: 0 0 22px rgba(255, 47, 208, 0.65), 0 0 44px rgba(255, 47, 208, 0.35), inset 0 0 14px rgba(255, 255, 255, 0.35); }
       50% { box-shadow: 0 0 34px rgba(255, 47, 208, 0.95), 0 0 70px rgba(255, 47, 208, 0.6), inset 0 0 18px rgba(255, 255, 255, 0.55); }
     }
-    @keyframes crtPowerOn {
-      0% { opacity: 1; transform: scaleY(0.006); }
-      18% { opacity: 1; transform: scaleY(0.02); }
-      45% { opacity: 1; transform: scaleY(0.55); }
-      72% { opacity: 1; transform: scaleY(1); }
-      100% { opacity: 0; transform: scaleY(1); }
+    /* ===== EFECTO CRT TV ANTIGUA (Líneas blancas verticales de encendido) ===== */
+    .crt-turnon-overlay {
+      pointer-events: none;
+    }
+
+    .crt-bloom {
+      animation: crtBloom 0.7s cubic-bezier(0.1, 0.85, 0.25, 1) forwards;
+    }
+    @keyframes crtBloom {
+      0% {
+        opacity: 0;
+        background: transparent;
+      }
+      15% {
+        opacity: 1;
+        background: radial-gradient(circle at center, rgba(255, 255, 255, 0.95) 0%, rgba(220, 255, 250, 0.7) 40%, rgba(34, 224, 208, 0.3) 75%, transparent 100%);
+      }
+      50% {
+        opacity: 0.8;
+        background: radial-gradient(circle at center, rgba(255, 255, 255, 0.8) 0%, rgba(200, 245, 255, 0.5) 50%, transparent 85%);
+      }
+      80% {
+        opacity: 0.35;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    .crt-vertical-beam {
+      background: #ffffff;
+      box-shadow: 0 0 15px #ffffff, 0 0 35px #ffffff, 0 0 70px #22e0d0, 0 0 120px #ffffff;
+      transform-origin: center;
+      animation: crtVerticalBeam 0.7s cubic-bezier(0.12, 0.9, 0.2, 1) forwards;
+    }
+    @keyframes crtVerticalBeam {
+      0% {
+        transform: scaleX(0.01) scaleY(0.02);
+        opacity: 1;
+      }
+      15% {
+        transform: scaleX(0.05) scaleY(1);
+        opacity: 1;
+      }
+      35% {
+        transform: scaleX(0.35) scaleY(1);
+        opacity: 1;
+      }
+      65% {
+        transform: scaleX(1) scaleY(1);
+        opacity: 0.85;
+      }
+      100% {
+        transform: scaleX(1) scaleY(1);
+        opacity: 0;
+      }
+    }
+
+    .crt-vertical-lines {
+      background: repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.9) 0px,
+        rgba(255, 255, 255, 0.9) 2px,
+        rgba(210, 245, 255, 0.5) 3px,
+        transparent 3px,
+        transparent 7px
+      );
+      transform-origin: center;
+      animation: crtVerticalLines 0.7s cubic-bezier(0.1, 0.85, 0.25, 1) forwards;
+    }
+    @keyframes crtVerticalLines {
+      0% {
+        transform: scaleX(0.005);
+        opacity: 0;
+      }
+      12% {
+        transform: scaleX(0.05);
+        opacity: 1;
+      }
+      35% {
+        transform: scaleX(0.45);
+        opacity: 0.95;
+      }
+      65% {
+        transform: scaleX(1);
+        opacity: 0.75;
+      }
+      100% {
+        transform: scaleX(1);
+        opacity: 0;
+      }
+    }
+
+    .crt-scanlines {
+      background: repeating-linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.4) 0px,
+        rgba(0, 0, 0, 0.4) 2px,
+        transparent 2px,
+        transparent 4px
+      );
+      animation: crtScanlines 0.7s ease-out forwards;
+    }
+    @keyframes crtScanlines {
+      0% { opacity: 0; }
+      20% { opacity: 0.7; }
+      80% { opacity: 0.4; }
+      100% { opacity: 0; }
     }
 
     .map-viewport {
@@ -125,7 +227,7 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
       overscroll-behavior: contain;
       scrollbar-width: thin;
       scrollbar-color: #a57b40 #ebbd64;
-      background: #190236;
+      background: var(--ground, #f6c25d);
       position: relative;
     }
 
@@ -453,19 +555,31 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
               </div>
             </div>
 
-            <!-- FLASH CRT DE BOOTEO -->
+            <!-- FLASH CRT DE BOOTEO CON LÍNEAS VERTICALES BLANCAS (Efecto TV Antigua) -->
             @if (view() === 'flash') {
               <div
-                class="pointer-events-none absolute inset-0 z-50 bg-[#fdfcff]"
-                style="animation: crtPowerOn 0.5s ease-out forwards; transform-origin: center;"
-              ></div>
+                class="crt-turnon-overlay pointer-events-none absolute inset-0 z-50 overflow-hidden flex items-center justify-center bg-black/40"
+              >
+                <!-- Resplandor ambiental de fósforo -->
+                <div class="crt-bloom absolute inset-0"></div>
+
+                <!-- Trama de líneas blancas verticales (Aperture Grille de TV antigua) -->
+                <div class="crt-vertical-lines absolute inset-0"></div>
+
+                <!-- Haz central vertical blanco brillante de alta intensidad -->
+                <div class="crt-vertical-beam absolute inset-y-0 w-2 md:w-3 bg-white"></div>
+
+                <!-- Scanlines horizontales tenues para textura CRT -->
+                <div class="crt-scanlines absolute inset-0"></div>
+              </div>
             }
 
             <!-- ============================================================= -->
             <!-- CAPA 2: INTERIOR DE LA UNIDAD (VERTICAL WORLD + ARCADIA)      -->
             <!-- ============================================================= -->
             <div
-              class="absolute inset-0 z-20 flex flex-col transition-all duration-600 ease-out"
+              class="vertical-world absolute inset-0 z-20 flex flex-col transition-all duration-600 ease-out"
+              [attr.data-theme]="theme()"
               [style.transform]="isRevealed() ? 'scale(1)' : 'scale(1.12)'"
               [style.opacity]="isRevealed() ? 1 : 0"
               [style.pointer-events]="view() === 'roadmap' ? 'auto' : 'none'"
@@ -543,15 +657,19 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
               <div class="flex-1 min-h-0 flex flex-row relative overflow-hidden">
                 
                 <!-- ÁREA IZQUIERDA: PANTALLA CON VERTICAL-WORLD SCROLLABLE -->
-                <div #mapPanel class="flex-1 min-h-0 relative flex flex-col overflow-hidden bg-[#160a2b]">
+                <div #mapPanel class="flex-1 min-h-0 relative flex flex-col overflow-hidden" [style.backgroundColor]="groundColor()">
                   
                   <!-- VIEWPORT CON SCROLL VERTICAL (El motor Mario 3) -->
-                  <div #mapViewport class="map-viewport">
+                  <div #mapViewport class="map-viewport" [style.backgroundColor]="groundColor()">
                     <div
                       class="map-world relative w-full overflow-hidden"
                       [style.height.px]="world().worldHeight"
-                      [style.background]="'var(--ground) url(' + world().tile + ') repeat-y'"
-                      style="background-size: 100% auto; image-rendering: pixelated;"
+                      [style.backgroundImage]="'url(' + world().tile + ')'"
+                      [style.backgroundColor]="groundColor()"
+                      [style.backgroundRepeat]="'repeat-y'"
+                      [style.backgroundPosition]="'center top'"
+                      [style.backgroundSize]="'100% auto'"
+                      style="image-rendering: pixelated;"
                     >
                       <!-- Capa de Terreno y Caminos SVG -->
                       <div class="vertical-terrain">
@@ -1232,12 +1350,14 @@ export class UnidadMapa {
     if (this.insertTimeout1) clearTimeout(this.insertTimeout1);
     if (this.insertTimeout2) clearTimeout(this.insertTimeout2);
 
+    this.playCrtPowerOnSound();
+
     this.insertTimeout1 = window.setTimeout(() => this.view.set('flash'), 650);
     this.insertTimeout2 = window.setTimeout(() => {
       this.view.set('roadmap');
       this.router.navigate(['/alumno/unidad', this.activeUnit().id], { replaceUrl: true });
-      setTimeout(() => this.scrollToPlayer(), 200);
-    }, 1150);
+      setTimeout(() => this.scrollToPlayer(), 250);
+    }, 1350);
   }
 
   back(): void {
@@ -1274,6 +1394,13 @@ export class UnidadMapa {
     if (nombre.includes('castillo') || nombre.includes('fortaleza') || nombre.includes('funcion') || u.orden === 3)
       return 'castle';
     return (['desert', 'jungle', 'castle'] as const)[(u.orden - 1) % 3];
+  });
+
+  protected readonly groundColor = computed<string>(() => {
+    const t = this.theme();
+    if (t === 'jungle') return '#638c3e';
+    if (t === 'castle') return '#343f5c';
+    return '#f6c25d'; // desert
   });
 
   protected readonly world = computed<GeneratedWorld>(() => {
@@ -1802,6 +1929,43 @@ export class UnidadMapa {
         osc.start(start);
         osc.stop(start + 0.4);
       });
+    } catch {}
+  }
+
+  private playCrtPowerOnSound(): void {
+    if (!this.soundEnabled()) return;
+    try {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime + 0.65;
+
+      // 1. Degauss coil 'thump' (130Hz -> 35Hz)
+      const degaussOsc = ctx.createOscillator();
+      const degaussGain = ctx.createGain();
+      degaussOsc.type = 'sine';
+      degaussOsc.frequency.setValueAtTime(130, now);
+      degaussOsc.frequency.exponentialRampToValueAtTime(35, now + 0.35);
+      degaussGain.gain.setValueAtTime(0.18, now);
+      degaussGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+      degaussOsc.connect(degaussGain);
+      degaussGain.connect(ctx.destination);
+      degaussOsc.start(now);
+      degaussOsc.stop(now + 0.45);
+
+      // 2. High-pitch CRT phosphor whine (~6500Hz -> 8200Hz)
+      const flybackOsc = ctx.createOscillator();
+      const flybackGain = ctx.createGain();
+      flybackOsc.type = 'sawtooth';
+      flybackOsc.frequency.setValueAtTime(6500, now);
+      flybackOsc.frequency.linearRampToValueAtTime(8200, now + 0.25);
+      flybackGain.gain.setValueAtTime(0.025, now);
+      flybackGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+      flybackOsc.connect(flybackGain);
+      flybackGain.connect(ctx.destination);
+      flybackOsc.start(now);
+      flybackOsc.stop(now + 0.55);
     } catch {}
   }
 }
