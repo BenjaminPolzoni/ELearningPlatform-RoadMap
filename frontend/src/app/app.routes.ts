@@ -19,7 +19,7 @@ export const routes: Routes = [
   {
     path: 'alumno',
     canActivate: [sesionGuard],
-    loadComponent: () => import('./features/alumno/mapa').then((m) => m.Mapa),
+    loadComponent: () => import('./features/alumno/unidad-mapa').then((m) => m.UnidadMapa),
   },
   {
     // Personalización del avatar que recorre el mapa y el tablero.
