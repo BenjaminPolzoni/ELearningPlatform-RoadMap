@@ -1688,7 +1688,7 @@ export class UnidadMapa {
   }
 
   protected scenerySvg(): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(renderWorldScenery(this.world()));
+    return this.sanitizer.bypassSecurityTrustHtml(renderWorldScenery(this.world(), this.completedIds()));
   }
 
   protected castleGoalSvg(): SafeHtml {
