@@ -3,10 +3,12 @@
 // (02-modelo-de-datos.md §"El seed no es descartable: es el fixture con el que se prueba
 // el ranking"). Números fijos y deterministas — el ranking no debe "bailar" entre cargas.
 //
-// AVATAR: placeholder. El avatar real (marco por nivel, imagen de perfil) lo provee otro
-// squad vía `AlumnoPerfilCache` (T01) y llega consolidado por el BFF. Acá solo se genera
-// un SVG de iniciales sobre color estable para no bloquear la tabla.
+// AVATAR: mismo `AvatarConfig` que usa el resto de la plataforma (HUD, mapa, "Mi
+// personaje"), no una imagen aparte. El alumno logueado ve su avatar real (AvatarService);
+// el resto de la cohorte recibe una combinación determinística por alumno — nunca cambia
+// entre cargas y nunca dos alumnos comparten exactamente el mismo look.
 
+import { ACCESORIOS, AvatarConfig, COLORES, PELOS, PIELES } from '../core/avatar/avatar.models';
 import { FilaRanking } from '../core/data/ranking.models';
 import { ordenarCohorte, percentilDe, zonaDe } from '../domain/ranking/ranking.reglas';
 import { alumnosSeed } from './seed';
@@ -14,20 +16,20 @@ import { alumnosSeed } from './seed';
 /** Alumno logueado en el mock (coincide con `features/alumno/mapa.ts`). */
 export const ALUMNO_ACTUAL_ID = 'alu-01';
 
-const PALETA = ['#00E5FF', '#B85CF6', '#FF2E93', '#39FF88', '#FFD60A'];
-
-/** SVG data-URI de iniciales sobre color estable. Placeholder — ver nota del encabezado. */
-export function avatarMock(seed: string, nombre: string, apellido: string): string {
+/** Combinación de avatar determinística por `seed` — misma paleta que el editor de avatar. */
+export function avatarConfigMock(seed: string): AvatarConfig {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  const bg = PALETA[h % PALETA.length];
-  const iniciales = `${nombre[0] ?? '?'}${apellido[0] ?? ''}`.toUpperCase();
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">` +
-    `<rect width="64" height="64" fill="${bg}"/>` +
-    `<text x="32" y="43" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" ` +
-    `text-anchor="middle" fill="#0D0B1E">${iniciales}</text></svg>`;
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  const elegir = <T extends string>(xs: readonly { id: T }[], bits: number): T =>
+    xs[(h >>> bits) % xs.length].id;
+  return {
+    piel: elegir(PIELES, 0),
+    pelo: elegir(PELOS, 3),
+    colorPelo: elegir(COLORES, 6),
+    colorTraje: elegir(COLORES, 9),
+    accesorio: elegir(ACCESORIOS, 12),
+    colorAccesorio: elegir(COLORES, 15),
+  };
 }
 
 /**
@@ -200,7 +202,7 @@ export function cohorteMock(): FilaRanking[] {
       nombre: a.nombre,
       apellido: a.apellido,
       legajo: a.legajo,
-      avatarUrl: avatarMock(a.id, a.nombre, a.apellido),
+      avatar: avatarConfigMock(a.id),
       xpTotal: c.xpTotal,
       nivelNodo: c.nivelNodo,
       percentil: 0,

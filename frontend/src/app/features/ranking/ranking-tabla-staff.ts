@@ -1,6 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { FilaRanking, VistaRankingStaff } from '../../core/data/ranking.models';
 import { enRiesgoRegularidad, esCandidatoPromocion } from '../../domain/ranking/ranking.reglas';
+import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 
 /**
  * Vista de PROFESOR/ADMIN (RF-RNK-10): tabla densa, identificada y sin anonimato, con las
@@ -12,6 +13,7 @@ import { enRiesgoRegularidad, esCandidatoPromocion } from '../../domain/ranking/
  */
 @Component({
   selector: 'app-ranking-tabla-staff',
+  imports: [AvatarSprite],
   template: `
     <div class="staff-scroll">
       <table class="staff">
@@ -40,7 +42,7 @@ import { enRiesgoRegularidad, esCandidatoPromocion } from '../../domain/ranking/
               <td class="tabular">{{ f.posicion }}</td>
               <td class="staff__alumno">
                 <div class="staff__ident">
-                  <img [src]="f.avatarUrl" alt="" class="rk-row__avatar" />
+                  <ui-avatar-sprite class="rk-row__avatar" [config]="f.avatar" [alto]="43" />
                   <b class="staff__nombre">{{ f.nombre }} {{ f.apellido }}</b>
                 </div>
               </td>
@@ -119,10 +121,10 @@ import { enRiesgoRegularidad, esCandidatoPromocion } from '../../domain/ranking/
     }
     .staff__legajo {
       text-align: left;
-      /* IBM Plex Mono: los dígitos del legajo se leen sin ambigüedad; VT323 (CRT)
-         confundía 0/8 y 1/7 a este tamaño. */
+      /* Dato de auditoría, no el protagonista de la fila: chico para no competir
+         con el nombre del alumno. */
       font-family: var(--font-ui);
-      font-size: 0.9rem;
+      font-size: 0.55rem;
       font-variant-numeric: tabular-nums;
       letter-spacing: 0.02em;
       color: var(--rk-cyan);
@@ -131,7 +133,7 @@ import { enRiesgoRegularidad, esCandidatoPromocion } from '../../domain/ranking/
     /* datos numéricos en Press Start 2P; el nombre del alumno queda en VT323 (celda base) */
     .staff td.tabular {
       font-family: var(--font-title);
-      font-size: 0.6rem;
+      font-size: 0.8rem;
       line-height: 1.5;
     }
     .staff tbody tr:hover {

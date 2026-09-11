@@ -1,3 +1,4 @@
+import { AVATAR_POR_DEFECTO } from '../../core/avatar/avatar.models';
 import { FilaRanking } from '../../core/data/ranking.models';
 import {
   cortesActivos,
@@ -15,7 +16,7 @@ function fila(over: Partial<FilaRanking>): FilaRanking {
     nombre: 'N',
     apellido: 'A',
     legajo: '0',
-    avatarUrl: '',
+    avatar: AVATAR_POR_DEFECTO,
     xpTotal: 1000,
     nivelNodo: 5,
     percentil: 0,

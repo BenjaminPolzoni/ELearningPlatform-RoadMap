@@ -1,6 +1,7 @@
 import { Component, computed, input, output } from '@angular/core';
 import { FilaRanking, FilaRankingAnon, VistaRankingAlumno } from '../../core/data/ranking.models';
 import { enRiesgoRegularidad, esCandidatoPromocion } from '../../domain/ranking/ranking.reglas';
+import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 
 type FilaLista = FilaRanking | FilaRankingAnon;
 
@@ -52,6 +53,7 @@ const COPY: Record<EstadoZona, { tag: string; sub: string; tono: Tono }> = {
  */
 @Component({
   selector: 'app-ranking-tabla-alumno',
+  imports: [AvatarSprite],
   template: `
     <!-- ══ TU ESTADO ══ solo aparece si estás en PROMOCIÓN o en RIESGO ══ -->
     @if (vista().yo; as yo) {
@@ -118,7 +120,7 @@ const COPY: Record<EstadoZona, { tag: string; sub: string; tono: Tono }> = {
       >
         <span class="rk-row__pos tabular">{{ f.posicion }}</span>
         <span style="display:flex;align-items:center;gap:0.5rem;min-width:0">
-          <img class="rk-row__avatar" [src]="f.avatarUrl" alt="" />
+          <ui-avatar-sprite class="rk-row__avatar" [config]="f.avatar" [alto]="52" />
           <span style="min-width:0">
             <span class="rk-row__name" style="display:block">{{ etiqueta(f) }}</span>
             @if (promociona(f)) {

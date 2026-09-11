@@ -786,11 +786,15 @@ button.rk-estado:hover {
 .rk-row--me .rk-row__pos {
   color: var(--rk-cyan);
 }
+/* busto: recorta el sprite de cuerpo entero a cabeza+torso, igual que `ui-hud` */
 .rk-row__avatar {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  object-fit: cover;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
   background: var(--rk-bg);
   border: 1px solid var(--rk-bg3);
   flex-shrink: 0;
@@ -807,7 +811,7 @@ button.rk-estado:hover {
 }
 .rk-row__cell {
   font-family: var(--font-title);
-  font-size: 0.5rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   text-align: center;
   color: var(--rk-ink);
@@ -819,7 +823,7 @@ button.rk-estado:hover {
   text-align: right;
   color: var(--rk-yellow);
   font-family: var(--font-title);
-  font-size: 0.55rem;
+  font-size: 0.85rem;
   line-height: 1.5;
 }
 
@@ -853,9 +857,12 @@ button.rk-estado:hover {
     inset 0 0 30px rgba(0, 0, 0, 0.3);
   font-family: var(--font-console);
 }
-/* avatar redondo, como en el listado (con anillo neón del HUD) */
+/* avatar redondo, como en el listado (con anillo neón del HUD) — busto recortado */
 .rk-shield {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
   width: 76px;
   height: 76px;
   flex-shrink: 0;
@@ -864,13 +871,6 @@ button.rk-estado:hover {
   border: 2px solid var(--rk-cyan);
   padding: 3px;
   box-shadow: 0 0 14px rgba(0, 229, 255, 0.35);
-}
-.rk-shield img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-  background: var(--rk-bg);
 }
 /* placa de puesto: kicker "PUESTO" + "NN / total" en pixel-font */
 .rk-plate {

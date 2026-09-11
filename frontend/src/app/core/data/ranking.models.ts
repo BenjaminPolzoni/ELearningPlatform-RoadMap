@@ -7,6 +7,8 @@
 // dos vistas distintas (`VistaRankingAlumno` / `VistaRankingStaff`), no una sola que el
 // componente recorte.
 
+import { AvatarConfig } from '../avatar/avatar.models';
+
 export type Zona = 'ninguna' | 'p90' | 'p10';
 
 /**
@@ -20,8 +22,8 @@ export interface FilaRanking {
   nombre: string;
   apellido: string;
   legajo: string;
-  /** MOCK — el avatar real lo provee otro squad (AlumnoPerfilCache, T01). Ver ranking.mock.ts. */
-  avatarUrl: string;
+  /** Mismo sprite pixel-art que el resto de la plataforma (HUD, mapa, "Mi personaje"). */
+  avatar: AvatarConfig;
   xpTotal: number;
   /**
    * NODO actual del alumno dentro del mapa de progreso del curso (no `floor(xp/n)`):
