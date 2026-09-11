@@ -15,6 +15,10 @@ import { SaveFeedbackToast } from './save-feedback-toast';
 @Component({
   selector: 'app-editor',
   imports: [FormsModule, RouterLink, Mapa, ConfirmButton, SaveFeedbackToast],
+  // El shell raíz (app.html) recorta el <router-outlet> a un cuadro fijo sin scroll (pensado
+  // para el mapa arcade del alumno) — esta vista sí necesita scrollear, así que scrollea
+  // puertas adentro en vez de depender del documento.
+  host: { class: 'block w-full h-full overflow-y-auto p-6' },
   template: `
     <div class="max-w-3xl mx-auto w-full">
       <div class="flex items-center justify-between gap-4 mb-6">

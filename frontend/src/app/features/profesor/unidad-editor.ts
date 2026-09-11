@@ -26,6 +26,9 @@ const XP_POR_DIFICULTAD: Record<Dificultad, number> = { BASICO: 100, MEDIO: 250,
 @Component({
   selector: 'app-unidad-editor',
   imports: [FormsModule, RouterLink, NodoCanvas, ConfirmButton, SaveFeedbackToast],
+  // Ídem editor.ts: el shell raíz recorta el <router-outlet> sin scroll, así que esta vista
+  // (la lista de nodos, que puede ser más alta que la pantalla) scrollea puertas adentro.
+  host: { class: 'block w-full h-full overflow-y-auto p-6' },
   template: `
     <a routerLink="/profesor" class="btn btn-sm btn-ghost mb-4">← volver al curso</a>
 

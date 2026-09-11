@@ -26,6 +26,9 @@ import { GENERIC_ICONS } from './generic-icons';
 @Component({
   selector: 'app-catalogo',
   imports: [PixelIcon, FormsModule, RouterLink],
+  // Ídem editor.ts/unidad-editor.ts: el shell raíz recorta el <router-outlet> sin scroll,
+  // así que esta vista scrollea puertas adentro.
+  host: { class: 'block w-full h-full overflow-y-auto p-6' },
   template: `
     <div class="flex items-center justify-between gap-4 mb-6">
       <div class="flex items-baseline gap-4">
