@@ -258,7 +258,7 @@ const markSvg = (name: 'check' | 'star' | 'heart' | 'bolt' | 'lock', x = 25, y =
   if (name === 'check')
     return `<path d="M${x + 4} ${y + size / 2} L${x + size / 3} ${y + size - 4} L${x + size - 3} ${y + 4}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>`;
   if (name === 'heart')
-    return `<path d="M${x + size / 2} ${y + size - 2} C${x} ${y + size / 2} ${x} ${y + 2} ${x + size / 2} ${y + size / 3} C${x + size} ${y + 2} ${x + size} ${y + size / 2} Z" fill="currentColor"/>`;
+    return `<path d="M${x + size / 2} ${y + size - 2} C${x} ${y + size / 2} ${x} ${y + 2} ${x + size / 2} ${y + size / 3} C${x + size} ${y + 2} ${x + size} ${y + size / 2} ${x + size / 2} ${y + size - 2} Z" fill="currentColor"/>`;
   if (name === 'star')
     return `<polygon points="${x + size / 2},${y} ${x + size * 0.65},${y + size * 0.35} ${x + size},${y + size * 0.35} ${x + size * 0.72},${y + size * 0.58} ${x + size * 0.82},${y + size} ${x + size / 2},${y + size * 0.75} ${x + size * 0.18},${y + size} ${x + size * 0.28},${y + size * 0.58} ${x},${y + size * 0.35} ${x + size * 0.35},${y + size * 0.35}" fill="currentColor"/>`;
   if (name === 'bolt')
