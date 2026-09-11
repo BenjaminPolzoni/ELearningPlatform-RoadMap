@@ -1,42 +1,4 @@
-@if (auth.rol()) {
-  <header
-    class="navbar sticky top-0 z-40 gap-3 border-b-2 border-primary bg-base-200/90 px-4 backdrop-blur"
-  >
-    <a routerLink="/" class="title-font text-lg text-primary drop-shadow-[0_0_8px_#FF2758]">ROADMAP</a>
-    <span class="badge badge-secondary badge-outline ui-font text-[8px]">{{ auth.rol() }}</span>
-
-    @if (auth.rol() === 'PROFESOR') {
-      <a routerLink="/profesor" routerLinkActive="text-primary" class="btn btn-sm btn-ghost">Editor</a>
-      <a routerLink="/alumno" routerLinkActive="text-primary" class="btn btn-sm btn-ghost">Ver mapa</a>
-    }
-    @if (auth.rol() === 'ALUMNO') {
-      <a
-        routerLink="/alumno"
-        routerLinkActive="text-primary"
-        [routerLinkActiveOptions]="{ exact: true }"
-        class="btn btn-sm btn-ghost"
-        >Mi mapa</a
-      >
-      <a routerLink="/alumno/avatar" routerLinkActive="text-primary" class="btn btn-sm btn-ghost"
-        >Mi personaje</a
-      >
-    }
-    @if (auth.rol() === 'ADMIN' || auth.rol() === 'PROFESOR') {
-      <a routerLink="/insignias" routerLinkActive="text-primary" class="btn btn-sm btn-ghost">Insignias</a>
-    }
-
-    <div class="flex-1"></div>
-    <button class="btn btn-sm btn-ghost" (click)="theme.toggle()">
-      {{ theme.tema() === 'arcade-dark' ? '☀ claro' : '☾ oscuro' }}
-    </button>
-    <button class="btn btn-sm btn-outline btn-error" (click)="salir()">salir</button>
-  </header>
-
-  <!-- Botón "HI-RANKING" del ranking de la cohorte (E8). Visible con sesión; el panel se adapta al rol. -->
-  <app-ranking-trigger />
-}
-
-<main class="mx-auto max-w-7xl p-6">
+<main class="w-[98vw] h-[98vh] mx-auto flex flex-col justify-center items-center p-0 overflow-hidden">
   <router-outlet />
 </main>
 

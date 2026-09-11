@@ -14,22 +14,27 @@ import {
 import { RoadmapStore } from '../../core/data/roadmap.store';
 import { CURSO_SEED_ID } from '../../mocks/seed';
 import { PixelIcon } from '../../shared/pixel-icon';
+import { RouterLink } from '@angular/router';
 import { BADGE_ICONS } from './badge-icons';
 import { GENERIC_ICONS } from './generic-icons';
 
 /**
  * Catálogo de insignias (ADMIN y PROFESOR — el alumno ve las que ganó desde su fila del
- * ranking, no este catálogo completo). El alta ("＋ Nueva insignia") es solo PROFESOR
- * (roadmap-requerimientos.md §9), con el mismo patrón de form inline que `editor.ts` /
- * `unidad-editor.ts` — no hay un modal real en el proyecto para traer ese patrón acá.
+ * ranking o su inventario, no este catálogo completo). El alta ("＋ Nueva insignia") es solo PROFESOR
+ * (roadmap-requerimientos.md §9).
  */
 @Component({
   selector: 'app-catalogo',
-  imports: [PixelIcon, FormsModule],
+  imports: [PixelIcon, FormsModule, RouterLink],
   template: `
-    <div class="flex items-baseline gap-4 mb-6">
-      <h2 class="title-font text-primary text-xs">CATÁLOGO DE INSIGNIAS</h2>
-      <span class="ui-font opacity-80">{{ insignias().length }} en total</span>
+    <div class="flex items-center justify-between gap-4 mb-6">
+      <div class="flex items-baseline gap-4">
+        <h2 class="title-font text-primary text-xs">CATÁLOGO DE INSIGNIAS</h2>
+        <span class="ui-font opacity-80 text-[10px]">{{ insignias().length }} en total</span>
+      </div>
+      <a routerLink="/profesor" class="btn btn-sm btn-ghost border border-neutral/40 ui-font text-[8px]">
+        ◀ Volver al editor
+      </a>
     </div>
 
     @if (auth.rol() === 'PROFESOR') {

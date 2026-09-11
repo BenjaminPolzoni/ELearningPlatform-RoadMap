@@ -1,6 +1,11 @@
 :host {
-  display: block;
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
   background: var(--color-base-100);
   color: var(--color-base-content);
+  overflow: hidden;
 }

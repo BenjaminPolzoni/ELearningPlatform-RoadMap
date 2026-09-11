@@ -16,8 +16,21 @@ import { SaveFeedbackToast } from './save-feedback-toast';
   selector: 'app-editor',
   imports: [FormsModule, RouterLink, Mapa, ConfirmButton, SaveFeedbackToast],
   template: `
-    <div class="max-w-3xl mx-auto">
-      <h2 class="title-font text-primary text-xs mb-6">EDITOR DEL CURSO</h2>
+    <div class="max-w-3xl mx-auto w-full">
+      <div class="flex items-center justify-between gap-4 mb-6">
+        <h2 class="title-font text-primary text-xs">EDITOR DEL CURSO</h2>
+        <div class="flex items-center gap-2">
+          <a routerLink="/login" class="btn btn-sm btn-ghost border border-neutral/40 ui-font text-[8px]" title="Cambiar de rol">
+            👤 {{ store.roadmap() ? 'PROFESOR' : 'ROL' }} ▾
+          </a>
+          <a routerLink="/insignias" class="btn btn-sm btn-outline btn-warning ui-font text-[8px]">
+            🏅 Insignias
+          </a>
+          <a routerLink="/alumno" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]">
+            👁 Ver mapa
+          </a>
+        </div>
+      </div>
 
       <!-- ── Unidades en columna, lineal hacia abajo (Moodle) ──────── -->
       <ol class="flex flex-col gap-3 mb-6">

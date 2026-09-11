@@ -74,8 +74,12 @@ const GLIFO: Record<TipoNodo, string> = {
   selector: 'app-unidad-mapa',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AvatarSprite, Hud, RouterLink, UpperCasePipe],
-  host: { class: 'block' },
+  host: { class: 'block w-full' },
   styles: `
+    :host {
+      display: block;
+      width: 100%;
+    }
     .casillero:focus-visible {
       outline: none;
     }
@@ -87,13 +91,13 @@ const GLIFO: Record<TipoNodo, string> = {
   `,
   template: `
     @if (unidad(); as u) {
-      <div class="relative overflow-hidden border-2 border-secondary bg-brand-night chaflan">
+      <div class="relative overflow-hidden border-2 border-secondary bg-brand-night chaflan w-full max-w-6xl mx-auto shadow-2xl">
         <!-- marco doble estilo consola: el tablero vive adentro de un cartucho -->
         <div class="border-4 border-primary/30 p-1">
           <svg
             [attr.viewBox]="'0 0 ' + ancho() + ' ' + alto()"
             class="block w-full"
-            [style.max-height.px]="560"
+            [style.max-height.px]="680"
             role="application"
             [attr.aria-label]="'Tablero de la unidad ' + u.nombre"
           >
