@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { delay, Observable, of } from 'rxjs';
 import { AuthMockService } from '../auth/auth-mock.service';
+import { AvatarService } from '../avatar/avatar.service';
 import { RankingDataPort } from './ranking-data.port';
 import { FilaRanking, FilaRankingAnon, VistaRanking } from './ranking.models';
 import { cohorteMock, ALUMNO_ACTUAL_ID } from '../../mocks/ranking.seed';
@@ -16,9 +17,14 @@ import { cohorteMock, ALUMNO_ACTUAL_ID } from '../../mocks/ranking.seed';
 @Injectable()
 export class InMemoryRankingAdapter extends RankingDataPort {
   private readonly auth = inject(AuthMockService);
+  private readonly avatarService = inject(AvatarService);
 
   getRanking(_cursoCohorteId: string): Observable<VistaRanking> {
-    const cohorte = cohorteMock();
+    // La fila propia muestra el avatar real de "Mi personaje", no el mock determinístico
+    // (el resto de la cohorte no tiene un avatar guardado — solo la sesión actual lo tiene).
+    const cohorte = cohorteMock().map((f) =>
+      f.alumnoId === ALUMNO_ACTUAL_ID ? { ...f, avatar: this.avatarService.avatar() } : f,
+    );
     const rol = this.auth.rol();
     const vista: VistaRanking =
       rol === 'ALUMNO'

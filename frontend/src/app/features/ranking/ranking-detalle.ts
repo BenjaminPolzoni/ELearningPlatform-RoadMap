@@ -6,6 +6,7 @@ import { InsigniasDataPort } from '../../core/data/insignias-data.port';
 import { InsigniaCatalogo, InsigniaOtorgada } from '../../core/data/insignias.models';
 import { enRiesgoRegularidad, esCandidatoPromocion } from '../../domain/ranking/ranking.reglas';
 import { PixelIcon } from '../../shared/pixel-icon';
+import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 import { BADGE_ICONS } from '../insignias/badge-icons';
 import { CURSO_SEED_ID } from '../../mocks/seed';
 import { Racha } from '../alumno/racha';
@@ -26,12 +27,12 @@ function esIdentificada(f: FilaDetalle): f is FilaRanking {
  */
 @Component({
   selector: 'app-ranking-detalle',
-  imports: [PixelIcon, Racha],
+  imports: [PixelIcon, Racha, AvatarSprite],
   template: `
     <div class="rk-hud">
       <!-- Perfil: escudo hexagonal + identidad -->
       <div style="display:flex;align-items:center;gap:1rem">
-        <span class="rk-shield"><img [src]="fila().avatarUrl" alt="" /></span>
+        <span class="rk-shield"><ui-avatar-sprite [config]="fila().avatar" [alto]="108" /></span>
         <div style="min-width:0">
           @if (identificada(); as f) {
             <div
