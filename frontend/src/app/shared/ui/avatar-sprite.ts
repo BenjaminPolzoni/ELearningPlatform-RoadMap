@@ -21,11 +21,9 @@ import { AvatarConfig, colorPorId, pielPorId } from '../../core/avatar/avatar.mo
        separado — a 16×22 px un ciclo de piernas real no se lee. */
     @keyframes paso {
       0%, 100% { transform: translateY(0) }
-      25%      { transform: translateY(-8%) }
-      50%      { transform: translateY(0) }
-      75%      { transform: translateY(-4%) }
+      50%      { transform: translateY(-10%) }
     }
-    .caminando { animation: paso 0.42s steps(4, end) infinite }
+    .caminando { animation: paso 0.24s steps(2, end) infinite }
 
     /* Salto de alegría (unidad completada): squash-stretch tipo arcade. Va en un wrapper
        aparte para no pelear con el scaleX(-1) que orienta el sprite sobre el propio <svg>. */
