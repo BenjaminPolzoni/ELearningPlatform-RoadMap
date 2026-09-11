@@ -1,8 +1,8 @@
 /* ============================================================================
-   Design system — paleta de marca (Fotos_y_conceptos/paleta.jpg), 05-design-system.md §1
-   Los 4 swatches de la lámina, muestreados del archivo:
-     #6B21C9 violeta eléctrico · #2D164A violeta profundo
-     #FF2758 rosa fuego        · #190236 negro violáceo
+   Design system — paleta G6 oficial (05-design-system.md §1). Reemplaza la paleta
+   de marca de la lámina Fotos_y_conceptos/paleta.jpg (que queda como historial).
+   Dark:  #8B5CF6 violeta · #00E5FF cian · #FF2E93 magenta · #FFD60A oro · #0D0B1E negro
+   Light: #7C3AED · #00E5FF · #DB2777 · #CA8A04 · #F8FAFC
    Tipografías de la lámina: Chelsea Market (títulos) + Comfortaa (texto).
    Press Start 2P se conserva SOLO para HUD/pixel-art del mapa (05 §3).
    VT323 entra con el ranking (E8): números de gabinete CRT, ver --font-console.
@@ -19,28 +19,28 @@
   prefersdark: true;
   color-scheme: dark;
 
-  --color-base-100: #190236;
-  --color-base-200: #24103F;
-  --color-base-300: #2D164A;
-  --color-base-content: #F3EAFF;
+  --color-base-100: #0D0B1E;
+  --color-base-200: #161230;
+  --color-base-300: #221C4A;
+  --color-base-content: #E8E6FF;
 
-  --color-primary: #FF2758;
-  --color-primary-content: #FFFFFF;
-  --color-secondary: #6B21C9;
-  --color-secondary-content: #FFFFFF;
-  --color-accent: #A855F7;
-  --color-accent-content: #190236;
-  --color-neutral: #2D164A;
-  --color-neutral-content: #F3EAFF;
+  --color-primary: #8B5CF6;
+  --color-primary-content: #0D0B1E;
+  --color-secondary: #00E5FF;
+  --color-secondary-content: #00343B;
+  --color-accent: #FF2E93;
+  --color-accent-content: #2A0130;
+  --color-neutral: #221C4A;
+  --color-neutral-content: #E8E6FF;
 
-  --color-info: #A855F7;
-  --color-info-content: #190236;
-  --color-success: #8B3DF5;
-  --color-success-content: #FFFFFF;
-  --color-warning: #FF7BA0;
-  --color-warning-content: #2A0011;
-  --color-error: #FF2758;
-  --color-error-content: #FFFFFF;
+  --color-info: #38BDF8;
+  --color-info-content: #0B2231;
+  --color-success: #10B981;
+  --color-success-content: #00271A;
+  --color-warning: #FFD60A;
+  --color-warning-content: #2A1E00;
+  --color-error: #FF4D5E;
+  --color-error-content: #2A000B;
 
   --radius-selector: 0.25rem;
   --radius-field: 0.25rem;
@@ -56,27 +56,27 @@
   prefersdark: false;
   color-scheme: light;
 
-  --color-base-100: #F7F2FF;
-  --color-base-200: #ECE0FF;
-  --color-base-300: #D8C4F7;
-  --color-base-content: #190236;
+  --color-base-100: #F8FAFC;
+  --color-base-200: #EFF1F8;
+  --color-base-300: #E0E3F0;
+  --color-base-content: #14103A;
 
-  --color-primary: #D6053C;
+  --color-primary: #7C3AED;
   --color-primary-content: #FFFFFF;
-  --color-secondary: #5A16AD;
-  --color-secondary-content: #FFFFFF;
-  --color-accent: #7C24D6;
+  --color-secondary: #00E5FF;
+  --color-secondary-content: #0A2A33;
+  --color-accent: #DB2777;
   --color-accent-content: #FFFFFF;
   --color-neutral: #2D164A;
-  --color-neutral-content: #F7F2FF;
+  --color-neutral-content: #F8FAFC;
 
-  --color-info: #5A16AD;
-  --color-info-content: #FFFFFF;
-  --color-success: #6B21C9;
+  --color-info: #0EA5E9;
+  --color-info-content: #0B2231;
+  --color-success: #059669;
   --color-success-content: #FFFFFF;
-  --color-warning: #C4144A;
-  --color-warning-content: #FFFFFF;
-  --color-error: #D6053C;
+  --color-warning: #CA8A04;
+  --color-warning-content: #211600;
+  --color-error: #E11D48;
   --color-error-content: #FFFFFF;
 
   --radius-selector: 0.25rem;
