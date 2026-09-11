@@ -403,10 +403,13 @@ interface ConfettiPiece {
               Recuperar vida
             </span>
           </footer>
-        </div>
-      </div>
 
-      <!-- MODAL DE ACTIVIDAD Y PREGUNTAS (Quiz interactivo) -->
+          <!--
+            Los modales van DENTRO de #mapPanel (no como hermanos del panel) a propósito:
+            la Fullscreen API solo renderiza el subárbol del elemento fullscreenizado, así
+            que si quedaran afuera, no se verían al completar un desafío en pantalla completa.
+          -->
+          <!-- MODAL DE ACTIVIDAD Y PREGUNTAS (Quiz interactivo) -->
       @if (activeChallenge(); as c) {
         <div class="modal modal-open backdrop-blur-md z-50">
           <div class="modal-box max-w-xl border-4 border-primary bg-[#1C1E2B] p-6 text-white shadow-2xl chaflan">
@@ -571,6 +574,8 @@ interface ConfettiPiece {
           </div>
         </div>
       }
+        </div>
+      </div>
     } @else {
       <div class="p-8 text-center text-white/70">
         <p>No se encontró la unidad solicitada.</p>
