@@ -714,7 +714,7 @@ button.rk-estado:hover {
   border: 2px solid var(--rk-bg3);
   border-bottom-color: var(--rk-cyan);
   font-family: var(--font-title);
-  font-size: 0.5rem;
+  font-size: 0.8rem;
   line-height: 1.5;
   letter-spacing: 0.03em;
   color: var(--rk-cyan);
