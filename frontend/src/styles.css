@@ -87,7 +87,14 @@
 }
 
 @theme {
-  /* --- swatches crudos de la lámina, para el arte del mapa (no rota con el tema) --- */
+  /* =====================================================================
+     ARTE DEL MAPA — paleta heredada de paleta.jpg. AISLADO del Design
+     System G6: estos tokens NO rotan con los temas arcade-* ni siguen la
+     paleta oficial (dark #8B5CF6/#00E5FF/#FF2E93/#FFD60A). Los consume la
+     escena 2.5D (escena-neon) y los estados de nodo (mapa.ts). El chrome
+     global (botones, badges, cards...) usa los tokens que daisyUI deriva
+     de los temas de arriba (primary, secondary, accent, warning...).
+     ===================================================================== */
   --color-brand-void: #0E0120;
   --color-brand-night: #190236;
   --color-brand-deep: #2D164A;
@@ -95,8 +102,8 @@
   --color-brand-glow: #8B3DF5;
   --color-brand-pink: #FF2758;
 
-  /* --- estado del nodo (05 §1). Sin verde: la paleta no lo tiene, así que el tramo
-         recorrido va en violeta eléctrico y el "andá por acá" en rosa fuego. --- */
+  /* Estado del nodo (05 §1). Sin verde, el tramo recorrido va en violeta
+     eléctrico (done) y el "andá por acá" en rosa fuego (open). */
   --color-node-locked: #3C2A5E;
   --color-node-open: #FF2758;
   --color-node-done: #8B3DF5;
