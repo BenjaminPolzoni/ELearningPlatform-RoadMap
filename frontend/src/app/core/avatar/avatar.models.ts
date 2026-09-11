@@ -334,3 +334,11 @@ export function sanearAvatar(v: AvatarGuardado | null | undefined): AvatarConfig
     objeto: valido('objeto', v.objeto, d.objeto),
   };
 }
+
+/**
+ * La corbata de la camisa ocupa el centro del pecho y la laptop va sostenida delante: en
+ * ambos casos el emblema no se dibuja (el editor lo avisa).
+ */
+export function emblemaVisible(a: AvatarConfig): boolean {
+  return a.emblema !== 'ninguno' && a.prenda !== 'camisa' && a.objeto !== 'laptop';
+}

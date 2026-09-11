@@ -6,6 +6,7 @@ import {
   COLORES,
   COLORES_PELO,
   COLORES_ROPA,
+  emblemaVisible,
   EMBLEMAS,
   GENEROS,
   IdGenero,
@@ -120,5 +121,20 @@ describe('catálogo', () => {
       const ids = lista.map((o) => o.id);
       expect(new Set(ids).size).toBe(ids.length);
     }
+  });
+});
+
+describe('emblemaVisible', () => {
+  const base = avatarPorDefecto('indefinido');
+
+  it('se ve sobre las prendas que dejan el pecho libre', () => {
+    expect(emblemaVisible({ ...base, prenda: 'hoodie' })).toBe(true);
+    expect(emblemaVisible({ ...base, prenda: 'campera' })).toBe(true);
+  });
+
+  it('se oculta sin emblema, con la corbata de la camisa o con la laptop delante', () => {
+    expect(emblemaVisible({ ...base, emblema: 'ninguno' })).toBe(false);
+    expect(emblemaVisible({ ...base, prenda: 'camisa' })).toBe(false);
+    expect(emblemaVisible({ ...base, objeto: 'laptop' })).toBe(false);
   });
 });

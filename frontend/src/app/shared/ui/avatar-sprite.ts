@@ -1,5 +1,19 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { AvatarConfig, colorPorId, pielPorId } from '../../core/avatar/avatar.models';
+import {
+  AvatarConfig,
+  colorPorId,
+  emblemaVisible,
+  IdColor,
+  pielPorId,
+} from '../../core/avatar/avatar.models';
+
+const HUESO = '#F3EAFF';
+const NOCHE = '#2D164A';
+const ROSA = '#FF2758';
+const VIOLETA_PROFUNDO = '#6B21C9';
+const GRAFITO = '#4B4A57';
+
+const esRosa = (c: IdColor) => c === 'rosa' || c === 'rosa-pastel';
 
 /**
  * Sprite pixel-art del alumno (05-design-system.md §4, `ui-avatar`).
@@ -9,8 +23,12 @@ import { AvatarConfig, colorPorId, pielPorId } from '../../core/avatar/avatar.mo
  * (04-engine §8) puede reemplazarlo después sin tocar a los consumidores, que solo pasan
  * `config` y `alto`.
  *
- * Se usa en tres lugares con el mismo componente: HUD (chico), isla actual del mapa 2.5D
- * y ficha del tablero de unidad (grande, animado).
+ * Se usa en cuatro lugares con el mismo componente: HUD (chico), isla actual del mapa 2.5D,
+ * ficha del tablero de unidad (grande, animado) y ranking.
+ *
+ * El template (`avatar-sprite.html`) pinta una capa por `<g data-capa>`, en orden de atrás
+ * hacia adelante. Las reglas de convivencia entre partes (qué tapa a qué, qué contrasta con
+ * qué) se resuelven acá, en `computed`, para que el template solo dibuje.
  */
 @Component({
   selector: 'ui-avatar-sprite',
@@ -42,106 +60,7 @@ import { AvatarConfig, colorPorId, pielPorId } from '../../core/avatar/avatar.mo
       .caminando, .celebrando { animation: none }
     }
   `,
-  template: `
-    <span [class.celebrando]="celebrando()">
-    <svg
-      [attr.height]="alto()"
-      viewBox="0 0 16 22"
-      class="pixelado overflow-visible"
-      [class.caminando]="caminando()"
-      [style.width.px]="alto() * (16 / 22)"
-      [style.transform]="mirando() === 'izquierda' ? 'scaleX(-1)' : null"
-      role="img"
-      [attr.aria-label]="etiqueta()"
-    >
-      <!-- sombra en el piso: ancla el sprite sobre la isla / el casillero -->
-      @if (sombra()) {
-        <ellipse cx="8" cy="22" rx="6" ry="1.4" fill="#0E0120" opacity="0.55" />
-      }
-
-      <!-- piernas y zapatos -->
-      <rect x="4" y="17" width="3" height="4" [attr.fill]="traje().sombra" />
-      <rect x="9" y="17" width="3" height="4" [attr.fill]="traje().sombra" />
-      <rect x="3" y="21" width="4" height="1" [attr.fill]="zapatos()" />
-      <rect x="9" y="21" width="4" height="1" [attr.fill]="zapatos()" />
-
-      <!-- torso, brazos y manos -->
-      <rect x="4" y="11" width="8" height="6" [attr.fill]="traje().base" />
-      <rect x="2" y="11" width="2" height="5" [attr.fill]="traje().sombra" />
-      <rect x="12" y="11" width="2" height="5" [attr.fill]="traje().sombra" />
-      <rect x="2" y="16" width="2" height="1" [attr.fill]="piel().base" />
-      <rect x="12" y="16" width="2" height="1" [attr.fill]="piel().base" />
-      <!-- emblema del pecho: el rosa de marca, salvo que el traje ya sea rosa -->
-      <rect x="7" y="13" width="2" height="2" [attr.fill]="emblema()" />
-
-      <!-- cabeza -->
-      <rect x="4" y="3" width="8" height="7" [attr.fill]="piel().base" />
-      <rect x="4" y="9" width="8" height="1" [attr.fill]="piel().sombra" />
-      <rect x="5" y="6" width="2" height="2" fill="#190236" />
-      <rect x="9" y="6" width="2" height="2" fill="#190236" />
-      <rect x="5" y="6" width="1" height="1" fill="#F3EAFF" />
-      <rect x="9" y="6" width="1" height="1" fill="#F3EAFF" />
-      <rect x="7" y="8" width="2" height="1" [attr.fill]="piel().sombra" />
-
-      <!-- pelo -->
-      @switch (config().pelo) {
-        @case ('corto') {
-          <rect x="4" y="2" width="8" height="2" [attr.fill]="pelo().base" />
-          <rect x="4" y="4" width="1" height="2" [attr.fill]="pelo().sombra" />
-          <rect x="11" y="4" width="1" height="2" [attr.fill]="pelo().sombra" />
-        }
-        @case ('largo') {
-          <rect x="4" y="2" width="8" height="2" [attr.fill]="pelo().base" />
-          <rect x="3" y="3" width="1" height="8" [attr.fill]="pelo().base" />
-          <rect x="12" y="3" width="1" height="8" [attr.fill]="pelo().sombra" />
-          <rect x="4" y="4" width="1" height="2" [attr.fill]="pelo().sombra" />
-          <rect x="11" y="4" width="1" height="2" [attr.fill]="pelo().sombra" />
-        }
-        @case ('cresta') {
-          <rect x="7" y="0" width="2" height="3" [attr.fill]="pelo().base" />
-          <rect x="6" y="1" width="1" height="2" [attr.fill]="pelo().sombra" />
-          <rect x="9" y="1" width="1" height="2" [attr.fill]="pelo().sombra" />
-          <rect x="4" y="2" width="8" height="2" [attr.fill]="pelo().sombra" />
-        }
-        @case ('rapado') {
-          <rect x="4" y="2" width="8" height="1" [attr.fill]="pelo().sombra" />
-        }
-        @case ('afro') {
-          <rect x="3" y="1" width="10" height="3" [attr.fill]="pelo().base" />
-          <rect x="2" y="2" width="1" height="4" [attr.fill]="pelo().sombra" />
-          <rect x="13" y="2" width="1" height="4" [attr.fill]="pelo().sombra" />
-          <rect x="4" y="0" width="8" height="1" [attr.fill]="pelo().base" />
-        }
-      }
-
-      <!-- accesorio: siempre por encima del pelo -->
-      @switch (config().accesorio) {
-        @case ('visor') {
-          <rect x="3" y="5" width="10" height="3" [attr.fill]="acc().base" opacity="0.85" />
-          <rect x="3" y="5" width="10" height="1" [attr.fill]="acc().sombra" />
-        }
-        @case ('gorra') {
-          <rect x="3" y="1" width="10" height="2" [attr.fill]="acc().base" />
-          <rect x="3" y="3" width="10" height="1" [attr.fill]="acc().sombra" />
-          <rect x="0" y="3" width="4" height="1" [attr.fill]="acc().base" />
-        }
-        @case ('corona') {
-          <rect x="4" y="0" width="2" height="2" [attr.fill]="acc().base" />
-          <rect x="7" y="0" width="2" height="2" [attr.fill]="acc().base" />
-          <rect x="10" y="0" width="2" height="2" [attr.fill]="acc().base" />
-          <rect x="4" y="2" width="8" height="1" [attr.fill]="acc().sombra" />
-        }
-        @case ('auriculares') {
-          <rect x="4" y="0" width="8" height="1" [attr.fill]="acc().base" />
-          <rect x="2" y="1" width="2" height="1" [attr.fill]="acc().base" />
-          <rect x="12" y="1" width="2" height="1" [attr.fill]="acc().base" />
-          <rect x="2" y="2" width="2" height="5" [attr.fill]="acc().base" />
-          <rect x="12" y="2" width="2" height="5" [attr.fill]="acc().sombra" />
-        }
-      }
-    </svg>
-    </span>
-  `,
+  templateUrl: './avatar-sprite.html',
 })
 export class AvatarSprite {
   readonly config = input.required<AvatarConfig>();
@@ -156,20 +75,52 @@ export class AvatarSprite {
 
   protected readonly piel = computed(() => pielPorId(this.config().piel));
   protected readonly pelo = computed(() => colorPorId(this.config().colorPelo));
-  protected readonly traje = computed(() => colorPorId(this.config().colorRopa));
+  protected readonly ropa = computed(() => colorPorId(this.config().colorRopa));
   protected readonly acc = computed(() => colorPorId(this.config().colorAccesorio));
 
-  /** El emblema tiene que contrastar contra el traje, si no desaparece. */
-  protected readonly emblema = computed(() =>
-    this.config().colorRopa === 'rosa' ? '#F3EAFF' : '#FF2758',
-  );
+  /** El traje es un mono: piernas del color de la ropa. Con las demás prendas va pantalón. */
+  protected readonly pantalon = computed(() => {
+    const { prenda, colorRopa } = this.config();
+    if (prenda === 'traje') return this.ropa().sombra;
+    return colorRopa === 'noche' || colorRopa === 'negro' ? GRAFITO : NOCHE;
+  });
 
   /**
-   * Los zapatos son el punto de apoyo del sprite sobre la isla o el casillero: si se
-   * pintan del tono oscuro del traje, con traje "noche" el personaje queda sin pies
-   * contra el fondo. Van siempre en hueso, salvo que el traje ya sea hueso.
+   * Los zapatos son el punto de apoyo del sprite sobre la isla o el casillero: van siempre
+   * en hueso, salvo con un traje hueso (piernas claras), donde un zapato hueso desaparece.
    */
-  protected readonly zapatos = computed(() =>
-    this.config().colorRopa === 'hueso' ? '#2D164A' : '#F3EAFF',
+  protected readonly zapatos = computed(() => {
+    const { prenda, colorRopa } = this.config();
+    return prenda === 'traje' && colorRopa === 'hueso' ? NOCHE : HUESO;
+  });
+
+  /** Remera que asoma debajo de la campera abierta: tiene que contrastar con la campera. */
+  protected readonly remera = computed(() => (this.config().colorRopa === 'hueso' ? NOCHE : HUESO));
+
+  /** La corbata va en el rosa de marca, salvo que la camisa ya sea rosa. */
+  protected readonly corbata = computed(() =>
+    esRosa(this.config().colorRopa) ? VIOLETA_PROFUNDO : ROSA,
+  );
+
+  protected readonly mostrarEmblema = computed(() => emblemaVisible(this.config()));
+
+  /**
+   * El emblema tiene que contrastar contra lo que tiene debajo, si no desaparece: la remera
+   * cuando la campera está abierta, la ropa en el resto de los casos.
+   */
+  protected readonly colorEmblema = computed(() => {
+    const { prenda, colorRopa } = this.config();
+    const fondo: IdColor =
+      prenda === 'campera' ? (colorRopa === 'hueso' ? 'noche' : 'hueso') : colorRopa;
+    return esRosa(fondo) ? HUESO : ROSA;
+  });
+
+  /**
+   * Mirando a la izquierda el `<svg>` entero se espeja con `scaleX(-1)`, y eso invertiría
+   * glifos como `λ` o `>_`. El grupo del emblema se vuelve a espejar para anularlo; como la
+   * grilla es simétrica respecto de x=8, el emblema no se mueve de lugar.
+   */
+  protected readonly contraEspejo = computed(() =>
+    this.mirando() === 'izquierda' ? 'translate(16 0) scale(-1 1)' : null,
   );
 }

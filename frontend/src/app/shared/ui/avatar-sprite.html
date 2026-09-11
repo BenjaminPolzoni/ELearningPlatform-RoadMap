@@ -1,0 +1,227 @@
+<span [class.celebrando]="celebrando()">
+  <svg
+    [attr.height]="alto()"
+    viewBox="0 0 16 22"
+    class="pixelado overflow-visible"
+    [class.caminando]="caminando()"
+    [style.width.px]="alto() * (16 / 22)"
+    [style.transform]="mirando() === 'izquierda' ? 'scaleX(-1)' : null"
+    role="img"
+    [attr.aria-label]="etiqueta()"
+  >
+    <!-- sombra en el piso: ancla el sprite sobre la isla / el casillero -->
+    @if (sombra()) {
+      <ellipse cx="8" cy="22" rx="6" ry="1.4" fill="#0E0120" opacity="0.55" />
+    }
+
+    <!-- piernas y zapatos -->
+    <g data-capa="piernas">
+      <rect x="4" y="17" width="3" height="4" [attr.fill]="pantalon()" />
+      <rect x="9" y="17" width="3" height="4" [attr.fill]="pantalon()" />
+      <rect x="3" y="21" width="4" height="1" [attr.fill]="zapatos()" />
+      <rect x="9" y="21" width="4" height="1" [attr.fill]="zapatos()" />
+    </g>
+
+    <!-- torso: la silueta define el contorno; la prenda solo agrega detalles encima -->
+    <g data-capa="torso" [attr.data-silueta]="config().genero">
+      @if (config().genero === 'mujer') {
+        <rect x="4" y="11" width="8" height="3" [attr.fill]="ropa().base" />
+        <rect x="5" y="14" width="6" height="2" [attr.fill]="ropa().base" />
+        <rect x="4" y="16" width="8" height="1" [attr.fill]="ropa().base" />
+      } @else {
+        <rect x="4" y="11" width="8" height="6" [attr.fill]="ropa().base" />
+      }
+    </g>
+
+    <!-- brazos y manos (misma posición en las tres siluetas); la remera es de manga corta -->
+    <g data-capa="brazos">
+      <rect x="2" y="11" width="2" height="5" [attr.fill]="ropa().sombra" />
+      <rect x="12" y="11" width="2" height="5" [attr.fill]="ropa().sombra" />
+      @if (config().prenda === 'remera') {
+        <rect x="2" y="13" width="2" height="3" [attr.fill]="piel().base" />
+        <rect x="12" y="13" width="2" height="3" [attr.fill]="piel().base" />
+      }
+      <rect x="2" y="16" width="2" height="1" [attr.fill]="piel().base" />
+      <rect x="12" y="16" width="2" height="1" [attr.fill]="piel().base" />
+      @if (config().genero === 'varon') {
+        <!-- hombros anchos: la fila de arriba del torso se extiende sobre los brazos -->
+        <rect x="2" y="11" width="12" height="1" [attr.fill]="ropa().base" />
+      }
+    </g>
+
+    <!-- detalles de la prenda (el traje no tiene: es el mono liso de siempre) -->
+    <g data-capa="prenda">
+      @switch (config().prenda) {
+        @case ('hoodie') {
+          <!-- capucha alrededor del cuello: la cabeza y el cuello la tapan en el centro -->
+          <rect x="3" y="9" width="10" height="2" [attr.fill]="ropa().sombra" />
+          <rect x="6" y="11" width="1" height="1" fill="#F3EAFF" />
+          <rect x="9" y="11" width="1" height="1" fill="#F3EAFF" />
+          <rect x="4" y="16" width="8" height="1" [attr.fill]="ropa().sombra" />
+        }
+        @case ('remera') {
+          <rect x="6" y="11" width="4" height="1" [attr.fill]="ropa().sombra" />
+        }
+        @case ('camisa') {
+          <rect x="5" y="11" width="2" height="1" fill="#F3EAFF" />
+          <rect x="9" y="11" width="2" height="1" fill="#F3EAFF" />
+          <rect x="7" y="11" width="2" height="1" [attr.fill]="corbata()" />
+          <rect x="7" y="12" width="2" height="4" [attr.fill]="corbata()" />
+        }
+        @case ('campera') {
+          <rect x="6" y="11" width="4" height="6" [attr.fill]="remera()" />
+          <rect x="5" y="12" width="1" height="5" [attr.fill]="ropa().sombra" />
+          <rect x="10" y="12" width="1" height="5" [attr.fill]="ropa().sombra" />
+        }
+      }
+    </g>
+
+    <!-- emblema del pecho: los rects heredan el fill del grupo -->
+    @if (mostrarEmblema()) {
+      <g data-capa="emblema" [attr.fill]="colorEmblema()" [attr.transform]="contraEspejo()">
+        @switch (config().emblema) {
+          @case ('cuadro') {
+            <rect x="7" y="13" width="2" height="2" />
+          }
+          @case ('tag') {
+            <rect x="6" y="12" width="1" height="1" />
+            <rect x="5" y="13" width="1" height="1" />
+            <rect x="6" y="14" width="1" height="1" />
+            <rect x="8" y="12" width="1" height="2" />
+            <rect x="7" y="14" width="1" height="1" />
+            <rect x="9" y="12" width="1" height="1" />
+            <rect x="10" y="13" width="1" height="1" />
+            <rect x="9" y="14" width="1" height="1" />
+          }
+          @case ('llaves') {
+            <rect x="6" y="12" width="1" height="3" />
+            <rect x="5" y="13" width="1" height="1" />
+            <rect x="9" y="12" width="1" height="3" />
+            <rect x="10" y="13" width="1" height="1" />
+          }
+          @case ('prompt') {
+            <rect x="5" y="12" width="1" height="1" />
+            <rect x="6" y="13" width="1" height="1" />
+            <rect x="5" y="14" width="1" height="1" />
+            <rect x="8" y="14" width="3" height="1" />
+          }
+          @case ('lambda') {
+            <rect x="6" y="12" width="2" height="1" />
+            <rect x="7" y="13" width="1" height="1" />
+            <rect x="6" y="14" width="1" height="1" />
+            <rect x="8" y="14" width="1" height="1" />
+          }
+          @case ('punto-y-coma') {
+            <rect x="7" y="12" width="1" height="1" />
+            <rect x="7" y="14" width="1" height="1" />
+            <rect x="6" y="15" width="1" height="1" />
+          }
+          @case ('hash') {
+            <rect x="6" y="12" width="1" height="4" />
+            <rect x="8" y="12" width="1" height="4" />
+            <rect x="5" y="13" width="5" height="1" />
+            <rect x="5" y="15" width="5" height="1" />
+          }
+        }
+      </g>
+    }
+
+    <!-- cuello, cabeza y rasgos según la silueta -->
+    <g data-capa="cabeza">
+      @if (config().genero === 'mujer') {
+        <rect x="7" y="10" width="2" height="1" [attr.fill]="piel().sombra" />
+        <rect x="4" y="3" width="8" height="6" [attr.fill]="piel().base" />
+        <!-- mentón redondeado -->
+        <rect x="5" y="9" width="6" height="1" [attr.fill]="piel().sombra" />
+      } @else {
+        <rect x="6" y="10" width="4" height="1" [attr.fill]="piel().sombra" />
+        <rect x="4" y="3" width="8" height="7" [attr.fill]="piel().base" />
+        <rect x="4" y="9" width="8" height="1" [attr.fill]="piel().sombra" />
+      }
+      <rect x="5" y="6" width="2" height="2" fill="#190236" />
+      <rect x="9" y="6" width="2" height="2" fill="#190236" />
+      <rect x="5" y="6" width="1" height="1" fill="#F3EAFF" />
+      <rect x="9" y="6" width="1" height="1" fill="#F3EAFF" />
+      @switch (config().genero) {
+        @case ('mujer') {
+          <g data-capa="pestanas">
+            <rect x="4" y="6" width="1" height="1" fill="#190236" />
+            <rect x="11" y="6" width="1" height="1" fill="#190236" />
+          </g>
+          <rect x="7" y="8" width="2" height="1" fill="#E0567A" />
+        }
+        @case ('varon') {
+          <g data-capa="cejas">
+            <rect x="5" y="5" width="2" height="1" [attr.fill]="pelo().sombra" />
+            <rect x="9" y="5" width="2" height="1" [attr.fill]="pelo().sombra" />
+          </g>
+          <rect x="7" y="8" width="2" height="1" [attr.fill]="piel().sombra" />
+        }
+        @default {
+          <rect x="7" y="8" width="2" height="1" [attr.fill]="piel().sombra" />
+        }
+      }
+    </g>
+
+    <!-- pelo -->
+    <g data-capa="pelo">
+      @switch (config().pelo) {
+        @case ('corto') {
+          <rect x="4" y="2" width="8" height="2" [attr.fill]="pelo().base" />
+          <rect x="4" y="4" width="1" height="2" [attr.fill]="pelo().sombra" />
+          <rect x="11" y="4" width="1" height="2" [attr.fill]="pelo().sombra" />
+        }
+        @case ('largo') {
+          <rect x="4" y="2" width="8" height="2" [attr.fill]="pelo().base" />
+          <rect x="3" y="3" width="1" height="8" [attr.fill]="pelo().base" />
+          <rect x="12" y="3" width="1" height="8" [attr.fill]="pelo().sombra" />
+          <rect x="4" y="4" width="1" height="2" [attr.fill]="pelo().sombra" />
+          <rect x="11" y="4" width="1" height="2" [attr.fill]="pelo().sombra" />
+        }
+        @case ('cresta') {
+          <rect x="7" y="0" width="2" height="3" [attr.fill]="pelo().base" />
+          <rect x="6" y="1" width="1" height="2" [attr.fill]="pelo().sombra" />
+          <rect x="9" y="1" width="1" height="2" [attr.fill]="pelo().sombra" />
+          <rect x="4" y="2" width="8" height="2" [attr.fill]="pelo().sombra" />
+        }
+        @case ('rapado') {
+          <rect x="4" y="2" width="8" height="1" [attr.fill]="pelo().sombra" />
+        }
+        @case ('afro') {
+          <rect x="3" y="1" width="10" height="3" [attr.fill]="pelo().base" />
+          <rect x="2" y="2" width="1" height="4" [attr.fill]="pelo().sombra" />
+          <rect x="13" y="2" width="1" height="4" [attr.fill]="pelo().sombra" />
+          <rect x="4" y="0" width="8" height="1" [attr.fill]="pelo().base" />
+        }
+      }
+    </g>
+
+    <!-- accesorio de cabeza: siempre por encima del pelo -->
+    <g data-capa="accesorio">
+      @switch (config().accesorio) {
+        @case ('visor') {
+          <rect x="3" y="5" width="10" height="3" [attr.fill]="acc().base" opacity="0.85" />
+          <rect x="3" y="5" width="10" height="1" [attr.fill]="acc().sombra" />
+        }
+        @case ('gorra') {
+          <rect x="3" y="1" width="10" height="2" [attr.fill]="acc().base" />
+          <rect x="3" y="3" width="10" height="1" [attr.fill]="acc().sombra" />
+          <rect x="0" y="3" width="4" height="1" [attr.fill]="acc().base" />
+        }
+        @case ('corona') {
+          <rect x="4" y="0" width="2" height="2" [attr.fill]="acc().base" />
+          <rect x="7" y="0" width="2" height="2" [attr.fill]="acc().base" />
+          <rect x="10" y="0" width="2" height="2" [attr.fill]="acc().base" />
+          <rect x="4" y="2" width="8" height="1" [attr.fill]="acc().sombra" />
+        }
+        @case ('auriculares') {
+          <rect x="4" y="0" width="8" height="1" [attr.fill]="acc().base" />
+          <rect x="2" y="1" width="2" height="1" [attr.fill]="acc().base" />
+          <rect x="12" y="1" width="2" height="1" [attr.fill]="acc().base" />
+          <rect x="2" y="2" width="2" height="5" [attr.fill]="acc().base" />
+          <rect x="12" y="2" width="2" height="5" [attr.fill]="acc().sombra" />
+        }
+      }
+    </g>
+  </svg>
+</span>
