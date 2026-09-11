@@ -250,8 +250,8 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
   `,
   template: `
     @if (preview()) {
-      <!-- Modo preview compacto para el editor del profesor -->
-      <div class="h-72 w-full flex flex-col justify-center bg-[#0d0618] border-2 border-[#22e0d0]/40 rounded-xl p-4 overflow-hidden relative">
+      <!-- Modo preview compacto para el editor del profesor: sin fondo negro -->
+      <div class="h-72 w-full flex flex-col justify-center bg-transparent border-2 border-[#22e0d0]/40 rounded-xl p-4 overflow-hidden relative">
         <div class="font-['Press_Start_2P'] text-[9px] text-[#22e0d0] mb-3 tracking-wider">
           UNIDADES DEL ROADMAP ({{ cartridgeCards().length }})
         </div>
@@ -273,26 +273,12 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
         </div>
       </div>
     } @else {
-      <!-- CONTENEDOR RAÍZ: HABITACIÓN RETRO + CHASIS TV EDU-VISION -->
-      <div class="relative w-full h-full overflow-hidden bg-[#050409] text-[#eae0ff] font-['Chakra_Petch',sans-serif]">
-        
-        <!-- Fondo ambiental arcade (lejos) -->
-        <div class="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-b from-[#0b0912] via-[#0a0810] to-[#100a16]"></div>
-          <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-[#050308]"></div>
-          
-          <!-- Siluetas difuminadas de máquinas en las esquinas -->
-          <div class="absolute -left-12 bottom-8 w-48 h-1/2 rounded-2xl bg-gradient-to-b from-[#173a4a] to-[#0c1c2c] blur-xl opacity-20"></div>
-          <div class="absolute -right-12 bottom-8 w-48 h-1/2 rounded-2xl bg-gradient-to-b from-[#3a1650] to-[#1c0c2c] blur-xl opacity-20"></div>
-
-          <!-- Resplandor del monitor -->
-          <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[70vw] h-[50vw] rounded-full bg-radial from-[#966eff24] via-[#3cc8dc12] to-transparent blur-3xl"></div>
-          <div class="absolute inset-0 bg-radial from-transparent via-transparent to-[#020104dc]"></div>
-        </div>
+      <!-- CONTENEDOR RAÍZ: SIN FONDO NEGRO, CHASIS COMPLETO EDU-VISION -->
+      <div class="relative w-full h-full overflow-hidden bg-transparent text-[#eae0ff] font-['Chakra_Petch',sans-serif]">
 
         <!-- CHASIS PRINCIPAL: TELEVISOR DE TUBO EDU-VISION -->
         <div
-          class="absolute inset-2 md:inset-4 lg:inset-6 z-10 flex flex-col rounded-[32px] md:rounded-[40px] bg-gradient-to-br from-[#37303f] via-[#1b1722] to-[#0d0b12] shadow-[0_30px_90px_rgba(0,0,0,0.8),0_0_70px_rgba(155,77,255,0.15)] border-4 border-[#231e2c]"
+          class="relative w-full h-full z-10 flex flex-col rounded-[20px] md:rounded-[32px] bg-gradient-to-br from-[#37303f] via-[#1b1722] to-[#0d0b12] shadow-[0_30px_90px_rgba(0,0,0,0.8),0_0_70px_rgba(155,77,255,0.15)] border-4 border-[#231e2c]"
         >
           <!-- Tornillos en esquinas del chasis -->
           <span class="absolute top-3 left-4 w-2.5 h-2.5 rounded-full bg-gradient-to-br from-[#6a6272] to-[#221e28] shadow-[0_1px_1px_rgba(255,255,255,0.2)]"></span>
@@ -303,7 +289,8 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
           <!-- PANTALLA CRT (Glass screen central) -->
           <div
             #crtScreen
-            class="relative flex-1 m-3 md:m-5 rounded-[20px] md:rounded-[26px] bg-[#020103] overflow-hidden shadow-[inset_0_0_70px_rgba(0,0,0,0.9),inset_0_0_0_3px_#000]"
+            class="relative flex-1 m-3 md:m-5 rounded-[20px] md:rounded-[26px] overflow-hidden shadow-[inset_0_0_70px_rgba(0,0,0,0.9),inset_0_0_0_3px_#000]"
+            style="background: radial-gradient(120% 90% at 50% 8%, #3a1150 0%, #1a0a2e 42%, #0d0618 78%);"
           >
             <!-- Efecto de piso en perspectiva neón y scanlines -->
             <div class="pointer-events-none absolute inset-0 z-0">
@@ -371,6 +358,28 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
                   </div>
                   <div class="text-[10px] font-semibold text-[#bfeee9] text-right">{{ xpNivelActual() }} / 1000</div>
                 </div>
+
+                <!-- Ranking modal button -->
+                <button
+                  type="button"
+                  (click)="rankOpen.set(true)"
+                  class="flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-xl bg-[#180a26b8] border border-[#c79bff99] shadow-[0_0_14px_rgba(199,155,255,0.3)] hover:scale-105 transition-transform cursor-pointer"
+                  title="Ver Ranking"
+                >
+                  <span class="text-xl drop-shadow-[0_0_6px_#c79bff]">🏆</span>
+                  <span class="font-['Press_Start_2P'] text-[6px] text-[#c9a9ff]">RANKING</span>
+                </button>
+
+                <!-- Insignias (Badges) modal button -->
+                <button
+                  type="button"
+                  (click)="inventoryModal.set('insignias')"
+                  class="flex flex-col items-center justify-center gap-1 w-14 h-14 rounded-xl bg-[#180a26b8] border border-[#ffe07a99] shadow-[0_0_14px_rgba(255,176,16,0.3)] hover:scale-105 transition-transform cursor-pointer"
+                  title="Ver Insignias"
+                >
+                  <span class="text-xl drop-shadow-[0_0_6px_#ffe07a]">🏅</span>
+                  <span class="font-['Press_Start_2P'] text-[6px] text-[#ffd98a]">INSIGNIAS</span>
+                </button>
 
                 <!-- Mochila modal button -->
                 <button
@@ -896,19 +905,30 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
                 <div class="flex items-center gap-4">
                   <div
                     #joystickBase
-                    class="relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0 cursor-crosshair"
+                    class="relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0 cursor-crosshair select-none touch-none"
                     (pointerdown)="onJoyDown($event)"
                     (pointermove)="onJoyMove($event)"
                   >
-                    <!-- Base circular -->
+                    <!-- Base circular (arandela antipolvo) -->
                     <div class="absolute left-1/2 bottom-1 -translate-x-1/2 w-16 h-7 rounded-[50%] bg-gradient-to-b from-[#3a3f4a] to-[#14161c] shadow-[0_4px_10px_rgba(0,0,0,0.6)]"></div>
-                    <!-- Eje metálico -->
-                    <div class="absolute left-1/2 bottom-4 -translate-x-1/2 w-2.5 h-10 rounded-sm bg-gradient-to-b from-[#c9ccd4] to-[#5a5e68]"></div>
-                    <!-- Bola Joystick con resplandor -->
+                    <!-- Collar central de la base -->
+                    <div class="absolute left-1/2 bottom-2.5 -translate-x-1/2 w-5 h-2.5 rounded-[50%] bg-[#0d0e12] shadow-inner"></div>
+
+                    <!-- Palanca completa (eje metálico + bola unidos rígidamente) -->
                     <div
-                      class="absolute left-1/2 top-1 -translate-x-1/2 w-8 h-8 rounded-full bg-gradient-to-br from-[#ff9dc0] to-[#ff2d6f] shadow-[0_0_14px_#ff2d6f] transition-transform duration-100"
+                      class="absolute left-1/2 bottom-3 -translate-x-1/2 flex flex-col items-center pointer-events-none transition-transform duration-100 ease-out"
+                      style="transform-origin: bottom center;"
                       [style.transform]="joystickTilt()"
-                    ></div>
+                    >
+                      <!-- Bola Joystick con resplandor arcade (fijada al tope del eje) -->
+                      <div
+                        class="w-8 h-8 rounded-full bg-gradient-to-br from-[#ff9dc0] to-[#ff2d6f] shadow-[0_0_14px_#ff2d6f,inset_0_-4px_8px_rgba(0,0,0,0.3)] z-10"
+                      ></div>
+                      <!-- Eje metálico (palanca) -->
+                      <div
+                        class="w-2.5 h-11 -mt-2.5 rounded-b-sm bg-gradient-to-b from-[#e2e4ea] via-[#c9ccd4] to-[#5a5e68] shadow-[0_1px_4px_rgba(0,0,0,0.5)] z-0"
+                      ></div>
+                    </div>
                   </div>
 
                   <div class="flex flex-col">
@@ -1380,6 +1400,18 @@ export class UnidadMapa {
     } else if (this.view() === 'roadmap') {
       if (e.key === 'Escape') {
         this.back();
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        const dir = e.key === 'ArrowUp' ? 'up' : 'down';
+        this.activeJoy.set(dir);
+        const vp = this.mapViewport()?.nativeElement;
+        if (vp) vp.scrollTop += dir === 'up' ? -40 : 40;
+        if (this.keyTimer) clearTimeout(this.keyTimer);
+        this.keyTimer = setTimeout(() => this.activeJoy.set(null), 180);
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        const dir = e.key === 'ArrowLeft' ? 'left' : 'right';
+        this.activeJoy.set(dir);
+        if (this.keyTimer) clearTimeout(this.keyTimer);
+        this.keyTimer = setTimeout(() => this.activeJoy.set(null), 180);
       }
     }
   }
@@ -1477,12 +1509,12 @@ export class UnidadMapa {
   readonly joystickTilt = computed(() => {
     const d = this.activeJoy();
     const map: Record<JoyDir, string> = {
-      left: 'translate(-50%, -50%) rotateZ(-20deg) rotateX(0deg)',
-      right: 'translate(-50%, -50%) rotateZ(20deg) rotateX(0deg)',
-      up: 'translate(-50%, -50%) rotateZ(0deg) rotateX(-16deg)',
-      down: 'translate(-50%, -50%) rotateZ(0deg) rotateX(16deg)',
+      left: 'rotateZ(-22deg)',
+      right: 'rotateZ(22deg)',
+      up: 'rotateX(25deg) scaleY(0.9)',
+      down: 'rotateX(-20deg) scaleY(0.92)',
     };
-    return d ? map[d] : 'translate(-50%, -50%) rotateZ(0deg) rotateX(0deg)';
+    return d ? map[d] : 'rotateZ(0deg)';
   });
 
   private readonly joyThreshold = 10;
