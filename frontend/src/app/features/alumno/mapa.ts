@@ -153,6 +153,15 @@ const MARGEN = 90;
             </div>
 
             <div class="flex items-center gap-3">
+              @if (auth.rol() === 'PROFESOR') {
+                <a
+                  routerLink="/profesor"
+                  class="btn btn-xs border border-white/20 bg-white/10 ui-font text-[8px] text-white hover:bg-white/20"
+                  title="Volver al editor del curso"
+                >
+                  ← EDITOR
+                </a>
+              }
               <a
                 routerLink="/login"
                 class="badge badge-secondary badge-outline ui-font text-[9px] cursor-pointer hover:badge-primary transition-colors flex items-center gap-1"
