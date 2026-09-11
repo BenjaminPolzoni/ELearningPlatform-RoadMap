@@ -1,4 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { RoadmapDataPort } from './roadmap-data.port';
 import { NuevaActividad, NuevaUnidad, Roadmap, Unidad } from './roadmap.models';
 import { CURSO_SEED_ID } from '../../mocks/seed';
@@ -22,9 +23,14 @@ export class RoadmapStore {
   readonly roadmap = this._roadmap.asReadonly();
   readonly unidades = computed(() => this._roadmap()?.unidades ?? []);
   readonly conexiones = computed(() => this._roadmap()?.conexiones ?? []);
+  readonly progreso = toSignal(this.port.getProgreso('alu-01', CURSO_SEED_ID));
 
   constructor() {
     this.recargar();
+  }
+
+  sumarProgreso(xpGanado: number, nodoId?: string, vidas?: number): void {
+    this.port.registrarProgreso('alu-01', CURSO_SEED_ID, xpGanado, nodoId, vidas).subscribe();
   }
 
   recargar(): void {

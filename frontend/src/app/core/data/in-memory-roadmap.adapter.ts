@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { RoadmapDataPort } from './roadmap-data.port';
 import { Actividad, Alumno, Conexion, NuevaActividad, NuevaUnidad, Progreso, Roadmap, Unidad } from './roadmap.models';
 import { alumnosSeed, progresoSeed, roadmapSeed } from '../../mocks/seed';
 
 const LS_KEY = 'roadmap-mock-v2';
+const PROGRESO_LS_KEY = 'progreso-mock-v2';
 
 // Grilla de posiciones default para nodos sin posicion_x/y (altas nuevas, o datos viejos
 // del localStorage previos a este editor) — no solapada, en columnas de a 4 (mismo ancho
@@ -176,10 +177,40 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
     return of(void 0);
   }
 
+  private readonly progresoSubject = new BehaviorSubject<Progreso>(this.cargarProgreso('alu-01'));
+
   getProgreso(alumnoId: string, _cursoCohorteId: string): Observable<Progreso> {
-    // ponytail: el progreso no se persiste todavía — se deriva del seed en cada lectura.
-    // Fase 2 le agrega mutación real cuando exista el motor de XP/estados en el mock.
-    return of(progresoSeed(alumnoId));
+    if (alumnoId === 'alu-01') {
+      return this.progresoSubject.asObservable();
+    }
+    return of(structuredClone(this.cargarProgreso(alumnoId)));
+  }
+
+  registrarProgreso(
+    alumnoId: string,
+    _cursoCohorteId: string,
+    xpGanado: number,
+    nodoId?: string,
+    vidas?: number,
+  ): Observable<Progreso> {
+    const p = this.cargarProgreso(alumnoId);
+    p.xpTotal += Math.max(0, xpGanado);
+    if (typeof vidas === 'number') {
+      p.vidasVigentes = Math.max(0, Math.min(5, vidas));
+    }
+    if (nodoId) {
+      const n = p.nodos.find((item) => item.nodoId === nodoId);
+      if (n) {
+        n.estado = 'completado';
+      } else {
+        p.nodos.push({ nodoId, estado: 'completado' });
+      }
+    }
+    this.guardarProgreso(alumnoId, p);
+    if (alumnoId === 'alu-01') {
+      this.progresoSubject.next(structuredClone(p));
+    }
+    return of(structuredClone(p));
   }
 
   getAlumnos(_cursoCohorteId: string): Observable<Alumno[]> {
@@ -268,6 +299,24 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
     }
     if (cambio) this.persistir(rm);
     return rm;
+  }
+
+  private cargarProgreso(alumnoId: string): Progreso {
+    try {
+      const raw = localStorage.getItem(`${PROGRESO_LS_KEY}-${alumnoId}`);
+      if (raw) return JSON.parse(raw) as Progreso;
+    } catch {
+      /* ignore */
+    }
+    return progresoSeed(alumnoId);
+  }
+
+  private guardarProgreso(alumnoId: string, p: Progreso): void {
+    try {
+      localStorage.setItem(`${PROGRESO_LS_KEY}-${alumnoId}`, JSON.stringify(p));
+    } catch {
+      /* modo incógnito / storage lleno */
+    }
   }
 
   private guardar(): void {

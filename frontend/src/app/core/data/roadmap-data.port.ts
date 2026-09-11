@@ -42,5 +42,12 @@ export abstract class RoadmapDataPort {
   abstract removeConexion(cursoCohorteId: string, conexionId: string): Observable<void>;
 
   abstract getProgreso(alumnoId: string, cursoCohorteId: string): Observable<Progreso>;
+  abstract registrarProgreso(
+    alumnoId: string,
+    cursoCohorteId: string,
+    xpGanado: number,
+    nodoId?: string,
+    vidas?: number,
+  ): Observable<Progreso>;
   abstract getAlumnos(cursoCohorteId: string): Observable<Alumno[]>;
 }
