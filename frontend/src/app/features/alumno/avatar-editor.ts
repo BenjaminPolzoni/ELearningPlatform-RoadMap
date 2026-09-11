@@ -3,7 +3,8 @@ import { RouterLink } from '@angular/router';
 import {
   ACCESORIOS,
   AvatarConfig,
-  COLORES,
+  COLORES_PELO,
+  COLORES_ROPA,
   IdColor,
   PELOS,
   PIELES,
@@ -111,7 +112,7 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
             }
           </div>
           <div class="flex flex-wrap gap-2">
-            @for (c of colores; track c.id) {
+            @for (c of coloresPelo; track c.id) {
               <button
                 class="swatch h-9 w-9"
                 [style.background]="c.base"
@@ -128,15 +129,15 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
         <section>
           <h3 class="ui-font mb-2 text-[9px] text-secondary">TRAJE</h3>
           <div class="flex flex-wrap gap-2">
-            @for (c of colores; track c.id) {
+            @for (c of coloresRopa; track c.id) {
               <button
                 class="swatch h-9 w-9"
                 [style.background]="c.base"
-                [class.sel]="srv.avatar().colorTraje === c.id"
-                [attr.aria-pressed]="srv.avatar().colorTraje === c.id"
+                [class.sel]="srv.avatar().colorRopa === c.id"
+                [attr.aria-pressed]="srv.avatar().colorRopa === c.id"
                 [attr.aria-label]="'Traje ' + c.nombre"
                 [title]="c.nombre"
-                (click)="elegirColor('colorTraje', c.id)"
+                (click)="elegirColor('colorRopa', c.id)"
               ></button>
             }
           </div>
@@ -159,7 +160,7 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
           </div>
           @if (srv.avatar().accesorio !== 'ninguno') {
             <div class="flex flex-wrap gap-2">
-              @for (c of colores; track c.id) {
+              @for (c of coloresRopa; track c.id) {
                 <button
                   class="swatch h-9 w-9"
                   [style.background]="c.base"
@@ -186,7 +187,8 @@ export class AvatarEditor {
 
   protected readonly pieles = PIELES;
   protected readonly pelos = PELOS;
-  protected readonly colores = COLORES;
+  protected readonly coloresPelo = COLORES_PELO;
+  protected readonly coloresRopa = COLORES_ROPA;
   protected readonly accesorios = ACCESORIOS;
 
   protected elegirColor(parte: keyof AvatarConfig & `color${string}`, id: IdColor): void {

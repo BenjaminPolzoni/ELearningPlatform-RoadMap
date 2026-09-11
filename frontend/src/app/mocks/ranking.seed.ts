@@ -8,7 +8,7 @@
 // el resto de la cohorte recibe una combinación determinística por alumno — nunca cambia
 // entre cargas y nunca dos alumnos comparten exactamente el mismo look.
 
-import { ACCESORIOS, AvatarConfig, COLORES, PELOS, PIELES } from '../core/avatar/avatar.models';
+import { armarAvatar, AvatarConfig } from '../core/avatar/avatar.models';
 import { FilaRanking } from '../core/data/ranking.models';
 import { ordenarCohorte, percentilDe, zonaDe } from '../domain/ranking/ranking.reglas';
 import { alumnosSeed } from './seed';
@@ -16,20 +16,16 @@ import { alumnosSeed } from './seed';
 /** Alumno logueado en el mock (coincide con `features/alumno/mapa.ts`). */
 export const ALUMNO_ACTUAL_ID = 'alu-01';
 
-/** Combinación de avatar determinística por `seed` — misma paleta que el editor de avatar. */
+/** Combinación de avatar determinística por `seed` — mismo catálogo que el editor de avatar. */
 export function avatarConfigMock(seed: string): AvatarConfig {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  const elegir = <T extends string>(xs: readonly { id: T }[], bits: number): T =>
-    xs[(h >>> bits) % xs.length].id;
-  return {
-    piel: elegir(PIELES, 0),
-    pelo: elegir(PELOS, 3),
-    colorPelo: elegir(COLORES, 6),
-    colorTraje: elegir(COLORES, 9),
-    accesorio: elegir(ACCESORIOS, 12),
-    colorAccesorio: elegir(COLORES, 15),
+  // Un hash por campo: con 12 campos, repartir los 32 bits de un único hash a 3 bits por
+  // campo ya no alcanza (los últimos campos saldrían siempre del mismo resto).
+  const hash = (s: string): number => {
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return h;
   };
+  return armarAvatar((campo, opciones) => opciones[hash(`${seed}:${campo}`) % opciones.length].id);
 }
 
 /**

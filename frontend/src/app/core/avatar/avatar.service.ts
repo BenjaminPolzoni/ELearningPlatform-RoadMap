@@ -1,13 +1,5 @@
 import { effect, Injectable, signal } from '@angular/core';
-import {
-  ACCESORIOS,
-  AvatarConfig,
-  AVATAR_POR_DEFECTO,
-  COLORES,
-  PELOS,
-  PIELES,
-  sanearAvatar,
-} from './avatar.models';
+import { armarAvatar, AvatarConfig, avatarPorDefecto, sanearAvatar } from './avatar.models';
 
 const LS_KEY = 'mock-avatar';
 
@@ -31,26 +23,21 @@ export class AvatarService {
     });
   }
 
-  /** Cambia una sola parte; el resto queda como estaba. */
+  /** Cambia una sola parte; el resto queda como estaba (cambiar el género no toca nada más). */
   set<K extends keyof AvatarConfig>(parte: K, valor: AvatarConfig[K]): void {
     this._avatar.update((a) => ({ ...a, [parte]: valor }));
   }
 
+  /** Vuelve a los valores sugeridos del género elegido: RESET no te cambia el género. */
   reiniciar(): void {
-    this._avatar.set({ ...AVATAR_POR_DEFECTO });
+    this._avatar.set(avatarPorDefecto(this._avatar().genero));
   }
 
-  /** Combinación aleatoria válida — atajo "sorprendeme" del editor. */
+  /** Combinación aleatoria válida — atajo "sorprendeme" del editor. Sortea también el género. */
   aleatorio(): void {
-    const elegir = <T>(xs: readonly T[]): T => xs[Math.floor(Math.random() * xs.length)];
-    this._avatar.set({
-      piel: elegir(PIELES).id,
-      pelo: elegir(PELOS).id,
-      colorPelo: elegir(COLORES).id,
-      colorTraje: elegir(COLORES).id,
-      accesorio: elegir(ACCESORIOS).id,
-      colorAccesorio: elegir(COLORES).id,
-    });
+    this._avatar.set(
+      armarAvatar((_, opciones) => opciones[Math.floor(Math.random() * opciones.length)].id),
+    );
   }
 
   private leer(): AvatarConfig {
@@ -58,7 +45,7 @@ export class AvatarService {
       const crudo = localStorage.getItem(LS_KEY);
       return sanearAvatar(crudo ? JSON.parse(crudo) : null);
     } catch {
-      return { ...AVATAR_POR_DEFECTO };
+      return avatarPorDefecto('indefinido');
     }
   }
 }

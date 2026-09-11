@@ -156,12 +156,12 @@ export class AvatarSprite {
 
   protected readonly piel = computed(() => pielPorId(this.config().piel));
   protected readonly pelo = computed(() => colorPorId(this.config().colorPelo));
-  protected readonly traje = computed(() => colorPorId(this.config().colorTraje));
+  protected readonly traje = computed(() => colorPorId(this.config().colorRopa));
   protected readonly acc = computed(() => colorPorId(this.config().colorAccesorio));
 
   /** El emblema tiene que contrastar contra el traje, si no desaparece. */
   protected readonly emblema = computed(() =>
-    this.config().colorTraje === 'rosa' ? '#F3EAFF' : '#FF2758',
+    this.config().colorRopa === 'rosa' ? '#F3EAFF' : '#FF2758',
   );
 
   /**
@@ -170,6 +170,6 @@ export class AvatarSprite {
    * contra el fondo. Van siempre en hueso, salvo que el traje ya sea hueso.
    */
   protected readonly zapatos = computed(() =>
-    this.config().colorTraje === 'hueso' ? '#2D164A' : '#F3EAFF',
+    this.config().colorRopa === 'hueso' ? '#2D164A' : '#F3EAFF',
   );
 }
