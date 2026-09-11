@@ -1840,7 +1840,10 @@ button.rk-estado:hover {
   width: 250px;
   left: clamp(130px, var(--encounter-x), calc(100% - 130px));
   top: var(--encounter-y);
-  translate: -50% -110%;
+  /* -110% ancla el fondo de la tarjeta muy cerca del nodo — con descripciones cortas (tarjeta
+     baja) eso queda por debajo de la cabeza del avatar parado en ese mismo punto y lo tapa.
+     El offset extra en px empuja la tarjeta lo suficiente para despejarlo siempre. */
+  translate: -50% calc(-110% - 46px);
   padding: 16px;
   background: #fff8e5;
   border: 2px solid #775637;
@@ -1848,7 +1851,8 @@ button.rk-estado:hover {
   color: #433626;
 }
 .encounter.below {
-  translate: -50% 15px;
+  /* Ídem, pero hacia abajo: deja despejados los pies/sombra del avatar. */
+  translate: -50% 27px;
 }
 .encounter::after {
   content: '';

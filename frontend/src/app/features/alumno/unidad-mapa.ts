@@ -244,21 +244,6 @@ interface ConfettiPiece {
                 <!-- Escenario Procedural (Monedas, Casas Hongo, Nubes, Flores, Antorchas, etc.) -->
                 <div [innerHTML]="scenerySvg()" class="pointer-events-none"></div>
 
-                <!-- Letreros de soporte para bonus y recuperación -->
-                @for (c of world().challenges; track c.id) {
-                  @if (c.optional) {
-                    <div
-                      class="support-sign"
-                      [class.life-sign]="c.recovery"
-                      [style.left.%]="c.x"
-                      [style.top]="'calc(' + c.y + '% + 36px)'"
-                    >
-                      {{ c.recovery ? '♥ RECUPERAR VIDA' : '★ BONUS' }}
-                      <small>{{ c.recovery ? 'Repaso · +1 corazón' : 'Desafío opcional' }}</small>
-                    </div>
-                  }
-                }
-
                 <!-- Meta en la cumbre (Castillo / Templo / Fortaleza) -->
                 <div class="vertical-castle" [style.top.%]="castleTopPercent()">
                   <div [innerHTML]="castleGoalSvg()"></div>
@@ -278,6 +263,26 @@ interface ConfettiPiece {
                   </div>
                 }
               </div>
+
+              <!--
+                Letreros de soporte para bonus y recuperación: van FUERA de .vertical-terrain
+                (que tiene z-index:1) a propósito — ahí quedaban siempre por detrás de los
+                nodos (z-index:8) sin importar el z-index propio del letrero, y el badge del
+                nodo (".node-sign") tapaba el título ("♥ RECUPERAR VIDA", etc.).
+              -->
+              @for (c of world().challenges; track c.id) {
+                @if (c.optional) {
+                  <div
+                    class="support-sign"
+                    [class.life-sign]="c.recovery"
+                    [style.left.%]="c.x"
+                    [style.top]="'calc(' + c.y + '% + 36px)'"
+                  >
+                    {{ c.recovery ? '♥ RECUPERAR VIDA' : '★ BONUS' }}
+                    <small>{{ c.recovery ? 'Repaso · +1 corazón' : 'Desafío opcional' }}</small>
+                  </div>
+                }
+              }
 
               <!-- 2. Partículas de polvo de caminata -->
               @for (p of walkPuffs(); track p.id) {
