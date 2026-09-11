@@ -14,9 +14,10 @@ import {
   viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { UpperCasePipe } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { AuthMockService } from '../../core/auth/auth-mock.service';
 import { AvatarService } from '../../core/avatar/avatar.service';
 import { RoadmapDataPort } from '../../core/data/roadmap-data.port';
 import { RoadmapStore } from '../../core/data/roadmap.store';
@@ -93,7 +94,7 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
 @Component({
   selector: 'app-mapa, app-unidad-mapa',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarSprite, UpperCasePipe, InventoryModal, RankingPanel, Lives, PixelIcon],
+  imports: [AvatarSprite, RouterLink, UpperCasePipe, InventoryModal, RankingPanel, Lives, PixelIcon],
   host: { class: 'block w-full h-full' },
   styles: `
     :host {
@@ -604,6 +605,15 @@ type JoyDir = 'left' | 'right' | 'up' | 'down';
                   >
                     ‹ VOLVER · ESC
                   </button>
+                  @if (auth.rol() === 'PROFESOR') {
+                    <a
+                      routerLink="/profesor"
+                      class="btn btn-xs md:btn-sm border border-white/20 bg-white/10 font-['Press_Start_2P'] text-[7px] md:text-[8px] text-white hover:bg-white/20"
+                      title="Volver al editor del curso"
+                    >
+                      ← EDITOR
+                    </a>
+                  }
                 </div>
 
                 <!-- Título central -->
@@ -1212,6 +1222,7 @@ export class UnidadMapa {
   readonly id = input<string>();
   readonly preview = input<boolean>(false);
 
+  protected readonly auth = inject(AuthMockService);
   protected readonly avatarSrv = inject(AvatarService);
   protected readonly store = inject(RoadmapStore);
   private readonly data = inject(RoadmapDataPort);
