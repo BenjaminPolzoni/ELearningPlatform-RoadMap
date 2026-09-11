@@ -1,14 +1,14 @@
 # Deuda técnica — descubierta ejecutando `05-design-system.md`
 
-## ✅ 1. El tablero de unidad ignora `posicion_x` / `posicion_y` — pagada (G9, editor gráfico)
+## 🟢 1. ~~El tablero de unidad ignora `posicion_x` / `posicion_y`~~ (G9, editor gráfico)
 
-**Qué falta:** que el tablero interno de la unidad ubique cada casillero en la posición
+**Qué faltaba:** que el tablero interno de la unidad ubique cada casillero en la posición
 que el profesor definió. Hoy calcula un layout serpenteante de 4 columnas a partir del
 orden de las actividades, así que el profesor no tiene ninguna forma de decidir la forma
 del recorrido — que es justamente lo que promete 05 §5 ("el profesor define `posicion_x`
 / `posicion_y` de cada nodo en el editor; el SVG los ubica sobre una grilla").
 
-**Dónde vive:** `frontend/src/app/features/alumno/unidad-mapa.ts` — constantes `COLS`,
+**Dónde vivía:** `frontend/src/app/features/alumno/unidad-mapa.ts` — constantes `COLS`,
 `CW`, `CH`, `X0`, `Y0` y el `computed` `casilleros()`, con un `⚠️` en el JSDoc del
 componente. Del lado del modelo, `Actividad` en
 `frontend/src/app/core/data/roadmap.models.ts` tampoco tiene los campos.
