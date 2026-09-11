@@ -601,6 +601,8 @@ export class UnidadMapa {
   protected readonly isWalking = signal<boolean>(false);
   protected readonly facing = signal<'derecha' | 'izquierda'>('derecha');
   protected readonly walkPuffs = signal<WalkPuff[]>([]);
+  // Id del stop del camino principal (0..mainCount) donde está parado lógicamente el avatar
+  private readonly currentStopId = signal<number>(0);
   private animId = 0;
 
   constructor() {
@@ -611,6 +613,7 @@ export class UnidadMapa {
       const nextId = w.challenges.find((c) => !c.optional && !comp.includes(c.id))?.id ?? w.mainCount;
       const stop = w.stops[nextId] ?? [50, 90];
       this.playerPos.set({ x: stop[0], y: stop[1] });
+      this.currentStopId.set(nextId);
     });
 
     // Centra la cámara automáticamente en la posición del personaje al entrar
@@ -704,16 +707,55 @@ export class UnidadMapa {
   // Interacción y Caminata
   protected onNodeClick(c: VerticalChallenge): void {
     this.sel.set(c);
-    this.walkTo(c.x, c.y);
+    this.walkRoute(this.buildRoute(c));
+    this.currentStopId.set(c.optional ? (c.branchStopId ?? this.currentStopId()) : c.id);
   }
 
-  private walkTo(targetX: number, targetY: number): void {
+  /**
+   * Arma los waypoints intermedios entre la posición actual y el nodo destino siguiendo
+   * el camino (stops del recorrido principal y, si el destino es opcional, el punto de
+   * bifurcación) en vez de cortar en línea recta a través del campo.
+   */
+  private buildRoute(target: VerticalChallenge): [number, number][] {
+    const w = this.world();
+    const fromStopId = this.currentStopId();
+    const branchStopId = target.optional ? (target.branchStopId ?? fromStopId) : target.id;
+
+    const route: [number, number][] = [];
+    const step = branchStopId > fromStopId ? 1 : branchStopId < fromStopId ? -1 : 0;
+    for (let id = fromStopId; id !== branchStopId; id += step) {
+      route.push(w.stops[id + step] ?? w.stops[branchStopId]);
+    }
+
+    if (target.optional) {
+      if (target.branchFrom) route.push(target.branchFrom);
+      route.push([target.x, target.y]);
+    }
+
+    return route.length ? route : [[target.x, target.y]];
+  }
+
+  /** Camina en línea recta por cada waypoint de la ruta, en orden, antes de llegar al destino final. */
+  private walkRoute(points: [number, number][]): void {
     if (this.animId) cancelAnimationFrame(this.animId);
+    this.walkLeg(points, 0);
+  }
+
+  private walkLeg(points: [number, number][], index: number): void {
+    if (index >= points.length) {
+      this.isWalking.set(false);
+      return;
+    }
+
+    const [targetX, targetY] = points[index];
     const from = this.playerPos();
     const dx = targetX - from.x;
     const dy = targetY - from.y;
     const dist = Math.hypot(dx, dy);
-    if (dist < 1) return;
+    if (dist < 1) {
+      this.walkLeg(points, index + 1);
+      return;
+    }
 
     this.isWalking.set(true);
     this.facing.set(dx >= 0 ? 'derecha' : 'izquierda');
@@ -741,7 +783,7 @@ export class UnidadMapa {
       if (progress < 1) {
         this.animId = requestAnimationFrame(step);
       } else {
-        this.isWalking.set(false);
+        this.walkLeg(points, index + 1);
       }
     };
     this.animId = requestAnimationFrame(step);

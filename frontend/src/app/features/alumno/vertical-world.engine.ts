@@ -23,6 +23,8 @@ export interface VerticalChallenge {
   x: number; // percentage 0-100
   y: number; // percentage 0-100
   branchFrom?: [number, number];
+  /** Id del stop principal (`stops[branchStopId]`) desde el que arranca la bifurcación hacia este nodo opcional. */
+  branchStopId?: number;
   estado?: EstadoNodo;
   completado?: boolean;
 }
@@ -172,6 +174,7 @@ export function generateVerticalWorld(
     c.x = origin[0] > 50 ? 76 : 24;
     c.y = origin[1];
     c.branchFrom = origin;
+    c.branchStopId = roadId;
   };
 
   if (bonus) support(bonus, Math.max(1, Math.ceil(mainCount * 0.6)));
@@ -181,6 +184,7 @@ export function generateVerticalWorld(
     bonus.x = recovery.x === 24 ? 76 : 24;
     bonus.y = (groundY(mainCount) / worldHeight) * 100;
     bonus.branchFrom = stops[mainCount];
+    bonus.branchStopId = mainCount;
   }
 
   // Load questions
