@@ -11,7 +11,7 @@ const LS_KEY = 'mock-rol';
  */
 @Injectable({ providedIn: 'root' })
 export class AuthMockService {
-  private readonly _rol = signal<Rol | null>(this.leer());
+  private readonly _rol = signal<Rol | null>(null);
   readonly rol = this._rol.asReadonly();
 
   entrarComo(rol: Rol): void {

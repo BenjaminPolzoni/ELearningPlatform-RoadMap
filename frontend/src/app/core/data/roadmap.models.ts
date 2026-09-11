@@ -23,6 +23,10 @@ export interface Actividad {
   // Desafío (tipo desafio/boss): se evalúa y otorga XP.
   dificultad?: Dificultad;
   modalidad?: Modalidad;
+  // Posición del nodo en el editor gráfico del profesor (05-design-system.md §5/§6). El
+  // adapter le asigna un default no solapado al crearla; el profesor la reubica arrastrando.
+  posicionX: number;
+  posicionY: number;
 }
 
 /** Alta/edición de actividad desde el editor del profesor (Fase 2). */
@@ -49,11 +53,21 @@ export interface Roadmap {
   cursoCohorteId: string;
   nombre: string;
   unidades: Unidad[];
+  // Prerequisitos entre nodos (grafo de conexiones, RF-CUR editor gráfico). Se mantiene
+  // como DAG: el adapter rechaza auto-lazo, ciclo y duplicado — espejo de POST /conexiones.
+  conexiones: Conexion[];
 }
 
 export interface NuevaUnidad {
   nombre: string;
   umbralXpDesbloqueo: number;
+}
+
+/** Prerequisito: no se puede entrar a `nodoDestinoId` sin completar `nodoOrigenId`. */
+export interface Conexion {
+  id: string;
+  nodoOrigenId: string;
+  nodoDestinoId: string;
 }
 
 export interface ProgresoNodo {
