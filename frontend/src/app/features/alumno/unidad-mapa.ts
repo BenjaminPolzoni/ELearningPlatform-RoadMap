@@ -1494,7 +1494,7 @@ export class UnidadMapa {
 
   // ---------- Progreso, Nivel, Vidas y Racha ----------
   protected readonly completedIds = signal<number[]>([1]);
-  protected readonly localVidas = signal<number>(5);
+  protected readonly localVidas = signal<number>(3);
 
   protected readonly vidas = computed(() => this.store.progreso()?.vidasVigentes ?? this.localVidas());
   protected readonly xp = computed(() => this.store.progreso()?.xpTotal ?? 0);
@@ -1832,8 +1832,8 @@ export class UnidadMapa {
       this.store.sumarProgreso(c.xp, c.actividadId, this.localVidas());
     }
     if (c.recovery) {
-      this.localVidas.set(5);
-      this.store.sumarProgreso(0, undefined, 5);
+      this.localVidas.set(3);
+      this.store.sumarProgreso(0, undefined, 3);
     }
     this.closeActivity();
 

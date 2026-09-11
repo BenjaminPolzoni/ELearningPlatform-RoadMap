@@ -196,7 +196,7 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
     const p = this.cargarProgreso(alumnoId);
     p.xpTotal += Math.max(0, xpGanado);
     if (typeof vidas === 'number') {
-      p.vidasVigentes = Math.max(0, Math.min(5, vidas));
+      p.vidasVigentes = Math.max(0, Math.min(3, vidas));
     }
     if (nodoId) {
       const n = p.nodos.find((item) => item.nodoId === nodoId);
