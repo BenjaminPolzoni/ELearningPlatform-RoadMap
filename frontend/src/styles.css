@@ -1490,6 +1490,9 @@ button.rk-estado:hover {
 .vertical-world[data-theme='castle'] {
   --ground: #343f5c;
 }
+.vertical-world[data-theme='snow'] {
+  --ground: #c3d8ea;
+}
 
 .vertical-terrain {
   position: absolute;
@@ -1552,6 +1555,13 @@ button.rk-estado:hover {
 [data-theme='castle'] .vertical-road .road-center { stroke: #c3baca; stroke-dasharray: 14 3; opacity: 0.55; }
 [data-theme='castle'] .vertical-road .support-road-edge { stroke: #534064; }
 [data-theme='castle'] .vertical-road .support-road { stroke: #a98eaa; }
+
+[data-theme='snow'] .vertical-road .road-shadow { stroke: #7b9cba; }
+[data-theme='snow'] .vertical-road .road-edge { stroke: #5c86a8; }
+[data-theme='snow'] .vertical-road .road-sand { stroke: #e9f5ff; }
+[data-theme='snow'] .vertical-road .road-center { stroke: #ffffff; stroke-dasharray: 16 6; }
+[data-theme='snow'] .vertical-road .support-road-edge { stroke: #6b93b3; }
+[data-theme='snow'] .vertical-road .support-road { stroke: #d7ecfb; }
 
 .vertical-terrain .desert-scenery {
   position: absolute;
@@ -1617,6 +1627,11 @@ button.rk-estado:hover {
   color: #e8bdd8;
   border-color: #987599;
 }
+[data-theme='snow'] .support-sign {
+  background: #e9f4ff;
+  color: #2f5a78;
+  border-color: #8fb0cd;
+}
 
 .vertical-castle {
   position: absolute;
@@ -1654,6 +1669,12 @@ button.rk-estado:hover {
   border-color: #8d6d85;
   box-shadow: 2px 3px rgba(21, 20, 38, 0.33);
 }
+[data-theme='snow'] .vertical-castle > span {
+  background: #e9f4ff;
+  color: #2f5a78;
+  border-color: #8fb0cd;
+  box-shadow: 2px 3px rgba(123, 156, 186, 0.33);
+}
 
 .vertical-start {
   position: absolute;
@@ -1682,6 +1703,11 @@ button.rk-estado:hover {
   color: #d9c5d7;
   border-color: #8d6d85;
 }
+[data-theme='snow'] .vertical-start > span {
+  background: #e9f4ff;
+  color: #2f5a78;
+  border-color: #8fb0cd;
+}
 .vertical-start > small {
   display: block;
   white-space: nowrap;
@@ -1691,6 +1717,9 @@ button.rk-estado:hover {
 }
 [data-theme='castle'] .vertical-start > small {
   color: #c2afc7;
+}
+[data-theme='snow'] .vertical-start > small {
+  color: #4a7695;
 }
 
 .ascent-milestone {
@@ -1714,6 +1743,11 @@ button.rk-estado:hover {
   background: #302b44;
   color: #d9c5d7;
   border-color: #8d6d85;
+}
+[data-theme='snow'] .ascent-milestone {
+  background: #e9f4ff;
+  color: #2f5a78;
+  border-color: #8fb0cd;
 }
 
 /* Map Nodes */
@@ -1777,6 +1811,16 @@ button.rk-estado:hover {
   color: #b9f3e8;
   border-color: #427c8a;
 }
+[data-theme='snow'] .node-sign {
+  background: #e9f4ff;
+  border-color: #5c86a8;
+  color: #2f5a78;
+}
+[data-theme='snow'] .map-node.completed .node-sign {
+  background: #dff0e4;
+  color: #3a6f4e;
+  border-color: #4b7a5a;
+}
 
 .node-invitation {
   position: absolute;
@@ -1818,6 +1862,14 @@ button.rk-estado:hover {
 [data-theme='castle'] .node-invitation::after {
   border-top-color: #d07ea2;
 }
+[data-theme='snow'] .node-invitation {
+  background: #eaf6ff;
+  color: #2f5a78;
+  border-color: #4f8fb8;
+}
+[data-theme='snow'] .node-invitation::after {
+  border-top-color: #4f8fb8;
+}
 
 .map-node .object-ground {
   position: absolute;
@@ -1838,6 +1890,10 @@ button.rk-estado:hover {
 [data-theme='castle'] .object-ground {
   border-color: #fc8cc3;
   box-shadow: 0 0 12px rgba(236, 68, 138, 0.53);
+}
+[data-theme='snow'] .object-ground {
+  border-color: #bfe6f7;
+  box-shadow: 0 0 12px rgba(127, 198, 239, 0.6);
 }
 
 /* Encounter popup card */
@@ -1955,6 +2011,29 @@ button.rk-estado:hover {
   background: #54425e;
   color: #c2a7c5;
 }
+[data-theme='snow'] .encounter {
+  background: #f4faff;
+  color: #26405a;
+  border-color: #5c86a8;
+}
+[data-theme='snow'] .encounter::after {
+  border-top-color: #5c86a8;
+}
+[data-theme='snow'] .encounter-kicker,
+[data-theme='snow'] .encounter-meta {
+  color: #5b87a8;
+}
+[data-theme='snow'] .encounter-action {
+  background: #3d7ea6;
+  border-color: #2c5e7d;
+  box-shadow: 0 3px #2c5e7d;
+}
+[data-theme='snow'] .encounter-action:disabled {
+  background: #a9bece;
+  color: #4f6373;
+  border-color: #8ca4bb;
+  box-shadow: none;
+}
 
 /* Animations */
 @keyframes desert-coin-glow {
@@ -1996,6 +2075,10 @@ button.rk-estado:hover {
 [data-theme='castle'] .walk-puff {
   background: #d4adee;
   box-shadow: 0 0 6px #b581d9;
+}
+[data-theme='snow'] .walk-puff {
+  background: #ffffff;
+  box-shadow: 3px -2px #a9cde2;
 }
 
 

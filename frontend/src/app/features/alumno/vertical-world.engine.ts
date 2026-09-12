@@ -1,6 +1,6 @@
 import { EstadoNodo } from '../../core/data/roadmap.models';
 
-export type WorldTheme = 'desert' | 'jungle' | 'castle';
+export type WorldTheme = 'desert' | 'jungle' | 'castle' | 'snow';
 
 export interface QuestionData {
   pregunta: string;
@@ -31,7 +31,7 @@ export interface VerticalChallenge {
 
 export interface WorldAppearanceConfig {
   tile: string;
-  goal: 'castillo' | 'templo' | 'fortaleza';
+  goal: 'castillo' | 'templo' | 'fortaleza' | 'refugio';
   goalName: string;
   setting: string;
   support: string;
@@ -62,6 +62,14 @@ export const WORLD_APPEARANCE: Record<WorldTheme, WorldAppearanceConfig> = {
     setting: 'Murallas, criptas y alquimia',
     support: 'Fuente de alquimia',
     lanes: [36, 34, 44, 62, 66, 56, 42, 36, 38, 58, 64, 52],
+  },
+  snow: {
+    tile: '/mapa_nieve_tile.png',
+    goal: 'refugio',
+    goalName: 'Refugio de los Picos del Norte',
+    setting: 'Cumbres, pinos y lagunas heladas',
+    support: 'Hoguera del refugio',
+    lanes: [22, 34, 76, 86, 64, 30, 16, 44, 78, 66, 38, 20],
   },
 };
 
@@ -250,6 +258,25 @@ export const fortressArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-
   <path d="M46 20V4m148 16V4" stroke="#9991a8" stroke-width="2"/>
 </svg>`;
 
+export const lodgeArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-rendering="crispEdges">
+  <ellipse cx="120" cy="184" rx="111" ry="12" fill="#2d4463" opacity=".35"/>
+  <path d="M8 168h224v22H8z" fill="#e8f1fb" stroke="#9fb6d1" stroke-width="4"/>
+  <path d="M56 108h128v62H56z" fill="#8a5a36" stroke="#402719" stroke-width="4"/>
+  <path d="M56 122h128M56 136h128M56 150h128" stroke="#6d4526" stroke-width="4"/>
+  <path d="m120 34 88 74H32z" fill="#5d3c28" stroke="#2c1b12" stroke-width="4"/>
+  <path d="M120 34l88 74h-22l-66-56-66 56H32z" fill="#f3f8ff" stroke="#a8bed6" stroke-width="4"/>
+  <path d="M26 106h188v14H26z" fill="#e8f1fb" stroke="#9fb6d1" stroke-width="4"/>
+  <path d="M104 126h32v44h-32z" fill="#4a2f1d" stroke="#2a1a10" stroke-width="3"/>
+  <path d="M110 146h5v5h-5z" fill="#ffd98a"/>
+  <path d="M70 126h26v24H70zm74 0h26v24h-26z" fill="#ffd166" stroke="#3b2616" stroke-width="4"/>
+  <path d="M83 126v24M70 138h26M157 126v24M144 138h26" stroke="#3b2616" stroke-width="3"/>
+  <path d="M166 46h20v36h-20z" fill="#6c6f7d" stroke="#2b2f3c" stroke-width="4"/>
+  <path d="M162 42h28v9h-28z" fill="#eef5ff" stroke="#a8bed6" stroke-width="3"/>
+  <g class="lodge-smoke" fill="#d8e5f4" opacity=".85"><path d="M170 26h9v9h-9zm11-13h8v8h-8zm-3-13h7v7h-7z"/></g>
+  <path d="M120 34V10" stroke="#43291b" stroke-width="4"/>
+  <path d="M122 11h30l-9 8 9 8h-30z" fill="#4f9fd0" stroke="#24486b" stroke-width="3"/>
+</svg>`;
+
 // Interactive Node SVGs
 const questionSvg =
   '<path d="M27 24h16v4h4v12h-4v4h-8v6h-7V39h8v-4h4v-5H27zm1 30h8v7h-8z" fill="#fff0b4" stroke="#915125" stroke-width="2"/>';
@@ -266,6 +293,8 @@ const markSvg = (name: 'check' | 'star' | 'heart' | 'bolt' | 'lock', x = 25, y =
   return `<path d="M${x + 4} ${y + 8} h${size - 8} v${size - 10} h-${size - 8} Z M${x + 6} ${y + 8} v-4 a4 4 0 0 1 8 0 v4" fill="currentColor"/>`;
 };
 
+const frostSvg =
+  '<path d="M30 30h4v22h-4z" fill="#f2fdff" stroke="#3d7ea6" stroke-width="1"/><path d="m21 36 22 11-2 4-22-11z" fill="#f2fdff"/><path d="m43 36-22 11 2 4-22-11z" fill="#f2fdff"/><path d="m28 33 4-4 4 4m-8 18 4 4 4-4" fill="none" stroke="#f2fdff" stroke-width="3"/>';
 const shadowSvg =
   '<ellipse class="object-shadow" cx="36" cy="76" rx="25" ry="6" fill="#221828" opacity=".28"/>';
 const sealSvg =
@@ -293,15 +322,27 @@ function portalSvg(status: 'completed' | 'available' | 'locked', final = false):
   return `<g class="object-shell"><path d="M9 72h54v7H9zM14 64h44v9H14z" fill="#8b7799" stroke="#33283f" stroke-width="2"/><path d="M14 65V24l7-7V9h10V4h10v5h10v8l7 7v41H47V27l-7-6h-8l-7 6v38z" fill="#64516f" stroke="#2b2438" stroke-width="3"/><path d="M18 25h5v35h-5zM48 25h6v35h-6zM25 13h7v5h-7zm15 0h7v5h-7z" fill="#b7a0bb"/><path d="M25 64V30l7-8h8l7 8v34z" fill="#20182e"/><g class="portal-core"><path d="M28 60V32l6-6h4l6 6v28z" fill="${used ? '#419aaf' : status === 'locked' ? '#633351' : '#d94d88'}"/><path d="M32 57V35l4-5 4 5v22z" fill="${used ? '#b0f4ef' : status === 'locked' ? '#9d5978' : '#ffabc8'}"/><path d="M35 37h3v16h-3z" fill="#fff1e4"/></g><path class="portal-runes" d="m17 32 4 4-4 4m35-8-4 4 4 4M18 51h4m-2-2v4m30-2h4m-2-2v4" fill="none" stroke="${used ? '#92e7e0' : '#e6b073'}" stroke-width="2"/>${final ? '<path d="M10 31 3 19v-8l14 9m45 11 7-12v-8L55 20" fill="#8a7295" stroke="#322739" stroke-width="2"/>' : ''}${used ? `<g color="#defdff">${markSvg('check', 30, 43, 13)}</g>` : ''}</g>${status === 'locked' ? sealSvg : ''}`;
 }
 
+function iceSvg(status: 'completed' | 'available' | 'locked', final = false): string {
+  if (final) {
+    return `<g class="object-shell"><path d="M8 69h56v8H8z" fill="#cfe2f2" stroke="#7f9dbb" stroke-width="2"/><path d="M16 60h40v9H16z" fill="#eef7ff" stroke="#9fb6d1" stroke-width="2"/><path d="M29 12h5v50h-5z" fill="#8a5a36" stroke="#402719" stroke-width="2"/><path class="object-banner" d="M35 14h27l-8 9 8 9H35z" fill="${status === 'completed' ? '#6bbc77' : '#4f9fd0'}" stroke="#24486b" stroke-width="2"/><path d="m26 8 5-5 5 5-5 5z" fill="#bde4f6"/></g>`;
+  }
+  const used = status === 'completed';
+  return `<g class="object-shell"><path d="m10 24 10-9h43l-9 9z" fill="${used ? '#9fc3d6' : '#e7f7ff'}" stroke="#2f5a78" stroke-width="2"/><path d="m54 24 9-9v43l-9 11z" fill="${used ? '#5f8ba6' : '#7fbede'}" stroke="#2f5a78" stroke-width="2"/><path d="M10 24h44v45H10z" fill="${used ? '#93b6cb' : status === 'locked' ? '#a9cde2' : '#bfe6f7'}" stroke="#2f5a78" stroke-width="3"/><path d="M14 28h34v5H18v30h-4z" fill="#eefaff"/><path d="M48 33v31H18v-4h26V33z" fill="#639ab9"/><path d="M17 29h3v3h-3zm28 0h3v3h-3zm-28 31h3v3h-3zm28 0h3v3h-3z" fill="#2f5a78"/>${used ? `<g class="resolved-symbol" color="#f2fdff">${markSvg('check', 24, 36, 21)}</g>` : frostSvg}</g>${status === 'locked' ? sealSvg : ''}`;
+}
+
 function bonusSvg(theme: WorldTheme): string {
   if (theme === 'desert')
     return `<g class="object-shell bonus-object"><path d="M10 69h52v7H10z" fill="#a76d34"/><g color="#ffdc45">${markSvg('star', 13, 13, 46)}</g><path d="M28 30v7m14-7v7" stroke="#6c471f" stroke-width="3"/></g>`;
+  if (theme === 'snow')
+    return `<g class="object-shell bonus-object"><path d="M10 69h52v7H10z" fill="#bcd6ea"/><path d="m36 9 23 17-9 30H22l-9-30z" fill="#c7e9f9" stroke="#2f5a78" stroke-width="3"/><path d="m36 14 17 13-6 22H25l-6-22z" fill="#e9f9ff"/><g color="#ffd76a">${markSvg('star', 21, 20, 30)}</g></g>`;
   if (theme === 'jungle')
     return `<g class="object-shell bonus-object"><path d="M37 9v13m0-8 10-8" stroke="#577b32" stroke-width="5"/><path d="M31 22q-17 30 18 38-19-13-12-35M39 22q-3 34 24 29-20-3-17-30M28 23Q5 40 17 57 14 39 32 29" fill="#ffd64a" stroke="#95712a" stroke-width="3"/><path d="M15 69h44v7H15z" fill="#705234"/></g>`;
   return `<g class="object-shell bonus-object"><path d="M12 69h48v8H12zM20 61h32v9H20z" fill="#83708e" stroke="#362b42" stroke-width="2"/><g class="portal-core"><path d="m36 12 17 15v22L36 61 19 49V27z" fill="#b779c9" stroke="#f4c680" stroke-width="3"/><path d="m36 17 7 13-7 25-7-25z" fill="#f3c8ff"/><path d="m21 29 15 26-7-25z" fill="#9562b4"/></g></g>`;
 }
 
 function recoverySvg(theme: WorldTheme, status: 'completed' | 'available' | 'locked'): string {
+  if (theme === 'snow')
+    return `<g class="object-shell"><path d="M8 72h56v6H8z" fill="#cfe2f2"/><path d="M14 63h44v9H14z" fill="#eef7ff" stroke="#9fb6d1" stroke-width="2"/><path d="m17 68 39-11 2 6-39 11zM55 68 16 57l-2 6 39 11z" fill="#8a5a36" stroke="#402719" stroke-width="2"/><g class="torch-flame"><path d="M23 55V39l9-13 6 8 7-18 11 26v13z" fill="#ed8653" stroke="#a74744" stroke-width="2"/><path d="M31 55V41l7-10 7 19v5z" fill="#ffe396"/></g><g class="heart-float" color="#fa719c">${markSvg('heart', 27, 2, 18)}</g></g>`;
   if (theme === 'jungle') return barrelSvg(status, false, true);
   if (theme === 'castle')
     return `<g class="object-shell"><path d="M10 72h52v6H10z" fill="#71647f"/><path d="M28 20h16v17l12 16v15H16V53l12-16z" fill="#b8d7d4" stroke="#343346" stroke-width="3"/><path d="M21 51h30v13H21z" fill="#db577f"/><path d="M23 52h24v4H23z" fill="#ffadbf"/><path d="M27 16h18v8H27z" fill="#c39d6d" stroke="#55422f" stroke-width="2"/><path d="M22 49v10" stroke="#f2ffff" stroke-width="3"/><g class="heart-float" color="#fa719c">${markSvg('heart', 27, 1, 18)}</g></g>`;
@@ -322,7 +363,9 @@ export function nodeArt(
         ? blockSvg(status, c.id === mainCount)
         : theme === 'jungle'
           ? barrelSvg(status, c.id === mainCount)
-          : portalSvg(status, c.id === mainCount);
+          : theme === 'snow'
+            ? iceSvg(status, c.id === mainCount)
+            : portalSvg(status, c.id === mainCount);
   const resolvedBonus =
     c.optional && status === 'completed'
       ? `<g color="#f2ffe2"><circle cx="56" cy="66" r="11" fill="#3c845e" stroke="#d9eeb0" stroke-width="2"/>${markSvg('check', 48, 58, 16)}</g>`
@@ -335,8 +378,14 @@ export function nodeVerb(
   status: 'completed' | 'available' | 'locked',
 ): string {
   if (status === 'completed') return 'RESUELTO';
-  if (status === 'locked') return theme === 'castle' ? 'SELLADO' : 'CERRADO';
-  return theme === 'desert' ? '¡GOLPEA!' : theme === 'jungle' ? '¡ABRE!' : '¡DESPIERTA!';
+  if (status === 'locked') return theme === 'castle' ? 'SELLADO' : theme === 'snow' ? 'CONGELADO' : 'CERRADO';
+  return theme === 'desert'
+    ? '¡GOLPEA!'
+    : theme === 'jungle'
+      ? '¡ABRE!'
+      : theme === 'snow'
+        ? '¡ROMPE!'
+        : '¡DESPIERTA!';
 }
 
 // Scenery SVG generator
@@ -372,6 +421,10 @@ const totemSvg =
   '<path d="M-34 39h68v9h-68zM-24-37h48v76h-48z" fill="#8c9560" stroke="#30442e" stroke-width="4"/><path d="M-19-30h38v12h-38z" fill="#c3c084"/><path d="M-15-9h10v10h-10zM5-9h10v10H5zM-11 16h22v7h-22z" fill="#36472d"/><path d="M-20 28h8v10h-8zm26-64h10v14H6z" fill="#53a04e"/>';
 const torchSvg =
   '<path d="M-22 42h44v8h-44zM-10-7h20v48h-20z" fill="#74718a" stroke="#292c43" stroke-width="3"/><path d="M-18-11h36v9h-36z" fill="#ab9070"/><g class="torch-flame"><path d="M-15-14v-17l9-14 5 9 6-22 11 27v17z" fill="#ed8653" stroke="#a74744" stroke-width="2"/><path d="M-7-15v-15l7-12 7 22v5z" fill="#ffe396"/></g>';
+const snowflakeSvg =
+  '<path d="M0-16v32M-14-8 14 8M-14 8 14-8" stroke="#f2fbff" stroke-width="7" stroke-linecap="round"/><path d="M0-16v32M-14-8 14 8M-14 8 14-8" stroke="#63b7e2" stroke-width="2"/><path d="m-6-12 6 5 6-5M-6 12l6-5 6 5" fill="none" stroke="#f2fbff" stroke-width="4"/><circle cx="0" cy="0" r="5" fill="#bfe6f7" stroke="#2f5a78" stroke-width="2"/>';
+const snowmanSvg =
+  '<ellipse cx="0" cy="41" rx="26" ry="7" fill="#b9cfe6" opacity=".7"/><circle cx="0" cy="21" r="19" fill="#f4faff" stroke="#93aec9" stroke-width="3"/><circle cx="0" cy="-7" r="13" fill="#fbfdff" stroke="#93aec9" stroke-width="3"/><path d="M-20 14h-13M20 14h13" stroke="#6d4526" stroke-width="4"/><path d="M-15-19h30v5h-30zM-9-30h18v11h-18z" fill="#3c4a63"/><path d="M-6-11h4v4h-4zm8 0h4v4h-4z" fill="#2b3446"/><path d="M-2-4h9v4h-9z" fill="#d96a52"/><path d="M-4 14h4v4h-4zm1 12h4v4h-4z" fill="#3c4a63"/>';
 
 export function renderWorldScenery(world: GeneratedWorld, completedIds: number[] = []): string {
   const { theme, worldWidth, worldHeight, roads, mainCount, challenges } = world;
@@ -422,7 +475,7 @@ export function renderWorldScenery(world: GeneratedWorld, completedIds: number[]
         if (roads[id][step]) {
           const [x, y] = px(roads[id][step]);
           items.push(
-            `<g class="trail-coin${litClass}" style="--delay:-${j * 0.4}s" transform="translate(${x} ${y})"><g>${theme === 'jungle' ? bananaSvg : crystalSvg}</g></g>`,
+            `<g class="trail-coin${litClass}" style="--delay:-${j * 0.4}s" transform="translate(${x} ${y})"><g>${theme === 'jungle' ? bananaSvg : theme === 'snow' ? snowflakeSvg : crystalSvg}</g></g>`,
           );
         }
       });
@@ -432,7 +485,7 @@ export function renderWorldScenery(world: GeneratedWorld, completedIds: number[]
       const [x, y] = px(roads[id][16]);
       const side = x > 50 ? 30 : 70;
       items.push(
-        `<g transform="translate(${(side / 100) * worldWidth} ${y})">${theme === 'jungle' ? totemSvg : torchSvg}</g>`,
+        `<g transform="translate(${(side / 100) * worldWidth} ${y})">${theme === 'jungle' ? totemSvg : theme === 'snow' ? snowmanSvg : torchSvg}</g>`,
       );
     }
   }
@@ -543,6 +596,63 @@ export function defaultQuestions(theme: WorldTheme): Record<number, QuestionData
         opciones: ['Una lista vacía', 'Un número par', 'El nombre del archivo fuente'],
         correcta: 0,
         explicacion: 'Una lista vacía puede causar una división por cero si no se valida.',
+      },
+    };
+  }
+
+  if (theme === 'snow') {
+    return {
+      1: {
+        pregunta: '¿Qué define a una estructura de datos?',
+        opciones: [
+          'La forma en que se organizan y se acceden los datos',
+          'El color de la pantalla',
+          'La velocidad del teclado',
+        ],
+        correcta: 0,
+        explicacion: 'Cada estructura propone un orden de guardado y de acceso distinto.',
+      },
+      2: {
+        pregunta: 'En una pila, ¿qué elemento sale primero?',
+        opciones: ['El último que entró', 'El primero que entró', 'El más grande'],
+        correcta: 0,
+        explicacion: 'Una pila es LIFO: el último en entrar es el primero en salir.',
+      },
+      3: {
+        pregunta: 'Apilas 3, 7 y 9. ¿Qué valor obtienes al retirar uno?',
+        opciones: ['3', '7', '9'],
+        correcta: 2,
+        explicacion: 'El tope de la pila es 9, el último apilado.',
+      },
+      4: {
+        pregunta: 'En una cola, ¿quién es atendido primero?',
+        opciones: ['El primero que llegó', 'El último que llegó', 'Cualquiera'],
+        correcta: 0,
+        explicacion: 'Una cola es FIFO: el primero en entrar es el primero en salir.',
+      },
+      5: {
+        pregunta: 'La cola tiene [Ana, Beto, Cris] y atiendes un turno. ¿Quién queda al frente?',
+        opciones: ['Ana', 'Beto', 'Cris'],
+        correcta: 1,
+        explicacion: 'Sale Ana, la primera que llegó, y Beto pasa al frente.',
+      },
+      6: {
+        pregunta: 'En un árbol, ¿cómo se llama el nodo sin hijos?',
+        opciones: ['Hoja', 'Raíz', 'Cola'],
+        correcta: 0,
+        explicacion: 'Las hojas son los nodos finales, sin descendientes.',
+      },
+      7: {
+        pregunta: 'La pila de témpanos guarda 2, 4, 8, 16. ¿Qué témpano sigue?',
+        opciones: ['18', '24', '32'],
+        correcta: 2,
+        explicacion: 'Cada valor duplica al anterior: después de 16 viene 32.',
+      },
+      8: {
+        pregunta: '¿Qué estructura conviene para deshacer el último paso dado?',
+        opciones: ['Una pila', 'Una cola', 'Un árbol'],
+        correcta: 0,
+        explicacion: 'La pila devuelve siempre la acción más reciente.',
       },
     };
   }

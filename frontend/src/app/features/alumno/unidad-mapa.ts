@@ -28,6 +28,7 @@ import {
   fortressArt,
   GeneratedWorld,
   generateVerticalWorld,
+  lodgeArt,
   nodeArt,
   nodeVerb,
   QuestionData,
@@ -615,7 +616,14 @@ export class UnidadMapa {
     if (nombre.includes('selva') || nombre.includes('control') || u.orden === 2) return 'jungle';
     if (nombre.includes('castillo') || nombre.includes('fortaleza') || nombre.includes('funcion') || u.orden === 3)
       return 'castle';
-    return (['desert', 'jungle', 'castle'] as const)[(u.orden - 1) % 3];
+    if (
+      nombre.includes('nieve') ||
+      nombre.includes('montaña') ||
+      nombre.includes('estructura de datos') ||
+      u.orden === 4
+    )
+      return 'snow';
+    return (['desert', 'jungle', 'castle', 'snow'] as const)[(u.orden - 1) % 4];
   });
 
   // Lista de desafíos y generación del mundo vertical
@@ -656,7 +664,14 @@ export class UnidadMapa {
       },
       {
         id: count + 2,
-        title: currentTheme === 'jungle' ? 'Barril de provisiones' : currentTheme === 'castle' ? 'Fuente de alquimia' : 'Tubería de recuperación',
+        title:
+          currentTheme === 'jungle'
+            ? 'Barril de provisiones'
+            : currentTheme === 'castle'
+              ? 'Fuente de alquimia'
+              : currentTheme === 'snow'
+                ? 'Hoguera del refugio'
+                : 'Tubería de recuperación',
         type: 'Recuperación',
         difficulty: 'Inicial',
         minutes: 3,
@@ -827,7 +842,7 @@ export class UnidadMapa {
 
   protected castleGoalSvg(): SafeHtml {
     const t = this.theme();
-    const raw = t === 'jungle' ? templeArt : t === 'castle' ? fortressArt : castleArt;
+    const raw = t === 'jungle' ? templeArt : t === 'castle' ? fortressArt : t === 'snow' ? lodgeArt : castleArt;
     return this.sanitizer.bypassSecurityTrustHtml(raw);
   }
 
@@ -872,17 +887,15 @@ export class UnidadMapa {
   }
 
   /**
-   * Camina hasta un desafío opcional (bonus/recuperación) pasando por su punto de bifurcación
-   * en el camino principal, en vez de cortar en línea recta a través del mapa. Al llegar, abre
-   * la actividad directamente (no hace falta un segundo toque, como sí ocurre en el camino
-   * principal).
+   * Camina hasta un desafío opcional (bonus/recuperación): primero sigue la curva real del
+   * camino principal hasta el punto de bifurcación y después la curva real del ramal — las
+   * mismas que se dibujan en el SVG — en vez de cortar en línea recta a través del mapa. Al
+   * llegar, abre la actividad directamente (no hace falta un segundo toque, como sí ocurre en
+   * el camino principal).
    */
   private walkToOptional(target: VerticalChallenge): void {
     this.sel.set(null);
-    const from: [number, number] = [this.playerPos().x, this.playerPos().y];
-    const segment: [number, number][] = target.branchFrom
-      ? [from, target.branchFrom, [target.x, target.y]]
-      : [from, [target.x, target.y]];
+    const segment = this.routeToBranch(target);
     this.walkAlongRoad(segment, () => {
       this.visitingOptionalId.set(target.id);
       this.openActivity(target);
@@ -895,12 +908,66 @@ export class UnidadMapa {
     if (optionalId === null) return;
     this.visitingOptionalId.set(null);
 
+    const target = this.world().challenges.find((c) => c.id === optionalId);
+    if (!target) return;
+    this.walkAlongRoad([...this.routeToBranch(target)].reverse());
+  }
+
+  /**
+   * Puntos reales (no en línea recta) desde la posición actual del avatar hasta un desafío
+   * opcional: el tramo del camino principal que lleva a su punto de bifurcación (`branchFrom`,
+   * en `roads[branchStopId][17]`) seguido de la curva Bezier del propio ramal — la misma curva
+   * que dibuja `branchPaths()` en el SVG.
+   */
+  private routeToBranch(target: VerticalChallenge): [number, number][] {
+    if (!target.branchFrom || target.branchStopId === undefined) {
+      return [[this.playerPos().x, this.playerPos().y], [target.x, target.y]];
+    }
+    const toBranch = this.mainRoadToBranchPoint(target.branchStopId);
+    const curve = this.branchCurvePoints(target);
+    return [...toBranch, ...curve.slice(1)];
+  }
+
+  /**
+   * Tramo del camino principal (siguiendo las curvas de `roads`, no los stops en línea recta)
+   * desde el stop donde está parado el avatar hasta el punto de bifurcación
+   * `roads[branchStopId][17]`, en cualquier sentido (el desafío opcional puede quedar por
+   * delante o por detrás de dónde está el jugador).
+   */
+  private mainRoadToBranchPoint(branchStopId: number): [number, number][] {
     const w = this.world();
-    const c = w.challenges.find((ch) => ch.id === optionalId);
-    const from: [number, number] = [this.playerPos().x, this.playerPos().y];
-    const mainStop = w.stops[this.currentStopId()] ?? [50, 90];
-    const segment: [number, number][] = c?.branchFrom ? [from, c.branchFrom, mainStop] : [from, mainStop];
-    this.walkAlongRoad(segment);
+    const from = this.currentStopId();
+    const points: [number, number][] = [];
+    const push = (pts: [number, number][]) => points.push(...(points.length ? pts.slice(1) : pts));
+
+    if (branchStopId === from) {
+      push([...w.roads[branchStopId]].slice(17).reverse());
+    } else if (branchStopId > from) {
+      for (let id = from + 1; id < branchStopId; id++) push(w.roads[id]);
+      push(w.roads[branchStopId].slice(0, 18));
+    } else {
+      for (let id = from; id > branchStopId; id--) push([...w.roads[id]].reverse());
+      push([...w.roads[branchStopId]].slice(17).reverse());
+    }
+    return points;
+  }
+
+  /** Muestrea la curva Bezier cuadrática del ramal (misma fórmula que `branchPaths()`). */
+  private branchCurvePoints(target: VerticalChallenge, steps = 17): [number, number][] {
+    const w = this.world();
+    const [x0, y0] = target.branchFrom!;
+    const x1 = target.x;
+    const y1 = target.y;
+    const cx = (x0 + x1) / 2;
+    const cy = y0 + (24 / w.worldHeight) * 100;
+    return Array.from({ length: steps }, (_, i) => {
+      const t = i / (steps - 1);
+      const u = 1 - t;
+      return [u * u * x0 + 2 * u * t * cx + t * t * x1, u * u * y0 + 2 * u * t * cy + t * t * y1] as [
+        number,
+        number,
+      ];
+    });
   }
 
   /** Camina por el tramo curvo real hasta el próximo desafío, sin reabrir ninguna tarjeta. */
