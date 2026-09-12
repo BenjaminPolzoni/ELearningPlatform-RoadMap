@@ -1,8 +1,11 @@
 /* ============================================================================
-   Design system — paleta de marca (Fotos_y_conceptos/paleta.jpg), 05-design-system.md §1
-   Los 4 swatches de la lámina, muestreados del archivo:
-     #6B21C9 violeta eléctrico · #2D164A violeta profundo
-     #FF2758 rosa fuego        · #190236 negro violáceo
+   Design system — tema global recoloreado a la paleta arcade (cian/violeta/
+   rosa/dorado, Fotos_y_conceptos/InterfazDeColores.png) por pedido explícito,
+   en vez de la de marca de 05-design-system.md §1 (rosa fuego/violeta) — se
+   aparta a propósito de lo documentado por el equipo. Mismos 4 colores que ya
+   usa el mapa del alumno y el panel de ranking (--rk-*), ahora también en los
+   tokens de daisyUI para que login/editor de profesor/insignias/avatar-editor
+   sean consistentes con el resto.
    Tipografías de la lámina: Chelsea Market (títulos) + Comfortaa (texto).
    Press Start 2P se conserva SOLO para HUD/pixel-art del mapa (05 §3).
    VT323 entra con el ranking (E8): números de gabinete CRT, ver --font-console.
@@ -19,27 +22,27 @@
   prefersdark: true;
   color-scheme: dark;
 
-  --color-base-100: #190236;
-  --color-base-200: #24103F;
-  --color-base-300: #2D164A;
-  --color-base-content: #F3EAFF;
+  --color-base-100: #0D0B1E;
+  --color-base-200: #161328;
+  --color-base-300: #1E1A38;
+  --color-base-content: #E8E4FF;
 
-  --color-primary: #FF2758;
-  --color-primary-content: #FFFFFF;
-  --color-secondary: #6B21C9;
+  --color-primary: #00E5FF;
+  --color-primary-content: #0D0B1E;
+  --color-secondary: #8B5CF6;
   --color-secondary-content: #FFFFFF;
-  --color-accent: #A855F7;
-  --color-accent-content: #190236;
-  --color-neutral: #2D164A;
-  --color-neutral-content: #F3EAFF;
+  --color-accent: #FF2E93;
+  --color-accent-content: #FFFFFF;
+  --color-neutral: #1E1A38;
+  --color-neutral-content: #E8E4FF;
 
-  --color-info: #A855F7;
-  --color-info-content: #190236;
-  --color-success: #8B3DF5;
+  --color-info: #7FFAFF;
+  --color-info-content: #0D0B1E;
+  --color-success: #8B5CF6;
   --color-success-content: #FFFFFF;
-  --color-warning: #FF7BA0;
-  --color-warning-content: #2A0011;
-  --color-error: #FF2758;
+  --color-warning: #FFD60A;
+  --color-warning-content: #2A2000;
+  --color-error: #FF2E93;
   --color-error-content: #FFFFFF;
 
   --radius-selector: 0.25rem;
@@ -56,27 +59,27 @@
   prefersdark: false;
   color-scheme: light;
 
-  --color-base-100: #F7F2FF;
-  --color-base-200: #ECE0FF;
-  --color-base-300: #D8C4F7;
-  --color-base-content: #190236;
+  --color-base-100: #F5F3FF;
+  --color-base-200: #E9E4FF;
+  --color-base-300: #D4CBFA;
+  --color-base-content: #0D0B1E;
 
-  --color-primary: #D6053C;
+  --color-primary: #008C99;
   --color-primary-content: #FFFFFF;
-  --color-secondary: #5A16AD;
+  --color-secondary: #5B2FC1;
   --color-secondary-content: #FFFFFF;
-  --color-accent: #7C24D6;
+  --color-accent: #C21A66;
   --color-accent-content: #FFFFFF;
   --color-neutral: #2D164A;
-  --color-neutral-content: #F7F2FF;
+  --color-neutral-content: #F5F3FF;
 
-  --color-info: #5A16AD;
+  --color-info: #006E79;
   --color-info-content: #FFFFFF;
-  --color-success: #6B21C9;
+  --color-success: #5B2FC1;
   --color-success-content: #FFFFFF;
-  --color-warning: #C4144A;
+  --color-warning: #B8860A;
   --color-warning-content: #FFFFFF;
-  --color-error: #D6053C;
+  --color-error: #C21A66;
   --color-error-content: #FFFFFF;
 
   --radius-selector: 0.25rem;
