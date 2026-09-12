@@ -1257,17 +1257,71 @@ button.rk-estado:hover {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
   filter: contrast(0.9) brightness(0.95);
 }
-
-/* Pink ball pulsing glow */
-.ball-pulse {
-  animation: bolapulso 1.6s ease-in-out infinite;
+.silkscreen-blink {
+  animation: silkscreenBlink 1.6s steps(1) infinite;
 }
-@keyframes bolapulso {
+@keyframes silkscreenBlink {
+  0%, 60% {
+    opacity: 1;
+  }
+  61%, 100% {
+    opacity: 0.25;
+  }
+}
+
+/* Ícono pixel art del alien (reemplaza al emoji 👾) */
+.invader-ico {
+  width: 27px;
+  height: 24px;
+}
+
+/* Destello periódico de la ranura de moneda */
+.coin-slot-glow {
+  animation: coinSlotFlash 1.8s ease-in-out infinite;
+}
+@keyframes coinSlotFlash {
   0%, 100% {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6), 0 0 16px rgba(255, 46, 147, 0.35);
+    box-shadow: 0 0 10px rgba(255, 214, 10, 0.4), inset 0 0 6px rgba(0, 0, 0, 0.9);
   }
   50% {
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 46, 147, 0.8);
+    box-shadow: 0 0 22px rgba(255, 214, 10, 0.95), inset 0 0 6px rgba(0, 0, 0, 0.9);
+  }
+}
+
+/* Bola roja con collar metálico (joystick) */
+.joy-ball-red {
+  background:
+    radial-gradient(circle at 32% 24%, #ffffff 0%, #ffffff 6%, transparent 26%),
+    radial-gradient(circle at 40% 62%, transparent 55%, rgba(0, 0, 0, 0.35) 72%, transparent 85%),
+    radial-gradient(circle at 35% 30%, #ff9c9c 0%, #ff2d2d 55%, #8f0000 100%);
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.6),
+    0 0 20px rgba(255, 45, 45, 0.65),
+    0 0 38px rgba(255, 45, 45, 0.3);
+}
+.joy-ball-collar {
+  background: linear-gradient(90deg, #6c717d 0%, #dcdfe6 45%, #55595f 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* Anillo de energía expansivo alrededor de la bola */
+.joy-energy-ring {
+  display: block;
+  border: 2px solid rgba(255, 45, 45, 0.85);
+  animation: joyRingPing 2s ease-out infinite;
+  pointer-events: none;
+}
+.joy-energy-ring.ring-delay {
+  animation-delay: 1s;
+}
+@keyframes joyRingPing {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
   }
 }
 
@@ -1463,6 +1517,41 @@ button.rk-estado:hover {
 
 .abtn-dummy .abtn-cap {
   filter: saturate(0.45) brightness(0.85);
+}
+
+/* Aro de color en el bisel, a juego con la cápsula de cada botón */
+.abtn-rank {
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.9),
+    inset 0 -2px 3px rgba(255, 255, 255, 0.1),
+    0 6px 0 #05060A,
+    0 10px 18px rgba(0, 0, 0, 0.7),
+    0 0 0 3px #8b5cf6,
+    0 0 14px rgba(139, 92, 246, 0.7);
+}
+.abtn-badge {
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.9),
+    inset 0 -2px 3px rgba(255, 255, 255, 0.1),
+    0 6px 0 #05060A,
+    0 10px 18px rgba(0, 0, 0, 0.7),
+    0 0 0 3px #ffd60a,
+    0 0 14px rgba(255, 214, 10, 0.7);
+}
+.abtn-bag {
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.9),
+    inset 0 -2px 3px rgba(255, 255, 255, 0.1),
+    0 6px 0 #05060A,
+    0 10px 18px rgba(0, 0, 0, 0.7),
+    0 0 0 3px #00e5ff,
+    0 0 14px rgba(0, 229, 255, 0.7);
+}
+
+/* Íconos pixel art de la botonera (reemplazan a los emoji) */
+.pixel-ico {
+  width: 40px;
+  height: 40px;
 }
 
 /* Neon text chips */

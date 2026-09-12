@@ -441,15 +441,14 @@ const MARGEN = 90;
 
             <!-- B. ARCADE DECK INFERIOR (Gabinete con Joystick y Botonera Sanwa) -->
             <footer
-              class="cabinet-metal cabinet-neon relative flex-shrink-0 flex items-center justify-between gap-3 px-8 py-2 border-t-[6px] border-[#23242E]"
+              class="cabinet-metal cabinet-neon relative z-20 flex-shrink-0 flex items-center justify-between gap-3 px-8 py-2 border-t-[6px] border-[#23242E]"
               style="max-height: 25%"
             >
-              <!-- Screws / bolts: 4 corners + 1 top center -->
+              <!-- Screws / bolts: 4 corners -->
               <span class="screw-metal absolute top-3 left-3 w-4 h-4 rounded-full pointer-events-none z-20"></span>
               <span class="screw-metal absolute top-3 right-3 w-4 h-4 rounded-full pointer-events-none z-20"></span>
               <span class="screw-metal absolute bottom-3 left-3 w-4 h-4 rounded-full pointer-events-none z-20"></span>
               <span class="screw-metal absolute bottom-3 right-3 w-4 h-4 rounded-full pointer-events-none z-20"></span>
-              <span class="screw-metal absolute top-3 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full pointer-events-none z-20"></span>
 
               <!-- ============ ZONE 1: joystick + silkscreen branding ============ -->
               <div class="flex items-center gap-2 flex-shrink-0">
@@ -490,13 +489,15 @@ const MARGEN = 90;
 
                       <!-- static mounting plate (8-way gate seen at 45°) -->
                       <div
-                        class="absolute left-1/2 bottom-3 -translate-x-1/2 w-36 h-20 rounded-[50%]"
+                        class="absolute left-1/2 bottom-3 -translate-x-1/2 w-32 h-[92px] rounded-[50%]"
                         style="
                           background: radial-gradient(ellipse at 40% 34%, #4a4c5a 0%, #262731 45%, #17181f 100%);
                           box-shadow:
                             inset 0 4px 8px rgba(255, 255, 255, 0.1),
                             inset 0 -6px 10px rgba(0, 0, 0, 0.7),
-                            0 6px 12px rgba(0, 0, 0, 0.5);
+                            0 6px 12px rgba(0, 0, 0, 0.5),
+                            0 0 0 2px rgba(255, 45, 45, 0.4),
+                            0 0 16px rgba(255, 45, 45, 0.35);
                         "
                       >
                         <div
@@ -525,24 +526,26 @@ const MARGEN = 90;
                         class="absolute left-1/2 bottom-16 -translate-x-1/2 w-14 h-4 rounded-[50%] bg-black/45 blur-sm pointer-events-none"
                       ></div>
 
-                      <!-- stick + ball: only tilts (origin at base), pulsing pink glow -->
+                      <!-- stick + ball: only tilts (origin at base), anillo de energía rojo -->
                       <div
                         class="absolute inset-0 pointer-events-none transition-transform duration-100"
                         [style.transform]="joystickTilt()"
                         style="transform-origin: center 88%"
                       >
                         <div
-                          class="absolute left-1/2 bottom-12 -translate-x-1/2 w-3.5 h-16"
+                          class="absolute left-1/2 bottom-[54px] -translate-x-1/2 w-[20px] h-[42px] rounded-[3px]"
                           style="
-                            background: linear-gradient(90deg, #858a94 0%, #dcdfe6 40%, #6c717d 100%);
+                            background: linear-gradient(90deg, #9aa0ac 0%, #eef1f6 45%, #7b818f 100%);
                             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
                           "
                         ></div>
+                        <span class="joy-energy-ring absolute left-1/2 bottom-[86px] -translate-x-1/2 w-18 h-18 rounded-full"></span>
+                        <span class="joy-energy-ring ring-delay absolute left-1/2 bottom-[86px] -translate-x-1/2 w-18 h-18 rounded-full"></span>
                         <div
-                          class="ball-pulse absolute left-1/2 bottom-[5rem] -translate-x-1/2 w-16 h-16 rounded-full"
-                          style="
-                            background: radial-gradient(circle at 35% 30%, #ff9cc8 0%, #ff2e93 55%, #b81866 100%);
-                          "
+                          class="absolute left-1/2 bottom-[78px] -translate-x-1/2 w-[34px] h-[12px] rounded-full joy-ball-collar"
+                        ></div>
+                        <div
+                          class="absolute left-1/2 bottom-[86px] -translate-x-1/2 w-18 h-18 rounded-full joy-ball-red"
                         ></div>
                       </div>
                     </div>
@@ -550,23 +553,32 @@ const MARGEN = 90;
 
                   <!-- silkscreen branding printed on the metal -->
                   <div class="flex flex-col items-center gap-3 flex-shrink-0">
-                    <div
-                      class="text-2xl opacity-80"
-                      style="filter: saturate(1.1) brightness(0.9) contrast(1.05)"
-                    >
-                      👾
-                    </div>
-                    <div class="silkscreen text-[9px] text-center leading-relaxed">
+                    <svg class="invader-ico" viewBox="0 0 9 8" shape-rendering="crispEdges" aria-hidden="true">
+                      <rect x="2" y="0" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="6" y="0" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="3" y="1" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="5" y="1" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="2" y="2" width="5" height="1" fill="#8B5CF6"/>
+                      <rect x="1" y="3" width="2" height="1" fill="#8B5CF6"/>
+                      <rect x="4" y="3" width="1" height="1" fill="#00E5FF"/>
+                      <rect x="6" y="3" width="2" height="1" fill="#8B5CF6"/>
+                      <rect x="0" y="4" width="9" height="1" fill="#8B5CF6"/>
+                      <rect x="0" y="5" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="2" y="5" width="5" height="1" fill="#8B5CF6"/>
+                      <rect x="8" y="5" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="0" y="6" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="2" y="6" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="6" y="6" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="8" y="6" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="3" y="7" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="5" y="7" width="1" height="1" fill="#8B5CF6"/>
+                    </svg>
+                    <div class="silkscreen silkscreen-blink text-[9px] text-center leading-relaxed">
                       EDU-JOY<br />INSERT COIN
                     </div>
                     <div
-                      class="w-1.5 h-8 rounded-sm bg-black/80"
-                      style="
-                        border: 2px solid #ffd60a;
-                        box-shadow:
-                          0 0 12px rgba(255, 214, 10, 0.55),
-                          inset 0 0 6px rgba(0, 0, 0, 0.9);
-                      "
+                      class="w-1.5 h-8 rounded-sm bg-black/80 coin-slot-glow"
+                      style="border: 2px solid #ffd60a"
                     ></div>
                   </div>
 
@@ -597,7 +609,41 @@ const MARGEN = 90;
                         0 0 22px rgba(139, 92, 246, 0.65);
                     "
                   >
-                    <span class="text-4xl">🏆</span>
+                    <svg class="pixel-ico" viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true">
+                      <rect x="1" y="0" width="7" height="1" fill="#1A1225"/>
+                      <rect x="0" y="1" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="1" width="2" height="1" fill="#8B5CF6"/>
+                      <rect x="3" y="1" width="1" height="1" fill="#FFFFFF"/>
+                      <rect x="4" y="1" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="5" y="1" width="1" height="1" fill="#FFFFFF"/>
+                      <rect x="6" y="1" width="2" height="1" fill="#8B5CF6"/>
+                      <rect x="8" y="1" width="1" height="1" fill="#1A1225"/>
+                      <rect x="0" y="2" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="2" width="1" height="1" fill="#5B2FC1"/>
+                      <rect x="2" y="2" width="5" height="1" fill="#8B5CF6"/>
+                      <rect x="7" y="2" width="1" height="1" fill="#5B2FC1"/>
+                      <rect x="8" y="2" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="3" width="1" height="1" fill="#1A1225"/>
+                      <rect x="2" y="3" width="1" height="1" fill="#5B2FC1"/>
+                      <rect x="3" y="3" width="3" height="1" fill="#8B5CF6"/>
+                      <rect x="6" y="3" width="1" height="1" fill="#5B2FC1"/>
+                      <rect x="7" y="3" width="1" height="1" fill="#1A1225"/>
+                      <rect x="2" y="4" width="1" height="1" fill="#1A1225"/>
+                      <rect x="3" y="4" width="1" height="1" fill="#5B2FC1"/>
+                      <rect x="4" y="4" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="5" y="4" width="1" height="1" fill="#5B2FC1"/>
+                      <rect x="6" y="4" width="1" height="1" fill="#1A1225"/>
+                      <rect x="3" y="5" width="1" height="1" fill="#1A1225"/>
+                      <rect x="4" y="5" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="5" y="5" width="1" height="1" fill="#1A1225"/>
+                      <rect x="2" y="6" width="2" height="1" fill="#1A1225"/>
+                      <rect x="4" y="6" width="1" height="1" fill="#8B5CF6"/>
+                      <rect x="5" y="6" width="2" height="1" fill="#1A1225"/>
+                      <rect x="1" y="7" width="1" height="1" fill="#1A1225"/>
+                      <rect x="2" y="7" width="5" height="1" fill="#8B5CF6"/>
+                      <rect x="7" y="7" width="1" height="1" fill="#1A1225"/>
+                      <rect x="0" y="8" width="9" height="1" fill="#1A1225"/>
+                    </svg>
                     <span
                       class="neon-cap text-[9px] text-[#241055]"
                       style="text-shadow: 0 0 4px rgba(0, 0, 0, 0.5)"
@@ -625,7 +671,47 @@ const MARGEN = 90;
                         0 0 18px rgba(255, 214, 10, 0.55);
                     "
                   >
-                    <span class="text-4xl">🏅</span>
+                    <svg class="pixel-ico" viewBox="0 0 11 11" shape-rendering="crispEdges" aria-hidden="true">
+                      <rect x="3" y="0" width="2" height="1" fill="#1A1225"/>
+                      <rect x="6" y="0" width="2" height="1" fill="#1A1225"/>
+                      <rect x="3" y="1" width="1" height="1" fill="#1A1225"/>
+                      <rect x="4" y="1" width="1" height="1" fill="#FFD60A"/>
+                      <rect x="6" y="1" width="1" height="1" fill="#FFD60A"/>
+                      <rect x="7" y="1" width="1" height="1" fill="#1A1225"/>
+                      <rect x="3" y="2" width="1" height="1" fill="#1A1225"/>
+                      <rect x="4" y="2" width="1" height="1" fill="#FFD60A"/>
+                      <rect x="6" y="2" width="1" height="1" fill="#FFD60A"/>
+                      <rect x="7" y="2" width="1" height="1" fill="#1A1225"/>
+                      <rect x="4" y="3" width="1" height="1" fill="#1A1225"/>
+                      <rect x="6" y="3" width="1" height="1" fill="#1A1225"/>
+                      <rect x="2" y="4" width="7" height="1" fill="#1A1225"/>
+                      <rect x="1" y="5" width="1" height="1" fill="#1A1225"/>
+                      <rect x="2" y="5" width="3" height="1" fill="#FFD60A"/>
+                      <rect x="5" y="5" width="1" height="1" fill="#FFFFFF"/>
+                      <rect x="6" y="5" width="3" height="1" fill="#FFD60A"/>
+                      <rect x="9" y="5" width="1" height="1" fill="#1A1225"/>
+                      <rect x="0" y="6" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="6" width="9" height="1" fill="#FFD60A"/>
+                      <rect x="10" y="6" width="1" height="1" fill="#1A1225"/>
+                      <rect x="0" y="7" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="7" width="1" height="1" fill="#FFD60A"/>
+                      <rect x="2" y="7" width="1" height="1" fill="#B89600"/>
+                      <rect x="3" y="7" width="5" height="1" fill="#FFD60A"/>
+                      <rect x="8" y="7" width="1" height="1" fill="#B89600"/>
+                      <rect x="9" y="7" width="1" height="1" fill="#FFD60A"/>
+                      <rect x="10" y="7" width="1" height="1" fill="#1A1225"/>
+                      <rect x="0" y="8" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="8" width="9" height="1" fill="#FFD60A"/>
+                      <rect x="10" y="8" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="9" width="1" height="1" fill="#1A1225"/>
+                      <rect x="2" y="9" width="2" height="1" fill="#FFD60A"/>
+                      <rect x="4" y="9" width="1" height="1" fill="#B89600"/>
+                      <rect x="5" y="9" width="1" height="1" fill="#FFD60A"/>
+                      <rect x="6" y="9" width="1" height="1" fill="#B89600"/>
+                      <rect x="7" y="9" width="2" height="1" fill="#FFD60A"/>
+                      <rect x="9" y="9" width="1" height="1" fill="#1A1225"/>
+                      <rect x="2" y="10" width="7" height="1" fill="#1A1225"/>
+                    </svg>
                     <span
                       class="neon-cap text-[9px] text-[#4A3900]"
                       style="text-shadow: 0 0 4px rgba(0, 0, 0, 0.4)"
@@ -653,7 +739,43 @@ const MARGEN = 90;
                         0 0 18px rgba(0, 229, 255, 0.6);
                     "
                   >
-                    <span class="text-4xl">🎒</span>
+                    <svg class="pixel-ico" viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true">
+                      <rect x="2" y="0" width="2" height="1" fill="#1A1225"/>
+                      <rect x="5" y="0" width="2" height="1" fill="#1A1225"/>
+                      <rect x="2" y="1" width="1" height="1" fill="#1A1225"/>
+                      <rect x="3" y="1" width="1" height="1" fill="#00E5FF"/>
+                      <rect x="5" y="1" width="1" height="1" fill="#00E5FF"/>
+                      <rect x="6" y="1" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="2" width="7" height="1" fill="#1A1225"/>
+                      <rect x="0" y="3" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="3" width="2" height="1" fill="#00E5FF"/>
+                      <rect x="3" y="3" width="1" height="1" fill="#FFFFFF"/>
+                      <rect x="4" y="3" width="1" height="1" fill="#00E5FF"/>
+                      <rect x="5" y="3" width="1" height="1" fill="#FFFFFF"/>
+                      <rect x="6" y="3" width="2" height="1" fill="#00E5FF"/>
+                      <rect x="8" y="3" width="1" height="1" fill="#1A1225"/>
+                      <rect x="0" y="4" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="4" width="2" height="1" fill="#00E5FF"/>
+                      <rect x="3" y="4" width="3" height="1" fill="#1A1225"/>
+                      <rect x="6" y="4" width="2" height="1" fill="#00E5FF"/>
+                      <rect x="8" y="4" width="1" height="1" fill="#1A1225"/>
+                      <rect x="0" y="5" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="5" width="2" height="1" fill="#00E5FF"/>
+                      <rect x="3" y="5" width="1" height="1" fill="#1A1225"/>
+                      <rect x="4" y="5" width="1" height="1" fill="#008A99"/>
+                      <rect x="5" y="5" width="1" height="1" fill="#1A1225"/>
+                      <rect x="6" y="5" width="2" height="1" fill="#00E5FF"/>
+                      <rect x="8" y="5" width="1" height="1" fill="#1A1225"/>
+                      <rect x="0" y="6" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="6" width="2" height="1" fill="#00E5FF"/>
+                      <rect x="3" y="6" width="3" height="1" fill="#1A1225"/>
+                      <rect x="6" y="6" width="2" height="1" fill="#00E5FF"/>
+                      <rect x="8" y="6" width="1" height="1" fill="#1A1225"/>
+                      <rect x="0" y="7" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="7" width="7" height="1" fill="#00E5FF"/>
+                      <rect x="8" y="7" width="1" height="1" fill="#1A1225"/>
+                      <rect x="1" y="8" width="7" height="1" fill="#1A1225"/>
+                    </svg>
                     <span
                       class="neon-cap text-[9px] text-[#02505A]"
                       style="text-shadow: 0 0 4px rgba(0, 0, 0, 0.4)"
