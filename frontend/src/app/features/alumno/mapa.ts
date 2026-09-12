@@ -146,7 +146,7 @@ const MARGEN = 90;
             <div class="flex items-center gap-3">
               <span class="text-2xl drop-shadow-[0_0_10px_rgba(255,214,10,0.8)]">🎯</span>
               <div class="leading-tight">
-                <div class="text-lg font-black tracking-wide text-primary glow-cyan">
+                <div class="text-lg font-black tracking-wide text-[#7FFAFF] glow-cyan">
                   EDUQUEST
                 </div>
                 <div class="text-[9px] uppercase tracking-[0.3em] text-base-content/50">
@@ -167,7 +167,7 @@ const MARGEN = 90;
               }
               <a
                 routerLink="/login"
-                class="badge badge-secondary badge-outline ui-font text-[9px] cursor-pointer hover:badge-primary transition-colors flex items-center gap-1"
+                class="badge badge-outline ui-font text-[9px] cursor-pointer transition-colors flex items-center gap-1 border-[#00E5FF] text-[#7FFAFF] hover:bg-[#00E5FF]/15"
                 title="Cambiar de rol / volver al selector"
               >
                 <span>{{ auth.rol() ?? 'ALUMNO' }}</span>
@@ -192,7 +192,10 @@ const MARGEN = 90;
           <div class="flex-1 flex flex-col h-full min-w-0">
             
             <!-- Canvas del Mapa SVG (Top) -->
-            <div class="flex-1 min-h-0 flex flex-col relative rounded-[10px] border-2 border-[#8B5CF6]/40 bg-[#0D0B1E] overflow-hidden m-2">
+            <div
+              #mapaContenedor
+              class="flex-1 min-h-0 flex flex-col relative rounded-[10px] border-2 border-[#8B5CF6]/40 bg-[#0D0B1E] overflow-hidden m-2"
+            >
               
               <!-- Viñeta CRT sobre el mapa -->
               <div
@@ -208,7 +211,7 @@ const MARGEN = 90;
 
               <!-- Título flotante superior del mapa -->
               <div class="absolute top-2 left-1/2 -translate-x-1/2 text-center z-40 pointer-events-none">
-                <h2 class="text-base font-black tracking-wide text-primary glow-cyan">
+                <h2 class="text-base font-black tracking-wide text-[#7FFAFF] glow-cyan">
                   {{ store.roadmap()?.nombre ?? 'ROADMAP' }} 🗺️
                 </h2>
                 <p class="text-[10px] text-base-content/40">
@@ -237,13 +240,17 @@ const MARGEN = 90;
                     <stop offset="100%" stop-color="#241046" />
                   </linearGradient>
                   <linearGradient id="isla-top-on" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#9D57FF" />
-                    <stop offset="100%" stop-color="#5A1BA8" />
+                    <stop offset="0%" stop-color="#8FF7FF" />
+                    <stop offset="100%" stop-color="#00A8BF" />
+                  </linearGradient>
+                  <linearGradient id="isla-top-done" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#7FC4CE" />
+                    <stop offset="100%" stop-color="#2C5B64" />
                   </linearGradient>
                   <linearGradient id="isla-base" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stop-color="#54299B" />
-                    <stop offset="45%" stop-color="#331255" />
-                    <stop offset="100%" stop-color="#1B0838" />
+                    <stop offset="0%" stop-color="#2A4A52" />
+                    <stop offset="45%" stop-color="#1B3238" />
+                    <stop offset="100%" stop-color="#0D1A1D" />
                   </linearGradient>
                   <filter id="neon" x="-60%" y="-60%" width="220%" height="220%">
                     <feGaussianBlur stdDeviation="7" result="b" />
@@ -307,7 +314,7 @@ const MARGEN = 90;
                         [attr.cy]="isla.c.y + 6"
                         [attr.rx]="SEMI_ANCHO * 1.25"
                         [attr.ry]="SEMI_ALTO * 0.95"
-                        fill="#FF2758"
+                        fill="#FFFFFF"
                         opacity="0.3"
                         filter="url(#neon)"
                         class="anim-latir"
@@ -318,15 +325,21 @@ const MARGEN = 90;
                     <polygon
                       [attr.points]="poliBase(isla)"
                       fill="url(#isla-base)"
-                      stroke="#7B3AD6"
+                      stroke="#3FA8B8"
                       stroke-width="1.5"
                       stroke-opacity="0.45"
                     />
-                    <polygon [attr.points]="poliCara(isla, 'izq')" fill="#4A2280" />
-                    <polygon [attr.points]="poliCara(isla, 'der')" fill="#2A1049" />
+                    <polygon [attr.points]="poliCara(isla, 'izq')" fill="#234048" />
+                    <polygon [attr.points]="poliCara(isla, 'der')" fill="#14282C" />
                     <polygon
                       [attr.points]="poliTapa(isla)"
-                      [attr.fill]="isla.estado === 'bloqueada' ? 'url(#isla-top)' : 'url(#isla-top-on)'"
+                      [attr.fill]="
+                        isla.estado === 'bloqueada'
+                          ? 'url(#isla-top)'
+                          : isla.estado === 'completada'
+                            ? 'url(#isla-top-done)'
+                            : 'url(#isla-top-on)'
+                      "
                       [attr.stroke]="borde(isla)"
                       stroke-width="2"
                     />
@@ -387,30 +400,36 @@ const MARGEN = 90;
                       {{ subtitulo(isla) }}
                     </text>
 
-                    <!-- Avatar del jugador en la isla actual -->
-                    @if (isla.actual) {
-                      <g class="anim-flotar pointer-events-none">
-                        <foreignObject
-                          [attr.x]="isla.c.x - 24"
-                          [attr.y]="isla.c.y - 62"
-                          width="48"
-                          height="70"
-                        >
-                          <ui-avatar-sprite [config]="avatarSrv.avatar()" [alto]="64" [sombra]="true" />
-                        </foreignObject>
-                      </g>
-                    }
+                  </g>
+                }
+
+                <!-- Avatar del jugador: sigue la unidad clickeada (salto visual),
+                     por defecto la unidad 'actual' real de progreso -->
+                @if (avatarIsla(); as isla) {
+                  <g class="anim-flotar pointer-events-none">
+                    <foreignObject
+                      class="avatar-jump"
+                      [attr.x]="isla.c.x - 24"
+                      [attr.y]="isla.c.y - 62"
+                      width="48"
+                      height="70"
+                    >
+                      <ui-avatar-sprite [config]="avatarSrv.avatar()" [alto]="64" [sombra]="true" />
+                    </foreignObject>
                   </g>
                 }
               </svg>
 
-              <!-- Tarjeta de unidad seleccionada -->
+              <!-- Tarjeta de unidad seleccionada: aparece al lado del nodo clickeado -->
               @if (sel(); as isla) {
                 <div
-                  class="chaflan absolute right-4 top-14 w-80 border-2 border-primary bg-base-200/95 p-4 backdrop-blur z-50 shadow-2xl"
+                  #fichaUnidad
+                  class="chaflan absolute w-80 border-2 border-[#00E5FF] bg-base-200/95 p-4 backdrop-blur z-50 shadow-2xl"
+                  [style.left.px]="fichaPos()?.x ?? 16"
+                  [style.top.px]="fichaPos()?.y ?? 56"
                 >
                   <div class="flex items-start justify-between gap-2">
-                    <h3 class="title-font text-lg text-primary">{{ isla.u.nombre }}</h3>
+                    <h3 class="title-font text-lg text-[#7FFAFF]">{{ isla.u.nombre }}</h3>
                     <button class="btn btn-ghost btn-xs" (click)="sel.set(null)" aria-label="Cerrar ficha">✕</button>
                   </div>
                   <p class="ui-font mt-1 text-[8px] text-accent">{{ subtitulo(isla) }}</p>
@@ -431,7 +450,11 @@ const MARGEN = 90;
                       🔒 NECESITÁS {{ isla.u.umbralXpDesbloqueo - xp() }} XP MÁS
                     </p>
                   } @else {
-                    <button class="btn btn-primary btn-sm ui-font mt-3 w-full text-[8px]" (click)="entrar(isla)">
+                    <button
+                      class="btn btn-sm ui-font mt-3 w-full text-[8px] border-none"
+                      style="background: #00E5FF; color: #0D0B1E"
+                      (click)="entrar(isla)"
+                    >
                       ▶ ENTRAR A LA UNIDAD
                     </button>
                   }
@@ -941,6 +964,12 @@ export class Mapa implements OnDestroy {
   private readonly router = inject(Router);
   private readonly lienzo = viewChild<ElementRef<SVGSVGElement>>('lienzo');
   private readonly joystickBase = viewChild<ElementRef<HTMLDivElement>>('joystickBase');
+  private readonly fichaUnidad = viewChild<ElementRef<HTMLDivElement>>('fichaUnidad');
+  private readonly mapaContenedor = viewChild<ElementRef<HTMLDivElement>>('mapaContenedor');
+
+  /** Posición en píxeles (relativa al contenedor del mapa) donde se dibuja la
+   *  ficha de unidad — se recalcula al abrirla, al lado del nodo clickeado. */
+  protected readonly fichaPos = signal<{ x: number; y: number } | null>(null);
 
   private readonly progreso = toSignal(this.data.getProgreso('alu-01', CURSO_SEED_ID));
 
@@ -985,6 +1014,17 @@ export class Mapa implements OnDestroy {
   private readonly onJoyUpBound = () => this.onJoyUp();
   private keyTimer: ReturnType<typeof setTimeout> | null = null;
 
+  @HostListener('document:click', ['$event'])
+  protected onDocumentClick(event: MouseEvent): void {
+    if (!this.sel()) return;
+    const target = event.target as Element | null;
+    if (!target) return;
+    if (target.closest('.isla-hit')) return;
+    const ficha = this.fichaUnidad()?.nativeElement;
+    if (ficha?.contains(target)) return;
+    this.sel.set(null);
+  }
+
   @HostListener('window:keydown', ['$event'])
   protected onKeyDown(event: KeyboardEvent): void {
     if (this.preview()) return;
@@ -1013,6 +1053,7 @@ export class Mapa implements OnDestroy {
   ngOnDestroy(): void {
     if (this.keyTimer) clearTimeout(this.keyTimer);
     window.removeEventListener('pointerup', this.onJoyUpBound);
+    this.saltoTimers.forEach((t) => clearTimeout(t));
   }
 
   protected onJoyDown(event: PointerEvent): void {
@@ -1092,6 +1133,20 @@ export class Mapa implements OnDestroy {
   protected readonly completadas = computed(
     () => this.islas().filter((i) => i.estado === 'completada').length,
   );
+
+  /** Unidad clickeada por el jugador para el salto visual del avatar (solo
+   *  estético: no afecta el progreso ni cuál es la unidad 'actual' real). */
+  private readonly posicionAvatarId = signal<string | null>(null);
+
+  protected readonly avatarIsla = computed(() => {
+    const is = this.islas();
+    const id = this.posicionAvatarId();
+    if (id) {
+      const clickeada = is.find((i) => i.u.id === id);
+      if (clickeada) return clickeada;
+    }
+    return is.find((i) => i.actual) ?? null;
+  });
 
   private readonly encuadreBase = computed(() => {
     const pts = this.islas().flatMap((i) => [
@@ -1174,7 +1229,7 @@ export class Mapa implements OnDestroy {
       const h = 14 + frac(Math.sin((semilla + k) * 55.7) * 43758.5453) * 16;
       return {
         p: `${px},${py - h} ${px + w},${py} ${px},${py + w * 0.5} ${px - w},${py}`,
-        color: apagada ? '#3E2166' : k === 0 ? '#FF2758' : '#C79BFF',
+        color: apagada ? '#1E3A40' : k === 0 ? '#00E5FF' : '#8FE8F5',
         op: apagada ? 0.75 : 0.9,
       };
     });
@@ -1189,7 +1244,10 @@ export class Mapa implements OnDestroy {
   }
 
   protected borde(i: Isla): string {
-    return i.actual ? '#FF2758' : i.estado === 'bloqueada' ? '#2D164A' : '#8B3DF5';
+    if (i.actual) return '#FFFFFF';
+    if (i.estado === 'bloqueada') return '#2D164A';
+    if (i.estado === 'completada') return '#5FB8C4';
+    return '#00E5FF';
   }
 
   protected glifo(i: Isla): string {
@@ -1209,7 +1267,95 @@ export class Mapa implements OnDestroy {
   }
 
   protected seleccionar(i: Isla): void {
-    this.sel.set(this.sel()?.u.id === i.u.id ? null : i);
+    if (this.sel()?.u.id === i.u.id) {
+      this.sel.set(null);
+      return;
+    }
+    this.sel.set(null);
+
+    if (i.estado === 'bloqueada') {
+      this.saltoTimers.forEach((t) => clearTimeout(t));
+      this.saltoTimers = [];
+      this.actualizarFichaPos(i);
+      this.sel.set(i);
+      return;
+    }
+
+    this.saltarA(i, () => {
+      this.actualizarFichaPos(i);
+      this.sel.set(i);
+    });
+  }
+
+  /** Calcula dónde dibujar la ficha (en píxeles, relativo al contenedor del
+   *  mapa) a partir de la posición de `isla` en el SVG, con el pan/zoom
+   *  actual — la ubica al lado del nodo, con el ancho fijo de la ficha. */
+  private actualizarFichaPos(isla: Isla): void {
+    const svg = this.lienzo()?.nativeElement;
+    const cont = this.mapaContenedor()?.nativeElement;
+    const ctm = svg?.getScreenCTM();
+    if (!svg || !cont || !ctm) {
+      this.fichaPos.set(null);
+      return;
+    }
+
+    const punto = svg.createSVGPoint();
+    punto.x = isla.c.x;
+    punto.y = isla.c.y;
+    const pantalla = punto.matrixTransform(ctm);
+    const contRect = cont.getBoundingClientRect();
+    const x = pantalla.x - contRect.left;
+    const y = pantalla.y - contRect.top;
+
+    const ANCHO_FICHA = 320;
+    // Despeja el ancho real de la isla (+ avatar) en pantalla, no un margen fijo,
+    // para que la ficha no tape la isla ni al avatar al hacer zoom.
+    const escala = ctm.a;
+    const MARGEN = SEMI_ANCHO * escala + 30;
+    const entraADerecha = x + MARGEN + ANCHO_FICHA <= contRect.width;
+    const left = entraADerecha ? x + MARGEN : Math.max(8, x - MARGEN - ANCHO_FICHA);
+    const top = Math.min(Math.max(y - 90, 8), Math.max(8, contRect.height - 260));
+
+    this.fichaPos.set({ x: left, y: top });
+  }
+
+  /** Duración de cada salto entre nodos consecutivos, en ms — lento a propósito
+   *  para que se note el movimiento. */
+  private static readonly SALTO_MS = 400;
+  private saltoTimers: ReturnType<typeof setTimeout>[] = [];
+
+  /** Mueve el avatar hasta `destino` pasando por cada unidad intermedia en
+   *  orden (nunca "corta camino" en diagonal) — puramente visual. Llama a
+   *  `alLlegar` recién cuando el avatar pisa el destino. */
+  private saltarA(destino: Isla, alLlegar?: () => void): void {
+    const is = this.islas();
+    const origenId = this.posicionAvatarId() ?? is.find((x) => x.actual)?.u.id;
+    const iOrigen = is.findIndex((x) => x.u.id === origenId);
+    const iDestino = is.findIndex((x) => x.u.id === destino.u.id);
+
+    this.saltoTimers.forEach((t) => clearTimeout(t));
+    this.saltoTimers = [];
+
+    if (iOrigen === -1 || iDestino === -1 || iOrigen === iDestino) {
+      this.posicionAvatarId.set(destino.u.id);
+      alLlegar?.();
+      return;
+    }
+
+    const paso = iDestino > iOrigen ? 1 : -1;
+    let salto = 0;
+    for (let idx = iOrigen + paso; ; idx += paso) {
+      salto += 1;
+      const parada = is[idx].u.id;
+      const esUltimo = idx === iDestino;
+      this.saltoTimers.push(
+        setTimeout(() => {
+          this.posicionAvatarId.set(parada);
+          if (esUltimo) alLlegar?.();
+        }, salto * Mapa.SALTO_MS),
+      );
+      if (esUltimo) break;
+    }
   }
 
   protected entrar(i: Isla): void {

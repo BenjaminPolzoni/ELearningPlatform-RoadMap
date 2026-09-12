@@ -95,11 +95,12 @@
   --color-brand-glow: #8B3DF5;
   --color-brand-pink: #FF2758;
 
-  /* --- estado del nodo (05 §1). Sin verde: la paleta no lo tiene, así que el tramo
-         recorrido va en violeta eléctrico y el "andá por acá" en rosa fuego. --- */
-  --color-node-locked: #3C2A5E;
-  --color-node-open: #FF2758;
-  --color-node-done: #8B3DF5;
+  /* --- estado del nodo: paleta arcade (cian/rosa) por pedido explícito,
+         en vez de la de 05 §1 (rosa fuego/violeta) — el "andá por acá" va
+         en cian y el tramo recorrido en rosa. --- */
+  --color-node-locked: #3A3550;
+  --color-node-open: #00E5FF;
+  --color-node-done: #3C6E78;
   --color-node-failed: #9B1B3C;
 
   --font-title: "Chelsea Market", system-ui, sans-serif;
@@ -197,12 +198,20 @@ html {
   animation: fluir 1.2s linear infinite;
 }
 
+/* Salto visual del avatar al clickear una unidad desbloqueada: un paso por
+   cada unidad intermedia (ver saltarA() en mapa.ts), lento a propósito. */
+.avatar-jump {
+  transition: x 0.35s ease-in-out, y 0.35s ease-in-out;
+}
+
 /* RF-NFR-05 / 05 §7: sin animación cuando el sistema la desaconseja. */
 @media (prefers-reduced-motion: reduce) {
   .anim-flotar,
   .anim-latir,
-  .anim-fluir {
+  .anim-fluir,
+  .avatar-jump {
     animation: none !important;
+    transition: none !important;
   }
 }
 
