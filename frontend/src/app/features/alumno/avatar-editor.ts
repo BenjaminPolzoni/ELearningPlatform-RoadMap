@@ -75,17 +75,16 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
       <h2 class="title-font text-2xl text-primary">Tu personaje</h2>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-[300px_1fr]">
+    <div class="grid gap-6 lg:grid-cols-[440px_1fr]">
       <!-- vitrina del avatar: queda fija mientras se recorren las pestañas -->
       <div
         class="escena-neon chaflan flex flex-col items-center gap-4 border-2 border-primary p-6 lg:sticky lg:top-4 lg:self-start"
       >
-        <div class="grid h-56 w-full place-items-center">
+        <div class="grid h-96 w-full place-items-center">
           <ui-avatar-sprite
             [config]="srv.avatar()"
-            [alto]="190"
+            [alto]="340"
             [sombra]="true"
-            [caminando]="true"
             etiqueta="Vista previa de tu avatar"
           />
         </div>
