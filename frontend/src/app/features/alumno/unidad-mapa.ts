@@ -688,7 +688,7 @@ export class UnidadMapa {
   });
 
   // Sincronización de progreso y estados con RoadmapStore
-  protected readonly completedIds = signal<number[]>([1]);
+  protected readonly completedIds = signal<number[]>([]);
   protected readonly localVidas = signal<number>(3);
 
   protected readonly vidas = computed(() => this.store.progreso()?.vidasVigentes ?? this.localVidas());
@@ -729,6 +729,23 @@ export class UnidadMapa {
   });
 
   constructor() {
+    // Refleja en el estado local los desafíos que ya figuran completados en el progreso
+    // persistido — sin esto, `completedIds` arrancaba vacío en cada visita y reentrar a
+    // una unidad ya terminada mostraba todo bloqueado de nuevo.
+    effect(() => {
+      const w = this.world();
+      const p = this.store.progreso();
+      const completos = new Set(
+        (p?.nodos ?? []).filter((n) => n.estado === 'completado').map((n) => n.nodoId),
+      );
+      const idsPersistidos = w.challenges
+        .filter((c) => c.actividadId && completos.has(c.actividadId))
+        .map((c) => c.id);
+      const actuales = untracked(() => this.completedIds());
+      const faltantes = idsPersistidos.filter((id) => !actuales.includes(id));
+      if (faltantes.length > 0) this.completedIds.set([...actuales, ...faltantes]);
+    });
+
     // Al cargar o cambiar de unidad, posiciona instantáneamente al jugador en el ÚLTIMO
     // desafío principal completado (o en el inicio si no completó ninguno) — nunca en el
     // próximo por resolver: ese tramo lo tiene que caminar el propio jugador al tocarlo.

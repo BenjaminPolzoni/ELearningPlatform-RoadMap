@@ -446,9 +446,11 @@ const MARGEN = 90;
                   </ul>
 
                   @if (isla.estado === 'bloqueada') {
-                    <p class="ui-font mt-3 text-[8px] leading-relaxed text-error">
-                      🔒 NECESITÁS {{ isla.u.umbralXpDesbloqueo - xp() }} XP MÁS
-                    </p>
+                    @if (motivoBloqueo(isla); as m) {
+                      <p class="mt-3 text-xs leading-relaxed text-white/70">
+                        🔒 {{ m.pre }}<b class="text-[#FFD60A]">{{ m.resaltado }}</b>{{ m.post }}
+                      </p>
+                    }
                   } @else {
                     <button
                       class="btn btn-sm ui-font mt-3 w-full text-[8px] border-none"
@@ -613,7 +615,10 @@ const MARGEN = 90;
               <div class="flex-1"></div>
 
               <!-- ============ ZONE 3: diamond gate of equal push-buttons ============ -->
-              <div class="flex-1 flex items-center justify-end gap-6 pr-12 h-full">
+              <div
+                class="flex-1 flex items-center justify-end gap-6 pr-12 h-full"
+                style="transform: translateY(-5px)"
+              >
                 <!-- top-center: RANKING -->
                 <button
                   type="button"
@@ -1109,23 +1114,45 @@ export class Mapa implements OnDestroy {
     );
     const xp = this.xp();
 
+    // Desbloqueo secuencial: además del umbral de XP, una unidad solo puede
+    // estar disponible si la anterior ya se completó al 100% — no se puede
+    // "saltear" unidades por tener XP de sobra.
+    let anteriorCompletada = true;
     const items = us.map((u, i): Isla => {
       const v = puntos[i];
       const hechas = u.actividades.filter((a) => completos.has(a.id)).length;
+      // "Completada" mira solo las actividades obligatorias — las opcionales
+      // (ej. "Práctica libre") no deben trabar el desbloqueo de la siguiente unidad.
+      const obligatorias = u.actividades.filter((a) => a.esObligatorio);
+      const completada =
+        obligatorias.length > 0 && obligatorias.every((a) => completos.has(a.id));
+      const estado: EstadoIsla = this.preview()
+        ? 'disponible'
+        : completada
+          ? 'completada'
+          : xp >= u.umbralXpDesbloqueo && anteriorCompletada
+            ? 'disponible'
+            : 'bloqueada';
+      anteriorCompletada = completada;
       return {
         u,
         c: proyectar(v),
         piso: proyectar({ ...v, z: 0 }),
-        estado: this.preview() ? 'disponible' : this.estadoDe(u, hechas, xp),
+        estado,
         actual: false,
         hechas,
         total: u.actividades.length,
       };
     });
 
-    if (!this.preview()) {
-      const actual = items.find((it) => it.estado === 'disponible');
-      if (actual) actual.actual = true;
+    if (!this.preview() && items.length > 0) {
+      // Si ya no queda ninguna unidad 'disponible' (roadmap 100% completo), el
+      // avatar se queda parado en la última unidad en vez de desaparecer.
+      const actual =
+        items.find((it) => it.estado === 'disponible') ??
+        [...items].reverse().find((it) => it.estado === 'completada') ??
+        items[items.length - 1];
+      actual.actual = true;
     }
     return items;
   });
@@ -1254,10 +1281,39 @@ export class Mapa implements OnDestroy {
     return i.estado === 'completada' ? '✓' : i.estado === 'bloqueada' ? '🔒' : String(i.u.orden);
   }
 
+  private unidadAnterior(i: Isla): Isla | null {
+    const is = this.islas();
+    const idx = is.findIndex((x) => x.u.id === i.u.id);
+    return idx > 0 ? is[idx - 1] : null;
+  }
+
   protected subtitulo(i: Isla): string {
-    if (i.estado === 'bloqueada') return `REQUIERE ${i.u.umbralXpDesbloqueo} XP`;
+    if (i.estado === 'bloqueada') {
+      const anterior = this.unidadAnterior(i);
+      if (anterior && anterior.estado !== 'completada') return `COMPLETÁ LA UNIDAD ${anterior.u.orden}`;
+      return `XP COSTO: ${i.u.umbralXpDesbloqueo}`;
+    }
     if (i.estado === 'completada') return 'COMPLETADA';
     return `${i.hechas}/${i.total} ACTIVIDADES`;
+  }
+
+  /** Mensaje completo (con más contexto que `subtitulo`) para la ficha de
+   *  unidad cuando está bloqueada — partido en 3 para resaltar el dato clave. */
+  protected motivoBloqueo(i: Isla): { pre: string; resaltado: string; post: string } {
+    const anterior = this.unidadAnterior(i);
+    if (anterior && anterior.estado !== 'completada') {
+      return {
+        pre: 'Te falta completar ',
+        resaltado: `Unidad ${anterior.u.orden} · "${anterior.u.nombre}"`,
+        post: ' para poder entrar acá.',
+      };
+    }
+    const faltante = Math.max(i.u.umbralXpDesbloqueo - this.xp(), 0);
+    return {
+      pre: 'Te faltan ',
+      resaltado: `${faltante} XP`,
+      post: ` para desbloquear esta unidad (cuesta ${i.u.umbralXpDesbloqueo} XP).`,
+    };
   }
 
   protected etiqueta(i: Isla): string {
@@ -1416,10 +1472,5 @@ export class Mapa implements OnDestroy {
   private vistaActual(): { x: number; y: number; w: number; h: number } {
     const b = this.encuadreBase();
     return this.vista() ?? { x: b.x, y: b.y, w: b.ancho, h: b.alto };
-  }
-
-  private estadoDe(u: Unidad, hechas: number, xp: number): EstadoIsla {
-    if (u.actividades.length > 0 && hechas === u.actividades.length) return 'completada';
-    return xp >= u.umbralXpDesbloqueo ? 'disponible' : 'bloqueada';
   }
 }
