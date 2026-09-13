@@ -1,0 +1,283 @@
+[gd_scene format=3 uid="uid://shop_interior_scene"]
+
+[ext_resource type="PackedScene" path="res://player.tscn" id="player_scene"]
+[ext_resource type="PackedScene" path="res://door_trigger.tscn" id="door_trigger"]
+[ext_resource type="Script" path="res://npc_employee.gd" id="employee_script"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/floor.glb" id="shop_floor_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/wall.glb" id="shop_wall_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/wall-window.glb" id="shop_wall_window_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/wall-door-rotate.glb" id="shop_wall_door_rotate_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/column.glb" id="shop_column_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/freezers-standing.glb" id="shop_freezers_standing_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/bottle-return.glb" id="shop_bottle_return_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/freezer.glb" id="shop_freezer_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/display-bread.glb" id="shop_display_bread_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/display-fruit.glb" id="shop_display_fruit_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/shelf-boxes.glb" id="shop_shelf_boxes_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/shelf-bags.glb" id="shop_shelf_bags_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/shelf-end.glb" id="shop_shelf_end_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/cash-register.glb" id="shop_cash_register_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/shopping-cart.glb" id="shop_shopping_cart_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/shopping-basket.glb" id="shop_shopping_basket_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/fence.glb" id="shop_fence_glb"]
+[ext_resource type="PackedScene" path="res://Assets/Shop/Models/GLB format/character-employee.glb" id="shop_character_employee_glb"]
+
+[sub_resource type="Environment" id="Environment_shop"]
+background_mode = 1
+background_color = Color(0.12, 0.13, 0.16, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.85, 0.82, 0.78, 1)
+ambient_light_energy = 0.8
+tonemap_mode = 2
+ssao_enabled = true
+glow_enabled = true
+glow_intensity = 0.15
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(4.2, 0.5, 4.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_NS"]
+size = Vector3(4.2, 2.0, 0.4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_EW"]
+size = Vector3(0.4, 2.0, 4.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_shelf"]
+size = Vector3(0.8, 0.8, 1.6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_counter"]
+size = Vector3(0.9, 0.6, 0.9)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_freezer"]
+size = Vector3(1.2, 0.9, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_displays"]
+size = Vector3(0.7, 0.6, 1.5)
+
+[node name="Shop" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_shop")
+
+[node name="CeilingLight_1" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+light_color = Color(1, 0.96, 0.88, 1)
+light_energy = 2.0
+omni_range = 5.0
+shadow_enabled = true
+
+[node name="CeilingLight_Checkout" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2, 1.5, 1.0)
+light_color = Color(1, 0.98, 0.92, 1)
+light_energy = 1.2
+omni_range = 3.0
+
+[node name="Ground" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="Wall_N_Col" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, -2.1)
+shape = SubResource("BoxShape3D_wall_NS")
+
+[node name="Wall_S_Col" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 2.1)
+shape = SubResource("BoxShape3D_wall_NS")
+
+[node name="Wall_W_Col" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.1, 1.25, 0)
+shape = SubResource("BoxShape3D_wall_EW")
+
+[node name="Wall_E_Col" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.1, 1.25, 0)
+shape = SubResource("BoxShape3D_wall_EW")
+
+[node name="FurnitureCollisions" type="StaticBody3D" parent="."]
+
+[node name="Col_ShelfCenter" type="CollisionShape3D" parent="FurnitureCollisions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.4, 0.0)
+shape = SubResource("BoxShape3D_shelf")
+
+[node name="Col_Checkout" type="CollisionShape3D" parent="FurnitureCollisions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2, 0.3, 1.0)
+shape = SubResource("BoxShape3D_counter")
+
+[node name="Col_Freezers" type="CollisionShape3D" parent="FurnitureCollisions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.45, -1.6)
+shape = SubResource("BoxShape3D_freezer")
+
+[node name="Col_Displays" type="CollisionShape3D" parent="FurnitureCollisions"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0.3, 0.1)
+shape = SubResource("BoxShape3D_displays")
+
+[node name="Floor" type="Node3D" parent="."]
+
+[node name="Walls" type="Node3D" parent="."]
+
+[node name="Furniture" type="Node3D" parent="."]
+
+[node name="Props" type="Node3D" parent="."]
+
+[node name="Floor_-15_-15" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, -1.5)
+
+[node name="Floor_-15_-5" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, -0.5)
+
+[node name="Floor_-15_5" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, 0.5)
+
+[node name="Floor_-15_15" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, 1.5)
+
+[node name="Floor_-5_-15" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0, -1.5)
+
+[node name="Floor_-5_-5" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0, -0.5)
+
+[node name="Floor_-5_5" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0, 0.5)
+
+[node name="Floor_-5_15" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0, 1.5)
+
+[node name="Floor_5_-15" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, -1.5)
+
+[node name="Floor_5_-5" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, -0.5)
+
+[node name="Floor_5_5" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5)
+
+[node name="Floor_5_15" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 1.5)
+
+[node name="Floor_15_-15" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, -1.5)
+
+[node name="Floor_15_-5" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, -0.5)
+
+[node name="Floor_15_5" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, 0.5)
+
+[node name="Floor_15_15" parent="Floor" instance=ExtResource("shop_floor_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, 1.5)
+
+[node name="Wall_N1" parent="Walls" instance=ExtResource("shop_wall_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, -2)
+
+[node name="Wall_N2" parent="Walls" instance=ExtResource("shop_wall_window_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0, -2)
+
+[node name="Wall_N3" parent="Walls" instance=ExtResource("shop_wall_window_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, -2)
+
+[node name="Wall_N4" parent="Walls" instance=ExtResource("shop_wall_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, -2)
+
+[node name="Wall_S1" parent="Walls" instance=ExtResource("shop_wall_glb")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -1.5, 0, 2)
+
+[node name="Wall_Door" parent="Walls" instance=ExtResource("shop_wall_door_rotate_glb")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -0.5, 0, 2)
+
+[node name="Wall_S3" parent="Walls" instance=ExtResource("shop_wall_window_glb")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.5, 0, 2)
+
+[node name="Wall_S4" parent="Walls" instance=ExtResource("shop_wall_glb")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.5, 0, 2)
+
+[node name="Wall_W1" parent="Walls" instance=ExtResource("shop_wall_glb")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, -1.5)
+
+[node name="Wall_W2" parent="Walls" instance=ExtResource("shop_wall_glb")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, -0.5)
+
+[node name="Wall_W3" parent="Walls" instance=ExtResource("shop_wall_glb")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, 0.5)
+
+[node name="Wall_W4" parent="Walls" instance=ExtResource("shop_wall_glb")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -2, 0, 1.5)
+
+[node name="Wall_E1" parent="Walls" instance=ExtResource("shop_wall_glb")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2, 0, -1.5)
+
+[node name="Wall_E2" parent="Walls" instance=ExtResource("shop_wall_glb")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2, 0, -0.5)
+
+[node name="Wall_E3" parent="Walls" instance=ExtResource("shop_wall_window_glb")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2, 0, 0.5)
+
+[node name="Wall_E4" parent="Walls" instance=ExtResource("shop_wall_glb")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 2, 0, 1.5)
+
+[node name="Col_NW" parent="Walls" instance=ExtResource("shop_column_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.9, 0, -1.9)
+
+[node name="Col_NE" parent="Walls" instance=ExtResource("shop_column_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.9, 0, -1.9)
+
+[node name="Col_SW" parent="Walls" instance=ExtResource("shop_column_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.9, 0, 1.9)
+
+[node name="Col_SE" parent="Walls" instance=ExtResource("shop_column_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.9, 0, 1.9)
+
+[node name="Freezer_Standing" parent="Furniture" instance=ExtResource("shop_freezers_standing_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, -1.6)
+
+[node name="Bottle_Return" parent="Furniture" instance=ExtResource("shop_bottle_return_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.4, 0, -1.6)
+
+[node name="Freezer_Chest" parent="Furniture" instance=ExtResource("shop_freezer_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0, -1.6)
+
+[node name="Display_Bread" parent="Furniture" instance=ExtResource("shop_display_bread_glb")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1.6, 0, -0.4)
+
+[node name="Display_Fruit" parent="Furniture" instance=ExtResource("shop_display_fruit_glb")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -1.6, 0, 0.5)
+
+[node name="Shelf_Boxes_1" parent="Furniture" instance=ExtResource("shop_shelf_boxes_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0, -0.2)
+
+[node name="Shelf_Bags_1" parent="Furniture" instance=ExtResource("shop_shelf_bags_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0, 0.5)
+
+[node name="Shelf_End_1" parent="Furniture" instance=ExtResource("shop_shelf_end_glb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0, -0.7)
+
+[node name="Checkout_Counter" parent="Furniture" instance=ExtResource("shop_cash_register_glb")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.2, 0, 1)
+
+[node name="Shopping_Cart_1" parent="Props" instance=ExtResource("shop_shopping_cart_glb")]
+transform = Transform3D(0.866, 0, -0.5, 0, 1, 0, 0.5, 0, 0.866, -1.2, 0, 1.3)
+
+[node name="Shopping_Basket_1" parent="Props" instance=ExtResource("shop_shopping_basket_glb")]
+transform = Transform3D(0.9659, 0, 0.2588, 0, 1, 0, -0.2588, 0, 0.9659, -0.8, 0, 1.5)
+
+[node name="Shopping_Basket_2" parent="Props" instance=ExtResource("shop_shopping_basket_glb")]
+transform = Transform3D(0.9397, 0, 0.342, 0, 1, 0, -0.342, 0, 0.9397, -0.8, 0.1, 1.5)
+
+[node name="Checkout_Fence" parent="Furniture" instance=ExtResource("shop_fence_glb")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.6, 0, 1)
+
+[node name="Employee" type="Node3D" parent="Furniture"]
+transform = Transform3D(0.2, 0, 0, 0, 0.2, 0, 0, 0, 0.2, 1.2, 0, 1.4)
+script = ExtResource("employee_script")
+
+[node name="Model" parent="Furniture/Employee" instance=ExtResource("shop_character_employee_glb")]
+
+[node name="ExitDoor" parent="." instance=ExtResource("door_trigger")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0, 1.7)
+target_scene = "res://city.tscn"
+prompt_text = "Salir a la Ciudad"
+
+[node name="Player" parent="." instance=ExtResource("player_scene")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 0.02, 1.2)
+

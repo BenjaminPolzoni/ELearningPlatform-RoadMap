@@ -1,0 +1,3237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ciudad Modular 3D - Creador de Personaje y Exploración</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0f172a;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    /* -----------------------------------------------------------
+       CHARACTER CREATOR PANEL (Modern Glassmorphic)
+       ----------------------------------------------------------- */
+    .creator-panel {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(18px);
+      padding: 18px 20px;
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+      width: 360px;
+      max-height: calc(100vh - 36px);
+      display: flex;
+      flex-direction: column;
+      color: #0f172a;
+      overflow-y: auto;
+    }
+
+    .creator-panel::-webkit-scrollbar { width: 5px; }
+    .creator-panel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 5px; }
+
+    .creator-panel h2 {
+      font-size: 1.2rem;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .creator-panel .subtitle {
+      font-size: 0.78rem;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #475569;
+      margin: 10px 0 6px 0;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Gender selection tabs */
+    .gender-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .gender-btn {
+      padding: 9px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      background: #f8fafc;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .gender-btn:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    .gender-btn.selected {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1d4ed8;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+
+    /* Hair & Model Style Buttons */
+    .styles-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .style-btn {
+      padding: 7px 4px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      background: #ffffff;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: all 0.18s;
+    }
+    .style-btn:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+    .style-btn.selected {
+      background: #f5f3ff;
+      border-color: #8b5cf6;
+      color: #6d28d9;
+      box-shadow: 0 3px 8px rgba(139, 92, 246, 0.25);
+    }
+
+    /* Color Swatch Pickers */
+    .swatch-group {
+      margin-bottom: 4px;
+    }
+    .swatch-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .swatch-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    .swatch-circle:hover {
+      transform: scale(1.15);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+    .swatch-circle.selected {
+      outline: 2.5px solid #2563eb;
+      outline-offset: 2px;
+      transform: scale(1.12);
+    }
+
+    /* Accessories selector */
+    .acc-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .acc-btn {
+      padding: 8px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      background: #ffffff;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.18s;
+    }
+    .acc-btn:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+    .acc-btn.selected {
+      background: #fdf2f8;
+      border-color: #ec4899;
+      color: #be185d;
+      box-shadow: 0 3px 8px rgba(236, 72, 153, 0.25);
+    }
+
+    /* Main Action Button (Enter City) */
+    .btn-enter-city {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .btn-enter-city:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(124, 58, 237, 0.5);
+    }
+
+    /* 2D / 3D View Mode Toggle */
+    .view-mode-tabs {
+      display: flex;
+      gap: 6px;
+      background: #e2e8f0;
+      padding: 4px;
+      border-radius: 12px;
+      margin-bottom: 12px;
+    }
+    .view-tab {
+      flex: 1;
+      padding: 7px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.18s;
+      background: transparent;
+      color: #64748b;
+    }
+    .view-tab.active {
+      background: #ffffff;
+      color: #1e293b;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Floating 2D angle bar */
+    .creator-2d-bar {
+      position: absolute;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 6px 14px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .angle-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .angle-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+    .angle-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #60a5fa;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+    }
+
+    /* Button for 2D Character Card */
+    .btn-card-2d {
+      width: 100%;
+      padding: 10px;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      margin-bottom: 8px;
+      transition: all 0.18s;
+    }
+    .btn-card-2d:hover {
+      background: #e2e8f0;
+      border-color: #94a3b8;
+      color: #0f172a;
+    }
+
+    /* Floating rotate helper tip */
+    .creator-tip {
+      position: absolute;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      color: #f8fafc;
+      padding: 9px 20px;
+      border-radius: 30px;
+      font-size: 0.84rem;
+      pointer-events: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* -----------------------------------------------------------
+       CITY EXPLORER HUD & SIDEBAR
+       ----------------------------------------------------------- */
+    .ui-panel {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(14px);
+      padding: 18px 22px;
+      border-radius: 18px;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18);
+      width: 330px;
+      max-height: calc(100vh - 36px);
+      display: none; /* hidden while in creator mode */
+      flex-direction: column;
+      color: #1e293b;
+    }
+
+    .ui-panel h2 {
+      font-size: 1.15rem;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .ui-panel .subtitle {
+      font-size: 0.78rem;
+      color: #64748b;
+      margin-bottom: 10px;
+    }
+
+    /* Return to creator button */
+    .btn-edit-char {
+      width: 100%;
+      padding: 8px 12px;
+      background: #f1f5f9;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 12px;
+      transition: all 0.2s;
+    }
+    .btn-edit-char:hover {
+      background: #e2e8f0;
+      border-color: #94a3b8;
+      color: #0f172a;
+    }
+
+    .form-group {
+      margin-bottom: 10px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #334155;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      color: #0f172a;
+      outline: none;
+      user-select: text;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    /* Biome selector buttons */
+    .biome-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 5px;
+      margin-bottom: 12px;
+    }
+
+    .biome-btn {
+      padding: 8px 4px;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .biome-btn .icon { font-size: 1.2rem; }
+    .biome-snow { background: #e0f2fe; color: #0369a1; }
+    .biome-desert { background: #fef3c7; color: #b45309; }
+    .biome-forest { background: #dcfce7; color: #15803d; }
+    .biome-nether { background: #fee2e2; color: #991b1b; }
+
+    .biome-btn:hover { transform: translateY(-2px); }
+    .biome-btn.selected { box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12); }
+    .biome-snow.selected { border-color: #0284c7; }
+    .biome-desert.selected { border-color: #d97706; }
+    .biome-forest.selected { border-color: #16a34a; }
+    .biome-nether.selected { border-color: #dc2626; box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25); }
+    .biome-arenisca { background: #ffedd5; color: #c2410c; }
+    .biome-arenisca.selected { border-color: #ea580c; box-shadow: 0 4px 10px rgba(234, 88, 12, 0.25); }
+
+    textarea.unit-desc-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 0.83rem;
+      color: #0f172a;
+      outline: none;
+      user-select: text;
+      resize: none;
+      height: 52px;
+      font-family: inherit;
+      margin-top: 4px;
+      margin-bottom: 8px;
+      transition: border-color 0.2s;
+    }
+    textarea.unit-desc-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+
+    button.btn-add-staged {
+      width: 100%;
+      padding: 9px;
+      background: #f1f5f9;
+      color: #1e293b;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    button.btn-add-staged:hover {
+      background: #e2e8f0;
+      border-color: #94a3b8;
+      transform: translateY(-1px);
+    }
+
+    button.btn-generate-map {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #16a34a 0%, #2563eb 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 0.94rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin: 10px 0 6px 0;
+    }
+    button.btn-generate-map:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+    }
+
+    .unit-desc-preview {
+      font-size: 0.72rem;
+      color: #64748b;
+      margin-top: 2px;
+      line-height: 1.25;
+      font-style: italic;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 10px 0 4px 0;
+      font-size: 0.82rem;
+      color: #334155;
+      cursor: pointer;
+    }
+    .toggle-row input {
+      accent-color: #2563eb;
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    .units-container {
+      margin-top: 6px;
+      flex: 1;
+      overflow-y: auto;
+      max-height: 160px;
+      padding-right: 4px;
+    }
+    .units-container::-webkit-scrollbar { width: 4px; }
+    .units-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .unit-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 5px;
+      font-size: 0.82rem;
+    }
+
+    .unit-info { display: flex; align-items: center; gap: 6px; }
+
+    .unit-badge {
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+    .badge-nieve { background: #e0f2fe; color: #0284c7; }
+    .badge-desierto { background: #fef3c7; color: #b45309; }
+    .badge-bosque { background: #dcfce7; color: #16a34a; }
+    .badge-nether { background: #fee2e2; color: #991b1b; }
+    .badge-arenisca { background: #ffedd5; color: #c2410c; }
+
+    .btn-delete-unit {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+    .btn-delete-unit:hover { color: #ef4444; background: #fee2e2; }
+
+    .info-bar {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    .btn-clear {
+      background: none;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .btn-clear:hover { text-decoration: underline; }
+
+    /* Controls helper banner */
+    .controls-banner {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      color: white;
+      padding: 10px 22px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      display: none; /* hidden in creator */
+      align-items: center;
+      gap: 16px;
+      pointer-events: none;
+    }
+
+    .key-badge {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-weight: 700;
+    }
+
+    /* Performance & Project Weight HUD */
+    .stats-hud {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      z-index: 10;
+      display: none; /* hidden in creator */
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(14px);
+      padding: 8px 12px;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      font-size: 0.8rem;
+    }
+
+    .dot-live {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse 1.4s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .stat-value {
+      font-weight: 700;
+      font-family: monospace;
+      font-size: 0.95rem;
+    }
+
+    .stat-unit {
+      color: #94a3b8;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    /* Description Character Counter */
+    .desc-counter-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: -4px;
+      margin-bottom: 8px;
+      font-size: 0.72rem;
+      color: #94a3b8;
+    }
+    .desc-counter-row .counter-tag {
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .desc-counter-row .counter-tag.warn {
+      color: #f59e0b;
+      font-weight: 700;
+    }
+    .desc-counter-row .counter-tag.limit {
+      color: #ef4444;
+      font-weight: 800;
+    }
+
+    /* Proximity Floating Action Prompt */
+    .proximity-prompt {
+      position: absolute;
+      bottom: 64px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 30;
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(56, 189, 248, 0.5);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+      border-radius: 40px;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .proximity-prompt.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+    .proximity-prompt .prompt-text {
+      color: #f8fafc;
+      font-size: 0.88rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-access-module {
+      padding: 8px 18px;
+      background: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+      transition: all 0.2s;
+    }
+    .btn-access-module:hover {
+      transform: scale(1.04);
+      box-shadow: 0 6px 18px rgba(2, 132, 199, 0.5);
+    }
+
+    /* Modal Dialogs */
+    .app-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .app-modal-overlay.active {
+      display: flex;
+    }
+    .app-modal-card {
+      background: #ffffff;
+      border-radius: 22px;
+      width: 100%;
+      max-width: 440px;
+      padding: 26px 28px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      display: flex;
+      flex-direction: column;
+      animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalPop {
+      0% { opacity: 0; transform: scale(0.92) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .app-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .app-modal-header h3 {
+      font-size: 1.18rem;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+    }
+    .btn-modal-close {
+      background: #f1f5f9;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+    .btn-modal-close:hover {
+      background: #fee2e2;
+      color: #ef4444;
+    }
+    .app-modal-body {
+      color: #334155;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      margin-bottom: 20px;
+    }
+    .btn-modal-action {
+      align-self: flex-end;
+      padding: 9px 20px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-modal-action:hover { background: #1d4ed8; }
+
+    /* 'Más detalles' button in cards */
+    .btn-more-details {
+      background: none;
+      border: none;
+      color: #2563eb;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 2px 4px;
+      margin-top: 2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      text-decoration: underline;
+    }
+    .btn-more-details:hover {
+      color: #1d4ed8;
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+
+  <!-- SCREEN 1: CHARACTER CREATOR -->
+  <div id="screen-creator" class="creator-panel">
+    <h2>✨ Creador de Personaje</h2>
+    <div class="subtitle">Personaliza tu avatar antes de entrar al mapa</div>
+
+    <div class="view-mode-tabs">
+      <button class="view-tab active" id="btn-view-3d">🧊 Vista 3D (360°)</button>
+      <button class="view-tab" id="btn-view-2d">🖼️ Vista 2D (Sprite)</button>
+    </div>
+
+    <div class="section-title">Género</div>
+    <div class="gender-grid">
+      <div class="gender-btn selected" data-gender="male">
+        <span>👨</span> Masculino
+      </div>
+      <div class="gender-btn" data-gender="female">
+        <span>👩</span> Femenino
+      </div>
+    </div>
+
+    <div class="section-title">Estilo de Modelo & Pelo</div>
+    <div class="styles-grid" id="hair-styles-container">
+      <div class="style-btn selected" data-variant="a">Estilo A</div>
+      <div class="style-btn" data-variant="b">Estilo B</div>
+      <div class="style-btn" data-variant="c">Estilo C</div>
+      <div class="style-btn" data-variant="d">Estilo D</div>
+      <div class="style-btn" data-variant="e">Estilo E</div>
+      <div class="style-btn" data-variant="f">Estilo F</div>
+    </div>
+
+    <div class="section-title">🎨 Tono de Piel</div>
+    <div class="swatch-row" id="swatches-skin">
+      <div class="swatch-circle" data-color="#ffe0bd" style="background: #ffe0bd;" title="Pálido"></div>
+      <div class="swatch-circle selected" data-color="#f8d4aa" style="background: #f8d4aa;" title="Claro"></div>
+      <div class="swatch-circle" data-color="#e5a676" style="background: #e5a676;" title="Medio"></div>
+      <div class="swatch-circle" data-color="#b06c49" style="background: #b06c49;" title="Bronceado"></div>
+      <div class="swatch-circle" data-color="#663d28" style="background: #663d28;" title="Oscuro"></div>
+      <div class="swatch-circle" data-color="#3d2314" style="background: #3d2314;" title="Ébano"></div>
+      <div class="swatch-circle" data-color="#7dd3fc" style="background: #7dd3fc;" title="Elfo Azul"></div>
+    </div>
+
+    <div class="section-title">✂️ Color de Pelo</div>
+    <div class="swatch-row" id="swatches-hair">
+      <div class="swatch-circle" data-color="#171717" style="background: #171717;" title="Negro"></div>
+      <div class="swatch-circle selected" data-color="#4a2c11" style="background: #4a2c11;" title="Castaño"></div>
+      <div class="swatch-circle" data-color="#795548" style="background: #795548;" title="Castaño Claro"></div>
+      <div class="swatch-circle" data-color="#f59e0b" style="background: #f59e0b;" title="Rubio"></div>
+      <div class="swatch-circle" data-color="#fef08a" style="background: #fef08a;" title="Platino"></div>
+      <div class="swatch-circle" data-color="#b91c1c" style="background: #b91c1c;" title="Pelirrojo"></div>
+      <div class="swatch-circle" data-color="#e2e8f0" style="background: #e2e8f0;" title="Blanco / Plateado"></div>
+      <div class="swatch-circle" data-color="#2563eb" style="background: #2563eb;" title="Azul Neón"></div>
+      <div class="swatch-circle" data-color="#ec4899" style="background: #ec4899;" title="Rosa Pastel"></div>
+    </div>
+
+    <div class="section-title">👕 Ropa (Torso)</div>
+    <div class="swatch-row" id="swatches-shirt">
+      <div class="swatch-circle selected" data-color="#1e40af" style="background: #1e40af;" title="Azul Clásico"></div>
+      <div class="swatch-circle" data-color="#dc2626" style="background: #dc2626;" title="Rojo"></div>
+      <div class="swatch-circle" data-color="#16a34a" style="background: #16a34a;" title="Verde"></div>
+      <div class="swatch-circle" data-color="#eab308" style="background: #eab308;" title="Amarillo"></div>
+      <div class="swatch-circle" data-color="#7c3aed" style="background: #7c3aed;" title="Púrpura"></div>
+      <div class="swatch-circle" data-color="#18181b" style="background: #18181b;" title="Negro"></div>
+      <div class="swatch-circle" data-color="#f8fafc" style="background: #f8fafc; border-color: #94a3b8;" title="Blanco"></div>
+      <div class="swatch-circle" data-color="#ea580c" style="background: #ea580c;" title="Naranja"></div>
+      <div class="swatch-circle" data-color="#06b6d4" style="background: #06b6d4;" title="Cian"></div>
+    </div>
+
+    <div class="section-title">👖 Pantalones</div>
+    <div class="swatch-row" id="swatches-pants">
+      <div class="swatch-circle selected" data-color="#1d4ed8" style="background: #1d4ed8;" title="Jeans Azul"></div>
+      <div class="swatch-circle" data-color="#1e293b" style="background: #1e293b;" title="Negro"></div>
+      <div class="swatch-circle" data-color="#d4b996" style="background: #d4b996;" title="Beige"></div>
+      <div class="swatch-circle" data-color="#64748b" style="background: #64748b;" title="Gris"></div>
+      <div class="swatch-circle" data-color="#78350f" style="background: #78350f;" title="Cuero Café"></div>
+      <div class="swatch-circle" data-color="#3f6212" style="background: #3f6212;" title="Verde Militar"></div>
+    </div>
+
+    <div class="section-title">👓 Accesorios</div>
+    <div class="acc-grid">
+      <div class="acc-btn selected" data-accessory="none">❌ Ninguno</div>
+      <div class="acc-btn" data-accessory="aid-glasses.glb">👓 Lentes</div>
+      <div class="acc-btn" data-accessory="aid-sunglasses.glb">🕶️ Gafas de Sol</div>
+      <div class="acc-btn" data-accessory="aid-mask.glb">😷 Máscara</div>
+    </div>
+
+    <button class="btn-card-2d" id="btn-card-2d" type="button">🪪 Ficha de Personaje 2D</button>
+    <button class="btn-enter-city" id="btn-enter-city">🚀 ¡Entrar a la Ciudad!</button>
+  </div>
+
+  <div id="creator-tip" class="creator-tip">
+    <span>🖱️ Mantén presionado y arrastra el ratón para rotar el personaje en 360°</span>
+  </div>
+
+  <div id="creator-2d-bar" class="creator-2d-bar" style="display: none;">
+    <span style="font-size: 0.78rem; font-weight: 700; color: #94a3b8; margin-right: 2px;">Ángulo 2D:</span>
+    <button class="angle-btn active" data-angle="front">👤 Frente</button>
+    <button class="angle-btn" data-angle="side">🔄 Perfil</button>
+    <button class="angle-btn" data-angle="back">🔙 Espalda</button>
+  </div>
+
+  <!-- SCREEN 2: MODULAR CITY PANEL -->
+  <div class="ui-panel" id="panel-city">
+    <h2>🗺️ Ciudad Modular 3D</h2>
+    <div class="subtitle">Añade unidades con nombre y bioma personalizado</div>
+
+    <button class="btn-edit-char" id="btn-edit-char">👤 Personalizar Personaje</button>
+
+    <div class="form-group">
+      <label for="input-unit-name">Título / Nombre de la Unidad:</label>
+      <input type="text" id="input-unit-name" placeholder="Ej: Villa Verde, Oasis Místico..." value="Casa 1">
+    </div>
+
+    <div class="section-title">Selecciona el Bioma:</div>
+    <div class="biome-grid">
+      <div class="biome-btn biome-snow" data-biome="Nieve">
+        <span class="icon">❄️</span>
+        <span>Nieve</span>
+      </div>
+      <div class="biome-btn biome-desert" data-biome="Desierto">
+        <span class="icon">🏜️</span>
+        <span>Desierto</span>
+      </div>
+      <div class="biome-btn biome-forest selected" data-biome="Bosque">
+        <span class="icon">🌲</span>
+        <span>Bosque</span>
+      </div>
+      <div class="biome-btn biome-nether" data-biome="Nether">
+        <span class="icon">🔥</span>
+        <span>Nether</span>
+      </div>
+      <div class="biome-btn biome-arenisca" data-biome="Arenisca">
+        <span class="icon">🏛️</span>
+        <span>Arenisca</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="input-unit-desc">Descripción del Bioma:</label>
+      <textarea id="input-unit-desc" class="unit-desc-input" maxlength="144" placeholder="Ej: Aldea tranquila rodeada de pinos y naturaleza..."></textarea>
+      <div class="desc-counter-row">
+        <span>Máx. 144 caracteres</span>
+        <span id="desc-char-counter" class="counter-tag">144 disponibles</span>
+      </div>
+    </div>
+
+    <button class="btn-add-staged" id="btn-add-staged">➕ Añadir a la Lista de Biomas</button>
+
+    <div class="section-title" style="margin-top: 6px; display: flex; justify-content: space-between;">
+      <span>Biomas Planificados:</span>
+      <span id="staged-count" style="color: #2563eb; font-weight: 700;">0 listos</span>
+    </div>
+    <div class="units-container" id="units-list"></div>
+
+    <button class="btn-generate-map" id="btn-generate-map">🚀 Generar Mapa Completo</button>
+
+    <label class="toggle-row">
+      <input type="checkbox" id="check-follow-player" checked>
+      <span>📹 La cámara sigue al personaje</span>
+    </label>
+
+    <div class="info-bar">
+      <span id="stat-units">0 unidades (0 cuadras, 0.0 m)</span>
+      <button class="btn-clear" id="btn-clear-all">Limpiar Todo</button>
+    </div>
+  </div>
+
+  <!-- Top Right Stats HUD (FPS, Project Weight, Scene Memory, Polygons) -->
+  <div class="stats-hud" id="stats-hud">
+    <div class="stat-badge">
+      <span class="dot-live"></span>
+      <span class="stat-value" id="hud-fps" style="color: #22c55e;">60</span>
+      <span class="stat-unit">FPS</span>
+    </div>
+    <div class="stat-badge">
+      <span style="font-size: 0.95rem;">💾</span>
+      <span class="stat-value" id="hud-scene-weight">0.0 MB</span>
+      <span class="stat-unit">Assets Escena</span>
+    </div>
+    <div class="stat-badge">
+      <span style="font-size: 0.95rem;">📦</span>
+      <span class="stat-value">24.7 MB</span>
+      <span class="stat-unit">Total Proyecto</span>
+    </div>
+    <div class="stat-badge">
+      <span style="font-size: 0.95rem;">🔺</span>
+      <span class="stat-value" id="hud-triangles">0</span>
+      <span class="stat-unit">Polígonos</span>
+    </div>
+  </div>
+
+  <div class="controls-banner" id="controls-banner">
+    <div>🎮 Mover: <span class="key-badge">W</span> <span class="key-badge">A</span> <span class="key-badge">S</span> <span class="key-badge">D</span></div>
+    <div>⚡ Correr: <span class="key-badge">SHIFT</span></div>
+    <div>🖱️ Rotar: <span class="key-badge">Click Izq.</span> | Zoom: <span class="key-badge">Rueda</span></div>
+  </div>
+
+  <!-- FLOATING PROXIMITY ACTION PROMPT -->
+  <div class="proximity-prompt" id="proximity-prompt">
+    <div class="prompt-text">
+      <span id="prompt-icon">📍</span>
+      <span id="prompt-target-name">Módulo</span>
+    </div>
+    <button class="btn-access-module" id="btn-access-module">Acceder al Módulo</button>
+  </div>
+
+  <!-- MODAL: EN CONSTRUCCIÓN -->
+  <div class="app-modal-overlay" id="modal-construction">
+    <div class="app-modal-card">
+      <div class="app-modal-header">
+        <h3 id="modal-const-title">🚧 En Construcción</h3>
+        <button class="btn-modal-close" id="btn-close-const">✕</button>
+      </div>
+      <div class="app-modal-body">
+        <p id="modal-const-desc" style="margin-bottom: 8px;">Este módulo está actualmente en desarrollo.</p>
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; font-size: 0.85rem; color: #64748b;">
+          Próximamente podrás acceder a lecciones, actividades y recompensas de este bioma.
+        </div>
+      </div>
+      <button class="btn-modal-action" id="btn-ok-const">Entendido</button>
+    </div>
+  </div>
+
+  <!-- MODAL: DETALLES DEL BIOMA -->
+  <div class="app-modal-overlay" id="modal-details">
+    <div class="app-modal-card">
+      <div class="app-modal-header">
+        <h3 id="modal-detail-title">📄 Detalles del Bioma</h3>
+        <button class="btn-modal-close" id="btn-close-details">✕</button>
+      </div>
+      <div class="app-modal-body">
+        <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: #2563eb; margin-bottom: 4px;" id="modal-detail-badge">Bioma</div>
+        <p id="modal-detail-text" style="font-size: 0.95rem; color: #1e293b; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px; line-height: 1.6;"></p>
+      </div>
+      <button class="btn-modal-action" id="btn-ok-details">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- MODAL: FICHA DE PERSONAJE 2D -->
+  <div class="app-modal-overlay" id="modal-char-card" style="display: none;">
+    <div class="app-modal-card" style="max-width: 380px;">
+      <div class="app-modal-header">
+        <h3 id="modal-card-title">🪪 Ficha del Personaje (2D)</h3>
+        <button class="btn-modal-close" id="btn-close-char-card">✕</button>
+      </div>
+      <div class="app-modal-body">
+        <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 12px;">Especificaciones del explorador</p>
+        <div style="background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 14px; font-size: 0.86rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #64748b; font-weight: 600;">Género:</span>
+            <span id="card-val-gender" style="font-weight: 700; color: #0f172a;">Masculino</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #64748b; font-weight: 600;">Estilo de Pelo:</span>
+            <span id="card-val-hair-style" style="font-weight: 700; color: #0f172a;">Estilo A</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
+            <span style="color: #64748b; font-weight: 600;">Color de Pelo:</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <div id="card-dot-hair" style="width: 14px; height: 14px; border-radius: 50%; border: 1px solid #cbd5e1;"></div>
+              <span id="card-val-hair-color" style="font-weight: 700; color: #0f172a; font-family: monospace;">#4a2c11</span>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
+            <span style="color: #64748b; font-weight: 600;">Tono de Piel:</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <div id="card-dot-skin" style="width: 14px; height: 14px; border-radius: 50%; border: 1px solid #cbd5e1;"></div>
+              <span id="card-val-skin-color" style="font-weight: 700; color: #0f172a; font-family: monospace;">#f8d4aa</span>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
+            <span style="color: #64748b; font-weight: 600;">Camiseta:</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <div id="card-dot-shirt" style="width: 14px; height: 14px; border-radius: 50%; border: 1px solid #cbd5e1;"></div>
+              <span id="card-val-shirt-color" style="font-weight: 700; color: #0f172a; font-family: monospace;">#1e40af</span>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center;">
+            <span style="color: #64748b; font-weight: 600;">Pantalones:</span>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <div id="card-dot-pants" style="width: 14px; height: 14px; border-radius: 50%; border: 1px solid #cbd5e1;"></div>
+              <span id="card-val-pants-color" style="font-weight: 700; color: #0f172a; font-family: monospace;">#1d4ed8</span>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #64748b; font-weight: 600;">Accesorio:</span>
+            <span id="card-val-acc" style="font-weight: 700; color: #0f172a;">Ninguno</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn-modal-action" id="btn-ok-char-card">Cerrar</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    // -------------------------------------------------------------
+    // THREE.JS SCENE SETUP
+    // -------------------------------------------------------------
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+
+    // Start with Studio Dark Theme
+    scene.background = new THREE.Color(0x0f172a);
+    scene.fog = new THREE.Fog(0x0f172a, 8, 35);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.2, 120);
+    camera.position.set(0, 0.85, 2.1);
+
+    // Cámara ortográfica para vista 2D sin distorsión de perspectiva (efecto sprite/ilustración plana)
+    let creatorViewMode = '3d';
+    const orthoHeight = 1.35;
+    const initialAspect = window.innerWidth / window.innerHeight;
+    const orthoCamera = new THREE.OrthographicCamera(
+      -orthoHeight * initialAspect / 2, orthoHeight * initialAspect / 2,
+      orthoHeight / 2, -orthoHeight / 2,
+      0.1, 50
+    );
+    orthoCamera.position.set(0, 0.45, 2.5);
+    orthoCamera.lookAt(0, 0.45, 0);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      powerPreference: 'high-performance',
+      stencil: false,
+      depth: true
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    // Limit pixel ratio to 1.25 for buttery smooth 60 FPS on high-DPI screens while keeping crisp visuals
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap; // Much faster than PCFSoft on fillrate
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.target.set(0, 0.45, 0);
+    controls.maxPolarAngle = Math.PI / 2 - 0.02;
+    controls.minDistance = 0.8;
+    controls.maxDistance = 4.5;
+    // Disable right click interaction completely with the map (only left-click orbit & wheel zoom allowed)
+    controls.mouseButtons = {
+      LEFT: THREE.MOUSE.ROTATE,
+      MIDDLE: THREE.MOUSE.DOLLY,
+      RIGHT: null
+    };
+
+    // Prevent default right-click context menu on the canvas
+    renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+
+    const mainSun = new THREE.DirectionalLight(0xfff8e7, 1.4);
+    mainSun.position.set(5, 12, 8);
+    mainSun.castShadow = true;
+    mainSun.shadow.mapSize.width = 1024;
+    mainSun.shadow.mapSize.height = 1024;
+    mainSun.shadow.camera.near = 0.5;
+    mainSun.shadow.camera.far = 100;
+    const d = 40;
+    mainSun.shadow.camera.left = -d;
+    mainSun.shadow.camera.right = d;
+    mainSun.shadow.camera.top = d;
+    mainSun.shadow.camera.bottom = -d;
+    mainSun.shadow.bias = -0.0003;
+    scene.add(mainSun);
+
+    // Studio Spotlight for character creator
+    const studioSpot = new THREE.SpotLight(0x38bdf8, 2.0, 10, Math.PI / 4, 0.5, 1);
+    studioSpot.position.set(0, 3.5, 2.0);
+    studioSpot.target.position.set(0, 0.45, 0);
+    scene.add(studioSpot);
+    scene.add(studioSpot.target);
+
+    // Studio Back Rim Light
+    const studioRimLight = new THREE.DirectionalLight(0x818cf8, 1.2);
+    studioRimLight.position.set(-2, 2.5, -2);
+    scene.add(studioRimLight);
+
+    // -------------------------------------------------------------
+    // STUDIO PODIUM
+    // -------------------------------------------------------------
+    const studioGroup = new THREE.Group();
+    scene.add(studioGroup);
+
+    // Podium Base
+    const podiumGeo = new THREE.CylinderGeometry(1.0, 1.05, 0.1, 48);
+    const podiumMat = new THREE.MeshStandardMaterial({
+      color: 0x1e293b,
+      roughness: 0.35,
+      metalness: 0.3
+    });
+    const podium = new THREE.Mesh(podiumGeo, podiumMat);
+    podium.position.y = -0.05;
+    podium.receiveShadow = true;
+    studioGroup.add(podium);
+
+    // Glowing Neon Ring
+    const ringGeo = new THREE.TorusGeometry(1.01, 0.018, 16, 48);
+    ringGeo.rotateX(Math.PI / 2);
+    const ringMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 1.8
+    });
+    const neonRing = new THREE.Mesh(ringGeo, ringMat);
+    neonRing.position.y = 0.001;
+    studioGroup.add(neonRing);
+
+    // Large shadow receiver floor in studio
+    const studioFloorGeo = new THREE.PlaneGeometry(30, 30);
+    const studioFloorMat = new THREE.ShadowMaterial({ opacity: 0.35 });
+    const studioFloor = new THREE.Mesh(studioFloorGeo, studioFloorMat);
+    studioFloor.rotation.x = -Math.PI / 2;
+    studioFloor.position.y = -0.051;
+    studioFloor.receiveShadow = true;
+    studioGroup.add(studioFloor);
+
+    // -------------------------------------------------------------
+    // ASSET CACHE & LOADER
+    // -------------------------------------------------------------
+    const loader = new GLTFLoader();
+    const modelCache = new Map();
+    const assetSizes = new Map();
+
+    function updateSceneWeight() {
+      let totalBytes = 0;
+      assetSizes.forEach(bytes => totalBytes += bytes);
+      const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
+      const el = document.getElementById('hud-scene-weight');
+      if (el) el.innerText = totalMB + ' MB';
+    }
+
+    async function fetchGLBBuffer(url) {
+      if (modelCache.has(url)) return modelCache.get(url);
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          console.warn('GLB HTTP error:', res.status, url);
+          return null;
+        }
+        const buf = await res.arrayBuffer();
+        if (buf.byteLength < 20) {
+          console.warn('GLB buffer too small:', url);
+          return null;
+        }
+        assetSizes.set(url, buf.byteLength);
+        updateSceneWeight();
+        modelCache.set(url, buf);
+        return buf;
+      } catch (e) {
+        console.error('Error fetching GLB:', url, e);
+        return null;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // CHARACTER CUSTOMIZATION STATE & PERSISTENCE
+    // -------------------------------------------------------------
+    const characterConfig = {
+      gender: 'male',
+      variant: 'a',
+      skinColor: '#f8d4aa',
+      hairColor: '#4a2c11',
+      shirtColor: '#1e40af',
+      pantsColor: '#1d4ed8',
+      accessory: 'none'
+    };
+
+    function loadSavedCharacterConfig() {
+      const saved = localStorage.getItem('modular_character_config');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          Object.assign(characterConfig, parsed);
+        } catch (e) {
+          console.warn('Failed parsing character config:', e);
+        }
+      }
+      syncUIToConfig();
+    }
+
+    function saveCharacterConfig() {
+      try {
+        localStorage.setItem('modular_character_config', JSON.stringify(characterConfig));
+      } catch (e) {
+        console.warn('Failed saving character config:', e);
+      }
+    }
+
+    function syncUIToConfig() {
+      document.querySelectorAll('.gender-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.getAttribute('data-gender') === characterConfig.gender);
+      });
+      document.querySelectorAll('.style-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.getAttribute('data-variant') === characterConfig.variant);
+      });
+      const updateSwatches = (containerId, selectedColor) => {
+        document.querySelectorAll('#' + containerId + ' .swatch-circle').forEach(s => {
+          s.classList.toggle('selected', s.getAttribute('data-color').toLowerCase() === selectedColor.toLowerCase());
+        });
+      };
+      updateSwatches('swatches-skin', characterConfig.skinColor);
+      updateSwatches('swatches-hair', characterConfig.hairColor);
+      updateSwatches('swatches-shirt', characterConfig.shirtColor);
+      updateSwatches('swatches-pants', characterConfig.pantsColor);
+
+      document.querySelectorAll('.acc-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.getAttribute('data-accessory') === characterConfig.accessory);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // VERTEX CLASSIFICATION & COLORING ENGINE
+    // -------------------------------------------------------------
+    function classifyAndColorMesh(mesh, config) {
+      const isHead = mesh.name === 'head-mesh';
+      const isBody = mesh.name === 'body-mesh';
+      if (!isHead && !isBody) return;
+
+      const geom = mesh.geometry;
+      const pos = geom.attributes.position;
+      const uv = geom.attributes.uv;
+      if (!pos || !uv) return;
+
+      const vertexCount = pos.count;
+      let partIndices = mesh.userData.partIndices;
+
+      if (!partIndices) {
+        partIndices = new Uint8Array(vertexCount);
+        let skinCol = 15;
+        if (isHead) {
+          const uCounts = {};
+          for (let i = 0; i < vertexCount; i++) {
+            const col = Math.floor(uv.getX(i) * 16);
+            uCounts[col] = (uCounts[col] || 0) + 1;
+          }
+          for (const c in uCounts) {
+            if (uCounts[c] >= 210 && uCounts[c] <= 240) {
+              skinCol = parseInt(c);
+              break;
+            }
+          }
+          mesh.userData.skinCol = skinCol;
+        }
+
+        for (let i = 0; i < vertexCount; i++) {
+          const x = pos.getX(i);
+          const y = pos.getY(i);
+          const z = pos.getZ(i);
+          const col = Math.floor(uv.getX(i) * 16);
+
+          if (isHead) {
+            if (col === skinCol) {
+              partIndices[i] = 1; // Skin (Face/Head Base)
+            } else if (z > 0.06 && y >= 0.43 && y <= 0.54 && Math.abs(x) < 0.18) {
+              partIndices[i] = 2; // Facial Features (Eyes, Brows, Mouth)
+            } else {
+              partIndices[i] = 0; // Hair
+            }
+          } else {
+            // Body mesh
+            if (y < 0.035) {
+              partIndices[i] = 5; // Shoes
+            } else if (y < 0.20) {
+              partIndices[i] = 4; // Pants / Legs
+            } else if (Math.abs(x) > 0.26 && y < 0.35) {
+              partIndices[i] = 1; // Skin (Hands)
+            } else {
+              partIndices[i] = 3; // Shirt / Torso
+            }
+          }
+        }
+        mesh.userData.partIndices = partIndices;
+      }
+
+      let colorAttr = geom.attributes.color;
+      if (!colorAttr || colorAttr.count !== vertexCount) {
+        colorAttr = new THREE.BufferAttribute(new Float32Array(vertexCount * 3), 3);
+        geom.setAttribute('color', colorAttr);
+      }
+
+      const skinC = new THREE.Color(config.skinColor);
+      const hairC = new THREE.Color(config.hairColor);
+      const shirtC = new THREE.Color(config.shirtColor);
+      const pantsC = new THREE.Color(config.pantsColor);
+      const shoesC = new THREE.Color(0x22262f);
+      const eyeC = new THREE.Color(0x18181b);
+
+      const colors = colorAttr.array;
+      for (let i = 0; i < vertexCount; i++) {
+        const part = partIndices[i];
+        let c = eyeC;
+        if (part === 0) c = hairC;
+        else if (part === 1) c = skinC;
+        else if (part === 2) c = eyeC;
+        else if (part === 3) c = shirtC;
+        else if (part === 4) c = pantsC;
+        else if (part === 5) c = shoesC;
+
+        colors[i * 3] = c.r;
+        colors[i * 3 + 1] = c.g;
+        colors[i * 3 + 2] = c.b;
+      }
+      colorAttr.needsUpdate = true;
+
+      if (!mesh.material.vertexColors) {
+        mesh.material = new THREE.MeshStandardMaterial({
+          vertexColors: true,
+          roughness: 0.68,
+          metalness: 0.08
+        });
+      }
+    }
+
+    function applyCustomColorsToModel(model, config) {
+      model.traverse((child) => {
+        if (child.isSkinnedMesh || child.isMesh) {
+          classifyAndColorMesh(child, config);
+        }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // ACCESSORY ATTACHMENT SYSTEM
+    // -------------------------------------------------------------
+    async function attachAccessoryToCharacter(model, accessoryName) {
+      const headBone = model.getObjectByName('head');
+      if (!headBone) return;
+
+      for (let i = headBone.children.length - 1; i >= 0; i--) {
+        const child = headBone.children[i];
+        if (child.userData && child.userData.isAccessory) {
+          headBone.remove(child);
+        }
+      }
+
+      if (!accessoryName || accessoryName === 'none') return;
+
+      const accUrl = 'Assets/Character/Models/GLB format/' + accessoryName;
+      const buf = await fetchGLBBuffer(accUrl);
+      if (!buf) return;
+
+      loader.parse(buf.slice(0), 'Assets/Character/Models/GLB format/', (gltf) => {
+        const acc = gltf.scene;
+        acc.userData.isAccessory = true;
+        acc.traverse((c) => {
+          if (c.isMesh) {
+            c.castShadow = true;
+            c.receiveShadow = false;
+          }
+        });
+
+        if (accessoryName === 'aid-glasses.glb') {
+          acc.position.set(0, 0.05, 0.075);
+          acc.scale.set(1.0, 1.0, 1.0);
+        } else if (accessoryName === 'aid-sunglasses.glb') {
+          acc.position.set(0, 0.05, 0.075);
+          acc.scale.set(1.0, 1.0, 1.0);
+        } else if (accessoryName === 'aid-mask.glb') {
+          acc.position.set(0, -0.015, 0.055);
+          acc.scale.set(0.95, 0.95, 0.95);
+        }
+        headBone.add(acc);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // PLAYER CHARACTER & ANIMATION LOGIC
+    // -------------------------------------------------------------
+    const playerGroup = new THREE.Group();
+    scene.add(playerGroup);
+
+    let playerModel = null;
+    let playerMixer = null;
+    let animActions = {};
+    let activeAction = null;
+    let isPlayerLoaded = false;
+
+    async function loadCharacterModel(config) {
+      const fileName = 'character-' + config.gender + '-' + config.variant + '.glb';
+      const url = 'Assets/Character/Models/GLB format/' + fileName;
+      const buf = await fetchGLBBuffer(url);
+      if (!buf) return;
+
+      loader.parse(buf.slice(0), 'Assets/Character/Models/GLB format/', (gltf) => {
+        while (playerGroup.children.length > 0) {
+          playerGroup.remove(playerGroup.children[0]);
+        }
+
+        playerModel = gltf.scene;
+        playerModel.scale.set(0.65, 0.65, 0.65);
+        playerModel.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = false; // Massive FPS boost when zoomed in (eliminates redundant shadow depth sampling on character body)
+          }
+        });
+
+        applyCustomColorsToModel(playerModel, config);
+        attachAccessoryToCharacter(playerModel, config.accessory);
+
+        playerGroup.add(playerModel);
+
+        playerMixer = new THREE.AnimationMixer(playerModel);
+        animActions = {};
+        for (const clip of gltf.animations) {
+          animActions[clip.name] = playerMixer.clipAction(clip);
+        }
+
+        if (animActions['idle']) {
+          animActions['idle'].play();
+          activeAction = animActions['idle'];
+        }
+
+        isPlayerLoaded = true;
+      });
+    }
+
+    function playAnimation(name) {
+      if (!animActions[name] || activeAction === animActions[name]) return;
+      const prevAction = activeAction;
+      activeAction = animActions[name];
+      if (prevAction) prevAction.fadeOut(0.15);
+      activeAction.reset().fadeIn(0.15).play();
+    }
+
+    // -------------------------------------------------------------
+    // UI EVENT LISTENERS FOR CHARACTER CREATOR
+    // -------------------------------------------------------------
+    document.querySelectorAll('.gender-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        characterConfig.gender = btn.getAttribute('data-gender');
+        saveCharacterConfig();
+        loadCharacterModel(characterConfig);
+      });
+    });
+
+    document.querySelectorAll('.style-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        characterConfig.variant = btn.getAttribute('data-variant');
+        saveCharacterConfig();
+        loadCharacterModel(characterConfig);
+      });
+    });
+
+    function bindSwatchGroup(containerId, configProp) {
+      document.querySelectorAll('#' + containerId + ' .swatch-circle').forEach(swatch => {
+        swatch.addEventListener('click', () => {
+          document.querySelectorAll('#' + containerId + ' .swatch-circle').forEach(s => s.classList.remove('selected'));
+          swatch.classList.add('selected');
+          characterConfig[configProp] = swatch.getAttribute('data-color');
+          saveCharacterConfig();
+          if (playerModel) {
+            applyCustomColorsToModel(playerModel, characterConfig);
+          }
+        });
+      });
+    }
+
+    bindSwatchGroup('swatches-skin', 'skinColor');
+    bindSwatchGroup('swatches-hair', 'hairColor');
+    bindSwatchGroup('swatches-shirt', 'shirtColor');
+    bindSwatchGroup('swatches-pants', 'pantsColor');
+
+    document.querySelectorAll('.acc-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.acc-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        characterConfig.accessory = btn.getAttribute('data-accessory');
+        saveCharacterConfig();
+        if (playerModel) {
+          attachAccessoryToCharacter(playerModel, characterConfig.accessory);
+        }
+      });
+    });
+
+    // -------------------------------------------------------------
+    // SCREEN MODES (CREATOR vs CITY EXPLORER)
+    // -------------------------------------------------------------
+    let currentMode = 'creator';
+
+    const screenCreator = document.getElementById('screen-creator');
+    const creatorTip = document.getElementById('creator-tip');
+    const panelCity = document.getElementById('panel-city');
+    const statsHud = document.getElementById('stats-hud');
+    const controlsBanner = document.getElementById('controls-banner');
+
+    function switchMode(newMode) {
+      currentMode = newMode;
+      if (newMode === 'creator') {
+        screenCreator.style.display = 'flex';
+        creatorTip.style.display = 'flex';
+        panelCity.style.display = 'none';
+        statsHud.style.display = 'none';
+        controlsBanner.style.display = 'none';
+
+        studioGroup.visible = true;
+        cityGroup.visible = false;
+        scene.background.setHex(0x0f172a);
+        scene.fog.color.setHex(0x0f172a);
+        scene.fog.near = 45;
+        scene.fog.far = 135;
+        studioSpot.visible = true;
+        studioSpot.intensity = 2.0;
+        studioRimLight.visible = true;
+        studioRimLight.intensity = 1.2;
+
+        playerGroup.position.set(0, 0, 0);
+        playerGroup.rotation.set(0, 0, 0);
+        playAnimation('idle');
+
+        controls.minDistance = 0.8;
+        controls.maxDistance = 4.5;
+        controls.target.set(0, 0.45, 0);
+        camera.position.set(0, 0.85, 2.1);
+      } else {
+        screenCreator.style.display = 'none';
+        creatorTip.style.display = 'none';
+        panelCity.style.display = 'flex';
+        statsHud.style.display = 'flex';
+        controlsBanner.style.display = 'flex';
+
+        studioGroup.visible = false;
+        cityGroup.visible = true;
+        // Turn off studio lights completely to remove them from shader computations in city mode
+        studioSpot.visible = false;
+        studioSpot.intensity = 0;
+        studioRimLight.visible = false;
+        studioRimLight.intensity = 0;
+
+        // Vibrant alpine blue sky with atmospheric soft haze
+        scene.background.setHex(0x38bdf8);
+        scene.fog.color.setHex(0x93c5fd);
+        scene.fog.near = 45;
+        scene.fog.far = 135;
+
+        // Spawn player near the Shop at the beginning of the avenue, facing down the street (+X)
+        const spawnCols = Math.ceil(units.length / 2);
+        const spawnAvenueLen = Math.max(spawnCols * UNIT_WIDTH, 6.0);
+        const spawnStartX = -spawnAvenueLen / 2 + UNIT_WIDTH / 2;
+        const shopLotWidth = 3.2;
+        const shopX = spawnStartX - UNIT_WIDTH / 2 - shopLotWidth / 2;
+
+        playerGroup.position.set(shopX + 1.4, 0, 0);
+        playerGroup.rotation.set(0, Math.PI / 2, 0);
+
+        controls.enabled = true;
+        controls.minDistance = 2.0;
+        controls.maxDistance = 75;
+        controls.target.set(playerGroup.position.x, playerGroup.position.y + 0.3, playerGroup.position.z);
+        camera.position.set(playerGroup.position.x - 3.2, playerGroup.position.y + 2.2, playerGroup.position.z);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // CONTROLES DE VISTA 2D vs 3D EN EL CREADOR DE PERSONAJE
+    // -------------------------------------------------------------
+    const btnView3D = document.getElementById('btn-view-3d');
+    const btnView2D = document.getElementById('btn-view-2d');
+    const bar2D = document.getElementById('creator-2d-bar');
+
+    function setCreatorViewMode(mode) {
+      creatorViewMode = mode;
+      if (mode === '2d') {
+        btnView2D.classList.add('active');
+        btnView3D.classList.remove('active');
+        if (creatorTip) creatorTip.style.display = 'none';
+        if (bar2D) bar2D.style.display = 'flex';
+
+        controls.enabled = false; // Desactivar rotación orbital libre
+        playerGroup.position.set(0, 0, 0);
+        playerGroup.rotation.set(0, 0, 0); // Vista frontal limpia
+
+        document.querySelectorAll('.angle-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.angle === 'front');
+        });
+      } else {
+        btnView3D.classList.add('active');
+        btnView2D.classList.remove('active');
+        if (creatorTip) creatorTip.style.display = 'flex';
+        if (bar2D) bar2D.style.display = 'none';
+
+        controls.enabled = true; // Reactivar rotación 3D
+        controls.target.set(0, 0.45, 0);
+        camera.position.set(0, 0.85, 2.1);
+      }
+    }
+
+    btnView3D.addEventListener('click', () => setCreatorViewMode('3d'));
+    btnView2D.addEventListener('click', () => setCreatorViewMode('2d'));
+
+    // Botones de cambio de ángulo en modo 2D (Frontal, Perfil, Espalda)
+    document.querySelectorAll('.angle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.angle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const angle = btn.dataset.angle;
+        if (angle === 'front') {
+          playerGroup.rotation.set(0, 0, 0);
+        } else if (angle === 'side') {
+          playerGroup.rotation.set(0, Math.PI / 2, 0);
+        } else if (angle === 'back') {
+          playerGroup.rotation.set(0, Math.PI, 0);
+        }
+      });
+    });
+
+    // Modal de Ficha de Personaje 2D (con comprobaciones de seguridad null-safe)
+    const modalCharCard = document.getElementById('modal-char-card');
+    const btnCard2D = document.getElementById('btn-card-2d');
+    const btnCloseCharCard = document.getElementById('btn-close-char-card');
+    const btnOkCharCard = document.getElementById('btn-ok-char-card');
+
+    if (btnCard2D && modalCharCard) {
+      btnCard2D.addEventListener('click', () => {
+        const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+        const setBg = (id, color) => { const el = document.getElementById(id); if (el) el.style.background = color; };
+
+        setTxt('card-val-gender', characterConfig.gender === 'male' ? 'Masculino 👨' : 'Femenino 👩');
+        setTxt('card-val-hair-style', 'Estilo ' + (characterConfig.variant || 'a').toUpperCase());
+        setTxt('card-val-hair-color', characterConfig.hairColor);
+        setBg('card-dot-hair', characterConfig.hairColor);
+        setTxt('card-val-skin-color', characterConfig.skinColor);
+        setBg('card-dot-skin', characterConfig.skinColor);
+        setTxt('card-val-shirt-color', characterConfig.shirtColor);
+        setBg('card-dot-shirt', characterConfig.shirtColor);
+        setTxt('card-val-pants-color', characterConfig.pantsColor);
+        setBg('card-dot-pants', characterConfig.pantsColor);
+
+        let accName = 'Ninguno ❌';
+        if (characterConfig.accessory === 'aid-glasses.glb') accName = 'Lentes 👓';
+        else if (characterConfig.accessory === 'aid-sunglasses.glb') accName = 'Gafas de Sol 🕶️';
+        else if (characterConfig.accessory === 'aid-mask.glb') accName = 'Máscara 😷';
+        setTxt('card-val-acc', accName);
+
+        modalCharCard.style.display = 'flex';
+      });
+    }
+
+    if (btnCloseCharCard && modalCharCard) {
+      btnCloseCharCard.addEventListener('click', () => {
+        modalCharCard.style.display = 'none';
+      });
+    }
+    if (btnOkCharCard && modalCharCard) {
+      btnOkCharCard.addEventListener('click', () => {
+        modalCharCard.style.display = 'none';
+      });
+    }
+    if (modalCharCard) {
+      modalCharCard.addEventListener('click', (e) => {
+        if (e.target === modalCharCard) modalCharCard.style.display = 'none';
+      });
+    }
+
+    document.getElementById('btn-enter-city').addEventListener('click', () => {
+      saveCharacterConfig();
+      switchMode('city');
+    });
+
+    document.getElementById('btn-edit-char').addEventListener('click', () => {
+      switchMode('creator');
+    });
+
+    // -------------------------------------------------------------
+    // KEYBOARD INPUT CONTROLS (WASD)
+    // -------------------------------------------------------------
+    const keys = {};
+    window.addEventListener('keydown', (e) => {
+      if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+      keys[e.code] = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+
+    // -------------------------------------------------------------
+    // DYNAMIC MODULAR CITY DATA & LOGIC
+    // -------------------------------------------------------------
+    const BIOMES = {
+      Nieve: {
+        name: 'Nieve',
+        icon: '❄️',
+        groundColor: 0xe0f2fe,
+        roadColor: 0x94a3b8,
+        curbColor: 0xcfd8dc,
+        skyColor: 0xcfe2f3,
+        fogColor: 0xcfe2f3,
+        badgeClass: 'badge-nieve'
+      },
+      Desierto: {
+        name: 'Desierto',
+        icon: '🏜️',
+        groundColor: 0xfde047,
+        roadColor: 0xd97706,
+        curbColor: 0xb45309,
+        skyColor: 0xfef3c7,
+        fogColor: 0xfef3c7,
+        badgeClass: 'badge-desierto'
+      },
+      Bosque: {
+        name: 'Bosque',
+        icon: '🌲',
+        groundColor: 0x5b9442,
+        roadColor: 0x2e3540,
+        curbColor: 0x475569,
+        skyColor: 0xa5d8ff,
+        fogColor: 0xa5d8ff,
+        badgeClass: 'badge-bosque'
+      },
+      Nether: {
+        name: 'Nether',
+        icon: '🔥',
+        groundColor: 0x50141b,
+        roadColor: 0x1c1315,
+        curbColor: 0x991b1b,
+        skyColor: 0x3f0a0a,
+        fogColor: 0x3f0a0a,
+        badgeClass: 'badge-nether'
+      },
+      Arenisca: {
+        name: 'Arenisca',
+        icon: '🏛️',
+        groundColor: 0xdfba87,
+        roadColor: 0x6e5d4f,
+        curbColor: 0xa88d6b,
+        skyColor: 0xfef08a,
+        fogColor: 0xfef08a,
+        badgeClass: 'badge-arenisca'
+      }
+    };
+
+    const HOUSE_MODELS = [
+      'Assets/House/Bosque/casa_madera_jardin_low_poly.glb',
+      'Assets/House/Desierto/desierto_voxel_low_poly.glb',
+      'Assets/House/Nieve/iglu_nieve_minecraft_low_poly (1).glb',
+      'Assets/House/Nether/portal_nether_sin_fondo (1).glb',
+      'Assets/House/Arenisca/portal_arenisca_floral_low_poly.glb'
+    ];
+
+    const units = [];
+    const UNIT_WIDTH = 2.8;
+    const cityGroup = new THREE.Group();
+    scene.add(cityGroup);
+    cityGroup.visible = false;
+
+    let selectedBiome = 'Bosque';
+
+    document.querySelectorAll('.biome-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.biome-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedBiome = btn.getAttribute('data-biome');
+      });
+    });
+
+    // Character counter for biome description (max 144, show remaining from last 30)
+    const descTextarea = document.getElementById('input-unit-desc');
+    const descCounterEl = document.getElementById('desc-char-counter');
+
+    function updateDescCharCounter() {
+      const maxChars = 144;
+      const currentLen = descTextarea.value.length;
+      const remaining = maxChars - currentLen;
+
+      if (remaining <= 0) {
+        descCounterEl.innerText = '0 caracteres restantes (límite alcanzado)';
+        descCounterEl.className = 'counter-tag limit';
+      } else if (remaining <= 30) {
+        descCounterEl.innerText = '⚠️ Quedan ' + remaining + ' caracteres';
+        descCounterEl.className = 'counter-tag warn';
+      } else {
+        descCounterEl.innerText = '';
+        descCounterEl.className = 'counter-tag';
+      }
+    }
+
+    descTextarea.addEventListener('input', updateDescCharCounter);
+
+    // Staging and single-click map generation
+    document.getElementById('btn-add-staged').addEventListener('click', () => {
+      const nameInput = document.getElementById('input-unit-name');
+      const descInput = document.getElementById('input-unit-desc');
+
+      const name = nameInput.value.trim() || ('Unidad ' + (units.length + 1));
+      const desc = descInput.value.trim() || getDefaultBiomeDescription(selectedBiome);
+
+      stageUnit(name, selectedBiome, desc);
+
+      // Set default name for next unit and reset description
+      nameInput.value = 'Casa ' + (units.length + 1);
+      descInput.value = ''; updateDescCharCounter();
+    });
+
+    document.getElementById('btn-generate-map').addEventListener('click', () => {
+      const genBtn = document.getElementById('btn-generate-map');
+      if (units.length === 0) {
+        alert('Por favor, añade al menos un bioma a la lista primero usando el botón "+ Añadir a la Lista".');
+        return;
+      }
+      genBtn.innerText = '⏳ Generando Mapa...';
+      rebuildCity().then(() => {
+        genBtn.innerText = '🚀 Actualizar / Regenerar Mapa';
+      });
+    });
+
+    function getDefaultBiomeDescription(biomeKey) {
+      if (biomeKey === 'Bosque') return 'Pueblo maderero con jardines y vegetación frondosa.';
+      if (biomeKey === 'Nieve') return 'Zona invernal con iglúes y pinos nevados.';
+      if (biomeKey === 'Desierto') return 'Asentamiento en las dunas con arquitectura voxel.';
+      if (biomeKey === 'Nether') return 'Dimensión oscura con portal de obsidiana y magma ardiente.';
+      if (biomeKey === 'Arenisca') return 'Templo antiguo con portal monumental de arenisca y vegetación mística.';
+      return 'Bioma modular.';
+    }
+
+    function saveUnitsToStorage() {
+      try {
+        localStorage.setItem('modular_city_units', JSON.stringify(units));
+      } catch (e) {
+        console.warn('Storage save failed:', e);
+      }
+    }
+
+    function loadUnitsFromStorage() {
+      const saved = localStorage.getItem('modular_city_units');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            parsed.forEach(u => {
+              if (u.biome === 'Bosque' && (!u.model || !u.model.includes('casa_madera_jardin'))) {
+                u.model = 'Assets/House/Bosque/casa_madera_jardin_low_poly.glb';
+              }
+              if (u.biome === 'Nether' && (!u.model || !u.model.includes('portal_nether'))) {
+                u.model = 'Assets/House/Nether/portal_nether_sin_fondo (1).glb';
+              }
+              if (u.biome === 'Arenisca' && (!u.model || !u.model.includes('portal_arenisca'))) {
+                u.model = 'Assets/House/Arenisca/portal_arenisca_floral_low_poly.glb';
+              }
+              if (!u.description) {
+                u.description = getDefaultBiomeDescription(u.biome);
+              }
+            });
+            units.push(...parsed);
+            updateUIList();
+            rebuildCity();
+            return;
+          }
+        } catch (err) {
+          console.warn('Storage load failed:', err);
+        }
+      }
+      updateUIList();
+      rebuildCity();
+    }
+
+    document.getElementById('btn-clear-all').addEventListener('click', () => {
+      units.length = 0;
+      saveUnitsToStorage();
+      updateUIList();
+      rebuildCity();
+    });
+
+    function stageUnit(name, biomeKey, description) {
+      let model = '';
+      if (biomeKey === 'Desierto') {
+        model = 'Assets/House/Desierto/desierto_voxel_low_poly.glb';
+      } else if (biomeKey === 'Nieve') {
+        model = 'Assets/House/Nieve/iglu_nieve_minecraft_low_poly (1).glb';
+      } else if (biomeKey === 'Bosque') {
+        model = 'Assets/House/Bosque/casa_madera_jardin_low_poly.glb';
+      } else if (biomeKey === 'Nether') {
+        model = 'Assets/House/Nether/portal_nether_sin_fondo (1).glb';
+      } else if (biomeKey === 'Arenisca') {
+        model = 'Assets/House/Arenisca/portal_arenisca_floral_low_poly.glb';
+      } else {
+        model = HOUSE_MODELS[Math.floor(Math.random() * HOUSE_MODELS.length)];
+      }
+
+      units.push({
+        id: Date.now() + Math.random(),
+        name: name,
+        biome: biomeKey,
+        description: description,
+        model: model
+      });
+
+      saveUnitsToStorage();
+      updateUIList();
+    }
+
+    const parsedGLTCache = {};
+
+    async function loadCityAssetGLB(filename) {
+      let url = filename;
+      if (!filename.includes('/')) {
+        url = 'Assets/City/Models/GLB format/' + filename;
+      }
+
+      // Reutilizar instancias en memoria VRAM para modelos ya cargados
+      if (parsedGLTCache[url]) {
+        return parsedGLTCache[url].clone(true);
+      }
+
+      const buf = await fetchGLBBuffer(url);
+      if (!buf) {
+        console.warn('Using fallback object for:', filename);
+        return createFallbackObject(filename);
+      }
+
+      return new Promise((resolve) => {
+        try {
+          loader.parse(buf.slice(0), '', (gltf) => {
+            const obj = gltf.scene;
+            obj.traverse((child) => {
+              if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = false; // Optimización crítica: elimina 180+ cálculos de sombra redundantes
+              }
+            });
+            parsedGLTCache[url] = obj.clone(true);
+            resolve(obj);
+          }, undefined, (err) => {
+            console.warn('GLTF parse error, using fallback for:', filename, err);
+            resolve(createFallbackObject(filename));
+          });
+        } catch (err) {
+          console.warn('GLTF exception, using fallback for:', filename, err);
+          resolve(createFallbackObject(filename));
+        }
+      });
+    }
+
+    function createFallbackObject(filename) {
+      const group = new THREE.Group();
+      if (filename.startsWith('building')) {
+        const bodyGeo = new THREE.BoxGeometry(1.4, 0.9, 1.2);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xecf0f1 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.45;
+        body.castShadow = true;
+        group.add(body);
+
+        const roofGeo = new THREE.ConeGeometry(1.1, 0.5, 4);
+        roofGeo.rotateY(Math.PI / 4);
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0xca8a04 });
+        const roof = new THREE.Mesh(roofGeo, roofMat);
+        roof.position.y = 1.15;
+        roof.castShadow = true;
+        group.add(roof);
+      } else if (filename.startsWith('tree')) {
+        const trunkGeo = new THREE.CylinderGeometry(0.06, 0.08, 0.4);
+        const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f });
+        const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+        trunk.position.y = 0.2;
+        group.add(trunk);
+
+        const folGeo = new THREE.DodecahedronGeometry(0.35);
+        const folMat = new THREE.MeshStandardMaterial({ color: 0x16a34a });
+        const foliage = new THREE.Mesh(folGeo, folMat);
+        foliage.position.y = 0.6;
+        foliage.castShadow = true;
+        group.add(foliage);
+      }
+      return group;
+    }
+
+    function createNameBillboard(text, biomeName, icon) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 150;
+      const ctx = canvas.getContext('2d');
+
+      const r = 24;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.lineTo(512 - r, 0);
+      ctx.quadraticCurveTo(512, 0, 512, r);
+      ctx.lineTo(512, 150 - r);
+      ctx.quadraticCurveTo(512, 150, 512 - r, 150);
+      ctx.lineTo(r, 150);
+      ctx.quadraticCurveTo(0, 150, 0, 150 - r);
+      ctx.lineTo(0, r);
+      ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = '#38bdf8';
+      ctx.stroke();
+
+      // Línea 1: Título de la Unidad
+      ctx.font = 'bold 36px -apple-system, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 256, 48);
+
+      // Línea 2: Bioma
+      ctx.font = 'bold 26px -apple-system, sans-serif';
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillText(icon + ' Bioma: ' + biomeName, 256, 102);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const mat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(1.9, 0.56, 1);
+      return sprite;
+    }
+
+    // -------------------------------------------------------------
+    // BUILDING COLLISIONS SYSTEM
+    // -------------------------------------------------------------
+    let buildingColliders = [];
+    const PLAYER_RADIUS = 0.22;
+
+    function checkBuildingCollision(px, pz) {
+      for (const box of buildingColliders) {
+        if (
+          px >= box.minX - PLAYER_RADIUS &&
+          px <= box.maxX + PLAYER_RADIUS &&
+          pz >= box.minZ - PLAYER_RADIUS &&
+          pz <= box.maxZ + PLAYER_RADIUS
+        ) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    let interactiveModules = [];
+
+
+    // -------------------------------------------------------------
+    // 🌊 ISLA COSTERA ORGÁNICA Y OCÉANO ANIMADO
+    // -------------------------------------------------------------
+    let activeClouds = [];
+    let oceanMesh = null;
+
+    const cloudMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.9,
+      transparent: true,
+      opacity: 0.92,
+      flatShading: true
+    });
+
+    const oceanUniforms = {
+      uTime: { value: 0 }
+    };
+
+    const oceanMat = new THREE.MeshStandardMaterial({
+      color: 0x0284c7, // Azul oceánico vibrante
+      roughness: 0.15,
+      metalness: 0.15,
+      transparent: true,
+      opacity: 0.88,
+      flatShading: true
+    });
+
+    // Oleaje ejecutado 100% en GPU mediante vertex shader (cero coste de CPU y sin sincronización PCIe)
+    oceanMat.onBeforeCompile = (shader) => {
+      shader.uniforms.uTime = oceanUniforms.uTime;
+      shader.vertexShader = 'uniform float uTime;\n' + shader.vertexShader;
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\nfloat wave = sin(position.x * 0.16 + uTime * 2.2) * 0.045 + cos(position.y * 0.2 + uTime * 1.8) * 0.035;\ntransformed.z += wave;'
+      );
+    };
+
+    const sandMat = new THREE.MeshStandardMaterial({
+      color: 0xd4a373, // Arena dorada cálida de playa
+      roughness: 0.92,
+      flatShading: true
+    });
+
+    const wetSandMat = new THREE.MeshStandardMaterial({
+      color: 0xb58a5c, // Arena mojada en la orilla
+      roughness: 0.6,
+      flatShading: true
+    });
+
+    const coastalRockMat = new THREE.MeshStandardMaterial({
+      color: 0x475569, // Roca costera
+      roughness: 0.95,
+      flatShading: true
+    });
+
+    const foamMat = new THREE.MeshStandardMaterial({
+      color: 0xf0fdf4, // Espuma marina de oleaje
+      roughness: 0.4,
+      transparent: true,
+      opacity: 0.82
+    });
+
+    function createCloudCluster(scale = 1.0) {
+      const cloud = new THREE.Group();
+      const mainW = (4.0 + Math.random() * 2.5) * scale;
+      const mainH = (1.1 + Math.random() * 0.4) * scale;
+      const mainD = (2.4 + Math.random() * 1.5) * scale;
+
+      const mainBlock = new THREE.Mesh(new THREE.BoxGeometry(mainW, mainH, mainD), cloudMat);
+      cloud.add(mainBlock);
+
+      const numPuffs = 4 + Math.floor(Math.random() * 3);
+      for (let p = 0; p < numPuffs; p++) {
+        const pw = mainW * (0.42 + Math.random() * 0.38);
+        const ph = mainH * (0.6 + Math.random() * 0.4);
+        const pd = mainD * (0.5 + Math.random() * 0.4);
+        const puff = new THREE.Mesh(new THREE.BoxGeometry(pw, ph, pd), cloudMat);
+        puff.position.set(
+          (Math.random() - 0.5) * (mainW * 0.85),
+          (Math.random() - 0.5) * (mainH * 0.35),
+          (Math.random() - 0.5) * (mainD * 0.85)
+        );
+        cloud.add(puff);
+      }
+      return cloud;
+    }
+
+    function buildOceanSkyAndClouds(minX, maxX) {
+      activeClouds = [];
+      const centerX = (minX + maxX) / 2;
+      const cloudMinX = centerX - 65;
+      const cloudMaxX = centerX + 65;
+
+      // Nubes marítimas flotando en el cielo sobre el océano y la isla
+      for (let i = 0; i < 14; i++) {
+        const c = createCloudCluster(1.0 + Math.random() * 0.5);
+        const y = 12.0 + Math.random() * 14.0; // En el cielo (Y de 12 a 26)
+        const x = cloudMinX + Math.random() * (cloudMaxX - cloudMinX);
+        const z = -45 + Math.random() * 90;
+        c.position.set(x, y, z);
+        c.userData = {
+          speed: 0.6 + Math.random() * 0.6,
+          initialY: y,
+          bobFreq: 0.5 + Math.random() * 0.5,
+          bobAmp: 0.2 + Math.random() * 0.2,
+          minX: cloudMinX,
+          maxX: cloudMaxX
+        };
+        activeClouds.push(c);
+        cityGroup.add(c);
+      }
+    }
+
+    function buildOceanIsland(minX, maxX, minZ, maxZ) {
+      const islandGroup = new THREE.Group();
+      const centerX = (minX + maxX) / 2;
+      const lenX = maxX - minX;
+      const lenZ = maxZ - minZ; // Exactamente 8.8m (de -4.4 a +4.4)
+
+      // 1. VASTO OCÉANO CON OLEAJE ANIMADO (Y = -0.38)
+      const oceanGeo = new THREE.PlaneGeometry(360, 360, 48, 48);
+      oceanMesh = new THREE.Mesh(oceanGeo, oceanMat);
+      oceanMesh.rotation.x = -Math.PI / 2;
+      oceanMesh.position.set(centerX, -0.38, 0);
+      oceanMesh.receiveShadow = false;
+      islandGroup.add(oceanMesh);
+
+      // Fondo marino profundo (color azul ultramar)
+      const seabedGeo = new THREE.PlaneGeometry(360, 360, 1, 1);
+      const seabedMesh = new THREE.Mesh(seabedGeo, new THREE.MeshStandardMaterial({ color: 0x034a6e, roughness: 0.95 }));
+      seabedMesh.rotation.x = -Math.PI / 2;
+      seabedMesh.position.set(centerX, -1.8, 0);
+      islandGroup.add(seabedMesh);
+
+      // 2. BASE INTERIOR DE ROCA Y TIERRA (Bajo toda la isla, ancho completo de 8.8m)
+      const underGeo = new THREE.BoxGeometry(lenX + 0.4, 0.4, lenZ + 0.4);
+      const underMesh = new THREE.Mesh(underGeo, coastalRockMat);
+      underMesh.position.set(centerX, -0.65, 0);
+      underMesh.receiveShadow = false;
+      islandGroup.add(underMesh);
+
+      // 3. COSTA ORGÁNICA NO FIJA: PLAYAS DE ARENA CONTINUAS A LO LARGO DE TODA LA ISLA
+      const step = 1.4;
+      const numSteps = Math.max(Math.ceil(lenX / step), 1);
+      const segW = lenX / numSteps;
+
+      // --- Costa Norte (Playa y calas orgánicas limpias a lo largo de Z = -4.4) ---
+      for (let i = 0; i < numSteps; i++) {
+        const segX = minX + (i + 0.5) * segW;
+        const offsetN = 0.95 + 0.65 * Math.sin(segX * 0.65) + 0.35 * Math.cos(segX * 1.35);
+        const beachD = offsetN;
+        const beachZ = minZ - beachD / 2;
+
+        const beachGeo = new THREE.BoxGeometry(segW, 0.24, beachD);
+        const beachMesh = new THREE.Mesh(beachGeo, (i % 2 === 0) ? sandMat : wetSandMat);
+        beachMesh.position.set(segX, -0.36, beachZ);
+        beachMesh.receiveShadow = false;
+        islandGroup.add(beachMesh);
+      }
+
+      // --- Costa Sur (Playa y calas orgánicas limpias a lo largo de Z = +4.4) ---
+      for (let i = 0; i < numSteps; i++) {
+        const segX = minX + (i + 0.5) * segW;
+        const offsetS = 0.95 + 0.65 * Math.cos(segX * 0.7) + 0.35 * Math.sin(segX * 1.25);
+        const beachD = offsetS;
+        const beachZ = maxZ + beachD / 2;
+
+        const beachGeo = new THREE.BoxGeometry(segW, 0.24, beachD);
+        const beachMesh = new THREE.Mesh(beachGeo, (i % 2 === 1) ? sandMat : wetSandMat);
+        beachMesh.position.set(segX, -0.36, beachZ);
+        beachMesh.receiveShadow = false;
+        islandGroup.add(beachMesh);
+      }
+
+      // --- Cabo Oeste (Detrás de la Tienda): Playa continua que cubre los 8.8m de ancho ---
+      const westCape = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.24, lenZ), sandMat);
+      westCape.position.set(minX - 1.2, -0.36, 0);
+      westCape.receiveShadow = false;
+      islandGroup.add(westCape);
+
+      // --- Cabo Este (Detrás del Trofeo Dorado): Promontorio rocoso continuo de 8.8m de ancho ---
+      const eastCape = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.24, lenZ), coastalRockMat);
+      eastCape.position.set(maxX + 1.2, -0.36, 0);
+      eastCape.receiveShadow = false;
+      islandGroup.add(eastCape);
+
+      // 4. ROCAS COSTERAS EN EL AGUA
+      const coastalBoulders = [
+        { dx: minX - 3.2, dz: -1.2, s: 0.8 },
+        { dx: minX - 2.8, dz: 2.2,  s: 0.9 },
+        { dx: minX + lenX * 0.25, dz: minZ - 2.2, s: 0.7 },
+        { dx: minX + lenX * 0.7,  dz: minZ - 2.6, s: 1.1 },
+        { dx: minX + lenX * 0.35, dz: maxZ + 2.4, s: 0.85 },
+        { dx: minX + lenX * 0.85, dz: maxZ + 2.2, s: 0.75 },
+        { dx: maxX + 3.4, dz: -0.8, s: 1.0 },
+        { dx: maxX + 2.9, dz: 1.8,  s: 0.8 }
+      ];
+
+      coastalBoulders.forEach((b) => {
+        const boulder = new THREE.Mesh(new THREE.BoxGeometry(b.s, b.s * 0.7, b.s), coastalRockMat);
+        boulder.position.set(b.dx, -0.36 + (b.s * 0.35) / 2, b.dz);
+        boulder.rotation.set(0.1, Math.random() * Math.PI, 0.1);
+        boulder.castShadow = true;
+        boulder.receiveShadow = false;
+        islandGroup.add(boulder);
+      });
+
+      // 2 Pequeños islotes de arena en aguas poco profundas
+      const islet1 = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.22, 1.8), sandMat);
+      islet1.position.set(centerX - 4.5, -0.35, minZ - 3.8);
+      islandGroup.add(islet1);
+
+      const islet2 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.22, 1.9), sandMat);
+      islet2.position.set(centerX + 5.0, -0.35, maxZ + 3.6);
+      islandGroup.add(islet2);
+
+      cityGroup.add(islandGroup);
+    }
+
+    async function rebuildCity() {
+      buildingColliders = [];
+      interactiveModules = [];
+      while (cityGroup.children.length > 0) {
+        cityGroup.remove(cityGroup.children[0]);
+      }
+
+      cityGroup.visible = (currentMode === 'city');
+
+      const count = units.length;
+      updateUIList();
+
+      // Number of residential columns along the avenue
+      const numColumns = Math.ceil(count / 2);
+      const avenueLength = Math.max(numColumns * UNIT_WIDTH, 6.0);
+      const startX = -avenueLength / 2 + UNIT_WIDTH / 2;
+
+      document.getElementById('stat-units').innerText = 'Tienda + ' + count + ' unidades + Trofeo (' + numColumns + ' cuadras, ' + avenueLength.toFixed(1) + ' m)';
+
+      // Ajustar cámara de sombras al largo real de la avenida (sombras más nítidas y eficientes)
+      const halfAvenue = Math.max((avenueLength + 14) / 2, 16);
+      mainSun.shadow.camera.left = -halfAvenue;
+      mainSun.shadow.camera.right = halfAvenue;
+      mainSun.shadow.camera.top = 15;
+      mainSun.shadow.camera.bottom = -15;
+      mainSun.shadow.camera.updateProjectionMatrix();
+
+      if (currentMode === 'city') {
+        // Cielo azul vibrante de montaña con nubes
+        scene.background.setHex(0x38bdf8);
+        scene.fog.color.setHex(0x93c5fd);
+        scene.fog.near = 45;
+        scene.fog.far = 135;
+      }
+
+      // -------------------------------------------------------------
+      // 🏬 TIENDA CENTRAL PERMANENTE (Al inicio de la calle mirando de frente)
+      // -------------------------------------------------------------
+      // Colocada inmediatamente antes de la primera columna sin solaparse:
+      const shopLotWidth = 3.2;
+      const shopX = startX - UNIT_WIDTH / 2 - shopLotWidth / 2;
+
+      // Terreno de la Tienda que cubre el ancho total exacto de los biomas (8.8m, de Z = -4.4 a +4.4)
+      const shopPlazaGeo = new THREE.BoxGeometry(shopLotWidth, 0.5, 8.8);
+      const shopPlazaMat = new THREE.MeshStandardMaterial({ color: 0x5b9442, roughness: 0.85 });
+      const shopPlaza = new THREE.Mesh(shopPlazaGeo, shopPlazaMat);
+      shopPlaza.position.set(shopX, -0.25, 0);
+      shopPlaza.receiveShadow = true;
+      cityGroup.add(shopPlaza);
+
+      // Conexión del camino de tierra desde el mostrador de la tienda hacia la avenida central
+      const shopPathGeo = new THREE.BoxGeometry(shopLotWidth / 2 + 0.1, 0.02, 2.4);
+      const shopPathMat = new THREE.MeshStandardMaterial({ color: 0x825b38, roughness: 0.96 });
+      const shopPath = new THREE.Mesh(shopPathGeo, shopPathMat);
+      shopPath.position.set(shopX + shopLotWidth / 4, 0.01, 0);
+      shopPath.receiveShadow = true;
+      cityGroup.add(shopPath);
+
+      // Decoración de parque/plaza en los laterales de la tienda para llenar armónicamente el ancho de 8.8m
+      try {
+        loadCityAssetGLB('planter.glb').then(p1 => {
+          p1.position.set(shopX, 0.01, -2.8);
+          cityGroup.add(p1);
+        });
+        loadCityAssetGLB('planter.glb').then(p2 => {
+          p2.position.set(shopX, 0.01, 2.8);
+          cityGroup.add(p2);
+        });
+      } catch (e) {}
+
+      // Cargar y posicionar el modelo de la Tienda
+      try {
+        const shopModel = await loadCityAssetGLB('Assets/House/Shop/puesto_mercado_minecraft_low_poly.glb');
+        const shopPivot = new THREE.Group();
+
+        // Auto-escalar la tienda para que quede armónica con el ancho de la calle
+        const shopBox = new THREE.Box3().setFromObject(shopModel);
+        const shopSize = new THREE.Vector3();
+        shopBox.getSize(shopSize);
+        const shopMaxDim = Math.max(shopSize.x, shopSize.z);
+        const shopScale = 2.4 / shopMaxDim;
+        shopModel.scale.set(shopScale, shopScale, shopScale);
+
+        const shopScaledBox = new THREE.Box3().setFromObject(shopModel);
+        const shopCenter = new THREE.Vector3();
+        shopScaledBox.getCenter(shopCenter);
+
+        // Centrar modelo dentro del pivote
+        shopModel.position.set(-shopCenter.x, -shopScaledBox.min.y, -shopCenter.z);
+        shopPivot.add(shopModel);
+
+        // Rotación: Math.PI / 2 para que el mostrador mire de frente a lo largo de la calle (+X)
+        shopPivot.position.set(shopX, 0, 0);
+        shopPivot.rotation.y = Math.PI / 2;
+        cityGroup.add(shopPivot);
+
+        // Letrero 3D de la Tienda Central
+        const shopBillboard = createNameBillboard('Tienda del Mercado', 'Mercado Central', '🏬');
+        shopBillboard.position.set(shopX, 2.2, 0);
+        cityGroup.add(shopBillboard);
+
+        interactiveModules.push({
+          type: 'shop',
+          name: 'Tienda del Mercado',
+          biome: 'Mercado Central',
+          icon: '🏬',
+          x: shopX,
+          z: 0,
+          radius: 2.3,
+          description: 'Puesto comercial con productos, armas y pociones mágicas.'
+        });
+
+        // Colisionador sólido de la tienda (mostrador, estantes y paredes)
+        buildingColliders.push({
+          minX: shopX - 1.2,
+          maxX: shopX + 0.65,
+          minZ: -1.35,
+          maxZ: 1.35
+        });
+      } catch (err) {
+        console.error('Error cargando modelo de Tienda:', err);
+      }
+
+      // Camino central de tierra rústico de la isla
+      for (let col = 0; col < numColumns; col++) {
+        const colCenterX = startX + col * UNIT_WIDTH;
+        const roadGroup = new THREE.Group();
+
+        // Superficie principal del camino de tierra
+        const roadGeo = new THREE.BoxGeometry(UNIT_WIDTH, 0.02, 2.4);
+        const roadMat = new THREE.MeshStandardMaterial({
+          color: 0x825b38, // Tierra marrón cálida natural
+          roughness: 0.96
+        });
+        const roadMesh = new THREE.Mesh(roadGeo, roadMat);
+        roadMesh.position.set(colCenterX, 0.01, 0);
+        roadMesh.receiveShadow = true;
+        roadGroup.add(roadMesh);
+
+        // Bordes rústicos de tierra compactada y guijarros
+        const curbGeo = new THREE.BoxGeometry(UNIT_WIDTH, 0.025, 0.14);
+        const curbMat = new THREE.MeshStandardMaterial({ color: 0x694727, roughness: 0.96 });
+        const curbN = new THREE.Mesh(curbGeo, curbMat);
+        curbN.position.set(colCenterX, 0.012, -1.2);
+        roadGroup.add(curbN);
+
+        const curbS = new THREE.Mesh(curbGeo, curbMat);
+        curbS.position.set(colCenterX, 0.012, 1.2);
+        roadGroup.add(curbS);
+
+        // Huellas rústicas de tierra en lugar de líneas blancas de autopista
+        const patchGeo = new THREE.BoxGeometry(0.8, 0.022, 0.35);
+        const patchMat = new THREE.MeshStandardMaterial({ color: 0x6e492b, roughness: 0.98 });
+        const patch = new THREE.Mesh(patchGeo, patchMat);
+        patch.position.set(colCenterX, 0.011, (col % 2 === 0 ? 0.35 : -0.35));
+        roadGroup.add(patch);
+
+        cityGroup.add(roadGroup);
+      }
+
+      // Build each house intercalated across the street (North vs South)
+      for (let i = 0; i < count; i++) {
+        const unit = units[i];
+        const biome = BIOMES[unit.biome] || BIOMES['Bosque'];
+        const col = Math.floor(i / 2);
+        const isSouth = (i % 2 === 1);
+        const unitCenterX = startX + col * UNIT_WIDTH;
+
+        const unitGroup = new THREE.Group();
+
+        // 1. Lot Terrain (North at Z = -2.8, South at Z = +2.8)
+        const lotDepth = 3.2;
+        const lotZ = isSouth ? 2.8 : -2.8;
+        const lotGeo = new THREE.BoxGeometry(UNIT_WIDTH, 0.5, lotDepth);
+        const lotMat = new THREE.MeshStandardMaterial({
+          color: biome.groundColor,
+          roughness: 0.85
+        });
+        const lotMesh = new THREE.Mesh(lotGeo, lotMat);
+        lotMesh.position.set(unitCenterX, -0.25, lotZ);
+        lotMesh.receiveShadow = true;
+        unitGroup.add(lotMesh);
+
+        // 2. House with Pivot for clean rotation & positioning
+        const house = await loadCityAssetGLB(unit.model);
+        const housePivot = new THREE.Group();
+
+        const box = new THREE.Box3().setFromObject(house);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const maxDim = Math.max(size.x, size.z);
+        let s = 1.0;
+        if (unit.biome === 'Arenisca') {
+          // El portal de arenisca es predominantemente alto (13.6m nativos).
+          // Escalamos por su altura para que quede nivelado con las casas de los demás biomas (~1.8m)
+          const targetHeight = 1.85;
+          s = targetHeight / (size.y || 13.66);
+        } else {
+          let targetWidth = 2.1;
+          if (unit.biome === 'Bosque') targetWidth = 2.2;
+          else if (unit.biome === 'Nether') targetWidth = 2.0;
+          else if (unit.biome === 'Nieve') targetWidth = 2.0;
+          else if (unit.biome === 'Desierto') targetWidth = 2.1;
+          s = targetWidth / maxDim;
+        }
+        house.scale.set(s, s, s);
+
+        const scaledBox = new THREE.Box3().setFromObject(house);
+        const center = new THREE.Vector3();
+        scaledBox.getCenter(center);
+
+        // Center house within pivot
+        house.position.set(-center.x, -scaledBox.min.y, -center.z);
+        housePivot.add(house);
+
+        // Position Pivot:
+        // North houses at Z = -2.5, facing +Z (towards street)
+        // South houses at Z = +2.5, facing -Z (rotated 180° towards street)
+        const houseZ = isSouth ? 2.5 : -2.5;
+        housePivot.position.set(unitCenterX, 0, houseZ);
+        housePivot.rotation.y = isSouth ? Math.PI : 0;
+        unitGroup.add(housePivot);
+
+        // 3. Sendero de tierra conectando la casa con el camino central
+        const walkwayGeo = new THREE.BoxGeometry(1.0, 0.02, 1.4);
+        const walkwayMat = new THREE.MeshStandardMaterial({
+          color: 0x8a6340, // Sendero de tierra rústico
+          roughness: 0.96
+        });
+        const walkwayMesh = new THREE.Mesh(walkwayGeo, walkwayMat);
+        const walkwayZ = isSouth ? 1.7 : -1.7;
+        walkwayMesh.position.set(unitCenterX, 0.011, walkwayZ);
+        walkwayMesh.receiveShadow = true;
+        unitGroup.add(walkwayMesh);
+
+        // 4. Fence (only in Forest)
+        if (unit.biome === 'Bosque') {
+          const fence = await loadCityAssetGLB('fence-1x2.glb');
+          const fenceZ = isSouth ? 3.6 : -3.6;
+          fence.position.set(unitCenterX, 0, fenceZ);
+          fence.rotation.y = isSouth ? Math.PI : 0;
+          unitGroup.add(fence);
+        }
+
+        // 5. Flora & Biome Features
+        const floraX = isSouth ? (unitCenterX - 0.9) : (unitCenterX + 0.9);
+        const floraZ = isSouth ? 2.5 : -2.5;
+
+        if (unit.biome === 'Bosque') {
+          const tree = await loadCityAssetGLB('tree-large.glb');
+          tree.position.set(floraX, 0, floraZ);
+          unitGroup.add(tree);
+        } else if (unit.biome === 'Nieve') {
+          const snowTree = await loadCityAssetGLB('tree-small.glb');
+          snowTree.position.set(floraX, 0, floraZ);
+          snowTree.traverse((c) => {
+            if (c.isMesh && c.material) {
+              const m = c.material.clone();
+              m.color.setHex(0xe2e8f0);
+              c.material = m;
+            }
+          });
+          unitGroup.add(snowTree);
+        } else if (unit.biome === 'Desierto') {
+          const planter = await loadCityAssetGLB('planter.glb');
+          planter.position.set(floraX, 0, floraZ);
+          unitGroup.add(planter);
+        } else if (unit.biome === 'Nether') {
+          const netherSpire = new THREE.Group();
+          const colGeo = new THREE.CylinderGeometry(0.12, 0.16, 0.7, 6);
+          const colMat = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.9 });
+          const col = new THREE.Mesh(colGeo, colMat);
+          col.position.y = 0.35;
+          col.castShadow = true;
+          netherSpire.add(col);
+
+          const coreGeo = new THREE.DodecahedronGeometry(0.18);
+          const coreMat = new THREE.MeshStandardMaterial({
+            color: 0xf97316,
+            emissive: 0xff3b30,
+            emissiveIntensity: 2.8,
+            roughness: 0.2
+          });
+          const core = new THREE.Mesh(coreGeo, coreMat);
+          core.position.y = 0.78;
+          core.castShadow = true;
+          netherSpire.add(core);
+
+          netherSpire.position.set(floraX, 0, floraZ);
+          unitGroup.add(netherSpire);
+        } else if (unit.biome === 'Arenisca') {
+          // Sandstone decorative pillar with glowing top
+          const pillarGroup = new THREE.Group();
+          const pGeo = new THREE.BoxGeometry(0.3, 0.7, 0.3);
+          const pMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.9 });
+          const pMesh = new THREE.Mesh(pGeo, pMat);
+          pMesh.position.y = 0.35;
+          pMesh.castShadow = true;
+          pillarGroup.add(pMesh);
+
+          const orbGeo = new THREE.DodecahedronGeometry(0.15);
+          const orbMat = new THREE.MeshStandardMaterial({
+            color: 0xf59e0b,
+            emissive: 0xd97706,
+            emissiveIntensity: 1.5,
+            roughness: 0.3
+          });
+          const orb = new THREE.Mesh(orbGeo, orbMat);
+          orb.position.y = 0.8;
+          orb.castShadow = true;
+          pillarGroup.add(orb);
+
+          pillarGroup.position.set(floraX, 0, floraZ);
+          unitGroup.add(pillarGroup);
+        }
+
+        // 6. Floating Title Billboard
+        let billboardY = 1.8;
+        if (unit.biome === 'Desierto' || unit.biome === 'Nether') billboardY = 2.1;
+        else if (unit.biome === 'Arenisca') billboardY = 2.05;
+        else if (unit.biome === 'Bosque') billboardY = 2.2;
+        const billboard = createNameBillboard(unit.name, biome.name, biome.icon);
+        billboard.position.set(unitCenterX, billboardY, houseZ);
+        unitGroup.add(billboard);
+
+        interactiveModules.push({
+          type: 'biome',
+          name: unit.name,
+          biome: biome.name,
+          icon: biome.icon,
+          x: unitCenterX,
+          z: houseZ,
+          radius: 2.2,
+          description: unit.description || getDefaultBiomeDescription(unit.biome)
+        });
+
+        cityGroup.add(unitGroup);
+
+        // Register house collision box
+        housePivot.updateMatrixWorld(true);
+        const houseBox = new THREE.Box3().setFromObject(housePivot);
+        buildingColliders.push({
+          minX: houseBox.min.x,
+          maxX: houseBox.max.x,
+          minZ: houseBox.min.z,
+          maxZ: houseBox.max.z
+        });
+      }
+
+      // Si el número de biomas es impar, llenar el lote vacío de enfrente con una sección de césped (plaza/parque verde)
+      if (count > 0 && count % 2 !== 0) {
+        const lastCol = Math.floor((count - 1) / 2);
+        const emptyLotCenterX = startX + lastCol * UNIT_WIDTH;
+        const emptyLotZ = 2.8; // El lote Sur queda libre cuando count es impar (1, 3, 5...)
+
+        const parkGroup = new THREE.Group();
+
+        // 1. Terreno de césped idéntico al de la plaza de la tienda
+        const parkGeo = new THREE.BoxGeometry(UNIT_WIDTH, 0.5, 3.2);
+        const parkMat = new THREE.MeshStandardMaterial({ color: 0x5b9442, roughness: 0.85 });
+        const parkMesh = new THREE.Mesh(parkGeo, parkMat);
+        parkMesh.position.set(emptyLotCenterX, -0.25, emptyLotZ);
+        parkMesh.receiveShadow = true;
+        parkGroup.add(parkMesh);
+
+        // 2. Jardineras y arbolito decorativo en la zona de césped
+        try {
+          const planter = await loadCityAssetGLB('planter.glb');
+          planter.position.set(emptyLotCenterX, 0.01, emptyLotZ);
+          parkGroup.add(planter);
+
+          const parkTree = await loadCityAssetGLB('tree-small.glb');
+          parkTree.position.set(emptyLotCenterX - 0.7, 0, emptyLotZ);
+          parkGroup.add(parkTree);
+        } catch (e) {
+          console.warn('Error cargando decoración del parque impar:', e);
+        }
+
+        cityGroup.add(parkGroup);
+      }
+
+      // -------------------------------------------------------------
+      // 🏆 TROFEO DORADO MONUMENTAL AL FINAL DEL CAMINO
+      // -------------------------------------------------------------
+      const podioLotWidth = 3.6;
+      const lastAvenueColX = startX + (numColumns > 0 ? (numColumns - 1) : 0) * UNIT_WIDTH;
+      const podioX = lastAvenueColX + UNIT_WIDTH / 2 + podioLotWidth / 2;
+
+      // -------------------------------------------------------------
+      // 🏔️ GENERACIÓN DE MONTAÑA Y NUBES DEBAJO DE LA CIUDAD
+      // -------------------------------------------------------------
+      const minMtX = shopX - shopLotWidth / 2 - 0.2;
+      const maxMtX = podioX + podioLotWidth / 2 + 0.2;
+      buildOceanIsland(minMtX, maxMtX, -4.4, 4.4);
+      buildOceanSkyAndClouds(minMtX, maxMtX);
+
+
+      // Terreno base ceremonial del Trofeo con ancho total exacto de los biomas (8.8m, de Z = -4.4 a +4.4)
+      const podioPlazaGeo = new THREE.BoxGeometry(podioLotWidth, 0.5, 8.8);
+      const podioPlazaMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
+      const podioPlaza = new THREE.Mesh(podioPlazaGeo, podioPlazaMat);
+      podioPlaza.position.set(podioX, -0.25, 0);
+      podioPlaza.receiveShadow = true;
+      cityGroup.add(podioPlaza);
+
+      // Conexión del camino de tierra que llega hasta los escalones del pedestal del Trofeo
+      const podioPathGeo = new THREE.BoxGeometry(podioLotWidth / 2 + 0.1, 0.02, 2.4);
+      const podioPathMat = new THREE.MeshStandardMaterial({ color: 0x825b38, roughness: 0.96 });
+      const podioPath = new THREE.Mesh(podioPathGeo, podioPathMat);
+      podioPath.position.set(podioX - podioLotWidth / 4, 0.01, 0);
+      podioPath.receiveShadow = true;
+      cityGroup.add(podioPath);
+
+      // Cargar y posicionar el modelo del Trofeo Dorado
+      try {
+        const trofeoModel = await loadCityAssetGLB('Assets/House/Podio/trofeo_dorado_minecraft_low_poly.glb');
+        const trofeoPivot = new THREE.Group();
+
+        // Auto-escalar el trofeo para que tenga una presencia imponente y armónica (~2.2m de altura)
+        const trofeoBox = new THREE.Box3().setFromObject(trofeoModel);
+        const trofeoSize = new THREE.Vector3();
+        trofeoBox.getSize(trofeoSize);
+        const trofeoScale = 2.2 / (trofeoSize.y || 6.38);
+        trofeoModel.scale.set(trofeoScale, trofeoScale, trofeoScale);
+
+        const trofeoScaledBox = new THREE.Box3().setFromObject(trofeoModel);
+        const trofeoCenter = new THREE.Vector3();
+        trofeoScaledBox.getCenter(trofeoCenter);
+
+        // Centrar modelo dentro del pivote
+        trofeoModel.position.set(-trofeoCenter.x, -trofeoScaledBox.min.y, -trofeoCenter.z);
+        trofeoPivot.add(trofeoModel);
+
+        // Rotación: -Math.PI / 2 para que el escalón frontal y la copa miren hacia el inicio de la avenida (-X)
+        trofeoPivot.position.set(podioX, 0, 0);
+        trofeoPivot.rotation.y = -Math.PI / 2;
+        cityGroup.add(trofeoPivot);
+
+        // Letrero 3D del Trofeo Dorado
+        const trofeoBillboard = createNameBillboard('Trofeo Dorado', 'Meta Final', '🏆');
+        trofeoBillboard.position.set(podioX, 2.5, 0);
+        cityGroup.add(trofeoBillboard);
+
+        interactiveModules.push({
+          type: 'trofeo',
+          name: 'Trofeo Dorado',
+          biome: 'Meta Final',
+          icon: '🏆',
+          x: podioX,
+          z: 0,
+          radius: 2.4,
+          description: 'Monumento ceremonial de la victoria al final del camino.'
+        });
+
+        // Colisionador físico sólido del trofeo (pedestal, escalón y copa)
+        buildingColliders.push({
+          minX: podioX - 0.75,
+          maxX: podioX + 0.75,
+          minZ: -0.95,
+          maxZ: 0.95
+        });
+      } catch (err) {
+        console.error('Error cargando modelo de Trofeo:', err);
+      }
+
+      if (currentMode === 'city' && checkBuildingCollision(playerGroup.position.x, playerGroup.position.z)) {
+        playerGroup.position.z = 0;
+      }
+    }
+
+    function updateUIList() {
+      const listEl = document.getElementById('units-list');
+      const stagedCountEl = document.getElementById('staged-count');
+      if (stagedCountEl) {
+        stagedCountEl.innerText = units.length + (units.length === 1 ? ' listo' : ' listos');
+      }
+
+      listEl.innerHTML = '';
+
+      if (units.length === 0) {
+        listEl.innerHTML = '<div style="color: #94a3b8; font-size: 0.78rem; text-align: center; padding: 14px;">No hay biomas en la lista.<br>Añade títulos y descripciones arriba.</div>';
+        return;
+      }
+
+      units.forEach((unit, index) => {
+        const biome = BIOMES[unit.biome] || BIOMES['Bosque'];
+        const card = document.createElement('div');
+        card.className = 'unit-card';
+        card.innerHTML = `
+          <div class="unit-info" style="flex: 1; min-width: 0;">
+            <span style="font-size: 1.1rem; flex-shrink: 0;">${biome.icon}</span>
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-weight: 700; color: #0f172a; font-size: 0.83rem;">${unit.name}</span>
+                <span class="unit-badge ${biome.badgeClass}">${biome.name}</span>
+              </div>
+              <button class="btn-more-details" data-idx="${index}">📖 Más detalles</button>
+            </div>
+          </div>
+          <button class="btn-delete-unit" title="Eliminar de la lista">✕</button>
+        `;
+
+        card.querySelector('.btn-delete-unit').addEventListener('click', (e) => {
+          e.stopPropagation();
+          units.splice(index, 1);
+          saveUnitsToStorage();
+          updateUIList();
+          rebuildCity();
+        });
+
+        const moreBtn = card.querySelector('.btn-more-details');
+        if (moreBtn) {
+          moreBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showBiomeDetailsModal(unit.name, biome.name, biome.icon, unit.description || getDefaultBiomeDescription(unit.biome));
+          });
+        }
+
+        listEl.appendChild(card);
+      });
+    }
+
+    // Modals and Interactive Module Handlers
+    const proximityPrompt = document.getElementById('proximity-prompt');
+    const promptIcon = document.getElementById('prompt-icon');
+    const promptTargetName = document.getElementById('prompt-target-name');
+    const btnAccessModule = document.getElementById('btn-access-module');
+
+    const modalConstruction = document.getElementById('modal-construction');
+    const modalConstTitle = document.getElementById('modal-const-title');
+    const modalConstDesc = document.getElementById('modal-const-desc');
+    const btnCloseConst = document.getElementById('btn-close-const');
+    const btnOkConst = document.getElementById('btn-ok-const');
+
+    const modalDetails = document.getElementById('modal-details');
+    const modalDetailTitle = document.getElementById('modal-detail-title');
+    const modalDetailBadge = document.getElementById('modal-detail-badge');
+    const modalDetailText = document.getElementById('modal-detail-text');
+    const btnCloseDetails = document.getElementById('btn-close-details');
+    const btnOkDetails = document.getElementById('btn-ok-details');
+
+    let activeNearModule = null;
+
+    function openConstructionModal(title, desc) {
+      modalConstTitle.innerHTML = '🚧 En Construcción';
+      modalConstDesc.innerText = 'El módulo "' + title + '" está actualmente en construcción.';
+      modalConstruction.classList.add('active');
+    }
+
+    function closeConstructionModal() {
+      modalConstruction.classList.remove('active');
+    }
+
+    btnCloseConst.addEventListener('click', closeConstructionModal);
+    btnOkConst.addEventListener('click', closeConstructionModal);
+    modalConstruction.addEventListener('click', (e) => {
+      if (e.target === modalConstruction) closeConstructionModal();
+    });
+
+    function showBiomeDetailsModal(name, biomeName, icon, description) {
+      modalDetailTitle.innerText = icon + ' ' + name;
+      modalDetailBadge.innerText = 'Bioma: ' + biomeName;
+      modalDetailText.innerText = description;
+      modalDetails.classList.add('active');
+    }
+
+    function closeDetailsModal() {
+      modalDetails.classList.remove('active');
+    }
+
+    btnCloseDetails.addEventListener('click', closeDetailsModal);
+    btnOkDetails.addEventListener('click', closeDetailsModal);
+    modalDetails.addEventListener('click', (e) => {
+      if (e.target === modalDetails) closeDetailsModal();
+    });
+
+    btnAccessModule.addEventListener('click', () => {
+      if (activeNearModule) {
+        openConstructionModal(activeNearModule.name, activeNearModule.description);
+      }
+    });
+
+    function checkProximityToModules(px, pz) {
+      if (currentMode !== 'city') {
+        proximityPrompt.classList.remove('visible');
+        activeNearModule = null;
+        return;
+      }
+
+      let closest = null;
+      let minDistance = Infinity;
+
+      for (const m of interactiveModules) {
+        const dx = px - m.x;
+        const dz = pz - m.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        if (dist <= m.radius && dist < minDistance) {
+          minDistance = dist;
+          closest = m;
+        }
+      }
+
+      if (closest) {
+        activeNearModule = closest;
+        promptIcon.innerText = closest.icon;
+        promptTargetName.innerText = closest.name + ' (' + closest.biome + ')';
+        proximityPrompt.classList.add('visible');
+      } else {
+        activeNearModule = null;
+        proximityPrompt.classList.remove('visible');
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+
+      const newAspect = window.innerWidth / window.innerHeight;
+      orthoCamera.left = -orthoHeight * newAspect / 2;
+      orthoCamera.right = orthoHeight * newAspect / 2;
+      orthoCamera.top = orthoHeight / 2;
+      orthoCamera.bottom = -orthoHeight / 2;
+      orthoCamera.updateProjectionMatrix();
+
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // -------------------------------------------------------------
+    // INITIALIZATION & GAME LOOP
+    // -------------------------------------------------------------
+    loadSavedCharacterConfig();
+    loadCharacterModel(characterConfig);
+    loadUnitsFromStorage();
+
+    const clock = new THREE.Clock();
+    const followPlayerCheckbox = document.getElementById('check-follow-player');
+
+    let frameCount = 0;
+    let lastFpsTime = performance.now();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+
+      // Real-time FPS & Triangles Performance Tracking
+      frameCount++;
+      const now = performance.now();
+      if (now - lastFpsTime >= 300) {
+        const fps = Math.round((frameCount * 1000) / (now - lastFpsTime));
+        const fpsEl = document.getElementById('hud-fps');
+        if (fpsEl) {
+          fpsEl.innerText = fps;
+          if (fps >= 55) fpsEl.style.color = '#22c55e';
+          else if (fps >= 30) fpsEl.style.color = '#eab308';
+          else fpsEl.style.color = '#ef4444';
+        }
+
+        const triEl = document.getElementById('hud-triangles');
+        if (triEl && renderer.info) {
+          const tris = renderer.info.render.triangles;
+          triEl.innerText = tris >= 1000 ? (tris / 1000).toFixed(1) + 'k' : tris;
+        }
+
+        frameCount = 0;
+        lastFpsTime = now;
+      }
+
+      if (playerMixer) playerMixer.update(delta);
+
+      if (currentMode === 'creator') {
+        neonRing.rotation.z += delta * 0.4;
+      } else if (currentMode === 'city') {
+        // Animación de oleaje en GPU (sin stalls de CPU ni subidas de búfers)
+        oceanUniforms.uTime.value = now * 0.0016;
+
+        // Animación de deriva suave y flotación de las nubes marítimas
+        if (activeClouds.length > 0) {
+          const timeSec = now * 0.001;
+          for (let i = 0; i < activeClouds.length; i++) {
+            const c = activeClouds[i];
+            c.position.x += c.userData.speed * delta;
+            c.position.y = c.userData.initialY + Math.sin(timeSec * c.userData.bobFreq + i) * c.userData.bobAmp;
+            if (c.position.x > c.userData.maxX) {
+              c.position.x = c.userData.minX;
+            }
+          }
+        }
+
+        if (isPlayerLoaded) {
+        const isSprinting = keys['ShiftLeft'] || keys['ShiftRight'];
+        const speed = isSprinting ? 4.5 : 2.5;
+
+        const camDir = new THREE.Vector3();
+        camera.getWorldDirection(camDir);
+        camDir.y = 0;
+        camDir.normalize();
+
+        const camRight = new THREE.Vector3();
+        camRight.crossVectors(camDir, new THREE.Vector3(0, 1, 0)).normalize();
+
+        const moveDir = new THREE.Vector3();
+        if (keys['KeyW'] || keys['ArrowUp']) moveDir.add(camDir);
+        if (keys['KeyS'] || keys['ArrowDown']) moveDir.sub(camDir);
+        if (keys['KeyD'] || keys['ArrowRight']) moveDir.add(camRight);
+        if (keys['KeyA'] || keys['ArrowLeft']) moveDir.sub(camRight);
+
+        if (moveDir.lengthSq() > 0.001) {
+          moveDir.normalize();
+
+          const stepX = moveDir.x * speed * delta;
+          const stepZ = moveDir.z * speed * delta;
+          const targetX = playerGroup.position.x + stepX;
+          const targetZ = playerGroup.position.z + stepZ;
+
+          if (!checkBuildingCollision(targetX, playerGroup.position.z)) {
+            playerGroup.position.x = targetX;
+          }
+          if (!checkBuildingCollision(playerGroup.position.x, targetZ)) {
+            playerGroup.position.z = targetZ;
+          }
+
+          const targetAngle = Math.atan2(moveDir.x, moveDir.z);
+          playerGroup.rotation.y = THREE.MathUtils.lerp(playerGroup.rotation.y, targetAngle, 0.2);
+
+          playAnimation(isSprinting ? 'sprint' : 'walk');
+        } else {
+          playAnimation('idle');
+        }
+
+        const numCols = Math.ceil(units.length / 2);
+        const avenueLen = Math.max(numCols * UNIT_WIDTH, 6.0);
+        const startStreetX = -avenueLen / 2 + UNIT_WIDTH / 2;
+        const lastColX = startStreetX + (numCols > 0 ? (numCols - 1) : 0) * UNIT_WIDTH;
+        const minStreetX = startStreetX - UNIT_WIDTH / 2 - 3.2 - 0.5;
+        const maxStreetX = lastColX + UNIT_WIDTH / 2 + 3.6 + 0.5;
+        playerGroup.position.x = THREE.MathUtils.clamp(playerGroup.position.x, minStreetX, maxStreetX);
+        playerGroup.position.z = THREE.MathUtils.clamp(playerGroup.position.z, -3.8, 3.8);
+
+        if (followPlayerCheckbox.checked) {
+          controls.target.lerp(
+            new THREE.Vector3(playerGroup.position.x, playerGroup.position.y + 0.3, playerGroup.position.z),
+            0.08
+          );
+        }
+
+        checkProximityToModules(playerGroup.position.x, playerGroup.position.z);
+        }
+      }
+
+      if (controls.enabled) controls.update();
+      if (currentMode === 'creator' && creatorViewMode === '2d') {
+        renderer.render(scene, orthoCamera);
+      } else {
+        renderer.render(scene, camera);
+      }
+    }
+
+    animate();
+  </script>
+</body>
+</html>
