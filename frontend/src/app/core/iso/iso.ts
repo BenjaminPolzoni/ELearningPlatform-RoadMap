@@ -146,20 +146,14 @@ export function base(c: Punto, semiAncho: number, semiAlto: number, espesor: num
 }
 
 /**
- * Camino curvo entre dos islas. El control se levanta perpendicular al tramo para que la
- * cinta se arquee — un segmento recto entre rombos isométricos se lee plano.
+ * Camino en escuadra entre dos islas: un único quiebre en ángulo recto (sube/baja recto,
+ * después corre horizontal), nunca una curva ni varios quiebres cortos seguidos — como las
+ * corridas largas del mapa de Super Mario Bros. 3, no una escalera de pasos chicos. Cada
+ * tramo queda tan largo como el hueco real entre islas.
  */
-export function camino(a: Punto, b: Punto, arco = 0.22): string {
-  const mx = (a.x + b.x) / 2;
-  const my = (a.y + b.y) / 2;
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const largo = Math.hypot(dx, dy) || 1;
-  // normal del tramo, siempre hacia arriba en pantalla
-  const nx = -dy / largo;
-  const ny = -Math.abs(dx / largo);
-  const d = largo * arco;
-  return `M ${a.x} ${a.y} Q ${mx + nx * d} ${my + ny * d} ${b.x} ${b.y}`;
+export function camino(a: Punto, b: Punto): string {
+  const codo: Punto = { x: a.x, y: b.y };
+  return `M ${a.x} ${a.y} L ${codo.x} ${codo.y} L ${b.x} ${b.y}`;
 }
 
 /** Parte fraccionaria en [0,1) — base del ruido determinista de decorado. */

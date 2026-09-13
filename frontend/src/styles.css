@@ -1610,8 +1610,9 @@ button.rk-estado:hover {
 }
 .vertical-road path {
   fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  shape-rendering: crispEdges;
 }
 .vertical-road .road-shadow {
   stroke: #ae7336;

@@ -30,6 +30,7 @@ import {
   lodgeArt,
   nodeArt,
   nodeVerb,
+  orthogonalRoute,
   QuestionData,
   renderWorldScenery,
   templeArt,
@@ -721,10 +722,11 @@ export class UnidadMapa {
     const w = this.world();
     return w.challenges
       .filter((c) => c.optional && c.branchFrom)
-      .map((c) => {
-        const [x, y] = c.branchFrom!;
-        return `M${(x / 100) * w.worldWidth},${(y / 100) * w.worldHeight} Q${((x + c.x) / 200) * w.worldWidth},${(y / 100) * w.worldHeight + 24} ${(c.x / 100) * w.worldWidth},${(c.y / 100) * w.worldHeight}`;
-      });
+      .map((c) =>
+        this.branchCurvePoints(c)
+          .map(([x, y], i) => `${i ? 'L' : 'M'}${(x / 100) * w.worldWidth},${(y / 100) * w.worldHeight}`)
+          .join(' '),
+      );
   });
 
   protected readonly castleTopPercent = computed(() => {
@@ -901,22 +903,10 @@ export class UnidadMapa {
     return points;
   }
 
-  /** Muestrea la curva Bezier cuadrática del ramal (misma fórmula que `branchPaths()`). */
+  /** Muestrea el tramo en escuadra del ramal (misma geometría que dibuja `branchPaths()`). */
   private branchCurvePoints(target: VerticalChallenge, steps = 17): [number, number][] {
     const w = this.world();
-    const [x0, y0] = target.branchFrom!;
-    const x1 = target.x;
-    const y1 = target.y;
-    const cx = (x0 + x1) / 2;
-    const cy = y0 + (24 / w.worldHeight) * 100;
-    return Array.from({ length: steps }, (_, i) => {
-      const t = i / (steps - 1);
-      const u = 1 - t;
-      return [u * u * x0 + 2 * u * t * cx + t * t * x1, u * u * y0 + 2 * u * t * cy + t * t * y1] as [
-        number,
-        number,
-      ];
-    });
+    return orthogonalRoute(target.branchFrom!, [target.x, target.y], w.worldWidth, w.worldHeight, steps);
   }
 
   /** Camina por el tramo curvo real hasta el próximo desafío, sin reabrir ninguna tarjeta. */

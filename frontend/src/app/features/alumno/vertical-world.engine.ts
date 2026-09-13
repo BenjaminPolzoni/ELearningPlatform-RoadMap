@@ -87,6 +87,57 @@ export const challengeSpacing = (id: number) =>
 
 const clampX = (x: number) => Math.max(30, Math.min(70, x));
 
+/**
+ * Vértices de un camino en escuadra de un solo quiebre entre dos puntos en % del mundo: un
+ * tramo vertical y uno horizontal, siempre en ángulo recto — nunca una curva ni varios
+ * quiebres cortos seguidos, para que cada tramo entre nodos se lea como una corrida larga
+ * (estilo mapa de Super Mario Bros. 3), no una escalera de pasos chicos. Mismo criterio que
+ * `camino()` en el mapa general de islas.
+ */
+function pixelStairCorners(from: [number, number], to: [number, number]): [number, number][] {
+  const [x0] = from;
+  const [, y1] = to;
+  return [from, [x0, y1], to];
+}
+
+/**
+ * Tramo de camino en escuadra (solo ángulos rectos, sin curvas) entre dos puntos en % del
+ * mundo — ver `pixelStairCorners()`. Se muestrea en `steps` puntos repartidos por distancia
+ * real (no por parámetro) para que `roads[id][17]` (punto de bifurcación de ramales) siga
+ * cayendo a mitad de tramo.
+ */
+export function orthogonalRoute(
+  from: [number, number],
+  to: [number, number],
+  worldWidth: number,
+  worldHeight: number,
+  steps = 33,
+): [number, number][] {
+  const corners = pixelStairCorners(from, to);
+
+  const segLengths = corners.slice(1).map((point, i) => {
+    const [ax, ay] = corners[i];
+    const [bx, by] = point;
+    return Math.hypot(((bx - ax) * worldWidth) / 100, ((by - ay) * worldHeight) / 100);
+  });
+  const total = segLengths.reduce((sum, n) => sum + n, 0) || 1;
+
+  return Array.from({ length: steps }, (_, step) => {
+    let d = (step / (steps - 1)) * total;
+    for (let i = 0; i < segLengths.length; i++) {
+      const last = i === segLengths.length - 1;
+      if (d <= segLengths[i] || last) {
+        const t = segLengths[i] ? Math.min(1, d / segLengths[i]) : 0;
+        const [ax, ay] = corners[i];
+        const [bx, by] = corners[i + 1];
+        return [ax + (bx - ax) * t, ay + (by - ay) * t] as [number, number];
+      }
+      d -= segLengths[i];
+    }
+    return to;
+  });
+}
+
 export interface GeneratedWorld {
   theme: WorldTheme;
   worldWidth: number;
@@ -118,45 +169,33 @@ export function generateVerticalWorld(
   const worldHeight = ascent[mainCount] + 600;
   const groundY = (id: number) => worldHeight - 150 - ascent[id];
 
-  // Stops: start at index 0 (bottom center) + main nodes
+  // Stops: start at index 0 (bottom center) + main nodes.
+  // Agrupados en tramos de 2-3 nodos por carril: dentro de un tramo comparten exactamente
+  // la misma x (recorrido recto, sin ningún quiebre cerca de los nodos), y el carril solo
+  // cambia —de un lado al otro— al pasar al siguiente tramo. Así el camino resultante es un
+  // zigzag de pocos quiebres grandes y espaciados (estilo Super Mario Bros. 3), en vez de un
+  // escalón por cada nodo.
   const stops: [number, number][] = [[50, (groundY(0) / worldHeight) * 100]];
   const lanes = appearance.lanes;
+  let tramo = 0;
+  let restantesEnTramo = 0;
+  let carrilActual = 50;
 
   for (let id = 1; id <= mainCount; id++) {
-    const zone = Math.floor((id - 1) / lanes.length);
-    const lane = lanes[(id - 1) % lanes.length];
-    const x = clampX((zone % 2 ? 100 - lane : lane) + (variation(id, 13) % 7) - 3);
-    stops.push([id === mainCount ? 50 : x, (groundY(id) / worldHeight) * 100]);
+    if (restantesEnTramo <= 0) {
+      restantesEnTramo = 2 + (variation(tramo, 53) % 2); // tramos de 2 o 3 nodos
+      const lane = lanes[tramo % lanes.length];
+      carrilActual = clampX(tramo % 2 ? 100 - lane : lane);
+      tramo++;
+    }
+    restantesEnTramo--;
+    stops.push([id === mainCount ? 50 : carrilActual, (groundY(id) / worldHeight) * 100]);
   }
 
-  // Calculate smooth Bezier roads
+  // Calcula caminos en escuadra (ángulo recto), no curvas — ver orthogonalRoute().
   const roads: [number, number][][] = [
     [],
-    ...stops.slice(1).map((to, i) => {
-      const from = stops[i];
-      const dy = to[1] - from[1];
-      const bend = variation(i + 1, 29) % 4;
-      const slope = (id: number) =>
-        id === 0 || id === mainCount
-          ? 0
-          : (stops[id + 1][0] - stops[id - 1][0]) / (stops[id + 1][1] - stops[id - 1][1]);
-      const y1 = [0.48, 0.28, 0.4, 0.3][bend];
-      const y2 = [0.7, 0.75, 0.6, 0.8][bend];
-      const cx1 = clampX(from[0] + slope(i) * dy * y1);
-      const cx2 = clampX(to[0] - slope(i + 1) * dy * (1 - y2));
-
-      return Array.from({ length: 33 }, (_, step) => {
-        const t = step / 32;
-        const u = 1 - t;
-        return [
-          u * u * u * from[0] + 3 * u * u * t * cx1 + 3 * u * t * t * cx2 + t * t * t * to[0],
-          u * u * u * from[1] +
-            3 * u * u * t * (from[1] + dy * y1) +
-            3 * u * t * t * (from[1] + dy * y2) +
-            t * t * t * to[1],
-        ] as [number, number];
-      });
-    }),
+    ...stops.slice(1).map((to, i) => orthogonalRoute(stops[i], to, WORLD_WIDTH, worldHeight)),
   ];
 
   // Clone challenges and set positions

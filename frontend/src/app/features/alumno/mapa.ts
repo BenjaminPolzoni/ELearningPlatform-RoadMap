@@ -116,7 +116,7 @@ const MARGEN = 90;
               <line [attr.x1]="l.a.x" [attr.y1]="l.a.y" [attr.x2]="l.b.x" [attr.y2]="l.b.y" />
             }
           </g>
-          <g fill="none" stroke-linecap="round">
+          <g fill="none" stroke-linecap="square" style="shape-rendering: crispEdges">
             @for (t of tramos(); track t.id) {
               <path [attr.d]="t.d" [attr.stroke]="t.color" stroke-width="11" opacity="0.28" filter="url(#neon)" />
               <path [attr.d]="t.d" [attr.stroke]="t.color" stroke-width="4" [attr.opacity]="t.tenue ? 0.4 : 0.95" />
@@ -269,7 +269,7 @@ const MARGEN = 90;
                 </g>
 
                 <!-- Caminos de neón -->
-                <g fill="none" stroke-linecap="round">
+                <g fill="none" stroke-linecap="square" style="shape-rendering: crispEdges">
                   @for (t of tramos(); track t.id) {
                     <path [attr.d]="t.d" [attr.stroke]="t.color" stroke-width="11" opacity="0.28" filter="url(#neon)" />
                     <path [attr.d]="t.d" [attr.stroke]="t.color" stroke-width="4" [attr.opacity]="t.tenue ? 0.4 : 0.95" />
