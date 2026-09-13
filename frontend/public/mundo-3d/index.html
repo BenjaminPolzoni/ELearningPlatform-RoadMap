@@ -401,6 +401,34 @@
       margin-bottom: 2px;
     }
 
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .btn-toggle-panel {
+      background: none;
+      border: none;
+      font-size: 1.1rem;
+      line-height: 1;
+      color: #64748b;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-toggle-panel:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .ui-panel.collapsed .panel-body {
+      display: none;
+    }
+
     .ui-panel .subtitle {
       font-size: 0.78rem;
       color: #64748b;
@@ -1134,7 +1162,11 @@
 
   <!-- SCREEN 2: MODULAR CITY PANEL -->
   <div class="ui-panel" id="panel-city">
-    <h2>🗺️ Ciudad Modular 3D</h2>
+    <div class="panel-header">
+      <h2>🗺️ Ciudad Modular 3D</h2>
+      <button class="btn-toggle-panel" id="btn-toggle-panel" title="Ocultar/mostrar panel">▾</button>
+    </div>
+    <div class="panel-body" id="panel-city-body">
     <div class="subtitle">Añade unidades con nombre y bioma personalizado</div>
 
     <button class="btn-edit-char" id="btn-edit-char">👤 Personalizar Personaje</button>
@@ -1195,6 +1227,7 @@
     <div class="info-bar">
       <span id="stat-units">0 unidades (0 cuadras, 0.0 m)</span>
       <button class="btn-clear" id="btn-clear-all">Limpiar Todo</button>
+    </div>
     </div>
   </div>
 
@@ -1746,6 +1779,14 @@
     const panelCity = document.getElementById('panel-city');
     const statsHud = document.getElementById('stats-hud');
     const controlsBanner = document.getElementById('controls-banner');
+
+    // Panel lateral plegable: el botón solo colapsa/expande el cuerpo, para que no
+    // tape la pantalla mientras se explora la ciudad.
+    const btnTogglePanel = document.getElementById('btn-toggle-panel');
+    btnTogglePanel.addEventListener('click', () => {
+      const collapsed = panelCity.classList.toggle('collapsed');
+      btnTogglePanel.textContent = collapsed ? '▸' : '▾';
+    });
 
     function switchMode(newMode) {
       currentMode = newMode;
@@ -3294,10 +3335,15 @@
         playerGroup.position.z = THREE.MathUtils.clamp(playerGroup.position.z, -3.8, 3.8);
 
         if (followPlayerCheckbox.checked) {
-          controls.target.lerp(
-            new THREE.Vector3(playerGroup.position.x, playerGroup.position.y + 0.3, playerGroup.position.z),
-            0.08
-          );
+          // Trasladar cámara y target juntos para mantener fija la distancia/ángulo
+          // (antes solo se movía el target y la distancia cámara-personaje se
+          // desviaba sola con cada paso: OrbitControls recalcula el radio a partir
+          // del offset cámara-target en cada update, así que si el target se movía
+          // y la cámara no, el radio efectivo cambiaba solo).
+          const desiredTarget = new THREE.Vector3(playerGroup.position.x, playerGroup.position.y + 0.3, playerGroup.position.z);
+          const followDelta = desiredTarget.sub(controls.target).multiplyScalar(0.08);
+          controls.target.add(followDelta);
+          camera.position.add(followDelta);
         }
 
         checkProximityToModules(playerGroup.position.x, playerGroup.position.z);
