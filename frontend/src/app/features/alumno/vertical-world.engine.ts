@@ -253,67 +253,130 @@ export function generateVerticalWorld(
   };
 }
 
-// SVG Artwork for End-Goals
+// SVG Artwork for End-Goals — sprites 8-bit reales: toda la geometría se arma sobre una
+// grilla de GOAL_UNIT px (rects, nunca curvas ni diagonales libres), para que el castillo,
+// el templo, la fortaleza y el refugio compartan el mismo lineamiento pixelado que el resto
+// del mapa (nodos, antorchas, tótems…) en vez de la ilustración vectorial suave que tenían.
+const GOAL_UNIT = 4;
+const goalBlock = (gx: number, gy: number, gw: number, gh: number, fill: string): string =>
+  `<rect x="${gx * GOAL_UNIT}" y="${gy * GOAL_UNIT}" width="${gw * GOAL_UNIT}" height="${gh * GOAL_UNIT}" fill="${fill}"/>`;
+
+/** Fila de almenas alineadas a la grilla — dientes de 2 unidades separados por huecos de 2,
+ * el remate típico de una muralla 8-bit. */
+function goalMerlons(gx: number, gy: number, gw: number, fill: string): string {
+  let out = '';
+  for (let x = gx; x + 2 <= gx + gw; x += 4) out += goalBlock(x, gy, 2, 2, fill);
+  return out;
+}
+
+/** Techo a dos aguas en escalera de píxeles: se ensancha 1 unidad por fila hacia abajo —
+ * el remate de techo típico 8-bit, nunca una diagonal lisa. */
+function goalRoof(centerX: number, gyTop: number, rows: number, fill: string): string {
+  let out = '';
+  for (let r = 0; r < rows; r++) {
+    const halfW = r + 1;
+    out += goalBlock(centerX - halfW, gyTop + r, halfW * 2, 1, fill);
+  }
+  return out;
+}
+
+/** Torreón con almenas: cuerpo + cara de sombra + remate — reutilizado por castillo/fortaleza. */
+function goalTower(gx: number, gy: number, gw: number, gh: number, wall: string, shade: string, merlon: string): string {
+  const shadeW = Math.max(2, Math.round(gw * 0.4));
+  return (
+    goalBlock(gx, gy, gw, gh, wall) +
+    goalBlock(gx + gw - shadeW, gy, shadeW, gh, shade) +
+    goalMerlons(gx, gy - 2, gw, merlon)
+  );
+}
+
 export const castleArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-rendering="crispEdges">
-  <ellipse cx="120" cy="180" rx="110" ry="13" fill="#775028" opacity=".24"/>
-  <path d="M12 170h216v12H12zM24 158h192v14H24z" fill="#b8884d" stroke="#6d462a" stroke-width="3"/>
-  <path d="M28 68h44v94H28zM168 68h44v94h-44zM70 93h100v69H70zM94 42h52v62H94z" fill="#dcb679" stroke="#63452d" stroke-width="4"/>
-  <path d="M30 72h10v86H30zM96 47h10v54H96zM170 72h10v86h-10zM74 100h8v58h-8z" fill="#ffe2a5"/>
-  <path d="M60 72h10v86H60zM136 47h8v51h-8zM200 72h10v86h-10zM158 100h10v58h-10z" fill="#ae7a49"/>
-  <path d="m24 68 26-35 26 35zm65-25 31-42 31 42zm75 25 26-35 26 35z" fill="#d95c45" stroke="#773b2d" stroke-width="4"/>
-  <path d="m33 58 17-22 5 9-12 13zm68-25 19-27 5 9-13 18zm72 25 17-22 5 9-12 13z" fill="#ff9260"/>
-  <path d="M74 86h13v10h13V86h13v10h14V86h13v10h13V86h13v22H74z" fill="#f3d096" stroke="#755434" stroke-width="3"/>
-  <path d="M102 165v-31l8-12h20l8 12v31z" fill="#563524" stroke="#9e7040" stroke-width="5"/>
-  <path d="M110 164v-28l6-8h9l6 8v28z" fill="#2e2529"/>
-  <path d="M43 88h12v22H43zM183 88h12v22h-12zM114 57h12v22h-12z" fill="#5f4430" stroke="#b78b55" stroke-width="3"/>
-  <path d="M32 119h34m-34 16h34m-34 16h34m106-32h36m-36 16h36m-36 16h36M80 117h20m40 0h21" stroke="#b28550" stroke-width="3"/>
-  <path d="M96 166h48v7H96zM89 174h62v8H89zM80 183h80v8H80z" fill="#ffe1a1" stroke="#a57948" stroke-width="3"/>
-  <path d="M50 34V8m140 26V8" stroke="#68432e" stroke-width="3"/>
-  <path d="M52 8h24l-6 7 6 7H52zM192 8h24l-6 7 6 7h-24z" fill="#e25c45" stroke="#8f442b" stroke-width="2"/>
+  <ellipse cx="120" cy="184" rx="108" ry="12" fill="#5c3a1c" opacity=".22"/>
+  <g stroke="#4a2c1a" stroke-width="2" stroke-linejoin="round">
+  ${goalBlock(4, 44, 52, 3, '#8a5a32')}
+  ${goalBlock(7, 41, 46, 3, '#b8804a')}
+  ${goalBlock(10, 38, 40, 3, '#dcb679')}
+  ${goalTower(6, 16, 10, 22, '#f0c988', '#c98f4c', '#e2573c')}
+  ${goalTower(44, 16, 10, 22, '#f0c988', '#c98f4c', '#e2573c')}
+  ${goalTower(16, 26, 6, 15, '#dcb679', '#c98f4c', '#e2573c')}
+  ${goalTower(38, 26, 6, 15, '#dcb679', '#c98f4c', '#e2573c')}
+  ${goalTower(22, 8, 16, 33, '#f0c988', '#c98f4c', '#e2573c')}
+  ${goalBlock(9, 23, 3, 4, '#4a2c1a')}
+  ${goalBlock(48, 23, 3, 4, '#4a2c1a')}
+  ${goalBlock(27, 17, 6, 4, '#4a2c1a')}
+  ${goalBlock(27, 32, 2, 2, '#4a2c1a')}
+  ${goalBlock(31, 32, 2, 2, '#4a2c1a')}
+  ${goalBlock(27, 34, 6, 7, '#3a2013')}
+  ${goalBlock(29, 0, 2, 8, '#6c471f')}
+  ${goalBlock(31, 1, 5, 1, '#e2573c')}
+  ${goalBlock(31, 2, 4, 1, '#e2573c')}
+  ${goalBlock(31, 3, 3, 1, '#e2573c')}
+  </g>
 </svg>`;
 
 export const templeArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-rendering="crispEdges">
-  <ellipse cx="120" cy="184" rx="111" ry="12" fill="#153629" opacity=".4"/>
-  <path d="M12 162h216v23H12zM30 139h180v23H30zM49 115h142v24H49zM65 89h110v26H65zM77 43h86v47H77z" fill="#938958" stroke="#384d32" stroke-width="4"/>
-  <path d="M15 164h210M33 142h174M53 118h134M69 93h102M81 47h77" stroke="#d2c38b" stroke-width="6"/>
-  <path d="M100 183V91h40v92z" fill="#b2a577"/>
-  <path d="M99 112h42m-42 16h42m-42 16h42m-42 16h42m-42 16h42" stroke="#635e3b" stroke-width="4"/>
-  <path d="M104 88V62h32v26z" fill="#263729"/>
-  <path d="M73 44V29h93v15zM89 28V15h60v13z" fill="#78824b" stroke="#34472e" stroke-width="4"/>
-  <path d="M30 164v-21h14m18-28h15v-21m85-9v21h19m18 38h14v27" fill="none" stroke="#4f8e43" stroke-width="8"/>
-  <path d="M82 54h9v15h-9zm67 0h8v15h-8z" fill="#ddb65e"/>
+  <ellipse cx="120" cy="184" rx="108" ry="12" fill="#0c2018" opacity=".35"/>
+  <g stroke="#241f10" stroke-width="2" stroke-linejoin="round">
+  ${goalBlock(3, 38, 54, 4, '#8f8a55')}
+  ${goalBlock(7, 34, 46, 4, '#9d9861')}
+  ${goalBlock(11, 30, 38, 4, '#aba46c')}
+  ${goalBlock(15, 26, 30, 4, '#938d5c')}
+  ${goalBlock(19, 20, 22, 6, '#7f7a50')}
+  ${goalBlock(28, 26, 4, 16, '#5c5636')}
+  ${goalBlock(24, 8, 12, 12, '#7f7a50')}
+  ${goalBlock(22, 6, 16, 2, '#33532f')}
+  ${goalBlock(24, 4, 12, 2, '#33532f')}
+  ${goalBlock(27, 14, 6, 6, '#26311f')}
+  ${goalBlock(29, 0, 2, 8, '#4c4326')}
+  ${goalBlock(24, 10, 3, 3, '#ffd76a')}
+  ${goalBlock(33, 10, 3, 3, '#ffd76a')}
+  </g>
 </svg>`;
 
+// La fortaleza se ve sobre el tile más oscuro de los cuatro (gótico, casi negro) — el
+// contorno acá es claro/lila en vez de oscuro, si no la silueta se pierde contra el fondo.
 export const fortressArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-rendering="crispEdges">
-  <ellipse cx="120" cy="184" rx="111" ry="12" fill="#100f20" opacity=".6"/>
-  <path d="M14 164h212v23H14zM25 70h42v94H25zM173 70h42v94h-42zM65 104h110v60H65zM94 42h52v76H94z" fill="#4b506f" stroke="#1b213a" stroke-width="4"/>
-  <path d="m20 70 26-48 26 48zm69-28 31-42 31 42zm79 28 26-48 26 48z" fill="#773453" stroke="#211c38" stroke-width="4"/>
-  <path d="M32 77h7v83h-7zm70-31h7v63h-7zm79 31h7v83h-7z" fill="#8484a1"/>
-  <path d="M103 164v-31l17-19 17 19v31z" fill="#ae4265" stroke="#27233e" stroke-width="5"/>
-  <path d="M112 164v-27l8-11 8 11v27z" fill="#251a32"/>
-  <path d="M41 91h9v20h-9zm149 0h9v20h-9zm-74-34h8v23h-8z" fill="#ec7181"/>
-  <path d="M68 95h12v12h15V95h13v12h24V95h13v12h15V95h12v25H68z" fill="#6e6b88" stroke="#262b44" stroke-width="3"/>
-  <path d="M98 166h44v8H98zM89 175h62v9H89zM79 185h82v8H79z" fill="#a07e91" stroke="#3a334f" stroke-width="3"/>
-  <path d="M46 20V4m148 16V4" stroke="#9991a8" stroke-width="2"/>
+  <ellipse cx="120" cy="184" rx="112" ry="16" fill="#cfc6ea" opacity=".18"/>
+  <g stroke="#cfc6ea" stroke-width="2" stroke-linejoin="round">
+  ${goalBlock(4, 44, 52, 3, '#33324a')}
+  ${goalBlock(7, 41, 46, 3, '#3d3c57')}
+  ${goalBlock(10, 38, 40, 3, '#4b4a6a')}
+  ${goalTower(6, 16, 10, 22, '#4b506f', '#33314a', '#773453')}
+  ${goalTower(44, 16, 10, 22, '#4b506f', '#33314a', '#773453')}
+  ${goalTower(16, 26, 6, 15, '#3f4360', '#33314a', '#773453')}
+  ${goalTower(38, 26, 6, 15, '#3f4360', '#33314a', '#773453')}
+  ${goalTower(22, 8, 16, 33, '#4b506f', '#33314a', '#773453')}
+  ${goalBlock(9, 23, 3, 4, '#1c1a2c')}
+  ${goalBlock(48, 23, 3, 4, '#1c1a2c')}
+  ${goalBlock(27, 17, 6, 4, '#ec7181')}
+  ${goalBlock(27, 34, 6, 7, '#1c1a2c')}
+  ${goalBlock(29, 0, 2, 8, '#252238')}
+  ${goalBlock(31, 1, 5, 1, '#773453')}
+  ${goalBlock(31, 2, 4, 1, '#773453')}
+  ${goalBlock(31, 3, 3, 1, '#773453')}
+  </g>
 </svg>`;
 
+// El techo blanco se pierde contra el tile de nieve (también claro) sin un contorno oscuro
+// que lo separe — mismo criterio que la fortaleza, pero invertido.
 export const lodgeArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-rendering="crispEdges">
-  <ellipse cx="120" cy="184" rx="111" ry="12" fill="#2d4463" opacity=".35"/>
-  <path d="M8 168h224v22H8z" fill="#e8f1fb" stroke="#9fb6d1" stroke-width="4"/>
-  <path d="M56 108h128v62H56z" fill="#8a5a36" stroke="#402719" stroke-width="4"/>
-  <path d="M56 122h128M56 136h128M56 150h128" stroke="#6d4526" stroke-width="4"/>
-  <path d="m120 34 88 74H32z" fill="#5d3c28" stroke="#2c1b12" stroke-width="4"/>
-  <path d="M120 34l88 74h-22l-66-56-66 56H32z" fill="#f3f8ff" stroke="#a8bed6" stroke-width="4"/>
-  <path d="M26 106h188v14H26z" fill="#e8f1fb" stroke="#9fb6d1" stroke-width="4"/>
-  <path d="M104 126h32v44h-32z" fill="#4a2f1d" stroke="#2a1a10" stroke-width="3"/>
-  <path d="M110 146h5v5h-5z" fill="#ffd98a"/>
-  <path d="M70 126h26v24H70zm74 0h26v24h-26z" fill="#ffd166" stroke="#3b2616" stroke-width="4"/>
-  <path d="M83 126v24M70 138h26M157 126v24M144 138h26" stroke="#3b2616" stroke-width="3"/>
-  <path d="M166 46h20v36h-20z" fill="#6c6f7d" stroke="#2b2f3c" stroke-width="4"/>
-  <path d="M162 42h28v9h-28z" fill="#eef5ff" stroke="#a8bed6" stroke-width="3"/>
-  <g class="lodge-smoke" fill="#d8e5f4" opacity=".85"><path d="M170 26h9v9h-9zm11-13h8v8h-8zm-3-13h7v7h-7z"/></g>
-  <path d="M120 34V10" stroke="#43291b" stroke-width="4"/>
-  <path d="M122 11h30l-9 8 9 8h-30z" fill="#4f9fd0" stroke="#24486b" stroke-width="3"/>
+  <ellipse cx="120" cy="184" rx="108" ry="12" fill="#1c3050" opacity=".3"/>
+  <g stroke="#2f5a78" stroke-width="2" stroke-linejoin="round">
+  ${goalBlock(2, 42, 56, 3, '#e8f1fb')}
+  ${goalBlock(14, 27, 32, 15, '#8a5a36')}
+  ${goalBlock(14, 31, 32, 1, '#6d4526')}
+  ${goalBlock(14, 35, 32, 1, '#6d4526')}
+  ${goalBlock(14, 39, 32, 1, '#6d4526')}
+  ${goalBlock(37, 2, 4, 16, '#6c6f7d')}${goalBlock(36, 0, 6, 3, '#eef5ff')}
+  ${goalRoof(30, 10, 17, '#f3f8ff')}
+  ${goalBlock(29, 10, 2, 4, '#5d3c28')}
+  ${goalBlock(26, 29, 8, 13, '#4a2f1d')}
+  ${goalBlock(29, 34, 2, 2, '#ffd98a')}
+  ${goalBlock(18, 29, 6, 6, '#ffd166')}
+  ${goalBlock(36, 29, 6, 6, '#ffd166')}
+  ${goalBlock(19, 30, 4, 4, '#8fd3ff')}
+  ${goalBlock(37, 30, 4, 4, '#8fd3ff')}
+  </g>
 </svg>`;
 
 // Interactive Node SVGs

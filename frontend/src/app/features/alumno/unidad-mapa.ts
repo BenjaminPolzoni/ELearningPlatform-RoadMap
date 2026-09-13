@@ -71,10 +71,29 @@ interface ConfettiPiece {
       overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior: contain;
-      scrollbar-width: thin;
-      scrollbar-color: #a57b40 #ebbd64;
+      /* El scroll sigue funcionando (rueda, touch, teclado) — solo se oculta la barra. */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
       background: #382d23;
       position: relative;
+    }
+    .map-viewport::-webkit-scrollbar {
+      display: none;
+    }
+    /*
+      En pantalla completa, el panel debe cubrir TODO el viewport real — pero el elemento
+      fullscreen-eado (#mapPanel) trae position: relative de Tailwind (clase relative en el
+      template), y esa regla de autor le gana a la posición fixed que el navegador intenta
+      aplicarle vía :fullscreen. Sin este override, el panel se queda con el ancho heredado
+      de .vertical-world (tope de 1448px) en vez de ocupar el monitor entero, y el fondo del
+      mapa (tile) no llega a cubrir el resto: se ve el color plano de --ground.
+    */
+    .map-panel.expanded {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100dvh;
+      z-index: 50;
     }
     .map-panel.expanded .map-viewport {
       height: 100dvh;
@@ -175,8 +194,9 @@ interface ConfettiPiece {
             <div
               class="map-world relative w-full overflow-hidden"
               [style.height.px]="world().worldHeight"
-              [style.background]="'var(--ground) url(' + world().tile + ') repeat-y'"
-              style="background-size: 100% auto; image-rendering: pixelated;"
+              [style.background-color]="'var(--ground)'"
+              [style.background-image]="'url(' + world().tile + ')'"
+              style="background-repeat: repeat-y; background-size: 100% auto; image-rendering: pixelated;"
             >
               <!-- 1. Capa de Terreno y Caminos SVG -->
               <div class="vertical-terrain">
@@ -197,6 +217,11 @@ interface ConfettiPiece {
                   <path [attr.d]="roadPathD()" class="road-edge" />
                   <path [attr.d]="roadPathD()" class="road-sand" />
                   <path [attr.d]="roadPathD()" class="road-center" />
+                  <!-- Tramo final: del último desafío a la base del castillo/casa -->
+                  <path [attr.d]="castleApproachD()" class="road-shadow" />
+                  <path [attr.d]="castleApproachD()" class="road-edge" />
+                  <path [attr.d]="castleApproachD()" class="road-sand" />
+                  <path [attr.d]="castleApproachD()" class="road-center" />
                 </svg>
 
                 <!-- Escenario Procedural (Monedas, Casas Hongo, Nubes, Flores, Antorchas, etc.) -->
@@ -733,6 +758,23 @@ export class UnidadMapa {
     const w = this.world();
     const last = w.stops[w.mainCount] || [50, 10];
     return ((last[1] / 100) * w.worldHeight - 355) / (w.worldHeight / 100);
+  });
+
+  /**
+   * Tramo final del camino, del último desafío principal a la base del castillo/casa: sin
+   * esto el sendero terminaba en el último nodo y la meta quedaba flotando, desconectada.
+   * `.vertical-castle` mide 17.5% del ancho del mundo con aspect-ratio 240:200 (ver
+   * styles.css); 0.92 aproxima dónde el dibujo pixelado toca el suelo dentro de ese alto.
+   */
+  protected readonly castleApproachD = computed(() => {
+    const w = this.world();
+    const last = w.stops[w.mainCount] ?? [50, 90];
+    const svgHeightPx = (17.5 / 100) * w.worldWidth * (200 / 240);
+    const baseYPx = (this.castleTopPercent() / 100) * w.worldHeight + svgHeightPx * 0.92;
+    const target: [number, number] = [last[0], (baseYPx / w.worldHeight) * 100];
+    return orthogonalRoute(last, target, w.worldWidth, w.worldHeight, 9)
+      .map(([x, y], i) => `${i ? 'L' : 'M'}${(x / 100) * w.worldWidth},${(y / 100) * w.worldHeight}`)
+      .join(' ');
   });
 
   protected readonly startTopPercent = computed(() => {
