@@ -15,6 +15,10 @@
 [ext_resource type="PackedScene" uid="uid://c2v8lfooee773" path="res://Assets/City/Models/GLB format/planter.glb" id="13_planter_glb"]
 [ext_resource type="PackedScene" uid="uid://c8kgjexxlrnle" path="res://Assets/City/Models/GLB format/tree-large.glb" id="14_tree_large_glb"]
 [ext_resource type="PackedScene" uid="uid://d1svbib5uqf4x" path="res://Assets/City/Models/GLB format/tree-small.glb" id="15_tree_small_glb"]
+[ext_resource type="PackedScene" path="res://Assets/House/Desierto/desierto_voxel_low_poly.glb" id="bioma_desierto"]
+[ext_resource type="PackedScene" path="res://Assets/House/Bosque/casa_madera_jardin_low_poly.glb" id="bioma_bosque"]
+[ext_resource type="PackedScene" path="res://Assets/House/Arenisca/portal_arenisca_floral_low_poly.glb" id="bioma_arenisca"]
+[ext_resource type="PackedScene" path="res://Assets/House/Nieve/iglu_nieve_minecraft_low_poly (1).glb" id="bioma_nieve"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sky"]
 sky_top_color = Color(0.38, 0.65, 0.98, 1)
@@ -194,7 +198,7 @@ mesh = SubResource("BoxMesh_stripe")
 
 [node name="Trees" type="Node3D" parent="."]
 
-[node name="House_1" parent="Buildings" instance=ExtResource("5_building_type_a_glb")]
+[node name="House_1" parent="Buildings" instance=ExtResource("bioma_desierto")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 0, -2.6)
 
 [node name="Driveway_1" parent="PathsAndDriveways" instance=ExtResource("6_driveway_short_glb")]
@@ -212,7 +216,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, -1.5)
 [node name="Fence_2" parent="Fences" instance=ExtResource("7_fence_1x2_glb")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.8)
 
-[node name="House_3" parent="Buildings" instance=ExtResource("9_building_type_c_glb")]
+[node name="House_3" parent="Buildings" instance=ExtResource("bioma_bosque")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0, -2.6)
 
 [node name="Driveway_3" parent="PathsAndDriveways" instance=ExtResource("6_driveway_short_glb")]
@@ -221,7 +225,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0.01, -1.5)
 [node name="Fence_3" parent="Fences" instance=ExtResource("7_fence_1x2_glb")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0, -3.8)
 
-[node name="House_4" parent="Buildings" instance=ExtResource("10_building_type_f_glb")]
+[node name="House_4" parent="Buildings" instance=ExtResource("bioma_arenisca")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, -2.8, 0, 2.6)
 
 [node name="Driveway_4" parent="PathsAndDriveways" instance=ExtResource("6_driveway_short_glb")]
@@ -230,7 +234,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 0.01, 1.5)
 [node name="Fence_4" parent="Fences" instance=ExtResource("7_fence_1x2_glb")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 0, 3.8)
 
-[node name="House_5" parent="Buildings" instance=ExtResource("11_building_type_b_glb")]
+[node name="House_5" parent="Buildings" instance=ExtResource("bioma_nieve")]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, 2.6)
 
 [node name="Driveway_5" parent="PathsAndDriveways" instance=ExtResource("6_driveway_short_glb")]
@@ -402,6 +406,26 @@ transform = Transform3D(0.965926, 0, -0.258819, 0, 1, 0, 0.258819, 0, 0.965926, 
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1.6)
 target_scene = "res://shop.tscn"
 prompt_text = "Entrar a la Tienda"
+
+[node name="House1Entrance" parent="." instance=ExtResource("door_trigger")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 0, -1.6)
+prompt_text = "Fundamentos"
+unit_id = "u1"
+
+[node name="House3Entrance" parent="." instance=ExtResource("door_trigger")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 0, -1.6)
+prompt_text = "Estructuras de control"
+unit_id = "u2"
+
+[node name="House4Entrance" parent="." instance=ExtResource("door_trigger")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.8, 0, 1.6)
+prompt_text = "Funciones"
+unit_id = "u3"
+
+[node name="House5Entrance" parent="." instance=ExtResource("door_trigger")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.6)
+prompt_text = "Estructuras de datos"
+unit_id = "u4"
 
 [node name="Player" parent="." instance=ExtResource("player_scene")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)

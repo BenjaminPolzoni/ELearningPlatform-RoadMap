@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Avatar Preview</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #161328;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+    // Mismo esquema que city_generator.html (localStorage 'modular_character_config'):
+    // { gender, variant, skinColor, hairColor, shirtColor, pantsColor, accessory }.
+    // Comparten origen (localhost), así que leemos lo que el alumno ya haya elegido
+    // en "Personalizar Personaje"; si todavía no eligió nada, usamos un default.
+    const DEFAULT_CONFIG = {
+      gender: 'male',
+      variant: 'a',
+      skinColor: '#f8d4aa',
+      hairColor: '#4a2c11',
+      shirtColor: '#1e40af',
+      pantsColor: '#1d4ed8',
+      accessory: 'none',
+    };
+
+    function leerConfig() {
+      try {
+        const saved = localStorage.getItem('modular_character_config');
+        if (saved) return Object.assign({}, DEFAULT_CONFIG, JSON.parse(saved));
+      } catch (e) {
+        console.warn('No se pudo leer modular_character_config:', e);
+      }
+      return DEFAULT_CONFIG;
+    }
+
+    // No usamos canvas transparente: `backdrop-blur` en la tarjeta del login (Chromium)
+    // fuerza una capa opaca detrás de un WebGL con alpha, y siempre termina en blanco.
+    // En su lugar pintamos el fondo del mismo violeta oscuro que la tarjeta
+    // (--color-base-200 del tema "arcade-dark" en styles.css) para que se vea igual.
+    const FONDO_TARJETA = 0x161328;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(FONDO_TARJETA);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 20);
+    camera.position.set(0, 0.7, 1.35);
+    camera.lookAt(0, 0.55, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+    const key = new THREE.DirectionalLight(0xfff2e0, 1.1);
+    key.position.set(1.5, 3, 2);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0x8b3df5, 0.6);
+    rim.position.set(-2, 1.5, -1.5);
+    scene.add(rim);
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- Clasificación y color de vértices (idéntico a city_generator.html) ---
+    function classifyAndColorMesh(mesh, config) {
+      const geom = mesh.geometry;
+      const pos = geom.attributes.position;
+      const vertexCount = pos.count;
+      const isHead = mesh.name.toLowerCase().includes('head') || (mesh.parent && mesh.parent.name.toLowerCase().includes('head'));
+
+      const skinCol = null; // no se reutiliza el color original: se reclasifica por geometría
+
+      if (!mesh.userData.partIndices) {
+        const partIndices = new Uint8Array(vertexCount);
+        for (let i = 0; i < vertexCount; i++) {
+          const x = pos.getX(i);
+          const y = pos.getY(i);
+          const z = pos.getZ(i);
+          if (isHead) {
+            if (z > 0.06 && y >= 0.43 && y <= 0.54 && Math.abs(x) < 0.18) {
+              partIndices[i] = 2; // ojos/boca
+            } else if (y < 0.4) {
+              partIndices[i] = 1; // piel de la cara
+            } else {
+              partIndices[i] = 0; // pelo
+            }
+          } else {
+            if (y < 0.035) partIndices[i] = 5; // zapatos
+            else if (y < 0.2) partIndices[i] = 4; // pantalón
+            else if (Math.abs(x) > 0.26 && y < 0.35) partIndices[i] = 1; // manos
+            else partIndices[i] = 3; // remera/torso
+          }
+        }
+        mesh.userData.partIndices = partIndices;
+      }
+
+      let colorAttr = geom.attributes.color;
+      if (!colorAttr || colorAttr.count !== vertexCount) {
+        colorAttr = new THREE.BufferAttribute(new Float32Array(vertexCount * 3), 3);
+        geom.setAttribute('color', colorAttr);
+      }
+
+      const skinC = new THREE.Color(config.skinColor);
+      const hairC = new THREE.Color(config.hairColor);
+      const shirtC = new THREE.Color(config.shirtColor);
+      const pantsC = new THREE.Color(config.pantsColor);
+      const shoesC = new THREE.Color(0x22262f);
+      const eyeC = new THREE.Color(0x18181b);
+
+      const colors = colorAttr.array;
+      const partIndices = mesh.userData.partIndices;
+      for (let i = 0; i < vertexCount; i++) {
+        let c = eyeC;
+        const part = partIndices[i];
+        if (part === 0) c = hairC;
+        else if (part === 1) c = skinC;
+        else if (part === 2) c = eyeC;
+        else if (part === 3) c = shirtC;
+        else if (part === 4) c = pantsC;
+        else if (part === 5) c = shoesC;
+        colors[i * 3] = c.r;
+        colors[i * 3 + 1] = c.g;
+        colors[i * 3 + 2] = c.b;
+      }
+      colorAttr.needsUpdate = true;
+
+      mesh.material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.68, metalness: 0.08 });
+    }
+
+    function applyCustomColorsToModel(model, config) {
+      model.traverse((child) => {
+        if (child.isMesh || child.isSkinnedMesh) classifyAndColorMesh(child, config);
+      });
+    }
+
+    const config = leerConfig();
+    const loader = new GLTFLoader();
+    const playerGroup = new THREE.Group();
+    scene.add(playerGroup);
+
+    let mixer = null;
+    const clock = new THREE.Clock();
+
+    const url = `Assets/Character/Models/GLB format/character-${config.gender}-${config.variant}.glb`;
+    loader.load(
+      url,
+      (gltf) => {
+        const model = gltf.scene;
+        model.scale.set(0.65, 0.65, 0.65);
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = false;
+            child.receiveShadow = false;
+          }
+        });
+        applyCustomColorsToModel(model, config);
+        playerGroup.add(model);
+
+        if (gltf.animations && gltf.animations.length) {
+          mixer = new THREE.AnimationMixer(model);
+          const idle = gltf.animations.find((a) => a.name === 'idle') ?? gltf.animations[0];
+          mixer.clipAction(idle).play();
+        }
+      },
+      undefined,
+      (err) => console.error('No se pudo cargar el avatar:', err),
+    );
+
+    function animar() {
+      requestAnimationFrame(animar);
+      const delta = clock.getDelta();
+      if (mixer) mixer.update(delta);
+      renderer.render(scene, camera);
+    }
+    animar();
+  </script>
+</body>
+</html>

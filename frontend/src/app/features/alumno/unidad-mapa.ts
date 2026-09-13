@@ -22,7 +22,6 @@ import { RoadmapStore } from '../../core/data/roadmap.store';
 import { EstadoNodo } from '../../core/data/roadmap.models';
 import { CURSO_SEED_ID } from '../../mocks/seed';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
-import { Lives } from './lives';
 import {
   castleArt,
   fortressArt,
@@ -56,7 +55,7 @@ interface ConfettiPiece {
 @Component({
   selector: 'app-unidad-mapa',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarSprite, RouterLink, UpperCasePipe, Lives],
+  imports: [AvatarSprite, RouterLink, UpperCasePipe],
   host: { class: 'block w-full h-full' },
   styles: `
     :host {
@@ -105,52 +104,6 @@ interface ConfettiPiece {
         class="vertical-world relative flex flex-col w-full max-w-[1448px] h-full mx-auto overflow-hidden rounded-[20px] border-[6px] border-[#23242E] bg-base-300 shadow-[0_0_80px_rgba(139,92,246,0.18)]"
         [attr.data-theme]="theme()"
       >
-        <!-- TOPBAR RETRO -->
-        <header
-          class="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 border-b-4 border-[#23242E] bg-[#161722] px-6 py-2.5 text-white"
-        >
-          <!-- Breadcrumb / Volver -->
-          <div class="flex items-center gap-3">
-            <a
-              routerLink="/alumno"
-              class="btn btn-sm border-2 border-primary/50 bg-[#252836] ui-font text-[9px] text-primary hover:border-primary hover:bg-[#303348]"
-            >
-              ← MI CURSO
-            </a>
-            <span class="opacity-40">/</span>
-            <span class="title-font text-sm text-[#F3EAFF]">Unidad {{ u.orden }}</span>
-            <span class="opacity-40">·</span>
-            <span class="ui-font text-[9px] text-accent">{{ u.nombre }}</span>
-          </div>
-
-          <!-- HUD flotante superior (Vidas, Racha, XP) -->
-          <div class="flex items-center gap-6">
-            <!-- Vidas -->
-            <div class="flex items-center gap-2 rounded-lg border border-red-900/50 bg-black/40 px-3 py-1.5">
-              <span class="ui-font text-[8px] text-red-400">VIDAS</span>
-              <app-lives [current]="vidas()" [size]="18" />
-            </div>
-
-            <!-- Racha -->
-            <div class="flex items-center gap-2 rounded-lg border border-amber-900/50 bg-black/40 px-3 py-1.5">
-              <span class="text-amber-400">⚡</span>
-              <div>
-                <strong class="ui-font text-[10px] text-amber-300">7 DÍAS</strong>
-                <span class="block ui-font text-[7px] opacity-60">EN RACHA</span>
-              </div>
-            </div>
-
-            <!-- XP Total -->
-            <div class="flex items-center gap-2 rounded-lg border border-purple-900/50 bg-black/40 px-3 py-1.5">
-              <span class="text-purple-400">★</span>
-              <div>
-                <strong class="ui-font text-[11px] text-purple-200">{{ xp() }}</strong>
-                <span class="ml-1 ui-font text-[8px] text-purple-400">XP</span>
-              </div>
-            </div>
-          </div>
-        </header>
-
         <!-- PANEL DE MAPA Y NAVEGACIÓN -->
         <div #mapPanel class="map-panel flex-1 min-h-0 relative flex flex-col" [class.expanded]="isExpanded()">
           <!-- Toolbar del Mapa -->
@@ -158,6 +111,12 @@ interface ConfettiPiece {
             class="flex-shrink-0 flex items-center justify-between border-b-2 border-[#2E303D] bg-[#1E202C] px-5 py-2 text-xs text-[#E0E2EC]"
           >
             <div class="flex items-center gap-3">
+              <a
+                routerLink="/alumno"
+                class="btn btn-xs border border-primary/50 bg-[#252836] ui-font text-[8px] text-primary hover:border-primary hover:bg-[#303348]"
+              >
+                ← MUNDO
+              </a>
               <span class="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span class="ui-font text-[8px] tracking-wider text-emerald-300">
                 MUNDO 0{{ u.orden }} · {{ world().setting | uppercase }}
@@ -384,32 +343,6 @@ interface ConfettiPiece {
               }
             </div>
           </div>
-
-          <!-- LEYENDA DEL MAPA INFERIOR -->
-          <footer
-            class="flex-shrink-0 flex flex-wrap items-center justify-center gap-6 border-t-2 border-[#2E303D] bg-[#161722] px-6 py-2.5 text-xs text-[#B4B7C9]"
-          >
-            <span class="flex items-center gap-2">
-              <span class="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-900/60 text-emerald-400 font-bold text-[10px]">✓</span>
-              Completado
-            </span>
-            <span class="flex items-center gap-2">
-              <span class="flex h-5 w-5 items-center justify-center rounded-full bg-amber-900/60 text-amber-400 font-bold text-[10px]">●</span>
-              Disponible
-            </span>
-            <span class="flex items-center gap-2">
-              <span class="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-800 text-zinc-400 text-[10px]">🔒</span>
-              Bloqueado
-            </span>
-            <span class="flex items-center gap-2">
-              <span class="flex h-5 w-5 items-center justify-center rounded-full bg-purple-900/60 text-purple-400 font-bold text-[10px]">★</span>
-              Bonus
-            </span>
-            <span class="flex items-center gap-2">
-              <span class="flex h-5 w-5 items-center justify-center rounded-full bg-red-900/60 text-red-400 font-bold text-[10px]">♥</span>
-              Recuperar vida
-            </span>
-          </footer>
 
           <!--
             Los modales van DENTRO de #mapPanel (no como hermanos del panel) a propósito:
@@ -692,7 +625,6 @@ export class UnidadMapa {
   protected readonly localVidas = signal<number>(3);
 
   protected readonly vidas = computed(() => this.store.progreso()?.vidasVigentes ?? this.localVidas());
-  protected readonly xp = computed(() => this.store.progreso()?.xpTotal ?? 0);
 
   // Posicionamiento e interacción
   protected readonly sel = signal<VerticalChallenge | null>(null);

@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { AuthMockService, Rol } from '../../core/auth/auth-mock.service';
-import { AvatarService } from '../../core/avatar/avatar.service';
-import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 
 interface RoleOption {
   rol: Rol;
@@ -16,18 +15,16 @@ interface RoleOption {
 @Component({
   selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AvatarSprite],
   template: `
     <div class="escena-neon fixed inset-0 grid place-items-center p-6">
       <div class="chaflan w-full max-w-lg border-2 border-primary bg-base-200/95 p-8 backdrop-blur shadow-[0_0_50px_rgba(139,92,246,0.3)]">
         <div class="flex flex-col items-center gap-5 text-center">
-          <ui-avatar-sprite
-            [config]="avatar.avatar()"
-            [alto]="120"
-            [sombra]="true"
-            [caminando]="true"
-            etiqueta="Personaje del roadmap"
-          />
+          <iframe
+            title="Tu avatar"
+            [src]="avatarPreviewUrl"
+            class="h-[160px] w-[160px] border-0"
+            style="background: transparent"
+          ></iframe>
           <div>
             <h1 class="title-font text-4xl leading-tight text-primary drop-shadow-[0_0_14px_#FF2758]">
               EduQuest
@@ -62,14 +59,18 @@ interface RoleOption {
 export class Login {
   private readonly auth = inject(AuthMockService);
   private readonly router = inject(Router);
-  protected readonly avatar = inject(AvatarService);
+  private readonly sanitizer = inject(DomSanitizer);
+
+  // ?v= evita que el navegador sirva una versión vieja cacheada del archivo estático.
+  protected readonly avatarPreviewUrl: SafeResourceUrl =
+    this.sanitizer.bypassSecurityTrustResourceUrl('mundo-3d/avatar-preview.html?v=5');
 
   protected readonly opciones: RoleOption[] = [
     {
       rol: 'ALUMNO',
       label: 'VISTA ALUMNO',
       icon: '🎓',
-      desc: 'Consola arcade interactiva, mapa 2.5D, joystick y ranking',
+      desc: 'Mundo 3D explorable, biomas por unidad y mapa de desafíos',
       btnClass: 'btn-outline btn-primary hover:bg-primary/20',
     },
     {

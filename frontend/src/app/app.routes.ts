@@ -17,18 +17,21 @@ export const routes: Routes = [
     loadComponent: () => import('./features/profesor/unidad-editor').then((m) => m.UnidadEditor),
   },
   {
+    // Mundo 3D (mundo-3d.ts embebe la herramienta de exploración): cada casa es una
+    // unidad/bioma; al entrar avisa por postMessage y acá se navega al mapa de
+    // desafíos de esa unidad. Reemplaza al viejo mapa isométrico de islas.
     path: 'alumno',
     canActivate: [sesionGuard],
-    loadComponent: () => import('./features/alumno/mapa').then((m) => m.Mapa),
+    loadComponent: () => import('./features/alumno/mundo-3d').then((m) => m.Mundo3d),
   },
   {
-    // Personalización del avatar que recorre el mapa y el tablero.
+    // Personalización del avatar que recorre el tablero de la unidad.
     path: 'alumno/avatar',
     canActivate: [sesionGuard],
     loadComponent: () => import('./features/alumno/avatar-editor').then((m) => m.AvatarEditor),
   },
   {
-    // Tablero interno de la unidad (estilo Mario 3) — se entra desde una isla del mapa.
+    // Tablero interno de la unidad (estilo Mario 3) — se entra desde una casa del mundo 3D.
     path: 'alumno/unidad/:id',
     canActivate: [sesionGuard],
     loadComponent: () => import('./features/alumno/unidad-mapa').then((m) => m.UnidadMapa),
