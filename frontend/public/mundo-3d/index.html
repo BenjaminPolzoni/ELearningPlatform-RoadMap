@@ -1263,6 +1263,43 @@
     // Prevent default right-click context menu on the canvas
     renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
 
+    // OrbitControls (three r160) calls `scope.update()` synchronously inside its own wheel
+    // handler for every single 'wheel' event, and its zoom scale is proportional to the raw
+    // `event.deltaY` it receives — uncapped in both count and magnitude. Windows/trackpad
+    // drivers commonly report either a burst of many small-delta events for one physical
+    // scroll, OR a single event with a very large deltaY (depends on driver/"scroll speed"
+    // setting) — both compound to a near-instant jump across the whole min/maxDistance
+    // range, feeling like a snap with no gradual middle step. Take over wheel-zoom entirely:
+    // ignore the reported deltaY magnitude, apply a fixed-size step per event, and allow at
+    // most one step per animation frame — so a burst or a single huge-delta tick both zoom
+    // by the same small, predictable amount, and a held scroll gesture still zooms smoothly.
+    const WHEEL_ZOOM_STEP = 0.95;
+    let lastWheelZoomTime = 0;
+    renderer.domElement.addEventListener(
+      'wheel',
+      (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (!controls.enabled) return;
+
+        const now = performance.now();
+        if (now - lastWheelZoomTime < 16) return;
+        lastWheelZoomTime = now;
+
+        const direction = event.deltaY < 0 ? 1 : event.deltaY > 0 ? -1 : 0;
+        if (direction === 0) return;
+        const scale = direction > 0 ? WHEEL_ZOOM_STEP : 1 / WHEEL_ZOOM_STEP;
+
+        const offset = camera.position.clone().sub(controls.target);
+        const dist = offset.length();
+        if (dist < 0.0001) return;
+        const newDist = THREE.MathUtils.clamp(dist * scale, controls.minDistance, controls.maxDistance);
+        offset.multiplyScalar(newDist / dist);
+        camera.position.copy(controls.target).add(offset);
+      },
+      { capture: true, passive: false },
+    );
+
     // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
