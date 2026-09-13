@@ -788,7 +788,7 @@ export class UnidadMapa {
 
   // Renderizadores SVG Sanitizados
   protected scenerySvg(): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(renderWorldScenery(this.world(), this.completedIds()));
+    return this.sanitizer.bypassSecurityTrustHtml(renderWorldScenery(this.world()));
   }
 
   protected castleGoalSvg(): SafeHtml {

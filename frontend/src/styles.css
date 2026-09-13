@@ -1672,17 +1672,6 @@ button.rk-estado:hover {
   height: 100%;
   overflow: visible;
 }
-.trail-coin > g {
-  animation: desert-coin-glow 2.8s ease-in-out infinite;
-  animation-delay: var(--delay, 0s);
-}
-/* Tramo todavía no recorrido: la moneda/banana/cristal queda "apagada" — sin brillo ni
-   animación — hasta que se complete el nodo anterior. */
-.trail-coin.unlit > g {
-  animation: none;
-  filter: grayscale(1) brightness(0.6);
-  opacity: 0.5;
-}
 .desert-flower {
   animation: desert-flower-peek 4s ease-in-out infinite;
 }
@@ -2138,9 +2127,6 @@ button.rk-estado:hover {
 }
 
 /* Animations */
-@keyframes desert-coin-glow {
-  50% { transform: translateY(-4px); filter: brightness(1.15); }
-}
 @keyframes desert-flower-peek {
   50% { transform: translateY(8px); }
 }

@@ -451,45 +451,22 @@ const bricksSvg = `<ellipse cx="0" cy="31" rx="48" ry="8" fill="#76502f" opacity
 <path d="M-17-63v-10h7v-7h20v7h7v10H7v9H-7v-9z" fill="#ef7354" stroke="#75432a" stroke-width="2"/><path d="M-6-77h10v9H-6z" fill="#ffedc0"/>`;
 
 const cloudSvg = `<path d="M-42 4v-13h13v-12h20v-8h23v9h16v11h13V8h-85z" fill="#fff5d9" stroke="#deb978" stroke-width="3"/><path d="M-32 7h66v5h-66z" fill="#dcab69" opacity=".35"/>`;
-const coinSvg = `<path d="M-6-14H6v4h4v20H6v4H-6v-4h-4v-20h4z" fill="#ffd950" stroke="#a86627" stroke-width="2"/><path d="M-4-10h5v20h-5z" fill="#fff4a5"/><path d="M5-8v16" stroke="#d9992f" stroke-width="2"/>`;
-const bananaSvg =
-  '<path d="M-12-20Q-26 15 9 24L23 14Q-1 18 0-17z" fill="#ffdc54" stroke="#95702c" stroke-width="3"/><path d="M-11-18Q-16 9 8 17" fill="none" stroke="#fff194" stroke-width="4"/><path d="M-13-20h13" stroke="#546a31" stroke-width="5"/>';
-const crystalSvg =
-  '<path d="m0-22 13 13v24L0 26-13 15V-9z" fill="#a776d4" stroke="#e1b594" stroke-width="2"/><path d="m0-19 6 11L0 22-6-8z" fill="#ecc1ff"/>';
 const totemSvg =
   '<path d="M-34 39h68v9h-68zM-24-37h48v76h-48z" fill="#8c9560" stroke="#30442e" stroke-width="4"/><path d="M-19-30h38v12h-38z" fill="#c3c084"/><path d="M-15-9h10v10h-10zM5-9h10v10H5zM-11 16h22v7h-22z" fill="#36472d"/><path d="M-20 28h8v10h-8zm26-64h10v14H6z" fill="#53a04e"/>';
 const torchSvg =
   '<path d="M-22 42h44v8h-44zM-10-7h20v48h-20z" fill="#74718a" stroke="#292c43" stroke-width="3"/><path d="M-18-11h36v9h-36z" fill="#ab9070"/><g class="torch-flame"><path d="M-15-14v-17l9-14 5 9 6-22 11 27v17z" fill="#ed8653" stroke="#a74744" stroke-width="2"/><path d="M-7-15v-15l7-12 7 22v5z" fill="#ffe396"/></g>';
-const snowflakeSvg =
-  '<path d="M0-16v32M-14-8 14 8M-14 8 14-8" stroke="#f2fbff" stroke-width="7" stroke-linecap="round"/><path d="M0-16v32M-14-8 14 8M-14 8 14-8" stroke="#63b7e2" stroke-width="2"/><path d="m-6-12 6 5 6-5M-6 12l6-5 6 5" fill="none" stroke="#f2fbff" stroke-width="4"/><circle cx="0" cy="0" r="5" fill="#bfe6f7" stroke="#2f5a78" stroke-width="2"/>';
 const snowmanSvg =
   '<ellipse cx="0" cy="41" rx="26" ry="7" fill="#b9cfe6" opacity=".7"/><circle cx="0" cy="21" r="19" fill="#f4faff" stroke="#93aec9" stroke-width="3"/><circle cx="0" cy="-7" r="13" fill="#fbfdff" stroke="#93aec9" stroke-width="3"/><path d="M-20 14h-13M20 14h13" stroke="#6d4526" stroke-width="4"/><path d="M-15-19h30v5h-30zM-9-30h18v11h-18z" fill="#3c4a63"/><path d="M-6-11h4v4h-4zm8 0h4v4h-4z" fill="#2b3446"/><path d="M-2-4h9v4h-9z" fill="#d96a52"/><path d="M-4 14h4v4h-4zm1 12h4v4h-4z" fill="#3c4a63"/>';
 
-export function renderWorldScenery(world: GeneratedWorld, completedIds: number[] = []): string {
+export function renderWorldScenery(world: GeneratedWorld): string {
   const { theme, worldWidth, worldHeight, roads, mainCount, challenges } = world;
   const px = ([x, y]: [number, number]) => [
     (x * worldWidth) / 100,
     (y * worldHeight) / 100,
   ];
-  // El tramo que lleva al nodo `id` ya fue recorrido (y sus monedas quedan "prendidas") en
-  // cuanto se completa el nodo anterior — el primer tramo arranca prendido, es el punto de
-  // partida. Camino interno = binario por nodo completado, no hay XP por nodo para un gradiente.
-  const lit = (id: number) => id === 1 || completedIds.includes(id - 1);
   const items: string[] = [];
 
   if (theme === 'desert') {
-    for (let id = 1; id <= mainCount; id += 2) {
-      if (!roads[id]) continue;
-      const litClass = lit(id) ? '' : ' unlit';
-      [7, 13, 20].forEach((index, j) => {
-        if (roads[id][index]) {
-          const [x, y] = px(roads[id][index]);
-          items.push(
-            `<g class="trail-coin${litClass}" style="--delay:-${j * 0.4}s" transform="translate(${x} ${y})"><g>${coinSvg}</g></g>`,
-          );
-        }
-      });
-    }
     const recovery = challenges.find((c) => c.recovery);
     if (recovery) {
       const [hx, hy] = px([recovery.x, recovery.y]);
@@ -507,18 +484,6 @@ export function renderWorldScenery(world: GeneratedWorld, completedIds: number[]
       }
     }
   } else {
-    for (let id = 1; id <= mainCount; id += 2) {
-      if (!roads[id]) continue;
-      const litClass = lit(id) ? '' : ' unlit';
-      [8, 16, 23].forEach((step, j) => {
-        if (roads[id][step]) {
-          const [x, y] = px(roads[id][step]);
-          items.push(
-            `<g class="trail-coin${litClass}" style="--delay:-${j * 0.4}s" transform="translate(${x} ${y})"><g>${theme === 'jungle' ? bananaSvg : theme === 'snow' ? snowflakeSvg : crystalSvg}</g></g>`,
-          );
-        }
-      });
-    }
     for (let id = 2; id <= mainCount; id += 3) {
       if (!roads[id] || !roads[id][16]) continue;
       const [x, y] = px(roads[id][16]);
