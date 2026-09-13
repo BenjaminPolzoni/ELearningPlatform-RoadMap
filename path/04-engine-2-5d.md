@@ -1,6 +1,20 @@
 # 04 · Engine 2.5D del mapa de islas
 
-> Squad **Engine**. Referencia visual: `Fotos_y_conceptos/VistaDeLasUnidadesRoad.jpeg`
+> Squad **Engine**. Referencia visual: `Fotos_y_conceptos/estilo_roadmap.jpeg`
+> (antes `Fotos_y_conceptos/VistaDeLasUnidadesRoad.jpeg`, hoy con la paleta de marca —
+> ver [`05-design-system.md`](05-design-system.md) §1).
+
+> ⚠️ **Estado real:** el mapa que corre hoy **no usa three.js**. Está resuelto con
+> proyección isométrica calculada a mano y render SVG —
+> `frontend/src/app/core/iso/iso.ts` + `features/alumno/mapa.ts`— porque así cada isla
+> queda como nodo del DOM (foco y `aria-label`, 05 §8) y el front no carga ~600 kB de
+> three.js. **Lo que sí se respeta de este documento es el §4**: la posición siempre se
+> calcula, con ruido determinista por índice y reflow al agregar/quitar unidades; el
+> `layoutIslas()` implementado devuelve coordenadas de mundo, así que se reutiliza tal
+> cual el día que entre el engine. Registrado en
+> [`deuda-tecnica/tarea-deuda-04-engine-2-5d.md`](deuda-tecnica/tarea-deuda-04-engine-2-5d.md).
+> Las secciones §3, §5 y §6 de acá abajo describen el engine **objetivo**, no lo que corre.
+> **La matemática de lo que corre hoy está en el §11**, al final de este documento.
 
 ## 1. Qué tiene que lograr
 
@@ -77,8 +91,19 @@ Se resuelve con `renderOrder` asignado por el índice de layout, no con `depthTe
 
 ## 4. Layout procedural — el corazón del engine
 
-Las unidades se acomodan sobre una **serpentina**: filas alternando dirección, igual que la
-referencia. Es determinista, así que la misma unidad cae siempre en el mismo lugar.
+Las unidades se acomodan sobre una **serpentina**. Es determinista, así que la misma unidad
+cae siempre en el mismo lugar.
+
+> **Corrección respecto del snippet de abajo:** el layout implementado
+> (`core/iso/iso.ts`, `layoutIslas()`) no usa filas que alternan dirección sino una **cinta
+> que avanza hacia la derecha con zig-zag vertical**, porque el mapa se recorre con paneo
+> horizontal (§9) y un bloque que crece hacia abajo pelea contra eso.
+>
+> Y una trampa que este snippet tiene y que costó encontrar: parametrizar el zig-zag
+> directo en `x`/`y` de mundo **no funciona**. Como la proyección resta (`pantallaX ∝ x − y`),
+> un offset simétrico en mundo se amplifica en horizontal y termina apilando islas encima
+> de las anteriores. El layout real se parametriza en los **ejes de pantalla** (`u = x − y`
+> horizontal, `w = x + y` vertical) y recién después convierte a mundo.
 
 ```ts
 interface LayoutOpts {
@@ -270,3 +295,93 @@ agregan unidades.
 - [ ] `ngOnDestroy` que libera geometrías, materiales, texturas y composer
 - [ ] Lazy-load del módulo
 - [ ] Medición de fps con 12 unidades
+
+---
+
+## 11. Implementación real: proyección isométrica en SVG
+
+Esta sección documenta la matemática de lo que **corre hoy** (ver el ⚠️ del principio del
+documento) — las secciones 1-10 de arriba son el engine three.js objetivo, no esto.
+
+Ubicación: `frontend/src/app/core/iso/iso.ts` (proyección y layout, matemática pura sin
+Angular) + `frontend/src/app/features/alumno/mapa.ts` (consumo en el componente, dibuja
+los `<polygon>`).
+
+### Mundo → pantalla
+
+Cada isla vive en un punto `{x, y, z}` de "mundo isométrico": `x`/`y` son los dos ejes del
+plano del suelo y `z` es la altura de flotación. `proyectar()` lo lleva a un punto
+`{x, y}` de **pantalla** con la fórmula clásica de proyección isométrica 2:1 — la misma
+relación que resuelve cualquier motor isométrico rotando una cámara ortográfica 45°/35°
+(§3), acá escrita directo como álgebra 2D:
+
+```ts
+const TILE_W = 64, TILE_H = 32;   // relación 2:1 — el "diamante" clásico del pixel-art iso
+
+function proyectar({ x, y, z }) {
+  return {
+    x: (x - y) * (TILE_W / 2),
+    y: (x + y) * (TILE_H / 2) - z,
+  };
+}
+```
+
+La lectura física: moverse "hacia la derecha" en el mundo (+x) empuja el sprite en
+pantalla hacia la derecha *y* hacia abajo; moverse "hacia adelante" (+y) lo empuja hacia
+la **izquierda** *y* hacia abajo. Sumar y restar esas dos componentes es lo que dibuja las
+diagonales a 30° del rombo isométrico en vez de un cuadrado derecho. La altura `z` solo se
+resta de la `y` de pantalla — sube el sprite sin moverlo lateralmente, que es justo lo que
+hace flotar una isla sin correrla de su lugar en la cinta.
+
+### La trampa: el layout no se puede parametrizar directo en x/y de mundo
+
+Esto es lo que más costó encontrar armando el mapa, y quedó documentado en el propio
+código (`layoutIslas()`) además de acá.
+
+El layout tiene que avanzar hacia la derecha en pantalla con un zig-zag vertical
+(arriba-abajo alternado), para que el mapa se lea como una cinta recorrible con paneo
+horizontal (§9). La tentación es zigzaguear directo sobre `y` de **mundo** — pero como la
+proyección **resta** (`xPantalla ∝ x − y`), un offset simétrico en `y` de mundo queda
+amplificado en el eje horizontal de pantalla, y las islas terminan apiladas unas sobre
+otras en vez de alternar prolijamente arriba/abajo.
+
+La solución es invertir el orden de las operaciones: parametrizar el zig-zag directamente
+en los **ejes de pantalla**, y recién después despejar `x`/`y` de mundo:
+
+```ts
+// 1. se diseña en pantalla:
+u = i · pasoU + ruido            // avance horizontal, en PANTALLA
+w = i · pasoW ± zigzag + ruido   // zig-zag vertical, en PANTALLA (alterna signo por índice)
+
+// 2. y recién ahí se despeja mundo, invirtiendo x - y = u, x + y = w:
+x = (u + w) / 2
+y = (w − u) / 2
+```
+
+`proyectar()` se encarga después de volver a pasar esas `x`/`y` de mundo a pantalla (con
+la escala de `TILE_W`/`TILE_H` de por medio). En esencia es la misma rotación de 45° que
+usa la cámara isométrica de §3, resuelta al revés: en vez de rotar mundo → pantalla y
+tener que corregir el resultado a mano, se diseña directamente en pantalla y se rota
+pantalla → mundo una sola vez.
+
+### El volumen de la isla es orden de dibujado, no geometría 3D
+
+No hay malla ni cámara: cada isla son 4 `<polygon>` de SVG, dibujados en este orden
+(atrás hacia adelante) y coloreados como si la luz viniera de arriba:
+
+1. `base()` — hexágono que se afina hacia abajo: la roca desprendida en el vacío
+2. `caraLateral()` × 2 — paralelogramos a izquierda y derecha del rombo, que "bajan" un
+   espesor fijo desde sus dos vértices laterales (la cara derecha va más oscura que la
+   izquierda, simulando la misma luz)
+3. `rombo()` — la tapa: el rombo de 4 puntos que da la cara de arriba, la más clara
+
+El ojo lee eso como un sólido por el orden y el sombreado, no porque exista geometría 3D
+— es el equivalente barato de lo que un `MeshBasicMaterial` con normales resuelve solo
+en three.js (§3).
+
+**Simplificación conocida, no un bug:** el orden de pintado entre islas distintas es el
+orden del `@for` del template (el índice `i` de `layoutIslas()`), no un sort por
+profundidad como el `renderOrder` de §3. Funciona porque la cinta actual avanza
+monótonamente en el eje horizontal de pantalla con poco desplazamiento vertical — dos
+islas nunca llegan a solaparse en la práctica. Un layout distinto (una espiral, por
+ejemplo) sí necesitaría ordenar por profundidad antes de pintar.
