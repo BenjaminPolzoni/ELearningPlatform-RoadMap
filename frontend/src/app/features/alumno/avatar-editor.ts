@@ -128,14 +128,6 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
           @switch (pestana()) {
             @case ('cuerpo') {
               <section>
-                <h3 class="ui-font mb-2 text-[9px] text-secondary">GÉNERO</h3>
-                <ng-container *ngTemplateOutlet="chips; context: { $implicit: generos, campo: 'genero' }" />
-                <p class="ui-font mt-2 text-[7px] leading-relaxed opacity-60">
-                  CAMBIA LA SILUETA · TODO EL CATÁLOGO SIGUE DISPONIBLE
-                </p>
-              </section>
-
-              <section>
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">TONO DE PIEL</h3>
                 <ng-container
                   *ngTemplateOutlet="muestras; context: { $implicit: pieles, campo: 'piel', etiqueta: 'Piel' }"

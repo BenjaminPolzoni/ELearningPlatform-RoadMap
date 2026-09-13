@@ -15,34 +15,34 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
-/* ---------- NEÓN OSCURO (default) ---------- */
+/* ---------- PALETA ESTANDARIZADA OSCURA (default) ---------- */
 @plugin "daisyui/theme" {
   name: "arcade-dark";
   default: true;
   prefersdark: true;
   color-scheme: dark;
 
-  --color-base-100: #0D0B1E;
-  --color-base-200: #161328;
-  --color-base-300: #1E1A38;
-  --color-base-content: #E8E4FF;
+  --color-base-100: #130E24;
+  --color-base-200: #1B1534;
+  --color-base-300: #261E47;
+  --color-base-content: #EDE9FE;
 
-  --color-primary: #00E5FF;
-  --color-primary-content: #0D0B1E;
-  --color-secondary: #8B5CF6;
+  --color-primary: #8B5CF6;
+  --color-primary-content: #FFFFFF;
+  --color-secondary: #6366F1;
   --color-secondary-content: #FFFFFF;
-  --color-accent: #FF2E93;
+  --color-accent: #F43F5E;
   --color-accent-content: #FFFFFF;
-  --color-neutral: #1E1A38;
-  --color-neutral-content: #E8E4FF;
+  --color-neutral: #261E47;
+  --color-neutral-content: #EDE9FE;
 
-  --color-info: #7FFAFF;
-  --color-info-content: #0D0B1E;
-  --color-success: #8B5CF6;
+  --color-info: #38BDF8;
+  --color-info-content: #0F172A;
+  --color-success: #10B981;
   --color-success-content: #FFFFFF;
-  --color-warning: #FFD60A;
-  --color-warning-content: #2A2000;
-  --color-error: #FF2E93;
+  --color-warning: #F59E0B;
+  --color-warning-content: #2A1800;
+  --color-error: #F43F5E;
   --color-error-content: #FFFFFF;
 
   --radius-selector: 0.25rem;
@@ -52,34 +52,34 @@
   --depth: 1;
 }
 
-/* ---------- NEÓN CLARO ---------- */
+/* ---------- PALETA ESTANDARIZADA CLARA ---------- */
 @plugin "daisyui/theme" {
   name: "arcade-light";
   default: false;
   prefersdark: false;
   color-scheme: light;
 
-  --color-base-100: #F5F3FF;
-  --color-base-200: #E9E4FF;
-  --color-base-300: #D4CBFA;
-  --color-base-content: #0D0B1E;
+  --color-base-100: #F8F7FF;
+  --color-base-200: #EDE9FE;
+  --color-base-300: #DDD6FE;
+  --color-base-content: #1E1736;
 
-  --color-primary: #008C99;
+  --color-primary: #6D28D9;
   --color-primary-content: #FFFFFF;
-  --color-secondary: #5B2FC1;
+  --color-secondary: #4F46E5;
   --color-secondary-content: #FFFFFF;
-  --color-accent: #C21A66;
+  --color-accent: #E11D48;
   --color-accent-content: #FFFFFF;
-  --color-neutral: #2D164A;
-  --color-neutral-content: #F5F3FF;
+  --color-neutral: #2A1F45;
+  --color-neutral-content: #F8F7FF;
 
-  --color-info: #006E79;
+  --color-info: #0284C7;
   --color-info-content: #FFFFFF;
-  --color-success: #5B2FC1;
+  --color-success: #059669;
   --color-success-content: #FFFFFF;
-  --color-warning: #B8860A;
+  --color-warning: #D97706;
   --color-warning-content: #FFFFFF;
-  --color-error: #C21A66;
+  --color-error: #E11D48;
   --color-error-content: #FFFFFF;
 
   --radius-selector: 0.25rem;
@@ -90,21 +90,19 @@
 }
 
 @theme {
-  /* --- swatches crudos de la lámina, para el arte del mapa (no rota con el tema) --- */
-  --color-brand-void: #0E0120;
-  --color-brand-night: #190236;
-  --color-brand-deep: #2D164A;
-  --color-brand-violet: #6B21C9;
-  --color-brand-glow: #8B3DF5;
-  --color-brand-pink: #FF2758;
+  /* --- swatches de paleta para arte del mapa --- */
+  --color-brand-void: #0D091B;
+  --color-brand-night: #16102B;
+  --color-brand-deep: #241A42;
+  --color-brand-violet: #6D28D9;
+  --color-brand-glow: #8B5CF6;
+  --color-brand-pink: #F43F5E;
 
-  /* --- estado del nodo: paleta arcade (cian/rosa) por pedido explícito,
-         en vez de la de 05 §1 (rosa fuego/violeta) — el "andá por acá" va
-         en cian y el tramo recorrido en rosa. --- */
-  --color-node-locked: #3A3550;
-  --color-node-open: #00E5FF;
-  --color-node-done: #3C6E78;
-  --color-node-failed: #9B1B3C;
+  /* --- estado del nodo --- */
+  --color-node-locked: #2E2548;
+  --color-node-open: #8B5CF6;
+  --color-node-done: #4C3B78;
+  --color-node-failed: #9F1239;
 
   --font-title: "Chelsea Market", system-ui, sans-serif;
   --font-body: "Comfortaa", system-ui, sans-serif;
@@ -232,29 +230,29 @@ html {
 
 :root,
 :root[data-theme='arcade-dark'] {
-  --rk-bg: #0d0b1e;
-  --rk-bg2: #161230;
-  --rk-bg3: #221c4a;
-  --rk-ink: #e8e6ff;
-  --rk-cyan: #00e5ff;
-  --rk-magenta: #ff2e93;
-  --rk-yellow: #ffd60a;
-  --rk-green: #39ff88;
+  --rk-bg: #130e24;
+  --rk-bg2: #1b1534;
+  --rk-bg3: #261e47;
+  --rk-ink: #ede9fe;
+  --rk-cyan: #8b5cf6;
+  --rk-magenta: #f43f5e;
+  --rk-yellow: #f59e0b;
+  --rk-green: #10b981;
   /* Estado académico del ranking (RF-RNK-05/06) — verde promoción / rojo riesgo. */
   --rk-promo: #10b981;
-  --rk-risk: #ef4444;
+  --rk-risk: #f43f5e;
 }
 :root[data-theme='arcade-light'] {
-  --rk-bg: #f5f3ff;
-  --rk-bg2: #e9e4ff;
-  --rk-bg3: #d6ceff;
-  --rk-ink: #14103a;
-  --rk-cyan: #0093ab;
-  --rk-magenta: #d11a76;
-  --rk-yellow: #a97c00;
-  --rk-green: #0e9f6e;
-  --rk-promo: #10b981;
-  --rk-risk: #ef4444;
+  --rk-bg: #f8f7ff;
+  --rk-bg2: #ede9fe;
+  --rk-bg3: #ddd6fe;
+  --rk-ink: #1e1736;
+  --rk-cyan: #6d28d9;
+  --rk-magenta: #e11d48;
+  --rk-yellow: #d97706;
+  --rk-green: #059669;
+  --rk-promo: #059669;
+  --rk-risk: #e11d48;
 }
 
 /* — util de brillo neón reutilizable — */
@@ -262,19 +260,19 @@ html {
   color: var(--rk-cyan);
   text-shadow:
     0 0 4px var(--rk-cyan),
-    0 0 14px rgba(0, 229, 255, 0.55);
+    0 0 14px rgba(139, 92, 246, 0.4);
 }
 .rk-neon-accent {
   color: var(--rk-magenta);
   text-shadow:
     0 0 4px var(--rk-magenta),
-    0 0 14px rgba(255, 46, 147, 0.55);
+    0 0 14px rgba(244, 63, 94, 0.4);
 }
 .rk-neon-success {
   color: var(--rk-green);
   text-shadow:
     0 0 4px var(--rk-green),
-    0 0 12px rgba(57, 255, 136, 0.55);
+    0 0 12px rgba(16, 185, 129, 0.4);
 }
 
 /* — backdrop: sala de arcade en penumbra — */
@@ -1594,6 +1592,9 @@ button.rk-estado:hover {
 .vertical-world[data-theme='snow'] {
   --ground: #c3d8ea;
 }
+.vertical-world[data-theme='nether'] {
+  --ground: #5a0e16;
+}
 
 .vertical-terrain {
   position: absolute;
@@ -1610,59 +1611,68 @@ button.rk-estado:hover {
 }
 .vertical-road path {
   fill: none;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  shape-rendering: crispEdges;
 }
 .vertical-road .road-shadow {
-  stroke: #ae7336;
-  stroke-width: 77;
-  opacity: 0.3;
-  transform: translateY(5px);
+  stroke: #784e18;
+  stroke-width: 44;
+  opacity: 0.5;
+  transform: translate(3px, 4px);
 }
 .vertical-road .road-edge {
-  stroke: #c48a40;
-  stroke-width: 72;
+  stroke: #382008;
+  stroke-width: 40;
 }
 .vertical-road .road-sand {
-  stroke: #ffe5a0;
-  stroke-width: 64;
+  stroke: #f6d58c;
+  stroke-width: 32;
 }
 .vertical-road .road-center {
-  stroke: #fff0bd;
-  stroke-width: 44;
-  opacity: 0.45;
-}
-.vertical-road .support-road-edge {
-  stroke: #b78445;
-  stroke-width: 24;
+  stroke: #ffffff;
+  stroke-width: 6;
+  stroke-dasharray: 10 10;
   opacity: 0.7;
 }
+.vertical-road .support-road-edge {
+  stroke: #382008;
+  stroke-width: 22;
+  opacity: 0.85;
+}
 .vertical-road .support-road {
-  stroke: #ffdf91;
-  stroke-width: 16;
-  stroke-dasharray: 12 8;
+  stroke: #f6d58c;
+  stroke-width: 14;
+  stroke-dasharray: 8 8;
 }
 
-[data-theme='jungle'] .vertical-road .road-shadow { stroke: #213e26; }
-[data-theme='jungle'] .vertical-road .road-edge { stroke: #715438; }
-[data-theme='jungle'] .vertical-road .road-sand { stroke: #cdac6b; }
-[data-theme='jungle'] .vertical-road .road-center { stroke: #f0d495; }
-[data-theme='jungle'] .vertical-road .support-road-edge { stroke: #4e6332; }
-[data-theme='jungle'] .vertical-road .support-road { stroke: #b6c276; }
+[data-theme='jungle'] .vertical-road .road-shadow { stroke: #1c2e14; }
+[data-theme='jungle'] .vertical-road .road-edge { stroke: #201103; }
+[data-theme='jungle'] .vertical-road .road-sand { stroke: #d5a86a; }
+[data-theme='jungle'] .vertical-road .road-center { stroke: #fae5b6; }
+[data-theme='jungle'] .vertical-road .support-road-edge { stroke: #201103; }
+[data-theme='jungle'] .vertical-road .support-road { stroke: #d5a86a; }
 
-[data-theme='castle'] .vertical-road .road-shadow { stroke: #0c152a; }
-[data-theme='castle'] .vertical-road .road-edge { stroke: #30334f; }
-[data-theme='castle'] .vertical-road .road-sand { stroke: #9393a9; }
-[data-theme='castle'] .vertical-road .road-center { stroke: #c3baca; stroke-dasharray: 14 3; opacity: 0.55; }
-[data-theme='castle'] .vertical-road .support-road-edge { stroke: #534064; }
-[data-theme='castle'] .vertical-road .support-road { stroke: #a98eaa; }
+[data-theme='castle'] .vertical-road .road-shadow { stroke: #0c0a14; }
+[data-theme='castle'] .vertical-road .road-edge { stroke: #1b1329; }
+[data-theme='castle'] .vertical-road .road-sand { stroke: #6a587d; }
+[data-theme='castle'] .vertical-road .road-center { stroke: #c4b4d8; }
+[data-theme='castle'] .vertical-road .support-road-edge { stroke: #1b1329; }
+[data-theme='castle'] .vertical-road .support-road { stroke: #6a587d; }
 
-[data-theme='snow'] .vertical-road .road-shadow { stroke: #7b9cba; }
-[data-theme='snow'] .vertical-road .road-edge { stroke: #5c86a8; }
-[data-theme='snow'] .vertical-road .road-sand { stroke: #e9f5ff; }
-[data-theme='snow'] .vertical-road .road-center { stroke: #ffffff; stroke-dasharray: 16 6; }
-[data-theme='snow'] .vertical-road .support-road-edge { stroke: #6b93b3; }
-[data-theme='snow'] .vertical-road .support-road { stroke: #d7ecfb; }
+[data-theme='snow'] .vertical-road .road-shadow { stroke: #334155; }
+[data-theme='snow'] .vertical-road .road-edge { stroke: #1e293b; }
+[data-theme='snow'] .vertical-road .road-sand { stroke: #cbd5e1; }
+[data-theme='snow'] .vertical-road .road-center { stroke: #ffffff; }
+[data-theme='snow'] .vertical-road .support-road-edge { stroke: #1e293b; }
+[data-theme='snow'] .vertical-road .support-road { stroke: #cbd5e1; }
+
+[data-theme='nether'] .vertical-road .road-shadow { stroke: #140406; }
+[data-theme='nether'] .vertical-road .road-edge { stroke: #1d1e26; }
+[data-theme='nether'] .vertical-road .road-sand { stroke: #353745; }
+[data-theme='nether'] .vertical-road .road-center { stroke: #f25500; }
+[data-theme='nether'] .vertical-road .support-road-edge { stroke: #1d1e26; }
+[data-theme='nether'] .vertical-road .support-road { stroke: #353745; }
 
 .vertical-terrain .desert-scenery {
   position: absolute;
@@ -1733,6 +1743,11 @@ button.rk-estado:hover {
   color: #2f5a78;
   border-color: #8fb0cd;
 }
+[data-theme='nether'] .support-sign {
+  background: #210f14;
+  color: #fca5a5;
+  border-color: #7f1d1d;
+}
 
 .vertical-castle {
   position: absolute;
@@ -1776,6 +1791,12 @@ button.rk-estado:hover {
   border-color: #8fb0cd;
   box-shadow: 2px 3px rgba(123, 156, 186, 0.33);
 }
+[data-theme='nether'] .vertical-castle > span {
+  background: #210f14;
+  color: #fca5a5;
+  border-color: #f25500;
+  box-shadow: 2px 3px rgba(20, 4, 6, 0.5);
+}
 
 .vertical-start {
   position: absolute;
@@ -1784,20 +1805,29 @@ button.rk-estado:hover {
   text-align: center;
   z-index: 5;
 }
-.vertical-start > span {
-  display: inline-block;
-  background: #fff1bd;
-  border: 3px solid #734a2f;
-  padding: 9px 18px;
-  color: #65502f;
-  box-shadow: 3px 3px #8f612f;
-  font-family: var(--font-pixel, monospace);
-  font-size: 18px;
+.vertical-start svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(2px 3px 0 rgba(0, 0, 0, 0.35));
 }
-[data-theme='jungle'] .vertical-start > span {
-  background: #eddfae;
-  border-color: #5d7140;
-  color: #4d6339;
+.vertical-start small {
+  display: block;
+  font-family: var(--font-pixel, monospace);
+  font-size: 8px;
+  color: #fff3cf;
+  text-shadow: 1px 1px 2px #000;
+  margin-top: 2px;
+}
+
+.road-joint {
+  z-index: 2;
+  filter: drop-shadow(1px 2px 0 rgba(0, 0, 0, 0.25));
+}
+.road-joint svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 [data-theme='castle'] .vertical-start > span {
   background: #302b44;
@@ -1808,6 +1838,11 @@ button.rk-estado:hover {
   background: #e9f4ff;
   color: #2f5a78;
   border-color: #8fb0cd;
+}
+[data-theme='nether'] .vertical-start > span {
+  background: #210f14;
+  color: #fca5a5;
+  border-color: #f25500;
 }
 .vertical-start > small {
   display: block;
@@ -1821,6 +1856,9 @@ button.rk-estado:hover {
 }
 [data-theme='snow'] .vertical-start > small {
   color: #4a7695;
+}
+[data-theme='nether'] .vertical-start > small {
+  color: #fca5a5;
 }
 
 .ascent-milestone {
@@ -1849,6 +1887,11 @@ button.rk-estado:hover {
   background: #e9f4ff;
   color: #2f5a78;
   border-color: #8fb0cd;
+}
+[data-theme='nether'] .ascent-milestone {
+  background: #210f14;
+  color: #fca5a5;
+  border-color: #f25500;
 }
 
 /* Map Nodes */
@@ -1922,6 +1965,16 @@ button.rk-estado:hover {
   color: #3a6f4e;
   border-color: #4b7a5a;
 }
+[data-theme='nether'] .node-sign {
+  background: #210f14;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+[data-theme='nether'] .map-node.completed .node-sign {
+  background: #3b1219;
+  color: #fed7aa;
+  border-color: #f25500;
+}
 
 .node-invitation {
   position: absolute;
@@ -1971,30 +2024,56 @@ button.rk-estado:hover {
 [data-theme='snow'] .node-invitation::after {
   border-top-color: #4f8fb8;
 }
+[data-theme='nether'] .node-invitation {
+  background: #210f14;
+  color: #fca5a5;
+  border-color: #f25500;
+}
+[data-theme='nether'] .node-invitation::after {
+  border-top-color: #f25500;
+}
 
 .map-node .object-ground {
   position: absolute;
-  width: 83%;
-  height: 22%;
-  bottom: 4%;
-  left: 8%;
-  border: 2px solid #fff4b6;
-  border-radius: 50%;
-  box-shadow: 0 0 12px rgba(255, 224, 121, 0.53);
-  opacity: 0;
+  width: 80%;
+  height: 20%;
+  bottom: 2%;
+  left: 10%;
+  border: 2px solid #382008;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 0;
+  box-shadow: 2px 2px #1c1004;
+  opacity: 0.6;
   z-index: -1;
 }
 .map-node.available .object-ground {
-  opacity: 0.7;
-  animation: ground-pulse 2.5s ease-in-out infinite;
+  border-color: #f59e0b;
+  box-shadow: 2px 2px #78350f;
+  opacity: 0.9;
+}
+[data-theme='jungle'] .object-ground {
+  border-color: #201103;
+}
+[data-theme='jungle'] .map-node.available .object-ground {
+  border-color: #84cc16;
 }
 [data-theme='castle'] .object-ground {
-  border-color: #fc8cc3;
-  box-shadow: 0 0 12px rgba(236, 68, 138, 0.53);
+  border-color: #181324;
+}
+[data-theme='castle'] .map-node.available .object-ground {
+  border-color: #a855f7;
 }
 [data-theme='snow'] .object-ground {
-  border-color: #bfe6f7;
-  box-shadow: 0 0 12px rgba(127, 198, 239, 0.6);
+  border-color: #1e293b;
+}
+[data-theme='snow'] .map-node.available .object-ground {
+  border-color: #38bdf8;
+}
+[data-theme='nether'] .object-ground {
+  border-color: #140406;
+}
+[data-theme='nether'] .map-node.available .object-ground {
+  border-color: #f25500;
 }
 
 /* Encounter popup card */

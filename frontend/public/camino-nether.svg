@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 768" width="1024" height="768">
+  <desc>Camino de piedra volcánica pixelado e imperfecto para fondo isométrico de lava</desc>
+  <defs>
+    <style>
+      .ground-base { fill: #5a0e16; } /* Color rojo oscuro texturizado del suelo */
+      .path-dark { fill: #1d1e26; }  /* Color de la base de la piedra oscura */
+      .path-light { fill: #353745; } /* Color de la superficie de la piedra */
+    </style>
+  </defs>
+  
+  <g id="path-4-volcanic">
+    <!-- Bloques Base (Profundidad del camino) -->
+    <rect x="550" y="660" width="100" height="40" class="path-dark" />
+    <rect x="450" y="620" width="100" height="40" class="path-dark" />
+    <rect x="350" y="580" width="100" height="40" class="path-dark" />
+    <rect x="350" y="500" width="100" height="40" class="path-dark" />
+    <rect x="450" y="460" width="100" height="40" class="path-dark" />
+    <rect x="550" y="420" width="100" height="40" class="path-dark" />
+    <rect x="550" y="340" width="100" height="40" class="path-dark" />
+    <rect x="450" y="300" width="100" height="40" class="path-dark" />
+    <rect x="350" y="260" width="100" height="40" class="path-dark" />
+
+    <!-- Bloques de Cima (Superficie iluminada) -->
+    <rect x="550" y="620" width="100" height="40" class="path-light" />
+    <rect x="450" y="580" width="100" height="40" class="path-light" />
+    <rect x="350" y="540" width="100" height="40" class="path-light" />
+    <rect x="350" y="460" width="100" height="40" class="path-light" />
+    <rect x="450" y="420" width="100" height="40" class="path-light" />
+    <rect x="550" y="380" width="100" height="40" class="path-light" />
+    <rect x="550" y="300" width="100" height="40" class="path-light" />
+    <rect x="450" y="260" width="100" height="40" class="path-light" />
+    <rect x="350" y="220" width="100" height="40" class="path-light" />
+
+    <!-- Efecto Granulado (Dithering) en los bordes -->
+    <rect x="546" y="624" width="4" height="4" class="ground-base" />
+    <rect x="550" y="616" width="4" height="4" class="path-light" />
+    <rect x="446" y="584" width="4" height="4" class="ground-base" />
+    <rect x="450" y="576" width="4" height="4" class="path-light" />
+    <rect x="346" y="544" width="4" height="4" class="ground-base" />
+    <rect x="350" y="536" width="4" height="4" class="path-light" />
+
+    <rect x="652" y="384" width="4" height="4" class="ground-base" />
+    <rect x="656" y="376" width="4" height="4" class="path-light" />
+    <rect x="652" y="304" width="4" height="4" class="ground-base" />
+    <rect x="656" y="296" width="4" height="4" class="path-light" />
+
+    <rect x="346" y="224" width="4" height="4" class="ground-base" />
+    <rect x="350" y="216" width="4" height="4" class="path-light" />
+  </g>
+</svg>

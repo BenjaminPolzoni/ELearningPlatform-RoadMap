@@ -24,16 +24,13 @@ import { CURSO_SEED_ID } from '../../mocks/seed';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 import { Lives } from './lives';
 import {
-  castleArt,
-  fortressArt,
   GeneratedWorld,
   generateVerticalWorld,
-  lodgeArt,
   nodeArt,
   nodeVerb,
   QuestionData,
-  renderWorldScenery,
-  templeArt,
+  roadJointSvg,
+  startSignSvg,
   VerticalChallenge,
   WorldTheme,
 } from './vertical-world.engine';
@@ -213,10 +210,12 @@ interface ConfettiPiece {
           <!-- VIEWPORT CON SCROLL VERTICAL (Ocupa 100% del ancho y alto) -->
           <div #mapViewport class="map-viewport">
             <div
-              class="map-world relative w-full overflow-hidden"
+              class="map-world vertical-world relative w-full overflow-hidden"
+              [attr.data-theme]="theme()"
               [style.height.px]="world().worldHeight"
-              [style.background]="'var(--ground) url(' + world().tile + ') repeat-y'"
-              style="background-size: 100% auto; image-rendering: pixelated;"
+              [style.backgroundImage]="'url(' + world().tile + ')'"
+              [style.backgroundColor]="'var(--ground)'"
+              style="background-size: 100% auto; background-repeat: repeat-y; background-position: center top; image-rendering: pixelated;"
             >
               <!-- 1. Capa de Terreno y Caminos SVG -->
               <div class="vertical-terrain">
@@ -225,6 +224,7 @@ interface ConfettiPiece {
                   class="vertical-road"
                   [attr.viewBox]="'0 0 ' + world().worldWidth + ' ' + world().worldHeight"
                   preserveAspectRatio="none"
+                  shape-rendering="crispEdges"
                   aria-hidden="true"
                 >
                   <!-- Ramales de bonus y recuperación -->
@@ -239,18 +239,23 @@ interface ConfettiPiece {
                   <path [attr.d]="roadPathD()" class="road-center" />
                 </svg>
 
-                <!-- Escenario Procedural (Monedas, Casas Hongo, Nubes, Flores, Antorchas, etc.) -->
-                <div [innerHTML]="scenerySvg()" class="pointer-events-none"></div>
+                <!-- Anillos conectores 16x16 en cada parada y bifurcacion del camino -->
+                @for (s of roadJoints(); track $index) {
+                  <div
+                    class="road-joint absolute pointer-events-none"
+                    [style.left.%]="s[0]"
+                    [style.top.%]="s[1]"
+                    style="translate: -50% -50%; width: 28px; height: 28px;"
+                    [innerHTML]="roadJointHtml()"
+                  ></div>
+                }
 
-                <!-- Meta en la cumbre (Castillo / Templo / Fortaleza) -->
-                <div class="vertical-castle" [style.top.%]="castleTopPercent()">
-                  <div [innerHTML]="castleGoalSvg()"></div>
-                  <span>LA META DE TU AVENTURA</span>
-                </div>
+
+
 
                 <!-- Punto de partida START en la base -->
                 <div class="vertical-start" [style.top.%]="startTopPercent()">
-                  <span>START</span>
+                  <div class="w-12 h-12 mx-auto mb-1" [innerHTML]="startSignHtml()"></div>
                   <small>Tu aventura empieza aquí</small>
                 </div>
 
@@ -614,16 +619,25 @@ export class UnidadMapa {
     const nombre = u.nombre.toLowerCase();
     if (nombre.includes('desierto') || nombre.includes('fundamento') || u.orden === 1) return 'desert';
     if (nombre.includes('selva') || nombre.includes('control') || u.orden === 2) return 'jungle';
-    if (nombre.includes('castillo') || nombre.includes('fortaleza') || nombre.includes('funcion') || u.orden === 3)
+    if (nombre.includes('castillo') || (nombre.includes('funcion') && !nombre.includes('concurrencia')) || u.orden === 3)
       return 'castle';
     if (
       nombre.includes('nieve') ||
       nombre.includes('montaña') ||
+      nombre.includes('taiga') ||
       nombre.includes('estructura de datos') ||
       u.orden === 4
     )
       return 'snow';
-    return (['desert', 'jungle', 'castle', 'snow'] as const)[(u.orden - 1) % 4];
+    if (
+      nombre.includes('nether') ||
+      nombre.includes('lava') ||
+      nombre.includes('concurrencia') ||
+      nombre.includes('redes') ||
+      u.orden === 5
+    )
+      return 'nether';
+    return (['desert', 'jungle', 'castle', 'snow', 'nether'] as const)[(u.orden - 1) % 5];
   });
 
   // Lista de desafíos y generación del mundo vertical
@@ -671,7 +685,9 @@ export class UnidadMapa {
               ? 'Fuente de alquimia'
               : currentTheme === 'snow'
                 ? 'Hoguera del refugio'
-                : 'Tubería de recuperación',
+                : currentTheme === 'nether'
+                  ? 'Caldero de magma'
+                  : 'Tubería de recuperación',
         type: 'Recuperación',
         difficulty: 'Inicial',
         minutes: 3,
@@ -806,6 +822,17 @@ export class UnidadMapa {
     return ((w.worldHeight - 95) / w.worldHeight) * 100;
   });
 
+  protected readonly roadJoints = computed(() => {
+    const w = this.world();
+    const joints: [number, number][] = [...w.stops];
+    for (const c of w.challenges) {
+      if (c.optional && c.branchFrom) {
+        joints.push(c.branchFrom);
+      }
+    }
+    return joints;
+  });
+
   protected readonly milestones = computed(() => {
     const w = this.world();
     const count = Math.floor((w.mainCount - 1) / 4);
@@ -853,14 +880,14 @@ export class UnidadMapa {
   }
 
   // Renderizadores SVG Sanitizados
-  protected scenerySvg(): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(renderWorldScenery(this.world(), this.completedIds()));
+
+
+  protected roadJointHtml(): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(roadJointSvg(this.theme()));
   }
 
-  protected castleGoalSvg(): SafeHtml {
-    const t = this.theme();
-    const raw = t === 'jungle' ? templeArt : t === 'castle' ? fortressArt : t === 'snow' ? lodgeArt : castleArt;
-    return this.sanitizer.bypassSecurityTrustHtml(raw);
+  protected startSignHtml(): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(startSignSvg);
   }
 
   protected nodeSvg(c: VerticalChallenge): SafeHtml {
@@ -1028,12 +1055,24 @@ export class UnidadMapa {
       const progress = duration === 0 ? 1 : Math.min(1, elapsed / duration);
       const [x, y] = pointOnRoute(route, progress);
 
-      const dx = x - this.playerPos().x;
+      // Clamp player within road bounds
+      const clampedX = Math.max(10, Math.min(90, x));
+      const clampedY = Math.max(2, Math.min(98, y));
+
+      const dx = clampedX - this.playerPos().x;
       if (Math.abs(dx) > 0.001) this.facing.set(dx < 0 ? 'izquierda' : 'derecha');
-      this.playerPos.set({ x, y });
+      this.playerPos.set({ x: clampedX, y: clampedY });
+
+      // Dinamismo de cámara: desplazar viewport/fondo manteniendo al explorador en foco
+      const vp = this.mapViewport()?.nativeElement;
+      if (vp) {
+        const playerPixelY = (clampedY / 100) * w.worldHeight;
+        const targetScroll = playerPixelY - vp.clientHeight / 2;
+        vp.scrollTop = Math.max(0, Math.min(vp.scrollHeight - vp.clientHeight, targetScroll));
+      }
 
       if (elapsed - lastFootstep > 180) {
-        const puff: WalkPuff = { id: Date.now() + Math.random(), x: (x / 100) * w.worldWidth, y: (y / 100) * w.worldHeight };
+        const puff: WalkPuff = { id: Date.now() + Math.random(), x: (clampedX / 100) * w.worldWidth, y: (clampedY / 100) * w.worldHeight };
         this.walkPuffs.update((list) => [...list.slice(-12), puff]);
         lastFootstep = elapsed;
       }

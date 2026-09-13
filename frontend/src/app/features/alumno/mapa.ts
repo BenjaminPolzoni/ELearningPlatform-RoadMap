@@ -38,7 +38,6 @@ import { RankingPanel } from '../ranking/ranking-panel';
 import { PixelIcon } from '../../shared/pixel-icon';
 
 type EstadoIsla = 'bloqueada' | 'disponible' | 'completada';
-type JoyDir = 'left' | 'right' | 'up' | 'down';
 
 interface Isla {
   u: Unidad;
@@ -142,11 +141,11 @@ const MARGEN = 90;
         
         <!-- 1. NAVBAR ARCADE SUPERIOR -->
         <header class="flex-shrink-0 relative z-10">
-          <nav class="navbar flex h-12 flex-shrink-0 items-center justify-between gap-4 px-4 border-b-4 border-[#8B5CF6] bg-gradient-to-r from-[#12102B] via-[#0D0B1E] to-[#12102B]">
+          <nav class="navbar flex h-12 flex-shrink-0 items-center justify-between gap-4 px-4 border-b-4 border-primary bg-gradient-to-r from-[#1A1438] via-[#130E24] to-[#1A1438]">
             <div class="flex items-center gap-3">
-              <span class="text-2xl drop-shadow-[0_0_10px_rgba(255,214,10,0.8)]">🎯</span>
+              <span class="text-2xl drop-shadow-[0_0_10px_rgba(245,158,11,0.6)]">🎯</span>
               <div class="leading-tight">
-                <div class="text-lg font-black tracking-wide text-[#7FFAFF] glow-cyan">
+                <div class="text-lg font-black tracking-wide text-primary">
                   EDUQUEST
                 </div>
                 <div class="text-[9px] uppercase tracking-[0.3em] text-base-content/50">
@@ -156,18 +155,9 @@ const MARGEN = 90;
             </div>
 
             <div class="flex items-center gap-3">
-              @if (auth.rol() === 'PROFESOR') {
-                <a
-                  routerLink="/profesor"
-                  class="btn btn-xs border border-white/20 bg-white/10 ui-font text-[8px] text-white hover:bg-white/20"
-                  title="Volver al editor del curso"
-                >
-                  ← EDITOR
-                </a>
-              }
               <a
                 routerLink="/login"
-                class="badge badge-outline ui-font text-[9px] cursor-pointer transition-colors flex items-center gap-1 border-[#00E5FF] text-[#7FFAFF] hover:bg-[#00E5FF]/15"
+                class="badge badge-outline ui-font text-[9px] cursor-pointer transition-colors flex items-center gap-1 border-primary/50 text-base-content hover:bg-primary/15"
                 title="Cambiar de rol / volver al selector"
               >
                 <span>{{ auth.rol() ?? 'ALUMNO' }}</span>
@@ -176,7 +166,7 @@ const MARGEN = 90;
 
               <a
                 routerLink="/alumno/avatar"
-                class="btn btn-circle btn-sm bg-[#1B1740] border-2 border-[#00E5FF] shadow-[0_0_12px_rgba(0,229,255,0.6)] flex items-center justify-center overflow-hidden hover:scale-110 transition-transform"
+                class="btn btn-circle btn-sm bg-[#1B1740] border-2 border-primary shadow-[0_0_12px_rgba(139,92,246,0.5)] flex items-center justify-center overflow-hidden hover:scale-110 transition-transform"
                 title="Personalizar mi avatar"
               >
                 <ui-avatar-sprite [config]="avatarSrv.avatar()" [alto]="48" />
@@ -420,16 +410,56 @@ const MARGEN = 90;
                 }
               </svg>
 
+              <!-- Floating Action Dock encima del mapa (Ranking, Insignias, Mochila, Centrar) -->
+              <div class="absolute top-3 right-3 z-50 flex items-center gap-2 bg-[#1B1534]/90 p-2 rounded-xl border-2 border-[#8B5CF6]/50 shadow-xl backdrop-blur-md">
+                <button
+                  type="button"
+                  class="btn btn-xs btn-primary ui-font text-[8px] flex items-center gap-1.5 shadow-md"
+                  (click)="rankOpen.set(true)"
+                  title="Ranking de la cohorte"
+                >
+                  <span class="text-xs">🏆</span>
+                  <span>RANKING</span>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-xs btn-secondary ui-font text-[8px] flex items-center gap-1.5 shadow-md"
+                  (click)="inventoryModal.set('insignias')"
+                  title="Insignias y logros"
+                >
+                  <span class="text-xs">🏅</span>
+                  <span>INSIGNIAS</span>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-xs btn-accent ui-font text-[8px] flex items-center gap-1.5 shadow-md"
+                  (click)="inventoryModal.set('equipamiento')"
+                  title="Mochila y equipamiento"
+                >
+                  <span class="text-xs">🎒</span>
+                  <span>MOCHILA</span>
+                </button>
+                <div class="w-px h-4 bg-white/20"></div>
+                <button
+                  type="button"
+                  class="btn btn-xs btn-ghost ui-font text-[8px] flex items-center justify-center border border-white/20 text-white hover:bg-white/20"
+                  (click)="encuadrar()"
+                  title="Centrar mapa"
+                >
+                  ⤢
+                </button>
+              </div>
+
               <!-- Tarjeta de unidad seleccionada: aparece al lado del nodo clickeado -->
               @if (sel(); as isla) {
                 <div
                   #fichaUnidad
-                  class="chaflan absolute w-80 border-2 border-[#00E5FF] bg-base-200/95 p-4 backdrop-blur z-50 shadow-2xl"
+                  class="chaflan absolute w-80 border-2 border-primary bg-base-200/95 p-4 backdrop-blur z-50 shadow-2xl"
                   [style.left.px]="fichaPos()?.x ?? 16"
                   [style.top.px]="fichaPos()?.y ?? 56"
                 >
                   <div class="flex items-start justify-between gap-2">
-                    <h3 class="title-font text-lg text-[#7FFAFF]">{{ isla.u.nombre }}</h3>
+                    <h3 class="title-font text-lg text-primary">{{ isla.u.nombre }}</h3>
                     <button class="btn btn-ghost btn-xs" (click)="sel.set(null)" aria-label="Cerrar ficha">✕</button>
                   </div>
                   <p class="ui-font mt-1 text-[8px] text-accent">{{ subtitulo(isla) }}</p>
@@ -448,13 +478,12 @@ const MARGEN = 90;
                   @if (isla.estado === 'bloqueada') {
                     @if (motivoBloqueo(isla); as m) {
                       <p class="mt-3 text-xs leading-relaxed text-white/70">
-                        🔒 {{ m.pre }}<b class="text-[#FFD60A]">{{ m.resaltado }}</b>{{ m.post }}
+                        🔒 {{ m.pre }}<b class="text-warning">{{ m.resaltado }}</b>{{ m.post }}
                       </p>
                     }
                   } @else {
                     <button
-                      class="btn btn-sm ui-font mt-3 w-full text-[8px] border-none"
-                      style="background: #00E5FF; color: #0D0B1E"
+                      class="btn btn-sm btn-primary ui-font mt-3 w-full text-[8px]"
                       (click)="entrar(isla)"
                     >
                       ▶ ENTRAR A LA UNIDAD
@@ -463,381 +492,6 @@ const MARGEN = 90;
                 </div>
               }
             </div>
-
-            <!-- B. ARCADE DECK INFERIOR (Gabinete con Joystick y Botonera Sanwa) -->
-            <footer
-              class="cabinet-metal cabinet-neon relative z-20 flex-shrink-0 flex items-center justify-between gap-3 px-8 py-2 border-t-[6px] border-[#23242E]"
-              style="max-height: 25%"
-            >
-              <!-- Screws / bolts: 4 corners -->
-              <span class="screw-metal absolute top-3 left-3 w-4 h-4 rounded-full pointer-events-none z-20"></span>
-              <span class="screw-metal absolute top-3 right-3 w-4 h-4 rounded-full pointer-events-none z-20"></span>
-              <span class="screw-metal absolute bottom-3 left-3 w-4 h-4 rounded-full pointer-events-none z-20"></span>
-              <span class="screw-metal absolute bottom-3 right-3 w-4 h-4 rounded-full pointer-events-none z-20"></span>
-
-              <!-- ============ ZONE 1: joystick + silkscreen branding ============ -->
-              <div class="flex items-center gap-2 flex-shrink-0">
-                <div class="flex items-center gap-2 flex-shrink-0">
-                  <!-- joystick (45° pink ball, sequential gate light, keyboard arrows) -->
-                  <div class="relative w-44 h-44 flex-shrink-0 -mt-8" style="perspective: 460px">
-                    <div
-                      #joystickBase
-                      class="absolute inset-0 cursor-crosshair"
-                      (pointerdown)="onJoyDown($event)"
-                      (pointermove)="onJoyMove($event)"
-                    >
-                      <!-- sequential idle light + active direction -->
-                      <span
-                        class="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 text-xs font-black"
-                        [class.gate-arrow]="activeJoy() !== 'up'"
-                        [class.glow-pink-txt]="activeJoy() === 'up'"
-                        >▲</span
-                      >
-                      <span
-                        class="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-black"
-                        [class.gate-arrow]="activeJoy() !== 'down'"
-                        [class.glow-pink-txt]="activeJoy() === 'down'"
-                        >▼</span
-                      >
-                      <span
-                        class="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 text-xs font-black"
-                        [class.gate-arrow]="activeJoy() !== 'left'"
-                        [class.glow-pink-txt]="activeJoy() === 'left'"
-                        >◄</span
-                      >
-                      <span
-                        class="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 text-xs font-black"
-                        [class.gate-arrow]="activeJoy() !== 'right'"
-                        [class.glow-pink-txt]="activeJoy() === 'right'"
-                        >►</span
-                      >
-
-                      <!-- static mounting plate (8-way gate seen at 45°) -->
-                      <div
-                        class="absolute left-1/2 bottom-3 -translate-x-1/2 w-32 h-[92px] rounded-[50%]"
-                        style="
-                          background: radial-gradient(ellipse at 40% 34%, #4a4c5a 0%, #262731 45%, #17181f 100%);
-                          box-shadow:
-                            inset 0 4px 8px rgba(255, 255, 255, 0.1),
-                            inset 0 -6px 10px rgba(0, 0, 0, 0.7),
-                            0 6px 12px rgba(0, 0, 0, 0.5),
-                            0 0 0 2px rgba(255, 45, 45, 0.4),
-                            0 0 16px rgba(255, 45, 45, 0.35);
-                        "
-                      >
-                        <div
-                          class="absolute inset-5 rounded-[50%] border-2 border-[#5A5C6A]"
-                          style="
-                            background: radial-gradient(ellipse at center, #1b1c26 0%, #12131b 70%);
-                            clip-path: polygon(50% 8%, 94% 32%, 94% 68%, 50% 92%, 6% 68%, 6% 32%);
-                          "
-                        ></div>
-                        <span
-                          class="absolute top-1 left-8 w-1.5 h-1.5 rounded-full bg-[#2E303A] border border-black/50"
-                        ></span>
-                        <span
-                          class="absolute top-1 right-8 w-1.5 h-1.5 rounded-full bg-[#2E303A] border border-black/50"
-                        ></span>
-                        <span
-                          class="absolute bottom-1 left-8 w-1.5 h-1.5 rounded-full bg-[#2E303A] border border-black/50"
-                        ></span>
-                        <span
-                          class="absolute bottom-1 right-8 w-1.5 h-1.5 rounded-full bg-[#2E303A] border border-black/50"
-                        ></span>
-                      </div>
-
-                      <!-- ball shadow on plate -->
-                      <div
-                        class="absolute left-1/2 bottom-16 -translate-x-1/2 w-14 h-4 rounded-[50%] bg-black/45 blur-sm pointer-events-none"
-                      ></div>
-
-                      <!-- stick + ball: only tilts (origin at base), anillo de energía rojo -->
-                      <div
-                        class="absolute inset-0 pointer-events-none transition-transform duration-100"
-                        [style.transform]="joystickTilt()"
-                        style="transform-origin: center 88%"
-                      >
-                        <div
-                          class="absolute left-1/2 bottom-[54px] -translate-x-1/2 w-[20px] h-[42px] rounded-[3px]"
-                          style="
-                            background: linear-gradient(90deg, #9aa0ac 0%, #eef1f6 45%, #7b818f 100%);
-                            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
-                          "
-                        ></div>
-                        <span class="joy-energy-ring absolute left-1/2 bottom-[86px] -translate-x-1/2 w-18 h-18 rounded-full"></span>
-                        <span class="joy-energy-ring ring-delay absolute left-1/2 bottom-[86px] -translate-x-1/2 w-18 h-18 rounded-full"></span>
-                        <div
-                          class="absolute left-1/2 bottom-[78px] -translate-x-1/2 w-[34px] h-[12px] rounded-full joy-ball-collar"
-                        ></div>
-                        <div
-                          class="absolute left-1/2 bottom-[86px] -translate-x-1/2 w-18 h-18 rounded-full joy-ball-red"
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- silkscreen branding printed on the metal -->
-                  <div class="flex flex-col items-center gap-3 flex-shrink-0">
-                    <svg class="invader-ico" viewBox="0 0 9 8" shape-rendering="crispEdges" aria-hidden="true">
-                      <rect x="2" y="0" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="6" y="0" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="3" y="1" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="5" y="1" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="2" y="2" width="5" height="1" fill="#8B5CF6"/>
-                      <rect x="1" y="3" width="2" height="1" fill="#8B5CF6"/>
-                      <rect x="4" y="3" width="1" height="1" fill="#00E5FF"/>
-                      <rect x="6" y="3" width="2" height="1" fill="#8B5CF6"/>
-                      <rect x="0" y="4" width="9" height="1" fill="#8B5CF6"/>
-                      <rect x="0" y="5" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="2" y="5" width="5" height="1" fill="#8B5CF6"/>
-                      <rect x="8" y="5" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="0" y="6" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="2" y="6" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="6" y="6" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="8" y="6" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="3" y="7" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="5" y="7" width="1" height="1" fill="#8B5CF6"/>
-                    </svg>
-                    <div class="silkscreen silkscreen-blink text-[9px] text-center leading-relaxed">
-                      EDU-JOY<br />INSERT COIN
-                    </div>
-                    <div
-                      class="w-1.5 h-8 rounded-sm bg-black/80 coin-slot-glow"
-                      style="border: 2px solid #ffd60a"
-                    ></div>
-                  </div>
-
-                  <!-- cooling vents -->
-                  <div class="vents w-2.5 h-28 rounded-sm flex-shrink-0"></div>
-                </div>
-              </div>
-
-              <div class="flex-1"></div>
-
-              <!-- ============ ZONE 3: diamond gate of equal push-buttons ============ -->
-              <div
-                class="flex-1 flex items-center justify-end gap-6 pr-12 h-full"
-                style="transform: translateY(-5px)"
-              >
-                <!-- top-center: RANKING -->
-                <button
-                  type="button"
-                  class="abtn abtn-rank w-28 h-28"
-                  (click)="rankOpen.set(true)"
-                  aria-label="Abrir Ranking"
-                  title="Ranking de la cohorte"
-                >
-                  <span
-                    class="abtn-cap"
-                    style="
-                      background: radial-gradient(circle at 40% 30%, #b79dff 0%, #8b5cf6 55%, #5b2fc1 100%);
-                      box-shadow:
-                        inset 0 -8px 12px rgba(0, 0, 0, 0.55),
-                        inset 0 4px 8px rgba(255, 255, 255, 0.55),
-                        0 0 22px rgba(139, 92, 246, 0.65);
-                    "
-                  >
-                    <svg class="pixel-ico" viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true">
-                      <rect x="1" y="0" width="7" height="1" fill="#1A1225"/>
-                      <rect x="0" y="1" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="1" width="2" height="1" fill="#8B5CF6"/>
-                      <rect x="3" y="1" width="1" height="1" fill="#FFFFFF"/>
-                      <rect x="4" y="1" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="5" y="1" width="1" height="1" fill="#FFFFFF"/>
-                      <rect x="6" y="1" width="2" height="1" fill="#8B5CF6"/>
-                      <rect x="8" y="1" width="1" height="1" fill="#1A1225"/>
-                      <rect x="0" y="2" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="2" width="1" height="1" fill="#5B2FC1"/>
-                      <rect x="2" y="2" width="5" height="1" fill="#8B5CF6"/>
-                      <rect x="7" y="2" width="1" height="1" fill="#5B2FC1"/>
-                      <rect x="8" y="2" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="3" width="1" height="1" fill="#1A1225"/>
-                      <rect x="2" y="3" width="1" height="1" fill="#5B2FC1"/>
-                      <rect x="3" y="3" width="3" height="1" fill="#8B5CF6"/>
-                      <rect x="6" y="3" width="1" height="1" fill="#5B2FC1"/>
-                      <rect x="7" y="3" width="1" height="1" fill="#1A1225"/>
-                      <rect x="2" y="4" width="1" height="1" fill="#1A1225"/>
-                      <rect x="3" y="4" width="1" height="1" fill="#5B2FC1"/>
-                      <rect x="4" y="4" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="5" y="4" width="1" height="1" fill="#5B2FC1"/>
-                      <rect x="6" y="4" width="1" height="1" fill="#1A1225"/>
-                      <rect x="3" y="5" width="1" height="1" fill="#1A1225"/>
-                      <rect x="4" y="5" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="5" y="5" width="1" height="1" fill="#1A1225"/>
-                      <rect x="2" y="6" width="2" height="1" fill="#1A1225"/>
-                      <rect x="4" y="6" width="1" height="1" fill="#8B5CF6"/>
-                      <rect x="5" y="6" width="2" height="1" fill="#1A1225"/>
-                      <rect x="1" y="7" width="1" height="1" fill="#1A1225"/>
-                      <rect x="2" y="7" width="5" height="1" fill="#8B5CF6"/>
-                      <rect x="7" y="7" width="1" height="1" fill="#1A1225"/>
-                      <rect x="0" y="8" width="9" height="1" fill="#1A1225"/>
-                    </svg>
-                    <span
-                      class="neon-cap text-[9px] text-[#241055]"
-                      style="text-shadow: 0 0 4px rgba(0, 0, 0, 0.5)"
-                    >
-                      RANKING
-                    </span>
-                  </span>
-                </button>
-
-                <!-- middle-left: INSIGNIAS -->
-                <button
-                  type="button"
-                  class="abtn abtn-badge w-28 h-28"
-                  (click)="inventoryModal.set('insignias')"
-                  aria-label="Abrir Insignias"
-                  title="Insignias y logros"
-                >
-                  <span
-                    class="abtn-cap"
-                    style="
-                      background: radial-gradient(circle at 40% 30%, #ffed99 0%, #ffd60a 55%, #b89600 100%);
-                      box-shadow:
-                        inset 0 -6px 10px rgba(0, 0, 0, 0.5),
-                        inset 0 3px 6px rgba(255, 255, 255, 0.6),
-                        0 0 18px rgba(255, 214, 10, 0.55);
-                    "
-                  >
-                    <svg class="pixel-ico" viewBox="0 0 11 11" shape-rendering="crispEdges" aria-hidden="true">
-                      <rect x="3" y="0" width="2" height="1" fill="#1A1225"/>
-                      <rect x="6" y="0" width="2" height="1" fill="#1A1225"/>
-                      <rect x="3" y="1" width="1" height="1" fill="#1A1225"/>
-                      <rect x="4" y="1" width="1" height="1" fill="#FFD60A"/>
-                      <rect x="6" y="1" width="1" height="1" fill="#FFD60A"/>
-                      <rect x="7" y="1" width="1" height="1" fill="#1A1225"/>
-                      <rect x="3" y="2" width="1" height="1" fill="#1A1225"/>
-                      <rect x="4" y="2" width="1" height="1" fill="#FFD60A"/>
-                      <rect x="6" y="2" width="1" height="1" fill="#FFD60A"/>
-                      <rect x="7" y="2" width="1" height="1" fill="#1A1225"/>
-                      <rect x="4" y="3" width="1" height="1" fill="#1A1225"/>
-                      <rect x="6" y="3" width="1" height="1" fill="#1A1225"/>
-                      <rect x="2" y="4" width="7" height="1" fill="#1A1225"/>
-                      <rect x="1" y="5" width="1" height="1" fill="#1A1225"/>
-                      <rect x="2" y="5" width="3" height="1" fill="#FFD60A"/>
-                      <rect x="5" y="5" width="1" height="1" fill="#FFFFFF"/>
-                      <rect x="6" y="5" width="3" height="1" fill="#FFD60A"/>
-                      <rect x="9" y="5" width="1" height="1" fill="#1A1225"/>
-                      <rect x="0" y="6" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="6" width="9" height="1" fill="#FFD60A"/>
-                      <rect x="10" y="6" width="1" height="1" fill="#1A1225"/>
-                      <rect x="0" y="7" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="7" width="1" height="1" fill="#FFD60A"/>
-                      <rect x="2" y="7" width="1" height="1" fill="#B89600"/>
-                      <rect x="3" y="7" width="5" height="1" fill="#FFD60A"/>
-                      <rect x="8" y="7" width="1" height="1" fill="#B89600"/>
-                      <rect x="9" y="7" width="1" height="1" fill="#FFD60A"/>
-                      <rect x="10" y="7" width="1" height="1" fill="#1A1225"/>
-                      <rect x="0" y="8" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="8" width="9" height="1" fill="#FFD60A"/>
-                      <rect x="10" y="8" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="9" width="1" height="1" fill="#1A1225"/>
-                      <rect x="2" y="9" width="2" height="1" fill="#FFD60A"/>
-                      <rect x="4" y="9" width="1" height="1" fill="#B89600"/>
-                      <rect x="5" y="9" width="1" height="1" fill="#FFD60A"/>
-                      <rect x="6" y="9" width="1" height="1" fill="#B89600"/>
-                      <rect x="7" y="9" width="2" height="1" fill="#FFD60A"/>
-                      <rect x="9" y="9" width="1" height="1" fill="#1A1225"/>
-                      <rect x="2" y="10" width="7" height="1" fill="#1A1225"/>
-                    </svg>
-                    <span
-                      class="neon-cap text-[9px] text-[#4A3900]"
-                      style="text-shadow: 0 0 4px rgba(0, 0, 0, 0.4)"
-                    >
-                      INSIGNIAS
-                    </span>
-                  </span>
-                </button>
-
-                <!-- middle-right: MOCHILA -->
-                <button
-                  type="button"
-                  class="abtn abtn-bag w-28 h-28"
-                  (click)="inventoryModal.set('equipamiento')"
-                  aria-label="Abrir Mochila"
-                  title="Mochila y equipamiento"
-                >
-                  <span
-                    class="abtn-cap"
-                    style="
-                      background: radial-gradient(circle at 40% 30%, #bdf4ff 0%, #00e5ff 55%, #008a99 100%);
-                      box-shadow:
-                        inset 0 -6px 10px rgba(0, 0, 0, 0.5),
-                        inset 0 3px 6px rgba(255, 255, 255, 0.6),
-                        0 0 18px rgba(0, 229, 255, 0.6);
-                    "
-                  >
-                    <svg class="pixel-ico" viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true">
-                      <rect x="2" y="0" width="2" height="1" fill="#1A1225"/>
-                      <rect x="5" y="0" width="2" height="1" fill="#1A1225"/>
-                      <rect x="2" y="1" width="1" height="1" fill="#1A1225"/>
-                      <rect x="3" y="1" width="1" height="1" fill="#00E5FF"/>
-                      <rect x="5" y="1" width="1" height="1" fill="#00E5FF"/>
-                      <rect x="6" y="1" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="2" width="7" height="1" fill="#1A1225"/>
-                      <rect x="0" y="3" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="3" width="2" height="1" fill="#00E5FF"/>
-                      <rect x="3" y="3" width="1" height="1" fill="#FFFFFF"/>
-                      <rect x="4" y="3" width="1" height="1" fill="#00E5FF"/>
-                      <rect x="5" y="3" width="1" height="1" fill="#FFFFFF"/>
-                      <rect x="6" y="3" width="2" height="1" fill="#00E5FF"/>
-                      <rect x="8" y="3" width="1" height="1" fill="#1A1225"/>
-                      <rect x="0" y="4" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="4" width="2" height="1" fill="#00E5FF"/>
-                      <rect x="3" y="4" width="3" height="1" fill="#1A1225"/>
-                      <rect x="6" y="4" width="2" height="1" fill="#00E5FF"/>
-                      <rect x="8" y="4" width="1" height="1" fill="#1A1225"/>
-                      <rect x="0" y="5" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="5" width="2" height="1" fill="#00E5FF"/>
-                      <rect x="3" y="5" width="1" height="1" fill="#1A1225"/>
-                      <rect x="4" y="5" width="1" height="1" fill="#008A99"/>
-                      <rect x="5" y="5" width="1" height="1" fill="#1A1225"/>
-                      <rect x="6" y="5" width="2" height="1" fill="#00E5FF"/>
-                      <rect x="8" y="5" width="1" height="1" fill="#1A1225"/>
-                      <rect x="0" y="6" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="6" width="2" height="1" fill="#00E5FF"/>
-                      <rect x="3" y="6" width="3" height="1" fill="#1A1225"/>
-                      <rect x="6" y="6" width="2" height="1" fill="#00E5FF"/>
-                      <rect x="8" y="6" width="1" height="1" fill="#1A1225"/>
-                      <rect x="0" y="7" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="7" width="7" height="1" fill="#00E5FF"/>
-                      <rect x="8" y="7" width="1" height="1" fill="#1A1225"/>
-                      <rect x="1" y="8" width="7" height="1" fill="#1A1225"/>
-                    </svg>
-                    <span
-                      class="neon-cap text-[9px] text-[#02505A]"
-                      style="text-shadow: 0 0 4px rgba(0, 0, 0, 0.4)"
-                    >
-                      MOCHILA
-                    </span>
-                  </span>
-                </button>
-
-                <!-- bottom-center: SYSTEM (Centrar mapa) -->
-                <button
-                  type="button"
-                  class="abtn abtn-center w-28 h-28"
-                  (click)="encuadrar()"
-                  aria-label="Centrar mapa"
-                  title="Centrar mapa"
-                >
-                  <span
-                    class="abtn-cap"
-                    style="
-                      background: radial-gradient(circle at 40% 30%, #4a4c58 0%, #2e303a 55%, #17181f 100%);
-                      box-shadow:
-                        inset 0 -6px 10px rgba(0, 0, 0, 0.5),
-                        inset 0 3px 6px rgba(255, 255, 255, 0.15);
-                    "
-                  >
-                    <span class="text-2xl text-[#C9B6FF]">⤢</span>
-                    <span class="neon-cap text-[9px] text-[#C9B6FF]" style="text-shadow: none">
-                      CENTRAR
-                    </span>
-                  </span>
-                </button>
-              </div>
-            </footer>
           </div>
 
           <!-- B. PANEL DERECHO (Player Stats Sidebar) -->
@@ -968,7 +622,6 @@ export class Mapa implements OnDestroy {
   private readonly data = inject(RoadmapDataPort);
   private readonly router = inject(Router);
   private readonly lienzo = viewChild<ElementRef<SVGSVGElement>>('lienzo');
-  private readonly joystickBase = viewChild<ElementRef<HTMLDivElement>>('joystickBase');
   private readonly fichaUnidad = viewChild<ElementRef<HTMLDivElement>>('fichaUnidad');
   private readonly mapaContenedor = viewChild<ElementRef<HTMLDivElement>>('mapaContenedor');
 
@@ -1002,23 +655,6 @@ export class Mapa implements OnDestroy {
   readonly rankOpen = signal(false);
   readonly inventoryModal = signal<InventoryMode | null>(null);
 
-  // Control e interacción del Joystick
-  readonly activeJoy = signal<JoyDir | null>(null);
-  readonly joystickTilt = computed(() => {
-    const d = this.activeJoy();
-    const map: Record<JoyDir, string> = {
-      left: 'rotateZ(-20deg) rotateX(0deg)',
-      right: 'rotateZ(20deg) rotateX(0deg)',
-      up: 'rotateZ(0deg) rotateX(-16deg)',
-      down: 'rotateZ(0deg) rotateX(16deg)',
-    };
-    return d ? map[d] : 'rotateZ(0deg) rotateX(0deg)';
-  });
-
-  private readonly joyThreshold = 10;
-  private readonly onJoyUpBound = () => this.onJoyUp();
-  private keyTimer: ReturnType<typeof setTimeout> | null = null;
-
   @HostListener('document:click', ['$event'])
   protected onDocumentClick(event: MouseEvent): void {
     if (!this.sel()) return;
@@ -1038,65 +674,19 @@ export class Mapa implements OnDestroy {
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
       event.preventDefault();
 
-      let dir: JoyDir = 'right';
       let dx = 0;
       let dy = 0;
+      if (event.key === 'ArrowLeft') dx = -70;
+      else if (event.key === 'ArrowRight') dx = 70;
+      else if (event.key === 'ArrowUp') dy = -50;
+      else if (event.key === 'ArrowDown') dy = 50;
 
-      if (event.key === 'ArrowLeft') { dir = 'left'; dx = -70; }
-      else if (event.key === 'ArrowRight') { dir = 'right'; dx = 70; }
-      else if (event.key === 'ArrowUp') { dir = 'up'; dy = -50; }
-      else if (event.key === 'ArrowDown') { dir = 'down'; dy = 50; }
-
-      this.activeJoy.set(dir);
       this.panOffset(dx, dy);
-
-      if (this.keyTimer) clearTimeout(this.keyTimer);
-      this.keyTimer = setTimeout(() => this.activeJoy.set(null), 180);
     }
   }
 
   ngOnDestroy(): void {
-    if (this.keyTimer) clearTimeout(this.keyTimer);
-    window.removeEventListener('pointerup', this.onJoyUpBound);
     this.saltoTimers.forEach((t) => clearTimeout(t));
-  }
-
-  protected onJoyDown(event: PointerEvent): void {
-    const el = this.joystickBase()?.nativeElement;
-    if (el) el.setPointerCapture(event.pointerId);
-    window.addEventListener('pointerup', this.onJoyUpBound);
-    this.updateJoy(event);
-  }
-
-  protected onJoyMove(event: PointerEvent): void {
-    if (event.buttons > 0) {
-      this.updateJoy(event);
-    }
-  }
-
-  private updateJoy(event: PointerEvent): void {
-    const el = this.joystickBase()?.nativeElement;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const dx = event.clientX - (rect.left + rect.width / 2);
-    const dy = event.clientY - (rect.top + rect.height / 2);
-    let dir: JoyDir | null = null;
-    if (Math.hypot(dx, dy) >= this.joyThreshold) {
-      dir = Math.abs(dx) > Math.abs(dy)
-        ? dx > 0 ? 'right' : 'left'
-        : dy > 0 ? 'down' : 'up';
-    }
-    this.activeJoy.set(dir);
-
-    if (dir === 'left') this.panOffset(-25, 0);
-    else if (dir === 'right') this.panOffset(25, 0);
-    else if (dir === 'up') this.panOffset(0, -20);
-    else if (dir === 'down') this.panOffset(0, 20);
-  }
-
-  private onJoyUp(): void {
-    window.removeEventListener('pointerup', this.onJoyUpBound);
-    this.activeJoy.set(null);
   }
 
   private panOffset(dx: number, dy: number): void {

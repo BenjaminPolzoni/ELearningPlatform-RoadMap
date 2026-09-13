@@ -1,6 +1,6 @@
 import { EstadoNodo } from '../../core/data/roadmap.models';
 
-export type WorldTheme = 'desert' | 'jungle' | 'castle' | 'snow';
+export type WorldTheme = 'desert' | 'jungle' | 'castle' | 'snow' | 'nether';
 
 export interface QuestionData {
   pregunta: string;
@@ -31,7 +31,7 @@ export interface VerticalChallenge {
 
 export interface WorldAppearanceConfig {
   tile: string;
-  goal: 'castillo' | 'templo' | 'fortaleza' | 'refugio';
+  goal: string;
   goalName: string;
   setting: string;
   support: string;
@@ -40,15 +40,15 @@ export interface WorldAppearanceConfig {
 
 export const WORLD_APPEARANCE: Record<WorldTheme, WorldAppearanceConfig> = {
   desert: {
-    tile: '/mapa_desierto_tile_vertical.png',
-    goal: 'castillo',
-    goalName: 'Castillo del Conocimiento',
+    tile: '/desierto_animado.gif',
+    goal: 'piramide',
+    goalName: 'Gran Pirámide del Saber',
     setting: 'Desierto, oasis y ruinas',
     support: 'Tubería de recuperación',
     lanes: [34, 62, 66, 58, 42, 36, 38, 62, 64, 56, 40, 36],
   },
   jungle: {
-    tile: '/mapa_selva_tile.png',
+    tile: '/selva_animada.gif',
     goal: 'templo',
     goalName: 'Templo de la Sabiduría',
     setting: 'Selva, cascadas y templos',
@@ -56,20 +56,28 @@ export const WORLD_APPEARANCE: Record<WorldTheme, WorldAppearanceConfig> = {
     lanes: [62, 66, 58, 38, 34, 42, 60, 64, 52, 40, 36, 46],
   },
   castle: {
-    tile: '/mapa_castillo_tile.png',
-    goal: 'fortaleza',
-    goalName: 'Fortaleza de la Noche',
+    tile: '/cementerio_animado.gif',
+    goal: 'castillo',
+    goalName: 'Castillo de la Noche',
     setting: 'Murallas, criptas y alquimia',
     support: 'Fuente de alquimia',
     lanes: [36, 34, 44, 62, 66, 56, 42, 36, 38, 58, 64, 52],
   },
   snow: {
-    tile: '/mapa_nieve_tile.png',
+    tile: '/bioma_taiga.jpg',
     goal: 'refugio',
-    goalName: 'Refugio de los Picos del Norte',
-    setting: 'Cumbres, pinos y lagunas heladas',
+    goalName: 'Refugio de la Taiga Nevada',
+    setting: 'Taiga, pinos y cumbres heladas',
     support: 'Hoguera del refugio',
     lanes: [22, 34, 76, 86, 64, 30, 16, 44, 78, 66, 38, 20],
+  },
+  nether: {
+    tile: '/nether_animado.gif',
+    goal: 'fortaleza',
+    goalName: 'Fortaleza Infernal de Magma',
+    setting: 'Nether, basaltos y ríos de lava',
+    support: 'Caldero de magma',
+    lanes: [36, 64, 58, 40, 32, 48, 68, 62, 44, 34, 54, 60],
   },
 };
 
@@ -85,7 +93,7 @@ function variation(id: number, salt = 0): number {
 export const challengeSpacing = (id: number) =>
   CHALLENGE_STEP + [0, 45, 15, 70, 30, 90][variation(id, 7) % 6];
 
-const clampX = (x: number) => Math.max(30, Math.min(70, x));
+const clampX = (x: number) => Math.max(16, Math.min(84, x));
 
 export interface GeneratedWorld {
   theme: WorldTheme;
@@ -100,6 +108,59 @@ export interface GeneratedWorld {
   goal: string;
   setting: string;
   support: string;
+}
+
+function makePixelRoadSegment(
+  from: [number, number],
+  to: [number, number],
+  worldWidth: number,
+  worldHeight: number,
+): [number, number][] {
+  const fx = (from[0] / 100) * worldWidth;
+  const fy = (from[1] / 100) * worldHeight;
+  const tx = (to[0] / 100) * worldWidth;
+  const ty = (to[1] / 100) * worldHeight;
+
+  const turnX = tx;
+  const goRight = turnX > fx;
+  const cornerR = Math.min(32, Math.abs(turnX - fx) * 0.4, Math.abs(ty - fy) * 0.4);
+
+  const pts: [number, number][] = [];
+
+  // Tramo 1: Desplazamiento lateral inicial hacia el eje del codo (puntos 0..10)
+  for (let i = 0; i <= 10; i++) {
+    const t = i / 10;
+    const targetX = goRight ? turnX - cornerR : turnX + cornerR;
+    pts.push([
+      ((fx + (targetX - fx) * t) / worldWidth) * 100,
+      (fy / worldHeight) * 100,
+    ]);
+  }
+
+  // Tramo 2: Curva cerrada en el codo (puntos 11..21)
+  const p0x = goRight ? turnX - cornerR : turnX + cornerR;
+  const p0y = fy;
+  const p1y = fy - cornerR;
+  for (let i = 1; i <= 11; i++) {
+    const t = i / 11;
+    const u = 1 - t;
+    pts.push([
+      ((u * u * p0x + 2 * u * t * turnX + t * t * turnX) / worldWidth) * 100,
+      ((u * u * p0y + 2 * u * t * p0y + t * t * p1y) / worldHeight) * 100,
+    ]);
+  }
+
+  // Tramo 3: Ascenso vertical hacia el nodo destino (puntos 22..32)
+  const startY = fy - cornerR;
+  for (let i = 1; i <= 11; i++) {
+    const t = i / 11;
+    pts.push([
+      (turnX / worldWidth) * 100,
+      ((startY + (ty - startY) * t) / worldHeight) * 100,
+    ]);
+  }
+
+  return pts;
 }
 
 export function generateVerticalWorld(
@@ -129,34 +190,12 @@ export function generateVerticalWorld(
     stops.push([id === mainCount ? 50 : x, (groundY(id) / worldHeight) * 100]);
   }
 
-  // Calculate smooth Bezier roads
+  // Caminos pixel art con curvas cerradas que aprovechan el ancho del mapa
   const roads: [number, number][][] = [
     [],
-    ...stops.slice(1).map((to, i) => {
-      const from = stops[i];
-      const dy = to[1] - from[1];
-      const bend = variation(i + 1, 29) % 4;
-      const slope = (id: number) =>
-        id === 0 || id === mainCount
-          ? 0
-          : (stops[id + 1][0] - stops[id - 1][0]) / (stops[id + 1][1] - stops[id - 1][1]);
-      const y1 = [0.48, 0.28, 0.4, 0.3][bend];
-      const y2 = [0.7, 0.75, 0.6, 0.8][bend];
-      const cx1 = clampX(from[0] + slope(i) * dy * y1);
-      const cx2 = clampX(to[0] - slope(i + 1) * dy * (1 - y2));
-
-      return Array.from({ length: 33 }, (_, step) => {
-        const t = step / 32;
-        const u = 1 - t;
-        return [
-          u * u * u * from[0] + 3 * u * u * t * cx1 + 3 * u * t * t * cx2 + t * t * t * to[0],
-          u * u * u * from[1] +
-            3 * u * u * t * (from[1] + dy * y1) +
-            3 * u * t * t * (from[1] + dy * y2) +
-            t * t * t * to[1],
-        ] as [number, number];
-      });
-    }),
+    ...stops.slice(1).map((to, i) =>
+      makePixelRoadSegment(stops[i], to, WORLD_WIDTH, worldHeight),
+    ),
   ];
 
   // Clone challenges and set positions
@@ -214,98 +253,168 @@ export function generateVerticalWorld(
   };
 }
 
-// SVG Artwork for End-Goals
-export const castleArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-rendering="crispEdges">
-  <ellipse cx="120" cy="180" rx="110" ry="13" fill="#775028" opacity=".24"/>
-  <path d="M12 170h216v12H12zM24 158h192v14H24z" fill="#b8884d" stroke="#6d462a" stroke-width="3"/>
-  <path d="M28 68h44v94H28zM168 68h44v94h-44zM70 93h100v69H70zM94 42h52v62H94z" fill="#dcb679" stroke="#63452d" stroke-width="4"/>
-  <path d="M30 72h10v86H30zM96 47h10v54H96zM170 72h10v86h-10zM74 100h8v58h-8z" fill="#ffe2a5"/>
-  <path d="M60 72h10v86H60zM136 47h8v51h-8zM200 72h10v86h-10zM158 100h10v58h-10z" fill="#ae7a49"/>
-  <path d="m24 68 26-35 26 35zm65-25 31-42 31 42zm75 25 26-35 26 35z" fill="#d95c45" stroke="#773b2d" stroke-width="4"/>
-  <path d="m33 58 17-22 5 9-12 13zm68-25 19-27 5 9-13 18zm72 25 17-22 5 9-12 13z" fill="#ff9260"/>
-  <path d="M74 86h13v10h13V86h13v10h14V86h13v10h13V86h13v22H74z" fill="#f3d096" stroke="#755434" stroke-width="3"/>
-  <path d="M102 165v-31l8-12h20l8 12v31z" fill="#563524" stroke="#9e7040" stroke-width="5"/>
-  <path d="M110 164v-28l6-8h9l6 8v28z" fill="#2e2529"/>
-  <path d="M43 88h12v22H43zM183 88h12v22h-12zM114 57h12v22h-12z" fill="#5f4430" stroke="#b78b55" stroke-width="3"/>
-  <path d="M32 119h34m-34 16h34m-34 16h34m106-32h36m-36 16h36m-36 16h36M80 117h20m40 0h21" stroke="#b28550" stroke-width="3"/>
-  <path d="M96 166h48v7H96zM89 174h62v8H89zM80 183h80v8H80z" fill="#ffe1a1" stroke="#a57948" stroke-width="3"/>
-  <path d="M50 34V8m140 26V8" stroke="#68432e" stroke-width="3"/>
-  <path d="M52 8h24l-6 7 6 7H52zM192 8h24l-6 7 6 7h-24z" fill="#e25c45" stroke="#8f442b" stroke-width="2"/>
+// 32x32 / 16x16 Pixel Art SVG Artwork for Biome End-Goals
+export const pyramidGoalArt = `<img src="/piramide.svg" class="w-full h-full object-contain pixelated" />`;
+export const templeGoalArt = `<img src="/templo.svg" class="w-full h-full object-contain pixelated" />`;
+export const castleGoalArt = `<img src="/castillo.svg" class="w-full h-full object-contain pixelated" />`;
+export const fortressGoalArt = `<img src="/fortress.svg" class="w-full h-full object-contain pixelated" />`;
+export const lodgeGoalArt = `<svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
+  <!-- Sombra en nieve -->
+  <rect x="0" y="15" width="16" height="1" fill="#334155" opacity="0.3"/>
+  <!-- Cúpula de hielo escalonada -->
+  <rect x="2" y="11" width="12" height="4" fill="#CBD5E1"/>
+  <rect x="3" y="8" width="10" height="3" fill="#E2E8F0"/>
+  <rect x="5" y="5" width="6" height="3" fill="#F1F5F9"/>
+  <rect x="6" y="4" width="4" height="1" fill="#FFFFFF"/>
+  <!-- Líneas de corte de bloques de hielo -->
+  <rect x="2" y="11" width="12" height="1" fill="#94A3B8"/>
+  <rect x="3" y="8" width="10" height="1" fill="#94A3B8"/>
+  <rect x="5" y="5" width="6" height="1" fill="#94A3B8"/>
+  <rect x="5" y="12" width="1" height="3" fill="#94A3B8"/>
+  <rect x="10" y="12" width="1" height="3" fill="#94A3B8"/>
+  <rect x="7" y="9" width="1" height="2" fill="#94A3B8"/>
+  <!-- Entrada túnel -->
+  <rect x="6" y="11" width="4" height="4" fill="#94A3B8"/>
+  <rect x="7" y="12" width="2" height="3" fill="#1E293B"/>
+  <!-- Chimenea humeante -->
+  <rect x="10" y="2" width="2" height="3" fill="#475569"/>
+  <rect x="11" y="0" width="2" height="1" fill="#F8FAFC"/>
+  <rect x="10" y="1" width="1" height="1" fill="#E2E8F0"/>
 </svg>`;
 
-export const templeArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-rendering="crispEdges">
-  <ellipse cx="120" cy="184" rx="111" ry="12" fill="#153629" opacity=".4"/>
-  <path d="M12 162h216v23H12zM30 139h180v23H30zM49 115h142v24H49zM65 89h110v26H65zM77 43h86v47H77z" fill="#938958" stroke="#384d32" stroke-width="4"/>
-  <path d="M15 164h210M33 142h174M53 118h134M69 93h102M81 47h77" stroke="#d2c38b" stroke-width="6"/>
-  <path d="M100 183V91h40v92z" fill="#b2a577"/>
-  <path d="M99 112h42m-42 16h42m-42 16h42m-42 16h42m-42 16h42" stroke="#635e3b" stroke-width="4"/>
-  <path d="M104 88V62h32v26z" fill="#263729"/>
-  <path d="M73 44V29h93v15zM89 28V15h60v13z" fill="#78824b" stroke="#34472e" stroke-width="4"/>
-  <path d="M30 164v-21h14m18-28h15v-21m85-9v21h19m18 38h14v27" fill="none" stroke="#4f8e43" stroke-width="8"/>
-  <path d="M82 54h9v15h-9zm67 0h8v15h-8z" fill="#ddb65e"/>
-</svg>`;
+// Sprite retro de conector/aro de camino 16x16 (estilo SMB3)
+export const roadJointSvg = (theme: WorldTheme = 'desert') => {
+  const border =
+    theme === 'jungle'
+      ? '#201103'
+      : theme === 'castle'
+        ? '#1B1329'
+        : theme === 'snow'
+          ? '#1E293B'
+          : theme === 'nether'
+            ? '#1D1E26'
+            : '#382008';
+  const fill =
+    theme === 'jungle'
+      ? '#D5A86A'
+      : theme === 'castle'
+        ? '#6A587D'
+        : theme === 'snow'
+          ? '#CBD5E1'
+          : theme === 'nether'
+            ? '#353745'
+            : '#F6D58C';
+  const highlight =
+    theme === 'jungle'
+      ? '#FAE5B6'
+      : theme === 'castle'
+        ? '#C4B4D8'
+        : theme === 'snow'
+          ? '#FFFFFF'
+          : theme === 'nether'
+            ? '#F25500'
+            : '#FFEAA7';
+  const core =
+    theme === 'jungle'
+      ? '#8B5A2B'
+      : theme === 'castle'
+        ? '#3D325C'
+        : theme === 'snow'
+          ? '#64748B'
+          : theme === 'nether'
+            ? '#5A0E16'
+            : '#D97706';
 
-export const fortressArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-rendering="crispEdges">
-  <ellipse cx="120" cy="184" rx="111" ry="12" fill="#100f20" opacity=".6"/>
-  <path d="M14 164h212v23H14zM25 70h42v94H25zM173 70h42v94h-42zM65 104h110v60H65zM94 42h52v76H94z" fill="#4b506f" stroke="#1b213a" stroke-width="4"/>
-  <path d="m20 70 26-48 26 48zm69-28 31-42 31 42zm79 28 26-48 26 48z" fill="#773453" stroke="#211c38" stroke-width="4"/>
-  <path d="M32 77h7v83h-7zm70-31h7v63h-7zm79 31h7v83h-7z" fill="#8484a1"/>
-  <path d="M103 164v-31l17-19 17 19v31z" fill="#ae4265" stroke="#27233e" stroke-width="5"/>
-  <path d="M112 164v-27l8-11 8 11v27z" fill="#251a32"/>
-  <path d="M41 91h9v20h-9zm149 0h9v20h-9zm-74-34h8v23h-8z" fill="#ec7181"/>
-  <path d="M68 95h12v12h15V95h13v12h24V95h13v12h15V95h12v25H68z" fill="#6e6b88" stroke="#262b44" stroke-width="3"/>
-  <path d="M98 166h44v8H98zM89 175h62v9H89zM79 185h82v8H79z" fill="#a07e91" stroke="#3a334f" stroke-width="3"/>
-  <path d="M46 20V4m148 16V4" stroke="#9991a8" stroke-width="2"/>
-</svg>`;
-
-export const lodgeArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-rendering="crispEdges">
-  <ellipse cx="120" cy="184" rx="111" ry="12" fill="#2d4463" opacity=".35"/>
-  <path d="M8 168h224v22H8z" fill="#e8f1fb" stroke="#9fb6d1" stroke-width="4"/>
-  <path d="M56 108h128v62H56z" fill="#8a5a36" stroke="#402719" stroke-width="4"/>
-  <path d="M56 122h128M56 136h128M56 150h128" stroke="#6d4526" stroke-width="4"/>
-  <path d="m120 34 88 74H32z" fill="#5d3c28" stroke="#2c1b12" stroke-width="4"/>
-  <path d="M120 34l88 74h-22l-66-56-66 56H32z" fill="#f3f8ff" stroke="#a8bed6" stroke-width="4"/>
-  <path d="M26 106h188v14H26z" fill="#e8f1fb" stroke="#9fb6d1" stroke-width="4"/>
-  <path d="M104 126h32v44h-32z" fill="#4a2f1d" stroke="#2a1a10" stroke-width="3"/>
-  <path d="M110 146h5v5h-5z" fill="#ffd98a"/>
-  <path d="M70 126h26v24H70zm74 0h26v24h-26z" fill="#ffd166" stroke="#3b2616" stroke-width="4"/>
-  <path d="M83 126v24M70 138h26M157 126v24M144 138h26" stroke="#3b2616" stroke-width="3"/>
-  <path d="M166 46h20v36h-20z" fill="#6c6f7d" stroke="#2b2f3c" stroke-width="4"/>
-  <path d="M162 42h28v9h-28z" fill="#eef5ff" stroke="#a8bed6" stroke-width="3"/>
-  <g class="lodge-smoke" fill="#d8e5f4" opacity=".85"><path d="M170 26h9v9h-9zm11-13h8v8h-8zm-3-13h7v7h-7z"/></g>
-  <path d="M120 34V10" stroke="#43291b" stroke-width="4"/>
-  <path d="M122 11h30l-9 8 9 8h-30z" fill="#4f9fd0" stroke="#24486b" stroke-width="3"/>
-</svg>`;
-
-// Interactive Node SVGs
-const questionSvg =
-  '<path d="M27 24h16v4h4v12h-4v4h-8v6h-7V39h8v-4h4v-5H27zm1 30h8v7h-8z" fill="#fff0b4" stroke="#915125" stroke-width="2"/>';
-
-const markSvg = (name: 'check' | 'star' | 'heart' | 'bolt' | 'lock', x = 25, y = 33, size = 22) => {
-  if (name === 'check')
-    return `<path d="M${x + 4} ${y + size / 2} L${x + size / 3} ${y + size - 4} L${x + size - 3} ${y + 4}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>`;
-  if (name === 'heart')
-    return `<path d="M${x + size / 2} ${y + size - 2} C${x} ${y + size / 2} ${x} ${y + 2} ${x + size / 2} ${y + size / 3} C${x + size} ${y + 2} ${x + size} ${y + size / 2} ${x + size / 2} ${y + size - 2} Z" fill="currentColor"/>`;
-  if (name === 'star')
-    return `<polygon points="${x + size / 2},${y} ${x + size * 0.65},${y + size * 0.35} ${x + size},${y + size * 0.35} ${x + size * 0.72},${y + size * 0.58} ${x + size * 0.82},${y + size} ${x + size / 2},${y + size * 0.75} ${x + size * 0.18},${y + size} ${x + size * 0.28},${y + size * 0.58} ${x},${y + size * 0.35} ${x + size * 0.35},${y + size * 0.35}" fill="currentColor"/>`;
-  if (name === 'bolt')
-    return `<polygon points="${x + size * 0.6},${y} ${x + size * 0.2},${y + size * 0.55} ${x + size * 0.5},${y + size * 0.55} ${x + size * 0.4},${y + size} ${x + size * 0.8},${y + size * 0.45} ${x + size * 0.5},${y + size * 0.45}" fill="currentColor"/>`;
-  return `<path d="M${x + 4} ${y + 8} h${size - 8} v${size - 10} h-${size - 8} Z M${x + 6} ${y + 8} v-4 a4 4 0 0 1 8 0 v4" fill="currentColor"/>`;
+  return `<svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
+    <!-- Anillo exterior -->
+    <rect x="2" y="1" width="12" height="14" fill="${border}"/>
+    <rect x="1" y="2" width="14" height="12" fill="${border}"/>
+    <!-- Relleno del camino -->
+    <rect x="3" y="2" width="10" height="12" fill="${fill}"/>
+    <rect x="2" y="3" width="12" height="10" fill="${fill}"/>
+    <!-- Brillo superior izquierdo -->
+    <rect x="4" y="3" width="8" height="2" fill="${highlight}"/>
+    <rect x="3" y="4" width="2" height="8" fill="${highlight}"/>
+    <!-- Núcleo central -->
+    <rect x="6" y="6" width="4" height="4" fill="${core}"/>
+    <rect x="7" y="7" width="2" height="2" fill="#FFFFFF"/>
+  </svg>`;
 };
 
-const frostSvg =
-  '<path d="M30 30h4v22h-4z" fill="#f2fdff" stroke="#3d7ea6" stroke-width="1"/><path d="m21 36 22 11-2 4-22-11z" fill="#f2fdff"/><path d="m43 36-22 11 2 4-22-11z" fill="#f2fdff"/><path d="m28 33 4-4 4 4m-8 18 4 4 4-4" fill="none" stroke="#f2fdff" stroke-width="3"/>';
+// Sprite pixel art 16x16 para poste de START
+export const startSignSvg = `<svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
+  <!-- Postes de madera -->
+  <rect x="3" y="10" width="2" height="6" fill="#78350F"/>
+  <rect x="11" y="10" width="2" height="6" fill="#78350F"/>
+  <!-- Placa base -->
+  <rect x="1" y="3" width="14" height="8" fill="#18181B"/>
+  <rect x="2" y="4" width="12" height="6" fill="#DC2626"/>
+  <rect x="3" y="5" width="10" height="4" fill="#FFFFFF"/>
+  <!-- Letras S T A R T en pixel art -->
+  <rect x="4" y="6" width="1" height="2" fill="#18181B"/>
+  <rect x="6" y="6" width="1" height="2" fill="#18181B"/>
+  <rect x="8" y="6" width="1" height="2" fill="#18181B"/>
+  <rect x="10" y="6" width="1" height="2" fill="#18181B"/>
+</svg>`;
+
+// Aliases para compatibilidad hacia atrás
+export const castleArt = castleGoalArt;
+export const templeArt = templeGoalArt;
+export const fortressArt = fortressGoalArt;
+export const lodgeArt = lodgeGoalArt;
+
+// Pixel art helpers
+const pixelCheckSvg = (x: number, y: number) =>
+  `<g shape-rendering="crispEdges"><rect x="${x + 6}" y="${y + 10}" width="4" height="4" fill="#FFFFFF"/><rect x="${x + 10}" y="${y + 14}" width="4" height="4" fill="#FFFFFF"/><rect x="${x + 14}" y="${y + 10}" width="4" height="4" fill="#FFFFFF"/><rect x="${x + 18}" y="${y + 6}" width="4" height="4" fill="#FFFFFF"/><rect x="${x + 22}" y="${y + 2}" width="4" height="4" fill="#FFFFFF"/><rect x="${x + 4}" y="${y + 8}" width="2" height="4" fill="#22C55E"/><rect x="${x + 8}" y="${y + 12}" width="2" height="4" fill="#22C55E"/><rect x="${x + 12}" y="${y + 8}" width="2" height="4" fill="#22C55E"/><rect x="${x + 16}" y="${y + 4}" width="2" height="4" fill="#22C55E"/><rect x="${x + 20}" y="${y}" width="2" height="4" fill="#22C55E"/></g>`;
+
+const pixelQuestionSvg = (x: number, y: number) =>
+  `<g shape-rendering="crispEdges"><rect x="${x + 4}" y="${y}" width="12" height="4" fill="#FFFFFF"/><rect x="${x + 12}" y="${y + 4}" width="4" height="6" fill="#FFFFFF"/><rect x="${x + 8}" y="${y + 10}" width="4" height="4" fill="#FFFFFF"/><rect x="${x + 8}" y="${y + 16}" width="4" height="4" fill="#FFFFFF"/><rect x="${x + 2}" y="${y + 2}" width="2" height="4" fill="#FFFFFF"/><rect x="${x + 4}" y="${y + 2}" width="10" height="2" fill="#D97706"/><rect x="${x + 10}" y="${y + 4}" width="4" height="4" fill="#D97706"/><rect x="${x + 8}" y="${y + 10}" width="2" height="2" fill="#D97706"/><rect x="${x + 8}" y="${y + 16}" width="2" height="2" fill="#D97706"/></g>`;
+
+const pixelLockSvg = (x: number, y: number) =>
+  `<g shape-rendering="crispEdges"><rect x="${x + 4}" y="${y + 6}" width="14" height="12" fill="#475569"/><rect x="${x + 6}" y="${y + 8}" width="10" height="8" fill="#94A3B8"/><rect x="${x + 10}" y="${y + 10}" width="2" height="4" fill="#0F172A"/><rect x="${x + 7}" y="${y}" width="8" height="6" fill="#334155"/><rect x="${x + 9}" y="${y + 2}" width="4" height="4" fill="#0F172A"/></g>`;
+
+const pixelHeartSvg = (x: number, y: number) =>
+  `<g shape-rendering="crispEdges"><rect x="${x + 2}" y="${y}" width="6" height="4" fill="#F43F5E"/><rect x="${x + 10}" y="${y}" width="6" height="4" fill="#F43F5E"/><rect x="${x}" y="${y + 2}" width="18" height="8" fill="#F43F5E"/><rect x="${x + 2}" y="${y + 10}" width="14" height="4" fill="#F43F5E"/><rect x="${x + 4}" y="${y + 14}" width="10" height="3" fill="#E11D48"/><rect x="${x + 6}" y="${y + 17}" width="6" height="2" fill="#BE123C"/><rect x="${x + 8}" y="${y + 19}" width="2" height="2" fill="#881337"/><rect x="${x + 4}" y="${y + 2}" width="2" height="3" fill="#FFF1F2"/></g>`;
+
+const pixelStarSvg = (x: number, y: number) =>
+  `<g shape-rendering="crispEdges"><rect x="${x + 8}" y="${y}" width="4" height="4" fill="#FDE047"/><rect x="${x + 6}" y="${y + 4}" width="8" height="4" fill="#FACC15"/><rect x="${x}" y="${y + 6}" width="20" height="4" fill="#FACC15"/><rect x="${x + 2}" y="${y + 10}" width="16" height="4" fill="#EAB308"/><rect x="${x + 4}" y="${y + 14}" width="12" height="4" fill="#CA8A04"/><rect x="${x + 2}" y="${y + 18}" width="4" height="4" fill="#A16207"/><rect x="${x + 14}" y="${y + 18}" width="4" height="4" fill="#A16207"/><rect x="${x + 8}" y="${y + 2}" width="2" height="2" fill="#FFFFFF"/></g>`;
+
+const pixelSnowflakeSvg = (x: number, y: number) =>
+  `<g shape-rendering="crispEdges"><rect x="${x + 8}" y="${y}" width="4" height="20" fill="#E0F2FE"/><rect x="${x}" y="${y + 8}" width="20" height="4" fill="#E0F2FE"/><rect x="${x + 4}" y="${y + 4}" width="4" height="4" fill="#BAE6FD"/><rect x="${x + 12}" y="${y + 4}" width="4" height="4" fill="#BAE6FD"/><rect x="${x + 4}" y="${y + 12}" width="4" height="4" fill="#BAE6FD"/><rect x="${x + 12}" y="${y + 12}" width="4" height="4" fill="#BAE6FD"/><rect x="${x + 8}" y="${y + 8}" width="4" height="4" fill="#FFFFFF"/></g>`;
+
+const pixelFlameSvg = (x: number, y: number) =>
+  `<g shape-rendering="crispEdges"><rect x="${x + 8}" y="${y}" width="4" height="6" fill="#FBBF24"/><rect x="${x + 6}" y="${y + 6}" width="8" height="8" fill="#F97316"/><rect x="${x + 4}" y="${y + 14}" width="12" height="6" fill="#EF4444"/><rect x="${x + 8}" y="${y + 6}" width="4" height="6" fill="#FFFBEB"/></g>`;
+
 const shadowSvg =
-  '<ellipse class="object-shadow" cx="36" cy="76" rx="25" ry="6" fill="#221828" opacity=".28"/>';
-const sealSvg =
-  '<g class="seal-chain" fill="none" stroke="#aca2a5" stroke-width="4"><path d="m14 27 43 35M58 27 13 62" stroke="#392e32" stroke-width="7"/><path d="m14 27 43 35M58 27 13 62" stroke-dasharray="5 3"/><rect x="28" y="36" width="16" height="17" rx="2" fill="#a88246" stroke="#513924" stroke-width="2"/><path d="M33 34v-4h7v4"/><path d="M36 42v6" stroke="#513924"/></g>';
+  '<ellipse class="object-shadow" cx="36" cy="76" rx="25" ry="6" fill="#221828" opacity=".35"/>';
 
 function blockSvg(status: 'completed' | 'available' | 'locked', final = false): string {
-  if (final) {
-    return `<g class="object-shell"><path d="M14 69h45v8H10v-4h4z" fill="#b2723d" stroke="#694528" stroke-width="2"/><path d="M28 13h5v56h-5z" fill="#fff1c4" stroke="#674528" stroke-width="2"/><path class="object-banner" d="M34 15h28v8H51v10H34z" fill="${status === 'completed' ? '#6bbc77' : '#ea6350'}" stroke="#743c36" stroke-width="2"/><path d="M21 65h19v7H21z" fill="#e1aa57"/><path d="m27 8 4-4 4 4-4 5z" fill="#ffd85d"/></g>`;
-  }
   const used = status === 'completed';
-  return `<g class="object-shell"><path d="m10 24 10-9h43l-9 9z" fill="${used ? '#c5aa75' : '#fff1a1'}" stroke="#6a3d22" stroke-width="2"/><path d="m54 24 9-9v43l-9 11z" fill="${used ? '#957447' : '#cc7b25'}" stroke="#6a3d22" stroke-width="2"/><path d="M10 24h44v45H10z" fill="${used ? '#ba915a' : status === 'locked' ? '#dc9c39' : '#ffc94b'}" stroke="#6a3d22" stroke-width="3"/><path d="M14 28h35v4H18v31h-4z" fill="${used ? '#debd81' : '#ffe890'}"/><path d="M49 32v32H18v-4h27V32z" fill="#b46d28"/><path d="M16 29h3v3h-3zm29 0h3v3h-3zm-29 31h3v3h-3zm29 0h3v3h-3z" fill="#6a3d22"/>${used ? `<g class="resolved-symbol" color="#fff6cf">${markSvg('check', 24, 36, 21)}</g>` : questionSvg}</g>${status === 'locked' ? sealSvg : ''}`;
+  return `<g class="object-shell" shape-rendering="crispEdges">
+    <!-- Sombra base solida -->
+    <rect x="14" y="68" width="44" height="6" fill="#42250F"/>
+    <!-- Bloque pixelado 40x40 -->
+    <rect x="16" y="24" width="40" height="44" fill="#2D1704"/>
+    <!-- Bisel exterior -->
+    <rect x="18" y="26" width="36" height="40" fill="${used ? '#8D6E40' : status === 'locked' ? '#B37D28' : '#F59E0B'}"/>
+    <!-- Highlight superior e izquierdo -->
+    <rect x="18" y="26" width="36" height="4" fill="${used ? '#B59868' : status === 'locked' ? '#D99B38' : '#FDE68A'}"/>
+    <rect x="18" y="26" width="4" height="40" fill="${used ? '#B59868' : status === 'locked' ? '#D99B38' : '#FDE68A'}"/>
+    <!-- Sombra inferior y derecha -->
+    <rect x="18" y="62" width="36" height="4" fill="${used ? '#624B25' : status === 'locked' ? '#8C5615' : '#D97706'}"/>
+    <rect x="50" y="26" width="4" height="40" fill="${used ? '#624B25' : status === 'locked' ? '#8C5615' : '#D97706'}"/>
+    <!-- Centro del bloque -->
+    <rect x="22" y="30" width="28" height="32" fill="${used ? '#7D5F33' : status === 'locked' ? '#9E6A1E' : '#FBBF24'}"/>
+    <!-- Tornillos/remaches en 4 esquinas -->
+    <rect x="20" y="28" width="3" height="3" fill="#382008"/>
+    <rect x="49" y="28" width="3" height="3" fill="#382008"/>
+    <rect x="20" y="61" width="3" height="3" fill="#382008"/>
+    <rect x="49" y="61" width="3" height="3" fill="#382008"/>
+    <rect x="20" y="28" width="1" height="1" fill="#FFFBEB"/>
+    <rect x="49" y="28" width="1" height="1" fill="#FFFBEB"/>
+    <!-- Simbolo central -->
+    ${used ? pixelCheckSvg(22, 34) : status === 'locked' ? pixelLockSvg(24, 34) : pixelQuestionSvg(24, 34)}
+  </g>`;
 }
 
 function barrelSvg(
@@ -314,39 +423,216 @@ function barrelSvg(
   recovery = false,
 ): string {
   const used = status === 'completed';
-  return `<g class="object-shell"><path d="M18 24h36l5 9 3 22-7 17H17l-7-17 3-22z" fill="${recovery ? '#727e39' : '#ad7038'}" stroke="#4d3421" stroke-width="3"/><path d="M22 27 18 54l4 16m9-43-2 43m12-43 2 43m7-43 6 27-5 16" fill="none" stroke="#754421" stroke-width="2"/><path d="m16 33 4-6h5l-5 25 3 15h-5l-5-15z" fill="#dea954"/><path d="M13 34h46v8H13zM12 58h48v8H12z" fill="${final ? '#e4bf53' : '#a1a19a'}" stroke="#4c4c3d" stroke-width="2"/><path d="M15 35h41v2H15zm0 24h41v2H15z" fill="#e5d8b1"/><g class="object-lid" ${used ? 'transform="translate(2,-10) rotate(-15 36 26)"' : ''}><ellipse cx="36" cy="25" rx="20" ry="8" fill="#d59e55" stroke="#52371f" stroke-width="3"/><ellipse cx="36" cy="25" rx="14" ry="4" fill="${used ? '#664729' : '#b67d3e'}"/><path d="M24 23h25m-23 4h21" stroke="#80532a" stroke-width="2"/></g><g color="${recovery ? '#fa8b8e' : used ? '#e5f6b1' : '#ffdf70'}">${markSvg(recovery ? 'heart' : used ? 'check' : 'bolt', 27, 43, 18)}</g>${final ? '<path d="m22 15-2-11 10 6 6-9 7 9 10-6-3 11z" fill="#ffd35c" stroke="#815526" stroke-width="2"/>' : ''}</g>${status === 'locked' ? sealSvg : ''}`;
+  return `<g class="object-shell" shape-rendering="crispEdges">
+    <!-- Sombra base -->
+    <rect x="14" y="68" width="44" height="6" fill="#1C2E14"/>
+    <!-- Contorno barril pixelado -->
+    <rect x="20" y="22" width="32" height="46" fill="#201103"/>
+    <rect x="16" y="26" width="40" height="38" fill="#201103"/>
+    <rect x="14" y="32" width="44" height="26" fill="#201103"/>
+    <!-- Duelas de madera (cuerpo) -->
+    <rect x="16" y="28" width="40" height="34" fill="${recovery ? '#4D7C0F' : '#92400E'}"/>
+    <rect x="22" y="24" width="28" height="42" fill="${recovery ? '#4D7C0F' : '#92400E'}"/>
+    <!-- Vetas de luz y volumen -->
+    <rect x="18" y="30" width="6" height="30" fill="${recovery ? '#65A30D' : '#B45309'}"/>
+    <rect x="28" y="26" width="16" height="38" fill="${recovery ? '#84CC16' : '#D97706'}"/>
+    <rect x="48" y="30" width="6" height="30" fill="${recovery ? '#365314' : '#78350F'}"/>
+    <!-- Separadores oscuros de duelas -->
+    <rect x="26" y="24" width="2" height="42" fill="#201103"/>
+    <rect x="44" y="24" width="2" height="42" fill="#201103"/>
+    <!-- Flejes/aros metalicos de hierro -->
+    <rect x="18" y="32" width="36" height="6" fill="#475569"/>
+    <rect x="18" y="32" width="36" height="2" fill="#94A3B8"/>
+    <rect x="18" y="52" width="36" height="6" fill="#475569"/>
+    <rect x="18" y="52" width="36" height="2" fill="#94A3B8"/>
+    <!-- Remaches de los aros -->
+    <rect x="22" y="34" width="2" height="2" fill="#F8FAFC"/>
+    <rect x="35" y="34" width="2" height="2" fill="#F8FAFC"/>
+    <rect x="48" y="34" width="2" height="2" fill="#F8FAFC"/>
+    <rect x="22" y="54" width="2" height="2" fill="#F8FAFC"/>
+    <rect x="35" y="54" width="2" height="2" fill="#F8FAFC"/>
+    <rect x="48" y="54" width="2" height="2" fill="#F8FAFC"/>
+    <!-- Simbolo -->
+    ${recovery ? pixelHeartSvg(26, 38) : used ? pixelCheckSvg(22, 38) : status === 'locked' ? pixelLockSvg(26, 38) : pixelStarSvg(26, 38)}
+  </g>`;
 }
 
 function portalSvg(status: 'completed' | 'available' | 'locked', final = false): string {
   const used = status === 'completed';
-  return `<g class="object-shell"><path d="M9 72h54v7H9zM14 64h44v9H14z" fill="#8b7799" stroke="#33283f" stroke-width="2"/><path d="M14 65V24l7-7V9h10V4h10v5h10v8l7 7v41H47V27l-7-6h-8l-7 6v38z" fill="#64516f" stroke="#2b2438" stroke-width="3"/><path d="M18 25h5v35h-5zM48 25h6v35h-6zM25 13h7v5h-7zm15 0h7v5h-7z" fill="#b7a0bb"/><path d="M25 64V30l7-8h8l7 8v34z" fill="#20182e"/><g class="portal-core"><path d="M28 60V32l6-6h4l6 6v28z" fill="${used ? '#419aaf' : status === 'locked' ? '#633351' : '#d94d88'}"/><path d="M32 57V35l4-5 4 5v22z" fill="${used ? '#b0f4ef' : status === 'locked' ? '#9d5978' : '#ffabc8'}"/><path d="M35 37h3v16h-3z" fill="#fff1e4"/></g><path class="portal-runes" d="m17 32 4 4-4 4m35-8-4 4 4 4M18 51h4m-2-2v4m30-2h4m-2-2v4" fill="none" stroke="${used ? '#92e7e0' : '#e6b073'}" stroke-width="2"/>${final ? '<path d="M10 31 3 19v-8l14 9m45 11 7-12v-8L55 20" fill="#8a7295" stroke="#322739" stroke-width="2"/>' : ''}${used ? `<g color="#defdff">${markSvg('check', 30, 43, 13)}</g>` : ''}</g>${status === 'locked' ? sealSvg : ''}`;
+  return `<g class="object-shell" shape-rendering="crispEdges">
+    <!-- Sombra base -->
+    <rect x="12" y="68" width="48" height="6" fill="#0C0A14"/>
+    <!-- Estructura de piedra oscura -->
+    <rect x="14" y="20" width="44" height="48" fill="#181324"/>
+    <rect x="16" y="16" width="40" height="52" fill="#2E2442"/>
+    <!-- Columnas laterales de sillares -->
+    <rect x="16" y="18" width="10" height="50" fill="#42345E"/>
+    <rect x="46" y="18" width="10" height="50" fill="#42345E"/>
+    <rect x="16" y="28" width="10" height="2" fill="#181324"/>
+    <rect x="16" y="42" width="10" height="2" fill="#181324"/>
+    <rect x="16" y="56" width="10" height="2" fill="#181324"/>
+    <rect x="46" y="28" width="10" height="2" fill="#181324"/>
+    <rect x="46" y="42" width="10" height="2" fill="#181324"/>
+    <rect x="46" y="56" width="10" height="2" fill="#181324"/>
+    <!-- Arco ojival superior -->
+    <rect x="22" y="12" width="28" height="6" fill="#58457D"/>
+    <rect x="26" y="8" width="20" height="5" fill="#58457D"/>
+    <rect x="32" y="4" width="8" height="5" fill="#7C5DAE"/>
+    <!-- Interior del portal arcano -->
+    <rect x="26" y="22" width="20" height="46" fill="#120A1F"/>
+    <rect x="28" y="24" width="16" height="42" fill="${used ? '#065F46' : status === 'locked' ? '#3B0764' : '#831843'}"/>
+    <!-- Resplandor central -->
+    <rect x="30" y="28" width="12" height="34" fill="${used ? '#10B981' : status === 'locked' ? '#7E22CE' : '#F43F5E'}"/>
+    <rect x="33" y="32" width="6" height="26" fill="${used ? '#A7F3D0' : status === 'locked' ? '#C084FC' : '#FDA4AF'}"/>
+    <rect x="35" y="36" width="2" height="18" fill="#FFFFFF"/>
+    <!-- Simbolo -->
+    ${used ? pixelCheckSvg(24, 38) : status === 'locked' ? pixelLockSvg(26, 38) : ''}
+  </g>`;
 }
 
 function iceSvg(status: 'completed' | 'available' | 'locked', final = false): string {
-  if (final) {
-    return `<g class="object-shell"><path d="M8 69h56v8H8z" fill="#cfe2f2" stroke="#7f9dbb" stroke-width="2"/><path d="M16 60h40v9H16z" fill="#eef7ff" stroke="#9fb6d1" stroke-width="2"/><path d="M29 12h5v50h-5z" fill="#8a5a36" stroke="#402719" stroke-width="2"/><path class="object-banner" d="M35 14h27l-8 9 8 9H35z" fill="${status === 'completed' ? '#6bbc77' : '#4f9fd0'}" stroke="#24486b" stroke-width="2"/><path d="m26 8 5-5 5 5-5 5z" fill="#bde4f6"/></g>`;
-  }
   const used = status === 'completed';
-  return `<g class="object-shell"><path d="m10 24 10-9h43l-9 9z" fill="${used ? '#9fc3d6' : '#e7f7ff'}" stroke="#2f5a78" stroke-width="2"/><path d="m54 24 9-9v43l-9 11z" fill="${used ? '#5f8ba6' : '#7fbede'}" stroke="#2f5a78" stroke-width="2"/><path d="M10 24h44v45H10z" fill="${used ? '#93b6cb' : status === 'locked' ? '#a9cde2' : '#bfe6f7'}" stroke="#2f5a78" stroke-width="3"/><path d="M14 28h34v5H18v30h-4z" fill="#eefaff"/><path d="M48 33v31H18v-4h26V33z" fill="#639ab9"/><path d="M17 29h3v3h-3zm28 0h3v3h-3zm-28 31h3v3h-3zm28 0h3v3h-3z" fill="#2f5a78"/>${used ? `<g class="resolved-symbol" color="#f2fdff">${markSvg('check', 24, 36, 21)}</g>` : frostSvg}</g>${status === 'locked' ? sealSvg : ''}`;
+  return `<g class="object-shell" shape-rendering="crispEdges">
+    <!-- Sombra base -->
+    <rect x="14" y="68" width="44" height="6" fill="#1E293B"/>
+    <!-- Bloque de hielo facetado -->
+    <rect x="16" y="24" width="40" height="44" fill="#0C4A6E"/>
+    <rect x="18" y="26" width="36" height="40" fill="${used ? '#64748B' : '#0284C7'}"/>
+    <!-- Caras y reflejos cristalinos -->
+    <rect x="18" y="26" width="36" height="6" fill="${used ? '#94A3B8' : '#7DD3FC'}"/>
+    <rect x="18" y="26" width="6" height="40" fill="${used ? '#94A3B8' : '#7DD3FC'}"/>
+    <rect x="24" y="32" width="24" height="28" fill="${used ? '#CBD5E1' : '#E0F2FE'}"/>
+    <!-- Brillos blancos -->
+    <rect x="20" y="28" width="4" height="4" fill="#FFFFFF"/>
+    <rect x="26" y="34" width="8" height="3" fill="#FFFFFF"/>
+    <rect x="42" y="44" width="4" height="8" fill="${used ? '#475569' : '#0369A1'}"/>
+    <!-- Simbolo -->
+    ${used ? pixelCheckSvg(22, 36) : status === 'locked' ? pixelLockSvg(24, 36) : pixelSnowflakeSvg(26, 36)}
+  </g>`;
+}
+
+function netherSvg(status: 'completed' | 'available' | 'locked', final = false): string {
+  const used = status === 'completed';
+  return `<g class="object-shell" shape-rendering="crispEdges">
+    <!-- Sombra base -->
+    <rect x="14" y="68" width="44" height="6" fill="#140406"/>
+    <!-- Bloque de basalto/obsidiana del Nether -->
+    <rect x="16" y="24" width="40" height="44" fill="#1D1E26"/>
+    <rect x="18" y="26" width="36" height="40" fill="${used ? '#353745' : status === 'locked' ? '#210F14' : '#5A0E16'}"/>
+    <!-- Grietas de lava incandescente -->
+    <rect x="18" y="26" width="36" height="4" fill="#F25500"/>
+    <rect x="18" y="26" width="4" height="40" fill="#F25500"/>
+    <rect x="24" y="32" width="24" height="28" fill="${used ? '#210F14' : '#3A1B24'}"/>
+    <!-- Núcleo de magma -->
+    <rect x="28" y="36" width="16" height="20" fill="${used ? '#475569' : '#F25500'}"/>
+    <rect x="32" y="40" width="8" height="12" fill="${used ? '#64748B' : '#FEF08A'}"/>
+    <!-- Simbolo -->
+    ${used ? pixelCheckSvg(22, 36) : status === 'locked' ? pixelLockSvg(24, 36) : pixelFlameSvg(26, 36)}
+  </g>`;
 }
 
 function bonusSvg(theme: WorldTheme): string {
-  if (theme === 'desert')
-    return `<g class="object-shell bonus-object"><path d="M10 69h52v7H10z" fill="#a76d34"/><g color="#ffdc45">${markSvg('star', 13, 13, 46)}</g><path d="M28 30v7m14-7v7" stroke="#6c471f" stroke-width="3"/></g>`;
-  if (theme === 'snow')
-    return `<g class="object-shell bonus-object"><path d="M10 69h52v7H10z" fill="#bcd6ea"/><path d="m36 9 23 17-9 30H22l-9-30z" fill="#c7e9f9" stroke="#2f5a78" stroke-width="3"/><path d="m36 14 17 13-6 22H25l-6-22z" fill="#e9f9ff"/><g color="#ffd76a">${markSvg('star', 21, 20, 30)}</g></g>`;
-  if (theme === 'jungle')
-    return `<g class="object-shell bonus-object"><path d="M37 9v13m0-8 10-8" stroke="#577b32" stroke-width="5"/><path d="M31 22q-17 30 18 38-19-13-12-35M39 22q-3 34 24 29-20-3-17-30M28 23Q5 40 17 57 14 39 32 29" fill="#ffd64a" stroke="#95712a" stroke-width="3"/><path d="M15 69h44v7H15z" fill="#705234"/></g>`;
-  return `<g class="object-shell bonus-object"><path d="M12 69h48v8H12zM20 61h32v9H20z" fill="#83708e" stroke="#362b42" stroke-width="2"/><g class="portal-core"><path d="m36 12 17 15v22L36 61 19 49V27z" fill="#b779c9" stroke="#f4c680" stroke-width="3"/><path d="m36 17 7 13-7 25-7-25z" fill="#f3c8ff"/><path d="m21 29 15 26-7-25z" fill="#9562b4"/></g></g>`;
+  return `<g class="object-shell bonus-object" shape-rendering="crispEdges">
+    <!-- Cofre del tesoro pixel art -->
+    <rect x="14" y="66" width="44" height="6" fill="#2E1B0E"/>
+    <!-- Base del cofre -->
+    <rect x="16" y="40" width="40" height="26" fill="#6B3914"/>
+    <rect x="18" y="42" width="36" height="22" fill="#9A5523"/>
+    <!-- Tapa curvada pixelada -->
+    <rect x="18" y="24" width="36" height="16" fill="#6B3914"/>
+    <rect x="20" y="22" width="32" height="18" fill="#9A5523"/>
+    <!-- Refuerzos y ribetes dorados -->
+    <rect x="16" y="40" width="6" height="26" fill="#F59E0B"/>
+    <rect x="50" y="40" width="6" height="26" fill="#F59E0B"/>
+    <rect x="16" y="24" width="6" height="16" fill="#F59E0B"/>
+    <rect x="50" y="24" width="6" height="16" fill="#F59E0B"/>
+    <rect x="16" y="38" width="40" height="4" fill="#F59E0B"/>
+    <rect x="18" y="24" width="36" height="3" fill="#FDE68A"/>
+    <!-- Cerradura dorada -->
+    <rect x="32" y="36" width="8" height="8" fill="#D97706"/>
+    <rect x="34" y="38" width="4" height="4" fill="#FEF08A"/>
+    <rect x="35" y="40" width="2" height="2" fill="#78350F"/>
+    <!-- Estrella flotante brillante -->
+    ${pixelStarSvg(26, 2)}
+  </g>`;
 }
 
 function recoverySvg(theme: WorldTheme, status: 'completed' | 'available' | 'locked'): string {
-  if (theme === 'snow')
-    return `<g class="object-shell"><path d="M8 72h56v6H8z" fill="#cfe2f2"/><path d="M14 63h44v9H14z" fill="#eef7ff" stroke="#9fb6d1" stroke-width="2"/><path d="m17 68 39-11 2 6-39 11zM55 68 16 57l-2 6 39 11z" fill="#8a5a36" stroke="#402719" stroke-width="2"/><g class="torch-flame"><path d="M23 55V39l9-13 6 8 7-18 11 26v13z" fill="#ed8653" stroke="#a74744" stroke-width="2"/><path d="M31 55V41l7-10 7 19v5z" fill="#ffe396"/></g><g class="heart-float" color="#fa719c">${markSvg('heart', 27, 2, 18)}</g></g>`;
+  if (theme === 'desert') {
+    // Tuberia verde pixel art (Warp Pipe)
+    return `<g class="object-shell" shape-rendering="crispEdges">
+      <rect x="14" y="68" width="44" height="6" fill="#14361B"/>
+      <!-- Cuerpo del tubo -->
+      <rect x="20" y="38" width="32" height="30" fill="#15803D"/>
+      <rect x="24" y="38" width="6" height="30" fill="#4ADE80"/>
+      <rect x="44" y="38" width="6" height="30" fill="#166534"/>
+      <!-- Borde superior del tubo -->
+      <rect x="16" y="26" width="40" height="14" fill="#15803D"/>
+      <rect x="18" y="28" width="36" height="10" fill="#22C55E"/>
+      <rect x="20" y="28" width="6" height="10" fill="#86EFAC"/>
+      <rect x="46" y="28" width="6" height="10" fill="#166534"/>
+      <rect x="16" y="26" width="40" height="2" fill="#86EFAC"/>
+      <rect x="16" y="38" width="40" height="2" fill="#14361B"/>
+      <!-- Corazon flotante -->
+      ${pixelHeartSvg(27, 2)}
+    </g>`;
+  }
+
   if (theme === 'jungle') return barrelSvg(status, false, true);
-  if (theme === 'castle')
-    return `<g class="object-shell"><path d="M10 72h52v6H10z" fill="#71647f"/><path d="M28 20h16v17l12 16v15H16V53l12-16z" fill="#b8d7d4" stroke="#343346" stroke-width="3"/><path d="M21 51h30v13H21z" fill="#db577f"/><path d="M23 52h24v4H23z" fill="#ffadbf"/><path d="M27 16h18v8H27z" fill="#c39d6d" stroke="#55422f" stroke-width="2"/><path d="M22 49v10" stroke="#f2ffff" stroke-width="3"/><g class="heart-float" color="#fa719c">${markSvg('heart', 27, 1, 18)}</g></g>`;
-  return `<g class="object-shell"><path d="M18 40h36v33H18z" fill="#27974e" stroke="#17482a" stroke-width="3"/><path d="M24 42h8v28h-8z" fill="#70df72"/><path d="M46 42h7v30h-7z" fill="#16613d"/><path d="M12 32h48v14H12z" fill="#40bf55" stroke="#17482a" stroke-width="3"/><path d="M15 35h40v4H15z" fill="#94ef83"/><g class="heart-float" color="#f35b76">${markSvg('heart', 24, 3, 25)}</g></g>`;
+
+  if (theme === 'castle') {
+    // Caldero / fuente de alquimia pixel art
+    return `<g class="object-shell" shape-rendering="crispEdges">
+      <rect x="14" y="68" width="44" height="6" fill="#130E24"/>
+      <!-- Base de piedra del caldero -->
+      <rect x="20" y="44" width="32" height="24" fill="#2E2442"/>
+      <rect x="16" y="32" width="40" height="16" fill="#3D325C"/>
+      <rect x="14" y="30" width="44" height="6" fill="#4E4075"/>
+      <rect x="18" y="32" width="36" height="4" fill="#705A9E"/>
+      <!-- Pocion magica burbujeante violeta/fucsia -->
+      <rect x="22" y="34" width="28" height="6" fill="#8B5CF6"/>
+      <rect x="26" y="32" width="8" height="4" fill="#C084FC"/>
+      <rect x="38" y="33" width="6" height="3" fill="#F43F5E"/>
+      <!-- Corazon flotante -->
+      ${pixelHeartSvg(27, 2)}
+    </g>`;
+  }
+
+  if (theme === 'nether') {
+    // Caldero de magma hirviente
+    return `<g class="object-shell" shape-rendering="crispEdges">
+      <rect x="14" y="68" width="44" height="6" fill="#140406"/>
+      <!-- Base de piedra volcánica -->
+      <rect x="20" y="44" width="32" height="24" fill="#210F14"/>
+      <rect x="16" y="32" width="40" height="16" fill="#3A1B24"/>
+      <rect x="14" y="30" width="44" height="6" fill="#522431"/>
+      <rect x="18" y="32" width="36" height="4" fill="#5A0E16"/>
+      <!-- Lava hirviente -->
+      <rect x="22" y="34" width="28" height="6" fill="#F25500"/>
+      <rect x="26" y="32" width="8" height="4" fill="#FBBF24"/>
+      <rect x="38" y="33" width="6" height="3" fill="#FEF08A"/>
+      <!-- Corazón flotante -->
+      ${pixelHeartSvg(27, 2)}
+    </g>`;
+  }
+
+  // Snow: Fogata de campamento con leños pixel art
+  return `<g class="object-shell" shape-rendering="crispEdges">
+    <rect x="14" y="68" width="44" height="6" fill="#1E293B"/>
+    <!-- Piedras en circulo -->
+    <rect x="16" y="58" width="40" height="10" fill="#475569"/>
+    <rect x="18" y="56" width="36" height="4" fill="#64748B"/>
+    <!-- Troncos cruzados -->
+    <rect x="20" y="50" width="32" height="6" fill="#78350F"/>
+    <rect x="24" y="44" width="24" height="6" fill="#92400E"/>
+    <!-- Fuego pixelado -->
+    <rect x="28" y="24" width="16" height="24" fill="#EF4444"/>
+    <rect x="30" y="20" width="12" height="20" fill="#F97316"/>
+    <rect x="32" y="16" width="8" height="16" fill="#FBBF24"/>
+    <rect x="34" y="12" width="4" height="10" fill="#FEF08A"/>
+    <!-- Corazon flotante -->
+    ${pixelHeartSvg(27, 2)}
+  </g>`;
 }
 
 export function nodeArt(
@@ -365,12 +651,14 @@ export function nodeArt(
           ? barrelSvg(status, c.id === mainCount)
           : theme === 'snow'
             ? iceSvg(status, c.id === mainCount)
-            : portalSvg(status, c.id === mainCount);
+            : theme === 'nether'
+              ? netherSvg(status, c.id === mainCount)
+              : portalSvg(status, c.id === mainCount);
   const resolvedBonus =
     c.optional && status === 'completed'
-      ? `<g color="#f2ffe2"><circle cx="56" cy="66" r="11" fill="#3c845e" stroke="#d9eeb0" stroke-width="2"/>${markSvg('check', 48, 58, 16)}</g>`
+      ? `<g shape-rendering="crispEdges"><rect x="46" y="58" width="18" height="18" fill="#15803D"/><rect x="48" y="60" width="14" height="14" fill="#22C55E"/>${pixelCheckSvg(43, 56)}</g>`
       : '';
-  return `<svg class="node-art" viewBox="0 0 72 84" aria-hidden="true">${shadowSvg}${art}${resolvedBonus}<path class="sprite-glint" d="M58 6v12m-6-6h12M8 35v8m-4-4h8" stroke="#fff1b1" stroke-width="2"/></svg>`;
+  return `<svg class="node-art" viewBox="0 0 72 84" aria-hidden="true">${shadowSvg}${art}${resolvedBonus}</svg>`;
 }
 
 export function nodeVerb(
@@ -378,53 +666,190 @@ export function nodeVerb(
   status: 'completed' | 'available' | 'locked',
 ): string {
   if (status === 'completed') return 'RESUELTO';
-  if (status === 'locked') return theme === 'castle' ? 'SELLADO' : theme === 'snow' ? 'CONGELADO' : 'CERRADO';
+  if (status === 'locked')
+    return theme === 'castle'
+      ? 'SELLADO'
+      : theme === 'snow'
+        ? 'CONGELADO'
+        : theme === 'nether'
+          ? 'ARDOR'
+          : 'CERRADO';
   return theme === 'desert'
     ? '¡GOLPEA!'
     : theme === 'jungle'
       ? '¡ABRE!'
       : theme === 'snow'
         ? '¡ROMPE!'
-        : '¡DESPIERTA!';
+        : theme === 'nether'
+          ? '¡FORJA!'
+          : '¡DESPIERTA!';
 }
 
-// Scenery SVG generator
-const houseSvg = `<ellipse cx="0" cy="38" rx="57" ry="10" fill="#754a30" opacity=".25"/>
-<path d="M-36-4h72v39h-72z" fill="#ffe5a0" stroke="#6b422c" stroke-width="4"/>
-<path d="M-32 0h8v31h-8zM24 0h9v31h-9z" fill="#d4a467"/>
-<path d="M-54-5v-16h9v-16h14v-12h17v-7h28v7h17v12h14v16h9v16z" fill="#ec6849" stroke="#703e2b" stroke-width="4"/>
-<path d="M-39-24h14v-15h-14zM-9-44h18v18H-9zM24-17h18v-16H24z" fill="#fff1c6"/>
-<path d="M-10 35V14h5V8H7v6h5v21z" fill="#62412e" stroke="#bd844e" stroke-width="3"/>
-<path d="M-29 9h10v11h-10zm47 0h10v11H18z" fill="#70bdac" stroke="#8c633c" stroke-width="2"/>
-<path d="M-17 36h34v5h-34z" fill="#b9804e"/>`;
+// Pixel art SVG for scenery
+const houseSvg = `<g shape-rendering="crispEdges">
+  <rect x="-24" y="10" width="48" height="26" fill="#5A3A22"/>
+  <rect x="-20" y="14" width="40" height="22" fill="#E8D5B5"/>
+  <!-- Techo de hongo pixelado -->
+  <rect x="-28" y="-12" width="56" height="6" fill="#E11D48"/>
+  <rect x="-24" y="-18" width="48" height="6" fill="#E11D48"/>
+  <rect x="-18" y="-24" width="36" height="6" fill="#E11D48"/>
+  <rect x="-10" y="-28" width="20" height="4" fill="#E11D48"/>
+  <!-- Manchas blancas pixeladas en el hongo -->
+  <rect x="-16" y="-18" width="8" height="5" fill="#FFFFFF"/>
+  <rect x="8" y="-16" width="8" height="5" fill="#FFFFFF"/>
+  <rect x="-4" y="-24" width="8" height="4" fill="#FFFFFF"/>
+  <!-- Puerta y ventana pixelada -->
+  <rect x="-6" y="22" width="12" height="14" fill="#6D4327"/>
+  <rect x="-4" y="24" width="8" height="12" fill="#3D2413"/>
+  <rect x="-16" y="18" width="6" height="6" fill="#60A5FA"/>
+  <rect x="10" y="18" width="6" height="6" fill="#60A5FA"/>
+</g>`;
 
-const flowerSvg = `<ellipse cx="0" cy="37" rx="32" ry="7" fill="#654531" opacity=".22"/>
-<path d="M-21 7h42v29h-42z" fill="#29a353" stroke="#245d32" stroke-width="3"/><path d="M-15 8h9v25h-9z" fill="#8ae477"/>
-<path d="M-27 0h54v12h-54z" fill="#4ec467" stroke="#245d32" stroke-width="3"/>
-<g class="desert-flower"><path d="M0 0v-30m0 16-15-9m15 2 15-9" fill="none" stroke="#30884a" stroke-width="6"/>
-<path d="M-20-51h30v6h10v23H10v6h-25v-7h-8v-19h3z" fill="#e75c4b" stroke="#793e2d" stroke-width="3"/>
-<path d="M5-41h17v12H5z" fill="#fff0c1"/><path d="M10-36h12" stroke="#70402d" stroke-width="3"/>
-<path d="M-15-45h6v6h-6zm-2 16h6v6h-6zm16-18h5v5h-5z" fill="#ffe7bf"/></g>`;
+// Piramide de arenisca escalonada en pixel art (estilo SMB3 Mundo 2)
+const pyramidSvg = `<g shape-rendering="crispEdges">
+  <!-- Sombra base en desierto -->
+  <rect x="-38" y="28" width="76" height="5" fill="#8C5C28" opacity="0.4"/>
+  <!-- Nivel 1 (base 72px) -->
+  <rect x="-36" y="22" width="42" height="6" fill="#F5D061"/>
+  <rect x="6" y="22" width="30" height="6" fill="#B8860B"/>
+  <rect x="-36" y="27" width="72" height="1" fill="#784E18"/>
+  <!-- Nivel 2 (58px) -->
+  <rect x="-29" y="16" width="35" height="6" fill="#F9DE7B"/>
+  <rect x="6" y="16" width="23" height="6" fill="#C69214"/>
+  <rect x="-29" y="21" width="58" height="1" fill="#784E18"/>
+  <!-- Nivel 3 (44px) -->
+  <rect x="-22" y="10" width="28" height="6" fill="#FDE68A"/>
+  <rect x="6" y="10" width="16" height="6" fill="#D49E1D"/>
+  <rect x="-22" y="15" width="44" height="1" fill="#784E18"/>
+  <!-- Nivel 4 (30px) -->
+  <rect x="-15" y="4" width="21" height="6" fill="#FEF08A"/>
+  <rect x="6" y="4" width="9" height="6" fill="#E2AB26"/>
+  <rect x="-15" y="9" width="30" height="1" fill="#784E18"/>
+  <!-- Cuspid dorada -->
+  <rect x="-8" y="-2" width="14" height="6" fill="#FFFBEB"/>
+  <rect x="6" y="-2" width="2" height="6" fill="#F59E0B"/>
+  <rect x="-2" y="-6" width="4" height="4" fill="#FDE047"/>
+  <!-- Puerta oscura -->
+  <rect x="-4" y="18" width="8" height="10" fill="#3D2406"/>
+  <rect x="-2" y="16" width="4" height="2" fill="#3D2406"/>
+</g>`;
 
-const bricksSvg = `<ellipse cx="0" cy="31" rx="48" ry="8" fill="#76502f" opacity=".2"/>
-<path d="M-45-10h90v36h-90zM-15-45h30v35h-30z" fill="#c9783b" stroke="#794729" stroke-width="3"/>
-<path d="M-42-7h84M-42 9h84M-42 24h84M-12-42h24M-12-26h24M-15-8V9M15-8V9M-30 10v14M0 10v14M30 10v14M0-42v16" stroke="#f0b766" stroke-width="3"/>
-<path d="M-17-63v-10h7v-7h20v7h7v10H7v9H-7v-9z" fill="#ef7354" stroke="#75432a" stroke-width="2"/><path d="M-6-77h10v9H-6z" fill="#ffedc0"/>`;
+// Palmera pixel art
+const palmSvg = `<g shape-rendering="crispEdges">
+  <rect x="-14" y="26" width="28" height="4" fill="#784E18" opacity="0.35"/>
+  <!-- Tronco segmentado -->
+  <rect x="-4" y="20" width="8" height="8" fill="#6D4327"/>
+  <rect x="-3" y="12" width="6" height="8" fill="#8B5A2B"/>
+  <rect x="-1" y="4" width="6" height="8" fill="#A06830"/>
+  <rect x="1" y="-4" width="6" height="8" fill="#8B5A2B"/>
+  <rect x="-4" y="20" width="8" height="1" fill="#452711"/>
+  <rect x="-3" y="12" width="6" height="1" fill="#452711"/>
+  <rect x="-1" y="4" width="6" height="1" fill="#452711"/>
+  <rect x="1" y="-4" width="6" height="1" fill="#452711"/>
+  <!-- Frondas verdes -->
+  <rect x="-20" y="-8" width="14" height="4" fill="#15803D"/>
+  <rect x="-24" y="-5" width="8" height="4" fill="#166534"/>
+  <rect x="8" y="-8" width="16" height="4" fill="#15803D"/>
+  <rect x="18" y="-5" width="8" height="4" fill="#166534"/>
+  <rect x="-16" y="-16" width="12" height="6" fill="#22C55E"/>
+  <rect x="6" y="-16" width="12" height="6" fill="#22C55E"/>
+  <rect x="-6" y="-20" width="14" height="8" fill="#4ADE80"/>
+  <rect x="-10" y="-14" width="22" height="6" fill="#16A34A"/>
+</g>`;
 
-const cloudSvg = `<path d="M-42 4v-13h13v-12h20v-8h23v9h16v11h13V8h-85z" fill="#fff5d9" stroke="#deb978" stroke-width="3"/><path d="M-32 7h66v5h-66z" fill="#dcab69" opacity=".35"/>`;
-const coinSvg = `<path d="M-6-14H6v4h4v20H6v4H-6v-4h-4v-20h4z" fill="#ffd950" stroke="#a86627" stroke-width="2"/><path d="M-4-10h5v20h-5z" fill="#fff4a5"/><path d="M5-8v16" stroke="#d9992f" stroke-width="2"/>`;
-const bananaSvg =
-  '<path d="M-12-20Q-26 15 9 24L23 14Q-1 18 0-17z" fill="#ffdc54" stroke="#95702c" stroke-width="3"/><path d="M-11-18Q-16 9 8 17" fill="none" stroke="#fff194" stroke-width="4"/><path d="M-13-20h13" stroke="#546a31" stroke-width="5"/>';
-const crystalSvg =
-  '<path d="m0-22 13 13v24L0 26-13 15V-9z" fill="#a776d4" stroke="#e1b594" stroke-width="2"/><path d="m0-19 6 11L0 22-6-8z" fill="#ecc1ff"/>';
-const totemSvg =
-  '<path d="M-34 39h68v9h-68zM-24-37h48v76h-48z" fill="#8c9560" stroke="#30442e" stroke-width="4"/><path d="M-19-30h38v12h-38z" fill="#c3c084"/><path d="M-15-9h10v10h-10zM5-9h10v10H5zM-11 16h22v7h-22z" fill="#36472d"/><path d="M-20 28h8v10h-8zm26-64h10v14H6z" fill="#53a04e"/>';
-const torchSvg =
-  '<path d="M-22 42h44v8h-44zM-10-7h20v48h-20z" fill="#74718a" stroke="#292c43" stroke-width="3"/><path d="M-18-11h36v9h-36z" fill="#ab9070"/><g class="torch-flame"><path d="M-15-14v-17l9-14 5 9 6-22 11 27v17z" fill="#ed8653" stroke="#a74744" stroke-width="2"/><path d="M-7-15v-15l7-12 7 22v5z" fill="#ffe396"/></g>';
-const snowflakeSvg =
-  '<path d="M0-16v32M-14-8 14 8M-14 8 14-8" stroke="#f2fbff" stroke-width="7" stroke-linecap="round"/><path d="M0-16v32M-14-8 14 8M-14 8 14-8" stroke="#63b7e2" stroke-width="2"/><path d="m-6-12 6 5 6-5M-6 12l6-5 6 5" fill="none" stroke="#f2fbff" stroke-width="4"/><circle cx="0" cy="0" r="5" fill="#bfe6f7" stroke="#2f5a78" stroke-width="2"/>';
-const snowmanSvg =
-  '<ellipse cx="0" cy="41" rx="26" ry="7" fill="#b9cfe6" opacity=".7"/><circle cx="0" cy="21" r="19" fill="#f4faff" stroke="#93aec9" stroke-width="3"/><circle cx="0" cy="-7" r="13" fill="#fbfdff" stroke="#93aec9" stroke-width="3"/><path d="M-20 14h-13M20 14h13" stroke="#6d4526" stroke-width="4"/><path d="M-15-19h30v5h-30zM-9-30h18v11h-18z" fill="#3c4a63"/><path d="M-6-11h4v4h-4zm8 0h4v4h-4z" fill="#2b3446"/><path d="M-2-4h9v4h-9z" fill="#d96a52"/><path d="M-4 14h4v4h-4zm1 12h4v4h-4z" fill="#3c4a63"/>';
+// Cactus saguaro pixel art
+const cactusSvg = `<g shape-rendering="crispEdges">
+  <rect x="-10" y="26" width="20" height="3" fill="#784E18" opacity="0.3"/>
+  <!-- Tallo central -->
+  <rect x="-4" y="-16" width="8" height="44" fill="#15803D"/>
+  <rect x="-3" y="-15" width="3" height="42" fill="#4ADE80"/>
+  <rect x="1" y="-15" width="2" height="42" fill="#166534"/>
+  <!-- Brazo izquierdo -->
+  <rect x="-14" y="-4" width="10" height="6" fill="#15803D"/>
+  <rect x="-14" y="-12" width="6" height="12" fill="#15803D"/>
+  <rect x="-13" y="-11" width="2" height="10" fill="#4ADE80"/>
+  <!-- Brazo derecho -->
+  <rect x="4" y="4" width="10" height="6" fill="#15803D"/>
+  <rect x="8" y="-4" width="6" height="12" fill="#15803D"/>
+  <rect x="9" y="-3" width="2" height="10" fill="#4ADE80"/>
+  <!-- Flor rosada -->
+  <rect x="-2" y="-20" width="4" height="4" fill="#F43F5E"/>
+  <rect x="-1" y="-19" width="2" height="2" fill="#FFE4E6"/>
+</g>`;
+
+// Rocas facetadas pixel art
+const rocksSvg = `<g shape-rendering="crispEdges">
+  <rect x="-20" y="16" width="40" height="4" fill="#603B1A" opacity="0.4"/>
+  <rect x="-18" y="2" width="22" height="16" fill="#784E18"/>
+  <rect x="-16" y="0" width="18" height="16" fill="#A06830"/>
+  <rect x="-14" y="2" width="8" height="6" fill="#D97706"/>
+  <rect x="2" y="6" width="16" height="12" fill="#784E18"/>
+  <rect x="4" y="4" width="12" height="12" fill="#A06830"/>
+  <rect x="6" y="6" width="6" height="4" fill="#D97706"/>
+</g>`;
+
+// Nube pixelada
+const cloudSvg = `<g shape-rendering="crispEdges">
+  <rect x="-36" y="-6" width="72" height="16" fill="#FFFFFF"/>
+  <rect x="-28" y="-14" width="56" height="8" fill="#FFFFFF"/>
+  <rect x="-16" y="-20" width="32" height="6" fill="#FFFFFF"/>
+  <!-- Sombra nube -->
+  <rect x="-36" y="8" width="72" height="4" fill="#E2E8F0"/>
+  <rect x="-28" y="2" width="56" height="6" fill="#F1F5F9"/>
+  <!-- Ojos kawaii retro -->
+  <rect x="-8" y="-2" width="3" height="4" fill="#1E293B"/>
+  <rect x="6" y="-2" width="3" height="4" fill="#1E293B"/>
+</g>`;
+
+// Totem pixel art selva
+const totemSvg = `<g shape-rendering="crispEdges">
+  <rect x="-16" y="28" width="32" height="4" fill="#142612" opacity="0.4"/>
+  <rect x="-14" y="-24" width="28" height="54" fill="#365314"/>
+  <rect x="-12" y="-22" width="24" height="50" fill="#4D7C0F"/>
+  <rect x="-10" y="-18" width="8" height="6" fill="#FEF08A"/>
+  <rect x="2" y="-18" width="8" height="6" fill="#FEF08A"/>
+  <rect x="-6" y="-16" width="4" height="4" fill="#1E293B"/>
+  <rect x="4" y="-16" width="4" height="4" fill="#1E293B"/>
+  <rect x="-8" y="-6" width="16" height="4" fill="#84CC16"/>
+  <rect x="-10" y="6" width="20" height="8" fill="#14532D"/>
+  <rect x="-6" y="8" width="12" height="4" fill="#DC2626"/>
+</g>`;
+
+// Antorcha de pared / pedestal castillo pixel art
+const torchSvg = `<g shape-rendering="crispEdges">
+  <rect x="-10" y="26" width="20" height="4" fill="#0F0B18" opacity="0.4"/>
+  <rect x="-6" y="2" width="12" height="26" fill="#334155"/>
+  <rect x="-4" y="4" width="8" height="22" fill="#64748B"/>
+  <rect x="-8" y="-4" width="16" height="8" fill="#475569"/>
+  <rect x="-6" y="-2" width="12" height="4" fill="#94A3B8"/>
+  <!-- Fuego pixelado -->
+  <rect x="-6" y="-20" width="12" height="16" fill="#EF4444"/>
+  <rect x="-4" y="-24" width="8" height="16" fill="#F97316"/>
+  <rect x="-2" y="-28" width="4" height="14" fill="#FDE047"/>
+  <rect x="-1" y="-30" width="2" height="6" fill="#FFFFFF"/>
+</g>`;
+
+// Muneco de nieve pixel art
+const snowmanSvg = `<g shape-rendering="crispEdges">
+  <rect x="-16" y="26" width="32" height="4" fill="#334155" opacity="0.3"/>
+  <!-- Bola inferior -->
+  <rect x="-14" y="6" width="28" height="22" fill="#E2E8F0"/>
+  <rect x="-12" y="4" width="24" height="26" fill="#FFFFFF"/>
+  <!-- Bola superior -->
+  <rect x="-10" y="-12" width="20" height="18" fill="#E2E8F0"/>
+  <rect x="-8" y="-14" width="16" height="20" fill="#FFFFFF"/>
+  <!-- Ojos y botones de carbon -->
+  <rect x="-5" y="-8" width="2" height="2" fill="#0F172A"/>
+  <rect x="3" y="-8" width="2" height="2" fill="#0F172A"/>
+  <rect x="-1" y="10" width="2" height="2" fill="#0F172A"/>
+  <rect x="-1" y="16" width="2" height="2" fill="#0F172A"/>
+  <!-- Nariz de zanahoria -->
+  <rect x="-1" y="-4" width="6" height="2" fill="#EA580C"/>
+  <!-- Sombrero de copa -->
+  <rect x="-12" y="-16" width="24" height="3" fill="#1E293B"/>
+  <rect x="-6" y="-26" width="12" height="10" fill="#1E293B"/>
+  <rect x="-6" y="-18" width="12" height="2" fill="#DC2626"/>
+</g>`;
 
 export function renderWorldScenery(world: GeneratedWorld, completedIds: number[] = []): string {
   const { theme, worldWidth, worldHeight, roads, mainCount, challenges } = world;
@@ -432,61 +857,49 @@ export function renderWorldScenery(world: GeneratedWorld, completedIds: number[]
     (x * worldWidth) / 100,
     (y * worldHeight) / 100,
   ];
-  // El tramo que lleva al nodo `id` ya fue recorrido (y sus monedas quedan "prendidas") en
-  // cuanto se completa el nodo anterior — el primer tramo arranca prendido, es el punto de
-  // partida. Camino interno = binario por nodo completado, no hay XP por nodo para un gradiente.
-  const lit = (id: number) => id === 1 || completedIds.includes(id - 1);
   const items: string[] = [];
 
   if (theme === 'desert') {
-    for (let id = 1; id <= mainCount; id += 2) {
-      if (!roads[id]) continue;
-      const litClass = lit(id) ? '' : ' unlit';
-      [7, 13, 20].forEach((index, j) => {
-        if (roads[id][index]) {
-          const [x, y] = px(roads[id][index]);
-          items.push(
-            `<g class="trail-coin${litClass}" style="--delay:-${j * 0.4}s" transform="translate(${x} ${y})"><g>${coinSvg}</g></g>`,
-          );
-        }
-      });
-    }
     const recovery = challenges.find((c) => c.recovery);
     if (recovery) {
       const [hx, hy] = px([recovery.x, recovery.y]);
       items.push(`<g class="mushroom-house" transform="translate(${hx} ${hy - 133})">${houseSvg}</g>`);
     }
-    for (let id = 3; id <= mainCount; id += 3) {
+
+    // Decoraciones desierto: Pirámides, Palmeras, Cactus, Rocas y Nubes
+    for (let id = 1; id <= mainCount; id++) {
       if (!roads[id] || !roads[id][16]) continue;
       const [x, y] = px(roads[id][16]);
-      const decorX = worldWidth * (x > worldWidth / 2 ? 0.3 : 0.7);
-      items.push(`<g transform="translate(${decorX} ${y})">${id % 2 ? bricksSvg : flowerSvg}</g>`);
-      if (id % 6 === 3) {
+      const leftSide = x > worldWidth / 2;
+      const decorX = worldWidth * (leftSide ? 0.22 : 0.78);
+      const farX = worldWidth * (leftSide ? 0.12 : 0.88);
+
+      if (id === 1 || id === 4 || id === 7) {
+        // Piramide
+        items.push(`<g transform="translate(${decorX} ${y - 10})">${pyramidSvg}</g>`);
+      } else if (id === 2 || id === 5) {
+        // Palmera + Cactus
+        items.push(`<g transform="translate(${decorX} ${y})">${palmSvg}</g>`);
+        items.push(`<g transform="translate(${farX} ${y + 20})">${cactusSvg}</g>`);
+      } else {
+        // Rocas + Cactus
+        items.push(`<g transform="translate(${decorX} ${y})">${rocksSvg}</g>`);
+        items.push(`<g transform="translate(${farX} ${y - 15})">${cactusSvg}</g>`);
+      }
+
+      if (id % 3 === 0) {
         items.push(
-          `<g class="desert-cloud" transform="translate(${worldWidth * (x > worldWidth / 2 ? 0.8 : 0.2)} ${y - 110})"><g>${cloudSvg}</g></g>`,
+          `<g class="desert-cloud" transform="translate(${worldWidth * (leftSide ? 0.8 : 0.2)} ${y - 100})">${cloudSvg}</g>`,
         );
       }
     }
   } else {
     for (let id = 1; id <= mainCount; id += 2) {
-      if (!roads[id]) continue;
-      const litClass = lit(id) ? '' : ' unlit';
-      [8, 16, 23].forEach((step, j) => {
-        if (roads[id][step]) {
-          const [x, y] = px(roads[id][step]);
-          items.push(
-            `<g class="trail-coin${litClass}" style="--delay:-${j * 0.4}s" transform="translate(${x} ${y})"><g>${theme === 'jungle' ? bananaSvg : theme === 'snow' ? snowflakeSvg : crystalSvg}</g></g>`,
-          );
-        }
-      });
-    }
-    for (let id = 2; id <= mainCount; id += 3) {
       if (!roads[id] || !roads[id][16]) continue;
       const [x, y] = px(roads[id][16]);
-      const side = x > 50 ? 30 : 70;
-      items.push(
-        `<g transform="translate(${(side / 100) * worldWidth} ${y})">${theme === 'jungle' ? totemSvg : theme === 'snow' ? snowmanSvg : torchSvg}</g>`,
-      );
+      const side = x > worldWidth / 2 ? 0.22 : 0.78;
+      const decorSvg = theme === 'jungle' ? totemSvg : theme === 'snow' ? snowmanSvg : torchSvg;
+      items.push(`<g transform="translate(${side * worldWidth} ${y})">${decorSvg}</g>`);
     }
   }
 
@@ -653,6 +1066,63 @@ export function defaultQuestions(theme: WorldTheme): Record<number, QuestionData
         opciones: ['Una pila', 'Una cola', 'Un árbol'],
         correcta: 0,
         explicacion: 'La pila devuelve siempre la acción más reciente.',
+      },
+    };
+  }
+
+  if (theme === 'nether') {
+    return {
+      1: {
+        pregunta: '¿Qué es un proceso o hilo de ejecución en computación?',
+        opciones: [
+          'Una secuencia de instrucciones que el procesador puede ejecutar concurrentemente',
+          'Un cable físico de la placa madre',
+          'Un archivo de texto estático sin compilar',
+        ],
+        correcta: 0,
+        explicacion: 'Un hilo representa la unidad más pequeña de procesamiento planificable por un sistema operativo.',
+      },
+      2: {
+        pregunta: '¿Qué condición ocurre cuando dos hilos intentan modificar el mismo dato simultáneamente?',
+        opciones: ['Condición de carrera (Race Condition)', 'Optimización cuántica', 'Bucle infinito'],
+        correcta: 0,
+        explicacion: 'La condición de carrera produce resultados impredecibles al acceder concurrentemente a recursos compartidos sin sincronización.',
+      },
+      3: {
+        pregunta: '¿Para qué sirve un candado (Mutex o Lock) en programación concurrente?',
+        opciones: [
+          'Garantizar exclusión mutua para que solo un hilo acceda a la sección crítica',
+          'Aumentar la velocidad del ventilador del CPU',
+          'Cerrar la ventana del navegador',
+        ],
+        correcta: 0,
+        explicacion: 'Un Mutex asegura que dos o más hilos no ejecuten al mismo tiempo un bloque de código crítico.',
+      },
+      4: {
+        pregunta: '¿Qué protocolo de transporte garantiza entrega ordenada y confiable de paquetes en una red?',
+        opciones: ['TCP', 'UDP', 'DNS'],
+        correcta: 0,
+        explicacion: 'TCP incluye control de flujo, retransmisión de paquetes perdidos y verificación de entrega.',
+      },
+      5: {
+        pregunta: '¿Cuándo es preferible utilizar UDP en lugar de TCP?',
+        opciones: [
+          'En streaming y videojuegos en tiempo real donde la baja latencia prima sobre reintentos',
+          'Para transferencias bancarias de dinero',
+          'Para enviar correos electrónicos críticos',
+        ],
+        correcta: 0,
+        explicacion: 'UDP no retransmite paquetes ni agrega sobrecarga de confirmaciones, reduciendo la latencia.',
+      },
+      6: {
+        pregunta: '¿Qué es una dirección IP en una red de computadoras?',
+        opciones: [
+          'Un identificador numérico único asignado a cada dispositivo en la red',
+          'La contraseña del usuario administrador',
+          'El número de serie de la tarjeta gráfica',
+        ],
+        correcta: 0,
+        explicacion: 'La dirección IP permite localizar e intercomunicar nodos conectados bajo el protocolo de Internet.',
       },
     };
   }

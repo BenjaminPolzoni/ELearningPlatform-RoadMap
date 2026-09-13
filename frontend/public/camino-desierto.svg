@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 768" width="1024" height="768">
+  <desc>Camino de tierra pixelado e imperfecto para fondo de desierto isométrico</desc>
+  <defs>
+    <!-- Definimos colores de la paleta del desierto para el efecto granulado -->
+    <style>
+      .sand-base { fill: #fbb03b; } /* Color de la arena de fondo */
+      .dirt-dark { fill: #8c6239; }  /* Color oscuro del camino */
+      .dirt-light { fill: #a67c52; } /* Color claro del camino */
+    </style>
+  </defs>
+  
+  <!-- Estructura del camino de tierra (bloques base y efecto granulado) -->
+  <g id="path-1-desert">
+    <!-- Bloques Base (Rectangulares) -->
+    <rect x="238" y="608" width="60" height="20" class="dirt-dark" />
+    <rect x="298" y="588" width="60" height="20" class="dirt-dark" />
+    <rect x="358" y="568" width="60" height="20" class="dirt-dark" />
+    <rect x="418" y="548" width="60" height="20" class="dirt-dark" />
+    <rect x="478" y="528" width="60" height="20" class="dirt-dark" />
+    <rect x="538" y="508" width="60" height="20" class="dirt-dark" />
+    <rect x="598" y="488" width="60" height="20" class="dirt-dark" />
+    <rect x="658" y="468" width="60" height="20" class="dirt-dark" />
+    
+    <!-- Bloques de Cima (Color claro para profundidad) -->
+    <rect x="238" y="588" width="60" height="20" class="dirt-light" />
+    <rect x="298" y="568" width="60" height="20" class="dirt-light" />
+    <rect x="358" y="548" width="60" height="20" class="dirt-light" />
+    <rect x="418" y="528" width="60" height="20" class="dirt-light" />
+    <rect x="478" y="508" width="60" height="20" class="dirt-light" />
+    <rect x="538" y="488" width="60" height="20" class="dirt-light" />
+    <rect x="598" y="468" width="60" height="20" class="dirt-light" />
+    <rect x="658" y="448" width="60" height="20" class="dirt-light" />
+    
+    <!-- Efecto Granulado/Desvanecimiento (Píxeles dispersos) -->
+    <!-- (Ejemplos de píxeles de arena sobre tierra y tierra sobre arena en los bordes) -->
+    <rect x="236" y="590" width="2" height="2" class="sand-base" /> <!-- Píxel de arena -->
+    <rect x="238" y="586" width="2" height="2" class="dirt-light" /> <!-- Píxel de tierra -->
+    <rect x="356" y="550" width="2" height="2" class="sand-base" />
+    <rect x="358" y="546" width="2" height="2" class="dirt-light" />
+    <rect x="596" y="470" width="2" height="2" class="sand-base" />
+    <rect x="598" y="466" width="2" height="2" class="dirt-light" />
+    <rect x="716" y="450" width="2" height="2" class="sand-base" />
+    <rect x="718" y="446" width="2" height="2" class="dirt-light" />
+    <!-- ... añadir más píxeles aquí para un efecto más denso ... -->
+  </g>
+</svg>

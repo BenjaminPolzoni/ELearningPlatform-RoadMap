@@ -16,8 +16,14 @@ import {
 
 export const CURSO_SEED_ID = '11111111-1111-1111-1111-111111111111';
 
-const NOMBRES_UNIDAD = ['Fundamentos', 'Estructuras de control', 'Funciones', 'Estructuras de datos'];
-const UMBRALES = [0, 500, 1200, 2000];
+const NOMBRES_UNIDAD = [
+  'Fundamentos',
+  'Estructuras de control',
+  'Funciones',
+  'Estructuras de datos',
+  'Concurrencia y Redes',
+];
+const UMBRALES = [0, 500, 1200, 2000, 3200];
 
 interface Fila {
   nombre: string;
