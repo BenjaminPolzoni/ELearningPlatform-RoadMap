@@ -3,18 +3,18 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { RoadmapStore } from '../../core/data/roadmap.store';
 import { Unidad } from '../../core/data/roadmap.models';
-import { Mapa } from '../alumno/mapa';
 import { ConfirmButton } from './confirm-button';
 import { SaveFeedbackToast } from './save-feedback-toast';
 
 /**
  * Editor de curso (E1). Página del curso estilo Moodle: las unidades se apilan en columna,
- * lineal hacia abajo, cada una enlazando a su contenido. Al agregar/quitar, el preview del
- * mapa se actualiza solo (`RoadmapStore` compartido) — "agrego unidad, aparece la isla".
+ * lineal hacia abajo, cada una enlazando a su contenido. "Ver como alumno" lleva al mapa
+ * real (`RoadmapStore` compartido) — no hay preview aparte, así se ve exactamente lo mismo
+ * que va a ver el alumno, no una aproximación.
  */
 @Component({
   selector: 'app-editor',
-  imports: [FormsModule, RouterLink, Mapa, ConfirmButton, SaveFeedbackToast],
+  imports: [FormsModule, RouterLink, ConfirmButton, SaveFeedbackToast],
   // El shell raíz (app.html) recorta el <router-outlet> a un cuadro fijo sin scroll (pensado
   // para el mapa arcade del alumno) — esta vista sí necesita scrollear, así que scrollea
   // puertas adentro en vez de depender del documento.
@@ -30,8 +30,8 @@ import { SaveFeedbackToast } from './save-feedback-toast';
           <a routerLink="/insignias" class="btn btn-sm btn-outline btn-warning ui-font text-[8px]">
             🏅 Insignias
           </a>
-          <a routerLink="/alumno" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]">
-            👁 Ver mapa
+          <a routerLink="/alumno" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]" title="Ver el mapa tal como lo ve el alumno">
+            👁 Ver como alumno
           </a>
         </div>
       </div>
@@ -125,11 +125,6 @@ import { SaveFeedbackToast } from './save-feedback-toast';
         </button>
       }
 
-      <!-- ── Preview del mapa ──────────────────────────────────────── -->
-      <div class="border-2 border-base-300 p-4">
-        <h3 class="ui-font text-sm opacity-70 mb-2">Preview del mapa</h3>
-        <app-mapa [preview]="true" class="block" />
-      </div>
     </div>
 
     <app-save-feedback-toast />

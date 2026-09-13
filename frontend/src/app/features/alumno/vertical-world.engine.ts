@@ -261,46 +261,71 @@ const GOAL_UNIT = 4;
 const goalBlock = (gx: number, gy: number, gw: number, gh: number, fill: string): string =>
   `<rect x="${gx * GOAL_UNIT}" y="${gy * GOAL_UNIT}" width="${gw * GOAL_UNIT}" height="${gh * GOAL_UNIT}" fill="${fill}"/>`;
 
-/** Fila de almenas alineadas a la grilla — dientes de 2 unidades separados por huecos de 2,
- * el remate típico de una muralla 8-bit. */
-function goalMerlons(gx: number, gy: number, gw: number, fill: string): string {
-  let out = '';
-  for (let x = gx; x + 2 <= gx + gw; x += 4) out += goalBlock(x, gy, 2, 2, fill);
-  return out;
+/** Aclara (amt > 0) u oscurece (amt < 0) un color hex — deriva brillo/sombra/mortero de un
+ * mismo tono base en vez de tener que elegir a mano cada variante de cada superficie. */
+function goalShade(hex: string, amt: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const c = (shift: number) => Math.max(0, Math.min(255, ((n >> shift) & 255) + amt)).toString(16).padStart(2, '0');
+  return `#${c(16)}${c(8)}${c(0)}`;
 }
 
-/** Techo a dos aguas en escalera de píxeles: se ensancha 1 unidad por fila hacia abajo —
- * el remate de techo típico 8-bit, nunca una diagonal lisa. */
-function goalRoof(centerX: number, gyTop: number, rows: number, fill: string): string {
+/** Fila de almenas alineadas a la grilla — dientes de 2 unidades con un filo de luz arriba,
+ * separados por huecos de 2: el remate típico de una muralla 8-bit. */
+function goalMerlons(gx: number, gy: number, gw: number, fill: string): string {
   let out = '';
-  for (let r = 0; r < rows; r++) {
-    const halfW = r + 1;
-    out += goalBlock(centerX - halfW, gyTop + r, halfW * 2, 1, fill);
+  for (let x = gx; x + 2 <= gx + gw; x += 4) {
+    out += goalBlock(x, gy, 2, 2, fill) + goalBlock(x, gy, 2, 1, goalShade(fill, 30));
   }
   return out;
 }
 
-/** Torreón con almenas: cuerpo + cara de sombra + remate — reutilizado por castillo/fortaleza. */
-function goalTower(gx: number, gy: number, gw: number, gh: number, wall: string, shade: string, merlon: string): string {
-  const shadeW = Math.max(2, Math.round(gw * 0.4));
-  return (
-    goalBlock(gx, gy, gw, gh, wall) +
-    goalBlock(gx + gw - shadeW, gy, shadeW, gh, shade) +
-    goalMerlons(gx, gy - 2, gw, merlon)
-  );
+/** Techo a dos aguas en escalera de píxeles: se ensancha 1 unidad por fila hacia abajo, con
+ * una línea de teja cada 3 filas — el remate de techo típico 8-bit, nunca una diagonal lisa. */
+function goalRoof(centerX: number, gyTop: number, rows: number, fill: string): string {
+  let out = '';
+  for (let r = 0; r < rows; r++) {
+    const halfW = r + 1;
+    out += goalBlock(centerX - halfW, gyTop + r, halfW * 2, 1, r % 3 === 2 ? goalShade(fill, -20) : fill);
+  }
+  return out;
+}
+
+/**
+ * Bloque con volumen: tono base + franja de luz a la izquierda + franja de sombra a la
+ * derecha + líneas de mortero horizontales — para que las superficies grandes (muros,
+ * escalinatas, tramos de pirámide) lean como piedra/madera texturada en vez de un
+ * rectángulo de color plano, igual criterio que el resto de la escenografía (antorchas,
+ * tótems, cofres). Sigue construido solo con rects — ninguna curva ni degradé.
+ */
+function goalTexturedBlock(gx: number, gy: number, gw: number, gh: number, wall: string): string {
+  const edge = Math.max(1, Math.round(gw * 0.12));
+  let out = goalBlock(gx, gy, gw, gh, wall);
+  if (gw > edge * 2 + 1) {
+    out += goalBlock(gx, gy, edge, gh, goalShade(wall, 28)) + goalBlock(gx + gw - edge, gy, edge, gh, goalShade(wall, -32));
+  }
+  const mortar = goalShade(wall, -44);
+  for (let y = gy + 3; y < gy + gh - 1; y += 4) {
+    out += goalBlock(gx + edge, y, Math.max(0, gw - edge * 2), 1, mortar);
+  }
+  return out;
+}
+
+/** Torreón con almenas: cuerpo texturado + remate — reutilizado por castillo/fortaleza. */
+function goalTower(gx: number, gy: number, gw: number, gh: number, wall: string, merlon: string): string {
+  return goalTexturedBlock(gx, gy, gw, gh, wall) + goalMerlons(gx, gy - 2, gw, merlon);
 }
 
 export const castleArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-rendering="crispEdges">
   <ellipse cx="120" cy="184" rx="108" ry="12" fill="#5c3a1c" opacity=".22"/>
   <g stroke="#4a2c1a" stroke-width="2" stroke-linejoin="round">
-  ${goalBlock(4, 44, 52, 3, '#8a5a32')}
-  ${goalBlock(7, 41, 46, 3, '#b8804a')}
-  ${goalBlock(10, 38, 40, 3, '#dcb679')}
-  ${goalTower(6, 16, 10, 22, '#f0c988', '#c98f4c', '#e2573c')}
-  ${goalTower(44, 16, 10, 22, '#f0c988', '#c98f4c', '#e2573c')}
-  ${goalTower(16, 26, 6, 15, '#dcb679', '#c98f4c', '#e2573c')}
-  ${goalTower(38, 26, 6, 15, '#dcb679', '#c98f4c', '#e2573c')}
-  ${goalTower(22, 8, 16, 33, '#f0c988', '#c98f4c', '#e2573c')}
+  ${goalTexturedBlock(4, 44, 52, 3, '#8a5a32')}
+  ${goalTexturedBlock(7, 41, 46, 3, '#b8804a')}
+  ${goalTexturedBlock(10, 38, 40, 3, '#dcb679')}
+  ${goalTower(6, 16, 10, 22, '#f0c988', '#e2573c')}
+  ${goalTower(44, 16, 10, 22, '#f0c988', '#e2573c')}
+  ${goalTower(16, 26, 6, 15, '#dcb679', '#e2573c')}
+  ${goalTower(38, 26, 6, 15, '#dcb679', '#e2573c')}
+  ${goalTower(22, 8, 16, 33, '#f0c988', '#e2573c')}
   ${goalBlock(9, 23, 3, 4, '#4a2c1a')}
   ${goalBlock(48, 23, 3, 4, '#4a2c1a')}
   ${goalBlock(27, 17, 6, 4, '#4a2c1a')}
@@ -317,13 +342,13 @@ export const castleArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-re
 export const templeArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-rendering="crispEdges">
   <ellipse cx="120" cy="184" rx="108" ry="12" fill="#0c2018" opacity=".35"/>
   <g stroke="#241f10" stroke-width="2" stroke-linejoin="round">
-  ${goalBlock(3, 38, 54, 4, '#8f8a55')}
-  ${goalBlock(7, 34, 46, 4, '#9d9861')}
-  ${goalBlock(11, 30, 38, 4, '#aba46c')}
-  ${goalBlock(15, 26, 30, 4, '#938d5c')}
-  ${goalBlock(19, 20, 22, 6, '#7f7a50')}
+  ${goalTexturedBlock(3, 38, 54, 4, '#8f8a55')}
+  ${goalTexturedBlock(7, 34, 46, 4, '#9d9861')}
+  ${goalTexturedBlock(11, 30, 38, 4, '#aba46c')}
+  ${goalTexturedBlock(15, 26, 30, 4, '#938d5c')}
+  ${goalTexturedBlock(19, 20, 22, 6, '#7f7a50')}
   ${goalBlock(28, 26, 4, 16, '#5c5636')}
-  ${goalBlock(24, 8, 12, 12, '#7f7a50')}
+  ${goalTexturedBlock(24, 8, 12, 12, '#7f7a50')}
   ${goalBlock(22, 6, 16, 2, '#33532f')}
   ${goalBlock(24, 4, 12, 2, '#33532f')}
   ${goalBlock(27, 14, 6, 6, '#26311f')}
@@ -338,14 +363,14 @@ export const templeArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-re
 export const fortressArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-rendering="crispEdges">
   <ellipse cx="120" cy="184" rx="112" ry="16" fill="#cfc6ea" opacity=".18"/>
   <g stroke="#cfc6ea" stroke-width="2" stroke-linejoin="round">
-  ${goalBlock(4, 44, 52, 3, '#33324a')}
-  ${goalBlock(7, 41, 46, 3, '#3d3c57')}
-  ${goalBlock(10, 38, 40, 3, '#4b4a6a')}
-  ${goalTower(6, 16, 10, 22, '#4b506f', '#33314a', '#773453')}
-  ${goalTower(44, 16, 10, 22, '#4b506f', '#33314a', '#773453')}
-  ${goalTower(16, 26, 6, 15, '#3f4360', '#33314a', '#773453')}
-  ${goalTower(38, 26, 6, 15, '#3f4360', '#33314a', '#773453')}
-  ${goalTower(22, 8, 16, 33, '#4b506f', '#33314a', '#773453')}
+  ${goalTexturedBlock(4, 44, 52, 3, '#33324a')}
+  ${goalTexturedBlock(7, 41, 46, 3, '#3d3c57')}
+  ${goalTexturedBlock(10, 38, 40, 3, '#4b4a6a')}
+  ${goalTower(6, 16, 10, 22, '#4b506f', '#773453')}
+  ${goalTower(44, 16, 10, 22, '#4b506f', '#773453')}
+  ${goalTower(16, 26, 6, 15, '#3f4360', '#773453')}
+  ${goalTower(38, 26, 6, 15, '#3f4360', '#773453')}
+  ${goalTower(22, 8, 16, 33, '#4b506f', '#773453')}
   ${goalBlock(9, 23, 3, 4, '#1c1a2c')}
   ${goalBlock(48, 23, 3, 4, '#1c1a2c')}
   ${goalBlock(27, 17, 6, 4, '#ec7181')}
@@ -362,11 +387,8 @@ export const fortressArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-
 export const lodgeArt = `<svg viewBox="0 0 240 200" aria-hidden="true" shape-rendering="crispEdges">
   <ellipse cx="120" cy="184" rx="108" ry="12" fill="#1c3050" opacity=".3"/>
   <g stroke="#2f5a78" stroke-width="2" stroke-linejoin="round">
-  ${goalBlock(2, 42, 56, 3, '#e8f1fb')}
-  ${goalBlock(14, 27, 32, 15, '#8a5a36')}
-  ${goalBlock(14, 31, 32, 1, '#6d4526')}
-  ${goalBlock(14, 35, 32, 1, '#6d4526')}
-  ${goalBlock(14, 39, 32, 1, '#6d4526')}
+  ${goalTexturedBlock(2, 42, 56, 3, '#e8f1fb')}
+  ${goalTexturedBlock(14, 27, 32, 15, '#8a5a36')}
   ${goalBlock(37, 2, 4, 16, '#6c6f7d')}${goalBlock(36, 0, 6, 3, '#eef5ff')}
   ${goalRoof(30, 10, 17, '#f3f8ff')}
   ${goalBlock(29, 10, 2, 4, '#5d3c28')}
