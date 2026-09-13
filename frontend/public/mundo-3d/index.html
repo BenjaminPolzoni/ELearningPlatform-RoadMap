@@ -27,6 +27,29 @@
       z-index: 1;
     }
 
+    .avatar-asset-status {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 12;
+      width: min(440px, calc(100vw - 32px));
+      padding: 18px 20px;
+      transform: translate(-50%, -50%);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.88);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      color: #e2e8f0;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .avatar-asset-status[hidden] { display: none; }
+    .avatar-asset-status strong { display: block; margin-bottom: 6px; color: #f8fafc; }
+    .avatar-asset-status span { font-size: 0.8rem; line-height: 1.45; color: #94a3b8; }
+    .avatar-asset-status[data-state="error"] { border-color: rgba(251, 191, 36, 0.5); }
+    .avatar-asset-status[data-state="error"] strong { color: #fbbf24; }
+
     /* -----------------------------------------------------------
        CHARACTER CREATOR PANEL (Modern Glassmorphic)
        ----------------------------------------------------------- */
@@ -896,6 +919,29 @@
     .btn-more-details:hover {
       color: #1d4ed8;
     }
+
+    @media (max-width: 720px) {
+      .creator-panel,
+      .ui-panel {
+        top: 10px;
+        left: 10px;
+        width: min(360px, calc(100vw - 20px));
+        max-height: calc(100vh - 20px);
+        padding: 14px;
+      }
+
+      .creator-tip,
+      .creator-2d-bar {
+        bottom: 10px;
+        max-width: calc(100vw - 20px);
+        font-size: 0.72rem;
+      }
+
+      .stats-hud,
+      .controls-banner {
+        display: none !important;
+      }
+    }
   </style>
 
   <script type="importmap">
@@ -909,6 +955,10 @@
 </head>
 <body>
   <div id="canvas-container"></div>
+  <div id="avatar-asset-status" class="avatar-asset-status" role="status" aria-live="polite">
+    <strong>Cargando avatar 3D…</strong>
+    <span>Validando el modelo modular optimizado.</span>
+  </div>
 
   <!-- SCREEN 1: CHARACTER CREATOR -->
   <div id="screen-creator" class="creator-panel">
@@ -930,14 +980,14 @@
       </div>
     </div>
 
-    <div class="section-title">Estilo de Modelo & Pelo</div>
+    <div class="section-title">Pelo low-poly</div>
     <div class="styles-grid" id="hair-styles-container">
-      <div class="style-btn selected" data-variant="a">Estilo A</div>
-      <div class="style-btn" data-variant="b">Estilo B</div>
-      <div class="style-btn" data-variant="c">Estilo C</div>
-      <div class="style-btn" data-variant="d">Estilo D</div>
-      <div class="style-btn" data-variant="e">Estilo E</div>
-      <div class="style-btn" data-variant="f">Estilo F</div>
+      <button class="style-btn selected" data-hair-style="a">Despeinado</button>
+      <button class="style-btn" data-hair-style="b">Lateral</button>
+      <button class="style-btn" data-hair-style="c">Corto</button>
+      <button class="style-btn" data-hair-style="d">Coleta</button>
+      <button class="style-btn" data-hair-style="e">Rodete</button>
+      <button class="style-btn" data-hair-style="f">Texturado</button>
     </div>
 
     <div class="section-title">🎨 Tono de Piel</div>
@@ -964,7 +1014,15 @@
       <div class="swatch-circle" data-color="#ec4899" style="background: #ec4899;" title="Rosa Pastel"></div>
     </div>
 
-    <div class="section-title">👕 Ropa (Torso)</div>
+    <div class="section-title">Ropa / torso</div>
+    <div class="styles-grid" id="top-styles-container">
+      <button class="style-btn selected" data-top-style="tshirt">Remera</button>
+      <button class="style-btn" data-top-style="code">&lt;/&gt;</button>
+      <button class="style-btn" data-top-style="braces">{ }</button>
+      <button class="style-btn" data-top-style="hoodie">Buzo</button>
+      <button class="style-btn" data-top-style="jacket">Campera</button>
+      <button class="style-btn" data-top-style="credential">Credencial</button>
+    </div>
     <div class="swatch-row" id="swatches-shirt">
       <div class="swatch-circle selected" data-color="#1e40af" style="background: #1e40af;" title="Azul Clásico"></div>
       <div class="swatch-circle" data-color="#dc2626" style="background: #dc2626;" title="Rojo"></div>
@@ -978,21 +1036,85 @@
     </div>
 
     <div class="section-title">👖 Pantalones</div>
+    <div class="styles-grid" id="bottom-styles-container">
+      <button class="style-btn selected" data-bottom-style="jogger">Jogger</button>
+      <button class="style-btn" data-bottom-style="jeans">Jean</button>
+      <button class="style-btn" data-bottom-style="cargo">Cargo</button>
+    </div>
     <div class="swatch-row" id="swatches-pants">
-      <div class="swatch-circle selected" data-color="#1d4ed8" style="background: #1d4ed8;" title="Jeans Azul"></div>
-      <div class="swatch-circle" data-color="#1e293b" style="background: #1e293b;" title="Negro"></div>
+      <div class="swatch-circle" data-color="#1d4ed8" style="background: #1d4ed8;" title="Jeans Azul"></div>
+      <div class="swatch-circle selected" data-color="#1e293b" style="background: #1e293b;" title="Negro"></div>
       <div class="swatch-circle" data-color="#d4b996" style="background: #d4b996;" title="Beige"></div>
       <div class="swatch-circle" data-color="#64748b" style="background: #64748b;" title="Gris"></div>
       <div class="swatch-circle" data-color="#78350f" style="background: #78350f;" title="Cuero Café"></div>
       <div class="swatch-circle" data-color="#3f6212" style="background: #3f6212;" title="Verde Militar"></div>
     </div>
 
-    <div class="section-title">👓 Accesorios</div>
+    <div class="section-title">Calzado</div>
+    <div class="styles-grid" id="shoe-styles-container">
+      <button class="style-btn selected" data-shoe-style="sneakers">Zapatillas</button>
+      <button class="style-btn" data-shoe-style="high-top">Caña alta</button>
+      <button class="style-btn" data-shoe-style="slip-on">Urbanas</button>
+    </div>
+
+    <div class="section-title">Cabeza</div>
     <div class="acc-grid">
-      <div class="acc-btn selected" data-accessory="none">❌ Ninguno</div>
-      <div class="acc-btn" data-accessory="aid-glasses.glb">👓 Lentes</div>
-      <div class="acc-btn" data-accessory="aid-sunglasses.glb">🕶️ Gafas de Sol</div>
-      <div class="acc-btn" data-accessory="aid-mask.glb">😷 Máscara</div>
+      <button class="acc-btn slot-option selected" data-slot="headAccessory" data-value="none">Ninguno</button>
+      <button class="acc-btn slot-option" data-slot="headAccessory" data-value="headphones">Auriculares</button>
+      <button class="acc-btn slot-option" data-slot="headAccessory" data-value="cat-headphones">Con orejitas</button>
+      <button class="acc-btn slot-option" data-slot="headAccessory" data-value="cap">Gorra</button>
+      <button class="acc-btn slot-option" data-slot="headAccessory" data-value="beanie">Gorro</button>
+    </div>
+
+    <div class="section-title">Rostro</div>
+    <div class="acc-grid">
+      <button class="acc-btn slot-option selected" data-slot="faceAccessory" data-value="none">Ninguno</button>
+      <button class="acc-btn slot-option" data-slot="faceAccessory" data-value="glasses">Anteojos</button>
+      <button class="acc-btn slot-option" data-slot="faceAccessory" data-value="visor">Visor</button>
+    </div>
+
+    <div class="section-title">Mano</div>
+    <div class="acc-grid">
+      <button class="acc-btn slot-option selected" data-slot="handItem" data-value="none">Libre</button>
+      <button class="acc-btn slot-option" data-slot="handItem" data-value="coffee">Taza</button>
+      <button class="acc-btn slot-option" data-slot="handItem" data-value="mate">Mate</button>
+      <button class="acc-btn slot-option" data-slot="handItem" data-value="energy">Energizante</button>
+      <button class="acc-btn slot-option" data-slot="handItem" data-value="phone">Celular</button>
+      <button class="acc-btn slot-option" data-slot="handItem" data-value="laptop">Notebook</button>
+    </div>
+
+    <div class="section-title">Espalda</div>
+    <div class="acc-grid">
+      <button class="acc-btn slot-option selected" data-slot="backItem" data-value="none">Nada</button>
+      <button class="acc-btn slot-option" data-slot="backItem" data-value="backpack">Mochila</button>
+      <button class="acc-btn slot-option" data-slot="backItem" data-value="tech-backpack">Mochila tech</button>
+      <button class="acc-btn slot-option" data-slot="backItem" data-value="sticker-backpack">Con stickers</button>
+      <button class="acc-btn slot-option" data-slot="backItem" data-value="keyboard">Teclado</button>
+    </div>
+
+    <div class="section-title">Cintura</div>
+    <div class="acc-grid">
+      <button class="acc-btn slot-option selected" data-slot="waistItem" data-value="none">Nada</button>
+      <button class="acc-btn slot-option" data-slot="waistItem" data-value="mouse">Mouse</button>
+      <button class="acc-btn slot-option" data-slot="waistItem" data-value="usb">Pendrive</button>
+      <button class="acc-btn slot-option" data-slot="waistItem" data-value="keychain">Llavero</button>
+      <button class="acc-btn slot-option" data-slot="waistItem" data-value="cables">Cables</button>
+    </div>
+
+    <div class="section-title">Hombro</div>
+    <div class="acc-grid">
+      <button class="acc-btn slot-option selected" data-slot="shoulderItem" data-value="none">Nada</button>
+      <button class="acc-btn slot-option" data-slot="shoulderItem" data-value="duck">Patito</button>
+      <button class="acc-btn slot-option" data-slot="shoulderItem" data-value="robot">Mini robot</button>
+      <button class="acc-btn slot-option" data-slot="shoulderItem" data-value="cat">Gatito</button>
+    </div>
+
+    <div class="section-title">Detalles</div>
+    <div class="acc-grid">
+      <button class="acc-btn slot-option selected" data-slot="detailItem" data-value="none">Nada</button>
+      <button class="acc-btn slot-option" data-slot="detailItem" data-value="pin">Pin</button>
+      <button class="acc-btn slot-option" data-slot="detailItem" data-value="watch">Reloj</button>
+      <button class="acc-btn slot-option" data-slot="detailItem" data-value="bracelets">Pulseras</button>
     </div>
 
     <button class="btn-card-2d" id="btn-card-2d" type="button">🪪 Ficha de Personaje 2D</button>
@@ -1207,6 +1329,13 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import {
+      APPROVED_AVATAR_URL,
+      AvatarAssetError,
+      createModularAvatar,
+      isGLBBuffer,
+      normalizeAvatarConfig
+    } from './avatar-glb.js';
 
     // -------------------------------------------------------------
     // THREE.JS SCENE SETUP
@@ -1219,19 +1348,19 @@
     scene.fog = new THREE.Fog(0x0f172a, 8, 35);
 
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.2, 120);
-    camera.position.set(0, 0.85, 2.1);
+    camera.position.set(0, 0.82, 2.3);
 
     // Cámara ortográfica para vista 2D sin distorsión de perspectiva (efecto sprite/ilustración plana)
     let creatorViewMode = '3d';
-    const orthoHeight = 1.35;
+    const orthoHeight = 1.75;
     const initialAspect = window.innerWidth / window.innerHeight;
     const orthoCamera = new THREE.OrthographicCamera(
       -orthoHeight * initialAspect / 2, orthoHeight * initialAspect / 2,
       orthoHeight / 2, -orthoHeight / 2,
       0.1, 50
     );
-    orthoCamera.position.set(0, 0.45, 2.5);
-    orthoCamera.lookAt(0, 0.45, 0);
+    orthoCamera.position.set(0, 0.68, 2.5);
+    orthoCamera.lookAt(0, 0.68, 0);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -1249,7 +1378,7 @@
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
-    controls.target.set(0, 0.45, 0);
+    controls.target.set(0, 0.68, 0);
     controls.maxPolarAngle = Math.PI / 2 - 0.02;
     controls.minDistance = 0.8;
     controls.maxDistance = 4.5;
@@ -1394,8 +1523,8 @@
           return null;
         }
         const buf = await res.arrayBuffer();
-        if (buf.byteLength < 20) {
-          console.warn('GLB buffer too small:', url);
+        if (!isGLBBuffer(buf)) {
+          console.warn('El recurso no contiene un GLB válido:', url);
           return null;
         }
         assetSizes.set(url, buf.byteLength);
@@ -1411,22 +1540,14 @@
     // -------------------------------------------------------------
     // CHARACTER CUSTOMIZATION STATE & PERSISTENCE
     // -------------------------------------------------------------
-    const characterConfig = {
-      gender: 'male',
-      variant: 'a',
-      skinColor: '#f8d4aa',
-      hairColor: '#4a2c11',
-      shirtColor: '#1e40af',
-      pantsColor: '#1d4ed8',
-      accessory: 'none'
-    };
+    const characterConfig = normalizeAvatarConfig();
 
     function loadSavedCharacterConfig() {
       const saved = localStorage.getItem('modular_character_config');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          Object.assign(characterConfig, parsed);
+          Object.assign(characterConfig, normalizeAvatarConfig(parsed));
         } catch (e) {
           console.warn('Failed parsing character config:', e);
         }
@@ -1446,8 +1567,17 @@
       document.querySelectorAll('.gender-btn').forEach(btn => {
         btn.classList.toggle('selected', btn.getAttribute('data-gender') === characterConfig.gender);
       });
-      document.querySelectorAll('.style-btn').forEach(btn => {
-        btn.classList.toggle('selected', btn.getAttribute('data-variant') === characterConfig.variant);
+      document.querySelectorAll('#hair-styles-container .style-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.getAttribute('data-hair-style') === characterConfig.hairStyle);
+      });
+      document.querySelectorAll('#top-styles-container .style-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.getAttribute('data-top-style') === characterConfig.topStyle);
+      });
+      document.querySelectorAll('#bottom-styles-container .style-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.getAttribute('data-bottom-style') === characterConfig.bottomStyle);
+      });
+      document.querySelectorAll('#shoe-styles-container .style-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.getAttribute('data-shoe-style') === characterConfig.shoeStyle);
       });
       const updateSwatches = (containerId, selectedColor) => {
         document.querySelectorAll('#' + containerId + ' .swatch-circle').forEach(s => {
@@ -1459,163 +1589,9 @@
       updateSwatches('swatches-shirt', characterConfig.shirtColor);
       updateSwatches('swatches-pants', characterConfig.pantsColor);
 
-      document.querySelectorAll('.acc-btn').forEach(btn => {
-        btn.classList.toggle('selected', btn.getAttribute('data-accessory') === characterConfig.accessory);
-      });
-    }
-
-    // -------------------------------------------------------------
-    // VERTEX CLASSIFICATION & COLORING ENGINE
-    // -------------------------------------------------------------
-    function classifyAndColorMesh(mesh, config) {
-      const isHead = mesh.name === 'head-mesh';
-      const isBody = mesh.name === 'body-mesh';
-      if (!isHead && !isBody) return;
-
-      const geom = mesh.geometry;
-      const pos = geom.attributes.position;
-      const uv = geom.attributes.uv;
-      if (!pos || !uv) return;
-
-      const vertexCount = pos.count;
-      let partIndices = mesh.userData.partIndices;
-
-      if (!partIndices) {
-        partIndices = new Uint8Array(vertexCount);
-        let skinCol = 15;
-        if (isHead) {
-          const uCounts = {};
-          for (let i = 0; i < vertexCount; i++) {
-            const col = Math.floor(uv.getX(i) * 16);
-            uCounts[col] = (uCounts[col] || 0) + 1;
-          }
-          for (const c in uCounts) {
-            if (uCounts[c] >= 210 && uCounts[c] <= 240) {
-              skinCol = parseInt(c);
-              break;
-            }
-          }
-          mesh.userData.skinCol = skinCol;
-        }
-
-        for (let i = 0; i < vertexCount; i++) {
-          const x = pos.getX(i);
-          const y = pos.getY(i);
-          const z = pos.getZ(i);
-          const col = Math.floor(uv.getX(i) * 16);
-
-          if (isHead) {
-            if (col === skinCol) {
-              partIndices[i] = 1; // Skin (Face/Head Base)
-            } else if (z > 0.06 && y >= 0.43 && y <= 0.54 && Math.abs(x) < 0.18) {
-              partIndices[i] = 2; // Facial Features (Eyes, Brows, Mouth)
-            } else {
-              partIndices[i] = 0; // Hair
-            }
-          } else {
-            // Body mesh
-            if (y < 0.035) {
-              partIndices[i] = 5; // Shoes
-            } else if (y < 0.20) {
-              partIndices[i] = 4; // Pants / Legs
-            } else if (Math.abs(x) > 0.26 && y < 0.35) {
-              partIndices[i] = 1; // Skin (Hands)
-            } else {
-              partIndices[i] = 3; // Shirt / Torso
-            }
-          }
-        }
-        mesh.userData.partIndices = partIndices;
-      }
-
-      let colorAttr = geom.attributes.color;
-      if (!colorAttr || colorAttr.count !== vertexCount) {
-        colorAttr = new THREE.BufferAttribute(new Float32Array(vertexCount * 3), 3);
-        geom.setAttribute('color', colorAttr);
-      }
-
-      const skinC = new THREE.Color(config.skinColor);
-      const hairC = new THREE.Color(config.hairColor);
-      const shirtC = new THREE.Color(config.shirtColor);
-      const pantsC = new THREE.Color(config.pantsColor);
-      const shoesC = new THREE.Color(0x22262f);
-      const eyeC = new THREE.Color(0x18181b);
-
-      const colors = colorAttr.array;
-      for (let i = 0; i < vertexCount; i++) {
-        const part = partIndices[i];
-        let c = eyeC;
-        if (part === 0) c = hairC;
-        else if (part === 1) c = skinC;
-        else if (part === 2) c = eyeC;
-        else if (part === 3) c = shirtC;
-        else if (part === 4) c = pantsC;
-        else if (part === 5) c = shoesC;
-
-        colors[i * 3] = c.r;
-        colors[i * 3 + 1] = c.g;
-        colors[i * 3 + 2] = c.b;
-      }
-      colorAttr.needsUpdate = true;
-
-      if (!mesh.material.vertexColors) {
-        mesh.material = new THREE.MeshStandardMaterial({
-          vertexColors: true,
-          roughness: 0.68,
-          metalness: 0.08
-        });
-      }
-    }
-
-    function applyCustomColorsToModel(model, config) {
-      model.traverse((child) => {
-        if (child.isSkinnedMesh || child.isMesh) {
-          classifyAndColorMesh(child, config);
-        }
-      });
-    }
-
-    // -------------------------------------------------------------
-    // ACCESSORY ATTACHMENT SYSTEM
-    // -------------------------------------------------------------
-    async function attachAccessoryToCharacter(model, accessoryName) {
-      const headBone = model.getObjectByName('head');
-      if (!headBone) return;
-
-      for (let i = headBone.children.length - 1; i >= 0; i--) {
-        const child = headBone.children[i];
-        if (child.userData && child.userData.isAccessory) {
-          headBone.remove(child);
-        }
-      }
-
-      if (!accessoryName || accessoryName === 'none') return;
-
-      const accUrl = 'Assets/Character/Models/GLB format/' + accessoryName;
-      const buf = await fetchGLBBuffer(accUrl);
-      if (!buf) return;
-
-      loader.parse(buf.slice(0), 'Assets/Character/Models/GLB format/', (gltf) => {
-        const acc = gltf.scene;
-        acc.userData.isAccessory = true;
-        acc.traverse((c) => {
-          if (c.isMesh) {
-            c.castShadow = true;
-            c.receiveShadow = false;
-          }
-        });
-
-        if (accessoryName === 'aid-glasses.glb') {
-          acc.position.set(0, 0.05, 0.075);
-          acc.scale.set(1.0, 1.0, 1.0);
-        } else if (accessoryName === 'aid-sunglasses.glb') {
-          acc.position.set(0, 0.05, 0.075);
-          acc.scale.set(1.0, 1.0, 1.0);
-        } else if (accessoryName === 'aid-mask.glb') {
-          acc.position.set(0, -0.015, 0.055);
-          acc.scale.set(0.95, 0.95, 0.95);
-        }
-        headBone.add(acc);
+      document.querySelectorAll('.slot-option').forEach(btn => {
+        const slotName = btn.getAttribute('data-slot');
+        btn.classList.toggle('selected', btn.getAttribute('data-value') === characterConfig[slotName]);
       });
     }
 
@@ -1626,57 +1602,64 @@
     scene.add(playerGroup);
 
     let playerModel = null;
-    let playerMixer = null;
-    let animActions = {};
-    let activeAction = null;
+    let avatarController = null;
+    let avatarLoadRevision = 0;
     let isPlayerLoaded = false;
 
+    function setAvatarStatus(state, title, detail) {
+      const status = document.getElementById('avatar-asset-status');
+      status.dataset.state = state;
+      status.querySelector('strong').textContent = title;
+      status.querySelector('span').textContent = detail;
+      status.hidden = state === 'ready';
+    }
+
     async function loadCharacterModel(config) {
-      const fileName = 'character-' + config.gender + '-' + config.variant + '.glb';
-      const url = 'Assets/Character/Models/GLB format/' + fileName;
-      const buf = await fetchGLBBuffer(url);
-      if (!buf) return;
+      const revision = ++avatarLoadRevision;
+      setAvatarStatus('loading', 'Cargando avatar 3D…', 'Validando el modelo modular optimizado.');
 
-      loader.parse(buf.slice(0), 'Assets/Character/Models/GLB format/', (gltf) => {
-        while (playerGroup.children.length > 0) {
-          playerGroup.remove(playerGroup.children[0]);
+      try {
+        const buffer = await fetchGLBBuffer(APPROVED_AVATAR_URL);
+        if (!buffer) {
+          throw new AvatarAssetError(
+            'Todavía no existe el GLB definitivo.',
+            [`Archivo esperado: mundo-3d/${APPROVED_AVATAR_URL}`]
+          );
         }
 
-        playerModel = gltf.scene;
-        playerModel.scale.set(0.65, 0.65, 0.65);
-        playerModel.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = false; // Massive FPS boost when zoomed in (eliminates redundant shadow depth sampling on character body)
-          }
-        });
+        const nextController = await createModularAvatar(loader, buffer, config);
+        if (revision !== avatarLoadRevision) {
+          nextController.dispose();
+          return;
+        }
 
-        applyCustomColorsToModel(playerModel, config);
-        attachAccessoryToCharacter(playerModel, config.accessory);
-
+        if (playerModel) playerGroup.remove(playerModel);
+        avatarController?.dispose();
+        avatarController = nextController;
+        playerModel = nextController.model;
+        playerModel.scale.setScalar(0.76);
         playerGroup.add(playerModel);
-
-        playerMixer = new THREE.AnimationMixer(playerModel);
-        animActions = {};
-        for (const clip of gltf.animations) {
-          animActions[clip.name] = playerMixer.clipAction(clip);
-        }
-
-        if (animActions['idle']) {
-          animActions['idle'].play();
-          activeAction = animActions['idle'];
-        }
-
         isPlayerLoaded = true;
-      });
+        nextController.warnings.forEach((warning) => console.warn('[Avatar GLB]', warning));
+        setAvatarStatus('ready', '', '');
+      } catch (error) {
+        if (revision !== avatarLoadRevision) return;
+        isPlayerLoaded = false;
+        const details = error instanceof AvatarAssetError && error.details.length
+          ? ` ${error.details.join(' ')}`
+          : '';
+        setAvatarStatus('error', 'Falta el modelo 3D aprobado', `${error.message}${details}`);
+        console.warn('[Avatar GLB]', error);
+      }
+    }
+
+    function applyCharacterConfig() {
+      saveCharacterConfig();
+      avatarController?.applyConfig(characterConfig);
     }
 
     function playAnimation(name) {
-      if (!animActions[name] || activeAction === animActions[name]) return;
-      const prevAction = activeAction;
-      activeAction = animActions[name];
-      if (prevAction) prevAction.fadeOut(0.15);
-      activeAction.reset().fadeIn(0.15).play();
+      avatarController?.play(name);
     }
 
     // -------------------------------------------------------------
@@ -1687,18 +1670,43 @@
         document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
         characterConfig.gender = btn.getAttribute('data-gender');
-        saveCharacterConfig();
-        loadCharacterModel(characterConfig);
+        applyCharacterConfig();
       });
     });
 
-    document.querySelectorAll('.style-btn').forEach(btn => {
+    document.querySelectorAll('#hair-styles-container .style-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('selected'));
+        document.querySelectorAll('#hair-styles-container .style-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
-        characterConfig.variant = btn.getAttribute('data-variant');
-        saveCharacterConfig();
-        loadCharacterModel(characterConfig);
+        characterConfig.hairStyle = btn.getAttribute('data-hair-style');
+        applyCharacterConfig();
+      });
+    });
+
+    document.querySelectorAll('#top-styles-container .style-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#top-styles-container .style-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        characterConfig.topStyle = btn.getAttribute('data-top-style');
+        applyCharacterConfig();
+      });
+    });
+
+    document.querySelectorAll('#bottom-styles-container .style-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#bottom-styles-container .style-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        characterConfig.bottomStyle = btn.getAttribute('data-bottom-style');
+        applyCharacterConfig();
+      });
+    });
+
+    document.querySelectorAll('#shoe-styles-container .style-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#shoe-styles-container .style-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        characterConfig.shoeStyle = btn.getAttribute('data-shoe-style');
+        applyCharacterConfig();
       });
     });
 
@@ -1708,10 +1716,7 @@
           document.querySelectorAll('#' + containerId + ' .swatch-circle').forEach(s => s.classList.remove('selected'));
           swatch.classList.add('selected');
           characterConfig[configProp] = swatch.getAttribute('data-color');
-          saveCharacterConfig();
-          if (playerModel) {
-            applyCustomColorsToModel(playerModel, characterConfig);
-          }
+          applyCharacterConfig();
         });
       });
     }
@@ -1721,15 +1726,13 @@
     bindSwatchGroup('swatches-shirt', 'shirtColor');
     bindSwatchGroup('swatches-pants', 'pantsColor');
 
-    document.querySelectorAll('.acc-btn').forEach(btn => {
+    document.querySelectorAll('.slot-option').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.acc-btn').forEach(b => b.classList.remove('selected'));
+        const slotName = btn.getAttribute('data-slot');
+        document.querySelectorAll('.slot-option[data-slot="' + slotName + '"]').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
-        characterConfig.accessory = btn.getAttribute('data-accessory');
-        saveCharacterConfig();
-        if (playerModel) {
-          attachAccessoryToCharacter(playerModel, characterConfig.accessory);
-        }
+        characterConfig[slotName] = btn.getAttribute('data-value');
+        applyCharacterConfig();
       });
     });
 
@@ -1747,6 +1750,7 @@
     function switchMode(newMode) {
       currentMode = newMode;
       if (newMode === 'creator') {
+        playerGroup.scale.setScalar(1);
         screenCreator.style.display = 'flex';
         creatorTip.style.display = 'flex';
         panelCity.style.display = 'none';
@@ -1770,9 +1774,10 @@
 
         controls.minDistance = 0.8;
         controls.maxDistance = 4.5;
-        controls.target.set(0, 0.45, 0);
-        camera.position.set(0, 0.85, 2.1);
+        controls.target.set(0, 0.68, 0);
+        camera.position.set(0, 0.82, 2.3);
       } else {
+        playerGroup.scale.setScalar(0.72);
         screenCreator.style.display = 'none';
         creatorTip.style.display = 'none';
         panelCity.style.display = 'flex';
@@ -1840,8 +1845,8 @@
         if (bar2D) bar2D.style.display = 'none';
 
         controls.enabled = true; // Reactivar rotación 3D
-        controls.target.set(0, 0.45, 0);
-        camera.position.set(0, 0.85, 2.1);
+        controls.target.set(0, 0.68, 0);
+        camera.position.set(0, 0.82, 2.3);
       }
     }
 
@@ -1876,7 +1881,7 @@
         const setBg = (id, color) => { const el = document.getElementById(id); if (el) el.style.background = color; };
 
         setTxt('card-val-gender', characterConfig.gender === 'male' ? 'Masculino 👨' : 'Femenino 👩');
-        setTxt('card-val-hair-style', 'Estilo ' + (characterConfig.variant || 'a').toUpperCase());
+        setTxt('card-val-hair-style', 'Estilo ' + (characterConfig.hairStyle || 'a').toUpperCase());
         setTxt('card-val-hair-color', characterConfig.hairColor);
         setBg('card-dot-hair', characterConfig.hairColor);
         setTxt('card-val-skin-color', characterConfig.skinColor);
@@ -1886,10 +1891,16 @@
         setTxt('card-val-pants-color', characterConfig.pantsColor);
         setBg('card-dot-pants', characterConfig.pantsColor);
 
-        let accName = 'Ninguno ❌';
-        if (characterConfig.accessory === 'aid-glasses.glb') accName = 'Lentes 👓';
-        else if (characterConfig.accessory === 'aid-sunglasses.glb') accName = 'Gafas de Sol 🕶️';
-        else if (characterConfig.accessory === 'aid-mask.glb') accName = 'Máscara 😷';
+        const accesoriosActivos = [
+          characterConfig.headAccessory,
+          characterConfig.faceAccessory,
+          characterConfig.handItem,
+          characterConfig.backItem,
+          characterConfig.waistItem,
+          characterConfig.shoulderItem,
+          characterConfig.detailItem
+        ].filter(value => value && value !== 'none');
+        const accName = accesoriosActivos.length ? accesoriosActivos.join(' · ') : 'Ninguno';
         setTxt('card-val-acc', accName);
 
         modalCharCard.style.display = 'flex';
@@ -3173,9 +3184,10 @@
     loadSavedCharacterConfig();
     loadCharacterModel(characterConfig);
     loadUnitsFromStorage();
-    // Entrar directo al mundo: el rol ya se elige en el login de Angular, y la
-    // personalización de personaje queda disponible desde "Personalizar Personaje".
-    switchMode('city');
+    // Entrar directo al mundo; el query param mode=creator permite probar el
+    // personalizador aislado sin duplicar la escena ni alterar el flujo normal.
+    const initialMode = new URLSearchParams(window.location.search).get('mode');
+    switchMode(initialMode === 'creator' ? 'creator' : 'city');
 
     const clock = new THREE.Clock();
     const followPlayerCheckbox = document.getElementById('check-follow-player');
@@ -3210,7 +3222,7 @@
         lastFpsTime = now;
       }
 
-      if (playerMixer) playerMixer.update(delta);
+      avatarController?.update(delta);
 
       if (currentMode === 'creator') {
         neonRing.rotation.z += delta * 0.4;

@@ -63,7 +63,7 @@ export class Login {
 
   // ?v= evita que el navegador sirva una versión vieja cacheada del archivo estático.
   protected readonly avatarPreviewUrl: SafeResourceUrl =
-    this.sanitizer.bypassSecurityTrustResourceUrl('mundo-3d/avatar-preview.html?v=5');
+    this.sanitizer.bypassSecurityTrustResourceUrl('mundo-3d/avatar-preview.html?v=7');
 
   protected readonly opciones: RoleOption[] = [
     {

@@ -20,14 +20,16 @@ el momento, no se archiva acá.
 
 | Archivo | Plan de origen | Ítems abiertos | Pagados |
 |---|---|---|---|
-| [tarea-deuda-01-arquitectura-y-stack.md](tarea-deuda-01-arquitectura-y-stack.md) | `01-arquitectura-y-stack.md` | 1 | 0 |
+| [tarea-deuda-01-arquitectura-y-stack.md](tarea-deuda-01-arquitectura-y-stack.md) | `01-arquitectura-y-stack.md` | 2 | 1 |
 | [tarea-deuda-02-modelo-de-datos.md](tarea-deuda-02-modelo-de-datos.md) | `02-modelo-de-datos.md` | 2 | 0 |
 | [tarea-deuda-03-plan-de-implementacion.md](tarea-deuda-03-plan-de-implementacion.md) | `03-plan-de-implementacion.md` | 2 | 0 |
 | [tarea-deuda-04-engine-2-5d.md](tarea-deuda-04-engine-2-5d.md) | `04-engine-2-5d.md` | 2 | 0 |
 | [tarea-deuda-05-design-system.md](tarea-deuda-05-design-system.md) | `05-design-system.md` | 4 | 1 |
 | [tarea-deuda-06-contrato-api.md](tarea-deuda-06-contrato-api.md) | `06-contrato-api.md` | 8 | 2 |
 
-**Total: 19 ítems abiertos, 3 pagados.** Última revisión: al rediseñar el avatar (género +
+**Total: 20 ítems abiertos, 4 pagados.** Última revisión: al integrar el avatar GLB se
+agregó el `.dockerignore` faltante y se pagó el ítem #3 de arquitectura. Antes: al implementar el
+avatar 3D low-poly se registró que Three.js todavía se descarga desde un CDN. Antes: al rediseñar el avatar (género +
 catálogo dev): abrió el ítem #5 de 05-design-system.md (textos sin i18n) y corrigió el
 conteo del ítem #1, que ya estaba pagado. Antes: al rediseñar el front sobre la
 paleta de marca (mapa 2.5D isométrico + tablero de unidad + avatar personalizable) —
