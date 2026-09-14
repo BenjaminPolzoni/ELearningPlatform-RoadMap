@@ -1,6 +1,7 @@
 import {
   Actividad,
   Alumno,
+  Conexion,
   Dificultad,
   EstadoNodo,
   Modalidad,
@@ -45,32 +46,56 @@ const PLANTILLA: Fila[] = [
     dificultad: 'AVANZADO', modalidad: 'practico' },
 ];
 
+// Grilla default de posición (misma serpentina de 4 columnas que calculaba
+// `unidad-mapa.ts` antes de que el editor gráfico expusiera posicion_x/y).
+const GRID_COLS = 4;
+const GRID_CW = 168;
+const GRID_CH = 138;
+const GRID_X0 = 104;
+const GRID_Y0 = 96;
+
+function posicionSerpentina(indice: number): { posicionX: number; posicionY: number } {
+  const fila = Math.floor(indice / GRID_COLS);
+  const enFila = indice % GRID_COLS;
+  const col = fila % 2 === 0 ? enFila : GRID_COLS - 1 - enFila;
+  return { posicionX: GRID_X0 + col * GRID_CW, posicionY: GRID_Y0 + fila * GRID_CH };
+}
+
 export function roadmapSeed(): Roadmap {
-  return {
-    cursoCohorteId: CURSO_SEED_ID,
-    nombre: 'Programación I — 2026 C1',
-    unidades: NOMBRES_UNIDAD.map((nombre, i) => ({
-      id: `u${i + 1}`,
-      nombre,
-      umbralXpDesbloqueo: UMBRALES[i],
-      orden: i + 1,
-      actividades: PLANTILLA.map((p, j): Actividad => {
-        const esDesafio = p.tipo === 'desafio' || p.tipo === 'boss';
-        return {
-          id: `u${i + 1}-a${j + 1}`,
-          nombre: p.nombre,
-          tipo: p.tipo,
-          esObligatorio: p.esObligatorio,
-          reintentosPermitidos: p.reintentos,
-          desafioId: esDesafio ? `desafio-ext-${i + 1}-${j + 1}` : undefined,
-          descripcion: p.descripcion,
-          recurso: p.recurso,
-          dificultad: p.dificultad,
-          modalidad: p.modalidad,
-        };
-      }),
+  const unidades = NOMBRES_UNIDAD.map((nombre, i) => ({
+    id: `u${i + 1}`,
+    nombre,
+    umbralXpDesbloqueo: UMBRALES[i],
+    orden: i + 1,
+    actividades: PLANTILLA.map((p, j): Actividad => {
+      const esDesafio = p.tipo === 'desafio' || p.tipo === 'boss';
+      return {
+        id: `u${i + 1}-a${j + 1}`,
+        nombre: p.nombre,
+        tipo: p.tipo,
+        esObligatorio: p.esObligatorio,
+        reintentosPermitidos: p.reintentos,
+        desafioId: esDesafio ? `desafio-ext-${i + 1}-${j + 1}` : undefined,
+        descripcion: p.descripcion,
+        recurso: p.recurso,
+        dificultad: p.dificultad,
+        modalidad: p.modalidad,
+        ...posicionSerpentina(j),
+      };
+    }),
+  }));
+
+  // Prerequisitos lineales dentro de cada unidad (la plantilla ya es teoría → prácticas →
+  // desafío → boss): demuestra el grafo de conexiones apenas se abre el editor gráfico.
+  const conexiones: Conexion[] = unidades.flatMap((u) =>
+    u.actividades.slice(0, -1).map((a, j): Conexion => ({
+      id: `cx-${u.id}-${j + 1}`,
+      nodoOrigenId: a.id,
+      nodoDestinoId: u.actividades[j + 1].id,
     })),
-  };
+  );
+
+  return { cursoCohorteId: CURSO_SEED_ID, nombre: 'Programación I — 2026 C1', unidades, conexiones };
 }
 
 const APELLIDOS = [
