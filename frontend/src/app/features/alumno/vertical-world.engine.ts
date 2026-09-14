@@ -171,59 +171,6 @@ export interface GeneratedWorld {
   support: string;
 }
 
-function makePixelRoadSegment(
-  from: [number, number],
-  to: [number, number],
-  worldWidth: number,
-  worldHeight: number,
-): [number, number][] {
-  const fx = (from[0] / 100) * worldWidth;
-  const fy = (from[1] / 100) * worldHeight;
-  const tx = (to[0] / 100) * worldWidth;
-  const ty = (to[1] / 100) * worldHeight;
-
-  const turnX = tx;
-  const goRight = turnX > fx;
-  const cornerR = Math.min(32, Math.abs(turnX - fx) * 0.4, Math.abs(ty - fy) * 0.4);
-
-  const pts: [number, number][] = [];
-
-  // Tramo 1: Desplazamiento lateral inicial hacia el eje del codo (puntos 0..10)
-  for (let i = 0; i <= 10; i++) {
-    const t = i / 10;
-    const targetX = goRight ? turnX - cornerR : turnX + cornerR;
-    pts.push([
-      ((fx + (targetX - fx) * t) / worldWidth) * 100,
-      (fy / worldHeight) * 100,
-    ]);
-  }
-
-  // Tramo 2: Curva cerrada en el codo (puntos 11..21)
-  const p0x = goRight ? turnX - cornerR : turnX + cornerR;
-  const p0y = fy;
-  const p1y = fy - cornerR;
-  for (let i = 1; i <= 11; i++) {
-    const t = i / 11;
-    const u = 1 - t;
-    pts.push([
-      ((u * u * p0x + 2 * u * t * turnX + t * t * turnX) / worldWidth) * 100,
-      ((u * u * p0y + 2 * u * t * p0y + t * t * p1y) / worldHeight) * 100,
-    ]);
-  }
-
-  // Tramo 3: Ascenso vertical hacia el nodo destino (puntos 22..32)
-  const startY = fy - cornerR;
-  for (let i = 1; i <= 11; i++) {
-    const t = i / 11;
-    pts.push([
-      (turnX / worldWidth) * 100,
-      ((startY + (ty - startY) * t) / worldHeight) * 100,
-    ]);
-  }
-
-  return pts;
-}
-
 export function generateVerticalWorld(
   theme: WorldTheme,
   baseChallenges: VerticalChallenge[],
@@ -263,12 +210,10 @@ export function generateVerticalWorld(
     stops.push([id === mainCount ? 50 : carrilActual, (groundY(id) / worldHeight) * 100]);
   }
 
-  // Caminos pixel art con curvas cerradas que aprovechan el ancho del mapa
+  // Calcula caminos en escuadra (ángulo recto), no curvas — ver orthogonalRoute().
   const roads: [number, number][][] = [
     [],
-    ...stops.slice(1).map((to, i) =>
-      makePixelRoadSegment(stops[i], to, WORLD_WIDTH, worldHeight),
-    ),
+    ...stops.slice(1).map((to, i) => orthogonalRoute(stops[i], to, WORLD_WIDTH, worldHeight)),
   ];
 
   // Clone challenges and set positions
