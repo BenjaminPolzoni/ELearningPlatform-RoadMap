@@ -1,8 +1,19 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, inject, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  effect,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { AuthMockService } from '../../core/auth/auth-mock.service';
 import { RoadmapStore } from '../../core/data/roadmap.store';
+import { XP_POR_DIFICULTAD } from '../../core/data/roadmap.models';
 
 /**
  * Contrato de mensajes que manda la escena Three.js al host vía
@@ -41,7 +52,7 @@ function esMensajeMundo3d(data: unknown): data is MensajeMundo3d {
         [src]="mundo3dUrl"
         allow="autoplay; fullscreen; gamepad; pointer-lock"
         allowfullscreen
-        (load)="enviarUnidades()"
+        (load)="onFrameLoad()"
       ></iframe>
     </div>
   `,
@@ -114,20 +125,70 @@ export class Mundo3d implements OnInit, OnDestroy {
     this.router.navigate(['/login']);
   }
 
+  // Contador, no boolean: un iframe sin `src` todavía dispara un `load` "fantasma"
+  // sobre `about:blank` ANTES de que Angular termine de aplicar el binding `[src]`
+  // (que navega recién en el próximo ciclo de detección de cambios). Con un boolean,
+  // ese primer load ponía `cargado=true` y el `effect` mandaba el mensaje a esa
+  // ventana fantasma que estaba por descartarse; cuando el iframe real terminaba de
+  // cargar y disparaba SU propio `load`, `cargado` ya era `true` → la señal no
+  // cambiaba de valor → el `effect` nunca se volvía a ejecutar → el mundo 3D real
+  // jamás recibía las unidades/XP/vidas (se quedaba con los valores por defecto).
+  private readonly cargas = signal(0);
+
+  protected onFrameLoad(): void {
+    this.cargas.update((n) => n + 1);
+  }
+
   /**
-   * Le manda al visor las unidades reales del curso (id, nombre, orden, bioma) apenas
-   * termina de cargar — reemplaza al mapa de biomas hardcodeado/local que traía el
-   * prototipo 3D, así el mundo 3D deja de tener su propio catálogo de unidades.
+   * Le manda al visor las unidades reales del curso (id, nombre, orden, bioma, si ya
+   * está resuelta) más el xp/vidas vigentes del alumno — reemplaza al mapa de biomas
+   * hardcodeado/local que traía el prototipo 3D y alimenta la ficha del explorador
+   * (vidas, XP, contador de unidades resueltas). Un `effect` en vez de un solo envío
+   * al `load` del iframe: así la ficha se actualiza sola si el alumno vuelve al mundo
+   * 3D después de sumar XP o resolver una unidad en otra pantalla.
    */
-  protected enviarUnidades(): void {
+  private readonly sincronizarEstado = effect(() => {
+    if (this.cargas() === 0) return;
     const contentWindow = this.frame()?.nativeElement.contentWindow;
     if (!contentWindow) return;
-    const unidades = this.store.unidades().map((u) => ({
-      id: u.id,
-      nombre: u.nombre,
-      orden: u.orden,
-      bioma: u.bioma,
-    }));
-    contentWindow.postMessage({ type: 'setUnidades', unidades }, '*');
-  }
+
+    const progreso = this.store.progreso();
+    const completados = new Set(
+      (progreso?.nodos ?? []).filter((n) => n.estado === 'completado').map((n) => n.nodoId),
+    );
+    // Misma definición de "unidad resuelta" que el mapa 2D (mapa.ts `islas`): solo mira
+    // las actividades obligatorias, así una "Práctica libre" opcional sin hacer no la traba.
+    const unidades = this.store.unidades().map((u) => {
+      const obligatorias = u.actividades.filter((a) => a.esObligatorio);
+      const resuelta = obligatorias.length > 0 && obligatorias.every((a) => completados.has(a.id));
+      // Actividades viejas (de antes de que el editor pidiera dificultad al crearlas)
+      // pueden no tenerla guardada — tratarlas como BASICO en vez de 0 XP, así no
+      // quedan invisibles para el cálculo de progreso de la unidad.
+      const xpDe = (a: (typeof u.actividades)[number]) => XP_POR_DIFICULTAD[a.dificultad ?? 'BASICO'];
+      // XP de ESTA unidad (no el total del alumno): cuánto ganó de sus desafíos vs. cuánto
+      // ganaría completando todos — es lo que muestra la ficha para la unidad en curso.
+      const xpUnidad = u.actividades.filter((a) => completados.has(a.id)).reduce((sum, a) => sum + xpDe(a), 0);
+      const xpUnidadMax = u.actividades.reduce((sum, a) => sum + xpDe(a), 0);
+      return {
+        id: u.id,
+        nombre: u.nombre,
+        orden: u.orden,
+        bioma: u.bioma,
+        resuelta,
+        umbralXpDesbloqueo: u.umbralXpDesbloqueo,
+        xpUnidad,
+        xpUnidadMax,
+      };
+    });
+
+    contentWindow.postMessage(
+      {
+        type: 'setUnidades',
+        unidades,
+        xpTotal: progreso?.xpTotal ?? 0,
+        vidasVigentes: progreso?.vidasVigentes ?? 3,
+      },
+      '*',
+    );
+  });
 }

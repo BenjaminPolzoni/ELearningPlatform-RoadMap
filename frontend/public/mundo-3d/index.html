@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ciudad Modular 3D - Creador de Personaje y Exploración</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     * {
       box-sizing: border-box;
@@ -373,90 +376,283 @@
     }
 
     /* -----------------------------------------------------------
-       CITY EXPLORER HUD & SIDEBAR
+       FICHA DEL EXPLORADOR — tarjeta compacta que se desliza desde
+       el borde izquierdo (mismo lenguaje visual arcade del resto de
+       la app: fondo violeta oscuro, Press Start 2P, glow de neón,
+       bordes angulares) con un emblema 3D real (Three.js) girando
+       en el encabezado en vez de un ícono plano.
        ----------------------------------------------------------- */
-    .ui-panel {
-      position: absolute;
-      top: 18px;
-      left: 18px;
-      z-index: 10;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(14px);
-      padding: 18px 22px;
-      border-radius: 18px;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18);
-      width: 330px;
-      max-height: calc(100vh - 36px);
+    #panel-city-wrap {
       display: none; /* hidden while in creator mode */
-      flex-direction: column;
-      color: #1e293b;
     }
 
-    .ui-panel h2 {
-      font-size: 1.15rem;
-      color: #0f172a;
+    /* Pestaña de la ficha: círculo violeta oscuro con borde cian, igual paleta que el
+       panel que abre (nada de cinta dorada suelta) y un ícono plano simple — nada de
+       texto rotado ni de emblema 3D, que quedaban ilegibles/fuera de tema a 30px. */
+    .drawer-handle {
+      position: fixed;
+      top: 50%;
+      left: 12px;
+      z-index: 11;
+      --dx: 0px;
+      transform: translate(var(--dx), -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      font-family: 'Press Start 2P', 'Courier New', monospace;
+      color: #7FFAFF;
+      background: radial-gradient(circle at 50% 35%, #23205A, #0D0B1E 75%);
+      border: 2px solid #00E5FF;
+      cursor: pointer;
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.5), 0 6px 16px rgba(0, 0, 0, 0.45);
+      transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.15s;
+    }
+    /* Al abrir, el botón se corre junto con el panel y queda pegado a su borde
+       derecho — antes se quedaba fijo en el borde de la pantalla y el panel
+       abierto lo dejaba flotando encima de su propio contenido. */
+    #panel-city-wrap:not(.collapsed) .drawer-handle {
+      --dx: 244px;
+    }
+    .drawer-handle .drawer-icon {
+      width: 22px;
+      height: 22px;
+      display: block;
+    }
+    .drawer-handle .drawer-label {
+      font-size: 0.32rem;
+      letter-spacing: 0.02em;
+    }
+    .drawer-handle .drawer-caret {
+      display: none;
+    }
+    .drawer-handle:hover { filter: brightness(1.15); transform: translate(var(--dx), -50%) scale(1.08); }
+    .drawer-handle:active { transform: translate(var(--dx), -50%) scale(0.96); }
+    .drawer-handle:focus-visible { outline: 2px solid #FFD60A; outline-offset: 3px; }
+    /* Respiración sutil del glow: la "vida" que le faltaba al botón cerrado. Se apaga
+       cuando la ficha ya está abierta para no competir con el contenido. */
+    .drawer-handle { animation: drawer-breathe 2.6s ease-in-out infinite; }
+    #panel-city-wrap:not(.collapsed) .drawer-handle { animation: none; filter: brightness(1.1); }
+    @keyframes drawer-breathe {
+      0%, 100% { box-shadow: 0 0 14px rgba(0, 229, 255, 0.5), 0 6px 16px rgba(0, 0, 0, 0.45); }
+      50% { box-shadow: 0 0 24px rgba(0, 229, 255, 0.85), 0 6px 16px rgba(0, 0, 0, 0.45); }
+    }
+
+    .ui-panel {
+      position: fixed;
+      top: 50%;
+      left: 16px;
+      z-index: 10;
+      width: 216px;
+      max-width: calc(100vw - 32px);
+      background: linear-gradient(165deg, #1B1740 0%, #161328 60%, #0D0B1E 100%);
+      border: 2px solid #00E5FF;
+      box-shadow: 0 0 0 4px #0D0B1E, 0 0 28px rgba(0, 229, 255, 0.28), 0 24px 48px rgba(0, 0, 0, 0.55);
+      padding: 18px 16px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #E8E4FF;
+      clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+      transform: translate(calc(-100% - 40px), -50%);
+      transition: transform 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    #panel-city-wrap:not(.collapsed) .ui-panel {
+      transform: translate(0, -50%);
+    }
+
+    .ficha-header-row {
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 2px;
+      gap: 12px;
+      width: 100%;
+      margin-bottom: 16px;
     }
 
-    .panel-header {
+    .ficha-avatar-frame {
+      position: relative;
+      width: 54px;
+      height: 54px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at 50% 30%, rgba(0, 229, 255, 0.22), #0D0B1E 72%);
+      border: 2px solid #FFD60A;
+      box-shadow: 0 0 0 3px #0D0B1E, 0 0 14px rgba(255, 214, 10, 0.5);
+      clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+      overflow: hidden;
+    }
+    .ficha-avatar-fallback {
+      position: absolute;
+      inset: 0;
+      width: 60%;
+      height: 60%;
+      margin: auto;
+      pointer-events: none;
+    }
+    .ficha-avatar-frame canvas {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .ficha-head {
+      font-family: 'Press Start 2P', 'Courier New', monospace;
+      font-size: 0.66rem;
+      letter-spacing: 0.08em;
+      line-height: 1.6;
+      color: #7FFAFF;
+      text-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+      margin: 0;
+      text-align: left;
+    }
+
+    /* Vidas + XP del explorador, mismo lenguaje visual que `ui-lives`/`ui-xp-bar`
+       (corazón rosa de 8x7 px, barra con borde grueso) del resto de la app. */
+    .ficha-vitals {
+      width: 100%;
+      margin-bottom: 4px;
+    }
+    .vitals-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
+      margin-bottom: 7px;
+    }
+    .vitals-label {
+      font-family: 'Press Start 2P', 'Courier New', monospace;
+      font-size: 0.5rem;
+      letter-spacing: 0.05em;
+      color: #A9A3D6;
+    }
+    .vitals-hearts {
+      display: flex;
+      gap: 4px;
+    }
+    .vitals-hearts svg {
+      shape-rendering: crispEdges;
+      display: block;
+    }
+    /* Corazones pixel-art (pixel-art-arcade-icons skill, `heart_full`/`heart_empty`) —
+       los mismos que usa `app-lives` en el mapa 2D del alumno, con el mismo parpadeo. */
+    .heart-on {
+      animation: heart-parpadeo 1.3s steps(2, jump-none) infinite;
+    }
+    .heart-off {
+      opacity: 0.22;
+      filter: saturate(0.3);
+    }
+    @keyframes heart-parpadeo {
+      0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 46, 147, 0.9)) brightness(1); }
+      50% { filter: drop-shadow(0 0 1px rgba(255, 46, 147, 0.4)) brightness(0.82); }
+    }
+    .vitals-xp-value {
+      font-family: 'Press Start 2P', 'Courier New', monospace;
+      font-size: 0.48rem;
+      color: #FFD60A;
+    }
+    .xp-track {
+      width: 100%;
+      height: 10px;
+      background: #0D0B1E;
+      border: 2px solid #00E5FF;
+      box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.6);
+      padding: 1px;
+    }
+    .xp-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #FFD60A, #00E5FF);
+      box-shadow: 0 0 8px rgba(0, 229, 255, 0.7);
+      transition: width 0.4s ease;
+    }
+    .xp-next {
+      margin-top: 6px;
+      font-family: 'Press Start 2P', 'Courier New', monospace;
+      font-size: 0.42rem;
+      letter-spacing: 0.02em;
+      line-height: 1.5;
+      color: #A9A3D6;
     }
 
-    .btn-toggle-panel {
-      background: none;
-      border: none;
-      font-size: 1.1rem;
-      line-height: 1;
-      color: #64748b;
-      cursor: pointer;
-      padding: 4px 8px;
-      border-radius: 8px;
-      flex-shrink: 0;
-    }
-
-    .btn-toggle-panel:hover {
-      background: #f1f5f9;
-      color: #0f172a;
-    }
-
-    .ui-panel.collapsed .panel-body {
-      display: none;
-    }
-
-    .ui-panel .subtitle {
-      font-size: 0.78rem;
-      color: #64748b;
-      margin-bottom: 10px;
+    .ficha-divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 229, 255, 0.35), transparent);
+      margin: 16px 0;
     }
 
     /* Return to creator button */
     .btn-edit-char {
       width: 100%;
-      padding: 8px 12px;
-      background: #f1f5f9;
-      border: 1.5px solid #cbd5e1;
-      border-radius: 10px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: #334155;
+      padding: 12px 10px;
+      background: linear-gradient(180deg, #00F0FF, #00B8CC);
+      border: none;
+      font-family: 'Press Start 2P', 'Courier New', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.03em;
+      color: #0D0B1E;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      margin-bottom: 12px;
-      transition: all 0.2s;
+      gap: 8px;
+      clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+      box-shadow: 0 0 0 2px #0D0B1E, 0 0 18px rgba(0, 229, 255, 0.6);
+      transition: filter 0.2s, transform 0.1s;
     }
-    .btn-edit-char:hover {
-      background: #e2e8f0;
-      border-color: #94a3b8;
-      color: #0f172a;
+    .btn-edit-char:hover { filter: brightness(1.1); }
+    .btn-edit-char:active { transform: translateY(1px); }
+
+    .icon-toggle {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .icon-toggle input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .icon-toggle-box {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 1rem;
+      clip-path: polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px);
+    }
+    .icon-toggle input:checked + .icon-toggle-box {
+      border-color: #00E5FF;
+      color: #00E5FF;
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+    }
+    .icon-toggle input:focus-visible + .icon-toggle-box {
+      outline: 2px solid #FFD60A;
+      outline-offset: 2px;
+    }
+    .icon-toggle-label {
+      font-family: 'Press Start 2P', 'Courier New', monospace;
+      font-size: 0.52rem;
+      letter-spacing: 0.03em;
+      line-height: 1.5;
+      color: #A9A3D6;
     }
 
     .form-group {
@@ -604,22 +800,6 @@
       max-width: 220px;
     }
 
-    .toggle-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin: 10px 0 4px 0;
-      font-size: 0.82rem;
-      color: #334155;
-      cursor: pointer;
-    }
-    .toggle-row input {
-      accent-color: #2563eb;
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-    }
-
     .units-container {
       margin-top: 6px;
       flex: 1;
@@ -669,13 +849,17 @@
 
     .info-bar {
       margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid #e2e8f0;
+      padding-top: 10px;
+      border-top: 1px solid rgba(0, 229, 255, 0.25);
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-      font-size: 0.75rem;
-      color: #64748b;
+      font-family: 'Press Start 2P', 'Courier New', monospace;
+      font-size: 0.48rem;
+      letter-spacing: 0.04em;
+      line-height: 1.6;
+      color: #7FFAFF;
+      text-align: center;
     }
 
     .btn-clear {
@@ -949,8 +1133,7 @@
     }
 
     @media (max-width: 720px) {
-      .creator-panel,
-      .ui-panel {
+      .creator-panel {
         top: 10px;
         left: 10px;
         width: min(360px, calc(100vw - 20px));
@@ -1160,16 +1343,50 @@
     <button class="angle-btn" data-angle="back">🔙 Espalda</button>
   </div>
 
-  <!-- SCREEN 2: MODULAR CITY PANEL -->
-  <div class="ui-panel" id="panel-city">
-    <div class="panel-header">
-      <h2>🗺️ Ciudad Modular 3D</h2>
-      <button class="btn-toggle-panel" id="btn-toggle-panel" title="Ocultar/mostrar panel">▾</button>
-    </div>
+  <!-- SCREEN 2: FICHA DEL EXPLORADOR — se desliza desde el borde izquierdo (tab dorado),
+       reemplaza al viejo panel "Ciudad Modular 3D" con look glassmorphic claro que no
+       tenía nada que ver con la identidad arcade del resto de la app. -->
+  <div id="panel-city-wrap" class="collapsed">
+    <button class="drawer-handle" id="btn-toggle-panel" title="Mostrar ficha" aria-expanded="false" aria-controls="panel-city">
+      <svg class="drawer-icon" viewBox="0 0 9 9" aria-hidden="true" shape-rendering="crispEdges">
+        <rect x="3" y="0" width="3" height="1" fill="#7FFAFF"/>
+        <rect x="2" y="1" width="5" height="1" fill="#7FFAFF"/>
+        <rect x="2" y="2" width="5" height="1" fill="#7FFAFF"/>
+        <rect x="3" y="3" width="3" height="1" fill="#7FFAFF"/>
+        <rect x="1" y="5" width="7" height="1" fill="#7FFAFF"/>
+        <rect x="0" y="6" width="9" height="3" fill="#7FFAFF"/>
+      </svg>
+      <span class="drawer-label" id="btn-toggle-panel-label">FICHA</span>
+    </button>
+    <div class="ui-panel" id="panel-city">
     <div class="panel-body" id="panel-city-body">
-    <div class="subtitle">Explorá el mapa de unidades del curso</div>
+    <div class="ficha-header-row">
+      <div class="ficha-avatar-frame">
+        <svg class="ficha-avatar-fallback" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="9" r="5" fill="#2A2555"/>
+          <path d="M3 23c0-5 4-9 9-9s9 4 9 9" fill="#2A2555"/>
+        </svg>
+        <canvas id="ficha-avatar-canvas" width="96" height="96" aria-hidden="true"></canvas>
+      </div>
+      <div class="ficha-head">TU<br>PERSONAJE</div>
+    </div>
 
-    <button class="btn-edit-char" id="btn-edit-char">👤 Personalizar Personaje</button>
+    <div class="ficha-vitals">
+      <div class="vitals-row">
+        <span class="vitals-label">VIDAS</span>
+        <span class="vitals-hearts" id="ficha-lives"></span>
+      </div>
+      <div class="vitals-row">
+        <span class="vitals-label">PROGRESO</span>
+        <span class="vitals-xp-value" id="ficha-xp-value">&hellip;</span>
+      </div>
+      <div class="xp-track"><div class="xp-fill" id="ficha-xp-fill"></div></div>
+      <div class="xp-next" id="ficha-xp-next">Cargando progreso&hellip;</div>
+    </div>
+
+    <div class="ficha-divider"></div>
+
+    <button class="btn-edit-char" id="btn-edit-char">🎨 PERSONALIZAR</button>
 
     <!-- Autoría de unidades/biomas (título, bioma, descripción, generar, limpiar): esto
          ahora lo hace el PROFESOR desde /profesor (Unidad.bioma, editor.ts) — el alumno
@@ -1227,13 +1444,17 @@
       <button class="btn-clear" id="btn-clear-all">Limpiar Todo</button>
     </div>
 
-    <label class="toggle-row">
+    <div class="ficha-divider"></div>
+
+    <label class="icon-toggle" title="La cámara sigue al personaje">
       <input type="checkbox" id="check-follow-player" checked>
-      <span>📹 La cámara sigue al personaje</span>
+      <span class="icon-toggle-box">📷</span>
+      <span class="icon-toggle-label">Cámara automática</span>
     </label>
 
     <div class="info-bar">
-      <span id="stat-units">0 unidades (0 cuadras, 0.0 m)</span>
+      <span id="stat-units">0/0 unidades resueltas</span>
+    </div>
     </div>
     </div>
   </div>
@@ -1646,6 +1867,103 @@
     let avatarLoadRevision = 0;
     let isPlayerLoaded = false;
 
+    // -------------------------------------------------------------
+    // MINI RETRATO 3D DEL AVATAR (ficha del explorador) — un segundo
+    // renderer aislado por layer 1: no dibuja ciudad ni edificios, solo el
+    // propio modelo del jugador, orbitando despacio en el encabezado de la ficha.
+    //
+    // Dos bugs del primer intento, ya corregidos acá:
+    // 1) Se veían los pies: el encuadre usaba una altura de cámara "inventada"
+    //    (proporción copiada de la cámara del creador). Ahora se mide la altura
+    //    REAL del modelo cargado con un Box3 y se apunta al ~90% de esa altura
+    //    (zona de la cara), así funciona sin importar las proporciones del GLB.
+    // 2) Se veía todo negro: en three.js una cámara con `.layers` restringidas
+    //    solo recibe luz de objetos-luz que también estén en esa layer — como
+    //    el sol/ambient de la ciudad viven en la layer 0, esta cámara no los
+    //    veía. Se agrega una luz de retrato propia, solo en layer 1, que sigue
+    //    a la cámara del mini-retrato.
+    // -------------------------------------------------------------
+    const fichaThumbCanvas = document.getElementById('ficha-avatar-canvas');
+    let fichaThumbRenderer = null;
+    let fichaThumbCamera = null;
+    let fichaThumbAngle = 0;
+    let fichaKeyLight = null;
+    if (fichaThumbCanvas) {
+      fichaThumbRenderer = new THREE.WebGLRenderer({ canvas: fichaThumbCanvas, alpha: true, antialias: true });
+      fichaThumbRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      fichaThumbRenderer.setSize(96, 96, false);
+      fichaThumbCamera = new THREE.PerspectiveCamera(28, 1, 0.03, 3);
+      fichaThumbCamera.layers.disableAll();
+      fichaThumbCamera.layers.enable(1);
+
+      fichaKeyLight = new THREE.DirectionalLight(0xfff4e0, 1.6);
+      fichaKeyLight.layers.set(1);
+      scene.add(fichaKeyLight);
+      scene.add(fichaKeyLight.target);
+
+      const fichaFill = new THREE.AmbientLight(0xaeb8ff, 0.55);
+      fichaFill.layers.set(1);
+      scene.add(fichaFill);
+    }
+
+    function markForThumb(object3d) {
+      object3d.traverse((node) => node.layers.enable(1));
+    }
+
+    // Altura real del avatar cargado (en unidades locales de `playerGroup`, o sea
+    // ya dividida por la escala vigente al medir) — se recalcula con cada modelo o
+    // cambio de outfit, así el "90% de altura" apunta siempre cerca de la cara sin
+    // importar el peinado/gorro equipado.
+    let avatarHeightLocal = 1.2;
+    function measureAvatarHeight(model) {
+      model.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(model);
+      if (!isFinite(box.min.y) || !isFinite(box.max.y)) return;
+      const groupScale = playerGroup.scale.y || 1;
+      const height = (box.max.y - box.min.y) / groupScale;
+      if (height > 0.05) avatarHeightLocal = height;
+    }
+
+    const fichaThumbTarget = new THREE.Vector3();
+
+    function renderFichaThumb(delta) {
+      if (!fichaThumbRenderer || !isPlayerLoaded || currentMode !== 'city') return;
+      if (panelCity.classList.contains('collapsed')) return;
+
+      fichaThumbAngle += delta * 0.6;
+
+      const scale = playerGroup.scale.y || 1;
+      const totalHeight = avatarHeightLocal * scale;
+      // 0.85 de la altura total ≈ cuello/mentón, no la punta del pelo — deja algo de
+      // aire arriba. Radio bien más abierto que el primer intento (0.24 mostraba un
+      // primer plano tan cerrado que no se distinguía qué era) para que entre cabeza
+      // + hombros y se note que es una cara, no una mancha.
+      const faceY = playerGroup.position.y + totalHeight * 0.85;
+      const radius = totalHeight * 0.65;
+
+      fichaThumbTarget.set(playerGroup.position.x, faceY, playerGroup.position.z);
+      fichaThumbCamera.position.set(
+        fichaThumbTarget.x + Math.sin(fichaThumbAngle) * radius,
+        faceY + totalHeight * 0.05,
+        fichaThumbTarget.z + Math.cos(fichaThumbAngle) * radius
+      );
+      fichaThumbCamera.lookAt(fichaThumbTarget);
+
+      // La luz de retrato viaja pegada a la cámara (siempre de frente a la cara,
+      // sin importar el ángulo de la órbita ni la hora del día en la ciudad).
+      fichaKeyLight.position.set(
+        fichaThumbTarget.x + Math.sin(fichaThumbAngle - 0.5) * radius * 2,
+        faceY + totalHeight * 0.3,
+        fichaThumbTarget.z + Math.cos(fichaThumbAngle - 0.5) * radius * 2
+      );
+      fichaKeyLight.target.position.copy(fichaThumbTarget);
+
+      const prevBackground = scene.background;
+      scene.background = null;
+      fichaThumbRenderer.render(scene, fichaThumbCamera);
+      scene.background = prevBackground;
+    }
+
     function setAvatarStatus(state, title, detail) {
       const status = document.getElementById('avatar-asset-status');
       status.dataset.state = state;
@@ -1679,6 +1997,8 @@
         playerModel = nextController.model;
         playerModel.scale.setScalar(0.76);
         playerGroup.add(playerModel);
+        markForThumb(playerModel);
+        measureAvatarHeight(playerModel);
         isPlayerLoaded = true;
         nextController.warnings.forEach((warning) => console.warn('[Avatar GLB]', warning));
         setAvatarStatus('ready', '', '');
@@ -1696,11 +2016,131 @@
     function applyCharacterConfig() {
       saveCharacterConfig();
       avatarController?.applyConfig(characterConfig);
+      if (playerModel) {
+        markForThumb(playerModel);
+        measureAvatarHeight(playerModel);
+      }
     }
 
     function playAnimation(name) {
       avatarController?.play(name);
     }
+
+    // -------------------------------------------------------------
+    // VIDAS Y PROGRESO DEL EXPLORADOR (ficha) — los corazones son los mismos
+    // que `ui-lives`/`app-lives` (shared/ui), acá duplicados porque este HTML
+    // vive fuera de Angular y recibe los valores reales por postMessage
+    // (ver listener de `setUnidades` en mundo-3d.ts).
+    //
+    // El progreso NO usa la curva de niveles global (PAR-09, 10 niveles fijos
+    // sin relación con la cantidad de unidades del curso) — acá "cuánto me
+    // falta" se mide contra el `umbralXpDesbloqueo` real de la PRÓXIMA unidad
+    // sin resolver, la misma cuenta que usa el mapa 2D (`mapa.ts`, `islas`)
+    // para decidir qué unidad está disponible.
+    // -------------------------------------------------------------
+    const VIDAS_MAX = 3;
+
+    // Mismo grid 9x9 que `app-lives` (features/alumno/lives.ts, pixel-art-arcade-icons
+    // skill: heart_full/heart_empty). 1 = contorno, 2 = relleno, 3 = brillo, 0 = transparente.
+    const HEART_GRID = [
+      [0, 1, 1, 0, 0, 0, 1, 1, 0],
+      [1, 3, 3, 1, 0, 1, 2, 2, 1],
+      [1, 3, 2, 2, 1, 2, 2, 2, 1],
+      [1, 2, 2, 2, 2, 2, 2, 2, 1],
+      [1, 2, 2, 2, 2, 2, 2, 2, 1],
+      [0, 1, 2, 2, 2, 2, 2, 1, 0],
+      [0, 0, 1, 2, 2, 2, 1, 0, 0],
+      [0, 0, 0, 1, 2, 1, 0, 0, 0],
+      [0, 0, 0, 0, 1, 0, 0, 0, 0]
+    ];
+    // Colores reales del tema oscuro del proyecto (frontend/src/styles.css, daisyUI dark):
+    // --color-neutral, --color-error, --color-base-content / --color-base-300 / --color-base-200.
+    const HEART_FULL_COLORS = { 1: '#1E1A38', 2: '#FF2E93', 3: '#E8E4FF' };
+    const HEART_EMPTY_COLORS = { 1: '#1E1A38', 2: '#1E1A38', 3: '#161328' };
+
+    function renderLives(vidas) {
+      const wrap = document.getElementById('ficha-lives');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      const ns = 'http://www.w3.org/2000/svg';
+      const filled = Math.max(0, Math.min(VIDAS_MAX, vidas));
+      wrap.setAttribute('aria-label', filled + ' de ' + VIDAS_MAX + ' vidas');
+      for (let i = 0; i < VIDAS_MAX; i++) {
+        const full = i < filled;
+        const colors = full ? HEART_FULL_COLORS : HEART_EMPTY_COLORS;
+        const svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('width', '16');
+        svg.setAttribute('height', '16');
+        svg.setAttribute('viewBox', '0 0 9 9');
+        svg.setAttribute('shape-rendering', 'crispEdges');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.classList.add(full ? 'heart-on' : 'heart-off');
+        if (full) svg.style.animationDelay = (i * 130) + 'ms';
+        HEART_GRID.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (!value) return;
+            const rect = document.createElementNS(ns, 'rect');
+            rect.setAttribute('x', String(x));
+            rect.setAttribute('y', String(y));
+            rect.setAttribute('width', '1');
+            rect.setAttribute('height', '1');
+            rect.setAttribute('fill', colors[value]);
+            svg.appendChild(rect);
+          });
+        });
+        wrap.appendChild(svg);
+      }
+    }
+
+    /**
+     * unidades: el array crudo que manda `setUnidades` (id, nombre, orden, resuelta,
+     * umbralXpDesbloqueo). Busca la primera unidad sin resolver, en orden, y muestra
+     * cuánto XP falta para alcanzar SU umbral — no un nivel global.
+     */
+    function renderProgresoUnidad(unidades, xpTotal) {
+      const valueEl = document.getElementById('ficha-xp-value');
+      const fillEl = document.getElementById('ficha-xp-fill');
+      const nextEl = document.getElementById('ficha-xp-next');
+      if (!valueEl || !fillEl || !nextEl) return;
+
+      const actual = Math.max(0, xpTotal || 0);
+      const ordenadas = [...(unidades || [])].sort((a, b) => (a.orden || 0) - (b.orden || 0));
+      const siguiente = ordenadas.find((u) => !u.resuelta);
+
+      if (!siguiente) {
+        valueEl.textContent = actual.toLocaleString('es-AR') + ' XP';
+        fillEl.style.width = '100%';
+        nextEl.textContent = ordenadas.length ? '¡Todas las unidades resueltas!' : 'Sin unidades todavía';
+        return;
+      }
+
+      const umbral = Math.max(0, siguiente.umbralXpDesbloqueo || 0);
+      const falta = Math.max(0, umbral - actual);
+
+      if (falta > 0) {
+        // Todavía no tiene el XP para desbloquearla: acá sí tiene sentido medir
+        // contra el umbral.
+        const porcentaje = Math.min(100, (actual / umbral) * 100);
+        valueEl.textContent = actual.toLocaleString('es-AR') + '/' + umbral.toLocaleString('es-AR') + ' XP';
+        fillEl.style.width = porcentaje + '%';
+        nextEl.textContent = 'Faltan ' + falta.toLocaleString('es-AR') + ' XP: ' + siguiente.nombre;
+        return;
+      }
+
+      // Ya tiene el XP para desbloquearla (o la unidad, como la primera, no pedía
+      // nada) — acá lo que importa ya no es el umbral de desbloqueo sino el XP
+      // propio de ESTA unidad: cuánto sacó de sus desafíos vs. cuánto puede sacar
+      // completándolos todos. Así "350" no queda suelto sin saber contra qué compara.
+      const xpUnidad = Math.max(0, siguiente.xpUnidad || 0);
+      const xpUnidadMax = Math.max(0, siguiente.xpUnidadMax || 0);
+      const porcentajeUnidad = xpUnidadMax > 0 ? Math.min(100, (xpUnidad / xpUnidadMax) * 100) : 0;
+
+      valueEl.textContent = xpUnidad.toLocaleString('es-AR') + '/' + xpUnidadMax.toLocaleString('es-AR') + ' XP';
+      fillEl.style.width = porcentajeUnidad + '%';
+      nextEl.textContent = (xpUnidad > 0 ? 'En curso: ' : 'Empezar: ') + siguiente.nombre;
+    }
+
+    renderLives(VIDAS_MAX);
 
     // -------------------------------------------------------------
     // UI EVENT LISTENERS FOR CHARACTER CREATOR
@@ -1783,16 +2223,22 @@
 
     const screenCreator = document.getElementById('screen-creator');
     const creatorTip = document.getElementById('creator-tip');
-    const panelCity = document.getElementById('panel-city');
+    // panelCity = el contenedor entero (tab + ficha deslizable), no el panel en sí —
+    // así un solo display none/flex prende o apaga el tab junto con la ficha al
+    // cambiar de modo (creador vs ciudad).
+    const panelCity = document.getElementById('panel-city-wrap');
     const statsHud = document.getElementById('stats-hud');
     const controlsBanner = document.getElementById('controls-banner');
 
-    // Panel lateral plegable: el botón solo colapsa/expande el cuerpo, para que no
-    // tape la pantalla mientras se explora la ciudad.
+    // Tab deslizable: arranca cerrado ("collapsed" en el markup) para no tapar el
+    // mundo 3D — el alumno la abre cuando quiere personalizar o cambiar un ajuste.
     const btnTogglePanel = document.getElementById('btn-toggle-panel');
+    const btnTogglePanelLabel = document.getElementById('btn-toggle-panel-label');
     btnTogglePanel.addEventListener('click', () => {
       const collapsed = panelCity.classList.toggle('collapsed');
-      btnTogglePanel.textContent = collapsed ? '▸' : '▾';
+      btnTogglePanel.setAttribute('aria-expanded', String(!collapsed));
+      btnTogglePanel.title = collapsed ? 'Mostrar ficha' : 'Ocultar ficha';
+      btnTogglePanelLabel.textContent = collapsed ? 'FICHA' : 'CERRAR';
     });
 
     function switchMode(newMode) {
@@ -2164,11 +2610,14 @@
       units.length = 0;
       data.unidades.forEach((u) => {
         const biomeKey = u.bioma || BIOMA_FALLBACK_CICLO[(u.orden - 1) % BIOMA_FALLBACK_CICLO.length];
-        stageUnit(u.nombre, biomeKey, getDefaultBiomeDescription(biomeKey), u.id);
+        stageUnit(u.nombre, biomeKey, getDefaultBiomeDescription(biomeKey), u.id, !!u.resuelta);
       });
       saveUnitsToStorage();
       updateUIList();
       rebuildCity();
+
+      if (typeof data.vidasVigentes === 'number') renderLives(data.vidasVigentes);
+      if (typeof data.xpTotal === 'number') renderProgresoUnidad(data.unidades, data.xpTotal);
     });
 
     function loadUnitsFromStorage() {
@@ -2217,7 +2666,7 @@
       rebuildCity();
     });
 
-    function stageUnit(name, biomeKey, description, unitId) {
+    function stageUnit(name, biomeKey, description, unitId, resuelta) {
       let model = '';
       if (biomeKey === 'Desierto') {
         model = 'Assets/House/Desierto/desierto_voxel_low_poly.glb';
@@ -2242,7 +2691,8 @@
         name: name,
         biome: biomeKey,
         description: description,
-        model: model
+        model: model,
+        resuelta: !!resuelta
       });
 
       saveUnitsToStorage();
@@ -2628,7 +3078,8 @@
       const avenueLength = Math.max(numColumns * UNIT_WIDTH, 6.0);
       const startX = -avenueLength / 2 + UNIT_WIDTH / 2;
 
-      document.getElementById('stat-units').innerText = 'Tienda + ' + count + ' unidades + Trofeo (' + numColumns + ' cuadras, ' + avenueLength.toFixed(1) + ' m)';
+      const resueltas = units.filter((u) => u.resuelta).length;
+      document.getElementById('stat-units').innerText = resueltas + '/' + count + ' unidades resueltas';
 
       // Ajustar cámara de sombras al largo real de la avenida (sombras más nítidas y eficientes)
       const halfAvenue = Math.max((avenueLength + 14) / 2, 16);
@@ -3383,6 +3834,7 @@
       } else {
         renderer.render(scene, camera);
       }
+      renderFichaThumb(delta);
     }
 
     animate();
