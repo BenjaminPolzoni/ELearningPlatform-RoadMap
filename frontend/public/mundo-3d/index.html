@@ -3705,26 +3705,14 @@
       object3d.traverse((node) => node.layers.enable(1));
     }
 
-    // Altura real del avatar cargado (en unidades locales de `playerGroup`, o sea
-    // ya dividida por la escala vigente al medir) — solo se usa para escalar cuánto
-    // se aleja la cámara (radius), no para apuntar: eso lo hace el hueso 'head' de
-    // abajo, así un gorro/mochila que agrande la caja no corre el encuadre hacia
-    // arriba (era el bug: se veía el pelo, no la cara).
-    let avatarHeightLocal = 1.2;
-    function measureAvatarHeight(model) {
-      model.updateMatrixWorld(true);
-      const box = new THREE.Box3().setFromObject(model);
-      if (!isFinite(box.min.y) || !isFinite(box.max.y)) return;
-      const groupScale = playerGroup.scale.y || 1;
-      const height = (box.max.y - box.min.y) / groupScale;
-      if (height > 0.05) avatarHeightLocal = height;
-    }
-
     // Ancla real de la cara: el rig de KayKit (Rig_Medium) tiene un hueso 'head' —
     // el mismo que usa el propio juego para colgar cascos/gorros (ver
     // `targetModel.getObjectByName('head')` en applyModularParts) — mucho más
-    // confiable que estimar la altura de la cara como % de la caja del modelo,
-    // que se infla con cualquier accesorio (mochila, mascota, ítems en mano).
+    // confiable que estimar la altura de la cara como % de la caja del modelo:
+    // esa caja (Box3) se infla con cualquier accesorio (mochila, mascota, ítems
+    // en mano) — eso corría el encuadre hacia el pelo Y alejaba la cámara mucho
+    // más de lo debido ("se ve muy expandido"). Por eso el zoom tampoco usa Box3:
+    // usa la escala real conocida del modelo (fija, la pone loadCharacterModel).
     let avatarHeadBone = null;
     function findAvatarHeadBone(model) {
       return model.getObjectByName('head') || null;
@@ -3738,25 +3726,28 @@
 
       fichaThumbAngle += delta * 0.6;
 
-      const scale = playerGroup.scale.y || 1;
-      const totalHeight = avatarHeightLocal * scale;
-      const radius = totalHeight * 0.65;
+      // Escala real del avatar en este momento: la fija de playerModel (0.32, ver
+      // loadCharacterModel) por la de playerGroup (1 en el creador, 0.72 en la
+      // ciudad) — nada derivado de una caja que un accesorio pueda inflar.
+      const compoundScale = (playerModel?.scale.x || 0.32) * (playerGroup.scale.y || 1);
+      const radius = compoundScale * 0.5;
 
       if (avatarHeadBone) {
         avatarHeadBone.getWorldPosition(fichaThumbTarget);
         // El pivote del hueso 'head' suele quedar a la altura del cuello, con la
         // cara/ojos un poco más arriba — nudge chico hacia arriba para no apuntar
         // justo al mentón.
-        fichaThumbTarget.y += totalHeight * 0.06;
+        fichaThumbTarget.y += compoundScale * 0.22;
       } else {
-        // Fallback si el GLB no trae el hueso (no debería pasar con estos personajes).
-        fichaThumbTarget.set(playerGroup.position.x, playerGroup.position.y + totalHeight * 0.85, playerGroup.position.z);
+        // Fallback si el GLB no trae el hueso (no debería pasar con estos personajes):
+        // ~1.6 unidades es la altura de ojos aproximada de un GLB humano de pie sin escalar.
+        fichaThumbTarget.set(playerGroup.position.x, playerGroup.position.y + compoundScale * 1.6, playerGroup.position.z);
       }
       const faceY = fichaThumbTarget.y;
 
       fichaThumbCamera.position.set(
         fichaThumbTarget.x + Math.sin(fichaThumbAngle) * radius,
-        faceY + totalHeight * 0.05,
+        faceY + compoundScale * 0.05,
         fichaThumbTarget.z + Math.cos(fichaThumbAngle) * radius
       );
       fichaThumbCamera.lookAt(fichaThumbTarget);
@@ -3765,7 +3756,7 @@
       // sin importar el ángulo de la órbita ni la hora del día en la ciudad).
       fichaKeyLight.position.set(
         fichaThumbTarget.x + Math.sin(fichaThumbAngle - 0.5) * radius * 2,
-        faceY + totalHeight * 0.3,
+        faceY + compoundScale * 0.5,
         fichaThumbTarget.z + Math.cos(fichaThumbAngle - 0.5) * radius * 2
       );
       fichaKeyLight.target.position.copy(fichaThumbTarget);
@@ -3806,11 +3797,10 @@
 
         playerGroup.add(playerModel);
         // Ficha del explorador: marcar el modelo para el mini-retrato aislado por layer
-        // y volver a medir su altura real — hace falta en cada carga porque acá (a
-        // diferencia del sistema modular viejo) cambiar cualquier parte del outfit
-        // recarga el GLB entero en vez de aplicar un cambio incremental.
+        // y ubicar el hueso 'head' — hace falta en cada carga porque acá (a diferencia
+        // del sistema modular viejo) cambiar cualquier parte del outfit recarga el GLB
+        // entero en vez de aplicar un cambio incremental.
         markForThumb(playerModel);
-        measureAvatarHeight(playerModel);
         avatarHeadBone = findAvatarHeadBone(playerModel);
         applyPet(playerGroup, config);
 
