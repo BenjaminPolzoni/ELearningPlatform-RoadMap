@@ -181,7 +181,6 @@ import { SaveFeedbackToast } from './save-feedback-toast';
           ＋ Agregar unidad <kbd class="kbd kbd-xs ml-2">Alt</kbd>+<kbd class="kbd kbd-xs">U</kbd>
         </button>
       }
-
     </div>
 
     <app-save-feedback-toast />

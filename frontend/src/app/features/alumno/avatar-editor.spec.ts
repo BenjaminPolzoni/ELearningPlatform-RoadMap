@@ -32,9 +32,10 @@ describe('AvatarEditor', () => {
   };
   const panel = () => el.querySelector('[role="tabpanel"]')?.textContent ?? '';
 
-  it('arranca en la pestaña CUERPO', () => {
+  it('arranca en la pestaña CUERPO con tono de piel', () => {
     expect(boton('CUERPO')!.getAttribute('aria-selected')).toBe('true');
-    expect(panel()).toContain('GÉNERO');
+    expect(panel()).toContain('TONO DE PIEL');
+    expect(panel()).not.toContain('GÉNERO');
   });
 
   it('cambiar de pestaña muestra solo sus secciones', () => {
@@ -42,19 +43,13 @@ describe('AvatarEditor', () => {
     expect(boton('ROPA')!.getAttribute('aria-selected')).toBe('true');
     expect(boton('CUERPO')!.getAttribute('aria-selected')).toBe('false');
     expect(panel()).toContain('PRENDA');
-    expect(panel()).not.toContain('GÉNERO');
 
     click('EQUIPO');
     expect(panel()).toContain('OBJETO EN MANO');
   });
 
-  it('elegir un género cambia la silueta y no toca el resto', () => {
-    srv.set('pelo', 'afro');
-    fixture.detectChanges();
-    click('Varón');
-    expect(srv.avatar().genero).toBe('varon');
-    expect(srv.avatar().pelo).toBe('afro');
-    expect(boton('Varón')!.getAttribute('aria-pressed')).toBe('true');
+  it('mantiene el género indefinido por defecto', () => {
+    expect(srv.avatar().genero).toBe('indefinido');
   });
 
   it('avisa cuando la camisa o la laptop tapan el emblema', () => {
@@ -76,12 +71,10 @@ describe('AvatarEditor', () => {
     expect(panel()).toContain('EL VISOR TAPA LOS ANTEOJOS');
   });
 
-  it('RESET conserva el género elegido', () => {
-    click('Mujer');
+  it('RESET reinicia manteniendo género indefinido', () => {
     srv.set('objeto', 'mate');
     click('RESET');
-    expect(srv.avatar().genero).toBe('mujer');
-    expect(srv.avatar().pelo).toBe('largo');
+    expect(srv.avatar().genero).toBe('indefinido');
     expect(srv.avatar().objeto).toBe('ninguno');
   });
 });

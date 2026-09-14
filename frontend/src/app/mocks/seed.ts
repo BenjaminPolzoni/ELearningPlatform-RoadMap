@@ -16,10 +16,16 @@ import { Bioma } from '../core/data/biomas';
 
 export const CURSO_SEED_ID = '11111111-1111-1111-1111-111111111111';
 
-const NOMBRES_UNIDAD = ['Fundamentos', 'Estructuras de control', 'Funciones', 'Estructuras de datos'];
-const UMBRALES = [0, 500, 1200, 2000];
+const NOMBRES_UNIDAD = [
+  'Fundamentos',
+  'Estructuras de control',
+  'Funciones',
+  'Estructuras de datos',
+  'Concurrencia y Redes',
+];
+const UMBRALES = [0, 500, 1200, 2000, 3200];
 // Mismo resultado visual que ya daba la heurística de nombre/orden en unidad-mapa.ts.
-const BIOMAS_UNIDAD: Bioma[] = ['Desierto', 'Bosque', 'Arenisca', 'Nieve'];
+const BIOMAS_UNIDAD: Bioma[] = ['Desierto', 'Bosque', 'Arenisca', 'Nieve', 'Nether'];
 
 interface Fila {
   nombre: string;

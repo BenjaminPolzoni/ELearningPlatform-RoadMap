@@ -28,15 +28,20 @@ export class AvatarService {
     this._avatar.update((a) => ({ ...a, [parte]: valor }));
   }
 
-  /** Vuelve a los valores sugeridos del género elegido: RESET no te cambia el género. */
+  /** Vuelve a los valores sugeridos conservando el género actual. */
   reiniciar(): void {
     this._avatar.set(avatarPorDefecto(this._avatar().genero));
   }
 
-  /** Combinación aleatoria válida — atajo "sorprendeme" del editor. Sortea también el género. */
+  /** Combinación aleatoria válida (manteniendo género sin definir). */
   aleatorio(): void {
     this._avatar.set(
-      armarAvatar((_, opciones) => opciones[Math.floor(Math.random() * opciones.length)].id),
+      armarAvatar(<K extends keyof AvatarConfig>(campo: K, opciones: readonly { id: AvatarConfig[K] }[]): AvatarConfig[K] => {
+        if (campo === 'genero') {
+          return 'indefinido' as AvatarConfig[K];
+        }
+        return opciones[Math.floor(Math.random() * opciones.length)].id;
+      }),
     );
   }
 
