@@ -139,13 +139,64 @@ tiene que ser genérico y consumible por otros equipos.
 | `ui-modal` | `<dialog>` nativo, `[(open)]`, título opcional, closable | ✅ `shared/ui/modal.ts` |
 | `ui-input` / `ui-textarea` | doble bind `[(value)]` · disabled/required/readonly | ✅ `shared/ui/input.ts` · `textarea.ts` |
 | `ui-select` | opciones proyectadas por `ng-content`, doble bind `[(value)]` | ✅ `shared/ui/select.ts` |
-| `ui-checkbox` / `ui-radio` | | ⬜ |
 | `ui-badge` | tonos del tema · outline · pill | ✅ `shared/ui/badge.ts` |
+| `ui-progress` | `[value]/[max]` · tono · label opcional · indeterminado sin `value` | ✅ `shared/ui/progress.ts` |
+| `ui-tabs` | tablist daisyUI · `[(value)]` para el activo · `boxed` · ARIA tablist/tab | ✅ `shared/ui/tabs.ts` |
+| `ui-alert` | tonos info/success/warning/error · `[(visible)]` · `closable` · contenido por `ng-content` | ✅ `shared/ui/alert.ts` |
+| `ui-checkbox` / `ui-radio` | | ⬜ |
 
 > Los `ui-*` están **proveídos, no migrados**: las features siguen usando clases daisyUI
 > directo por ahora (deuda [#5](deuda-tecnica/tarea-deuda-05-design-system.md)). Cada squad
 > migra a `ui-*` cuando toque su feature; el aspecto ya queda unificado porque los `ui-*` y
 > daisyUI derivan del mismo tema.
+
+#### Cómo se consumen (barrel único)
+
+Todo se importa desde un solo lugar — el barrel `shared/ui/index.ts`:
+**no hace falta importar por archivo.**
+
+```ts
+import { UiButton, UiModal, UiProgress, UiAlert, UiTabs, type UiTab } from '../shared/ui';
+```
+
+Cada componente es standalone (`ChangeDetectionStrategy.OnPush`): se declara en `imports`
+del componente consumidor y se usa directo en el template.
+
+```html
+<ui-button (click)="guardar()">Guardar</ui-button>
+<ui-button variant="ghost" [disabled]="!puedeGuardar()">Cancelar</ui-button>
+
+<ui-card title="Progreso">
+  <ui-progress [value]="xp()" [max]="1000" tone="warning" label="Avance de la unidad" />
+</ui-card>
+
+<ui-alert tone="error" [(visible)]="errorVisible">No se pudo guardar.</ui-alert>
+
+<ui-modal [(open)]="confirmarAbierto" title="Confirmar">
+  <p>¿Borrar el desafío?</p>
+</ui-modal>
+
+<ui-select [(value)]="dificultad" ariaLabel="Dificultad">
+  <option value="basico">Básico</option>
+  <option value="medio">Medio</option>
+</ui-select>
+
+<ui-tabs
+  [(value)]="pestanaActiva"
+  [tabs]="[{ id: 'actividades', label: 'Actividades' }, { id: 'detalle', label: 'Detalle' }]"
+  [boxed]="true"
+/>
+@if (pestanaActiva() === 'actividades') { ... }
+@if (pestanaActiva() === 'detalle') { ... }
+```
+
+- Los **tonos** (`tone`, `variant`) y el **estado** (`loading`, `disabled`, `closable`…)
+  mapean a clases daisyUI que derivan de los tokens del tema activo — ningún componente
+  hardcodea colores.
+- `ui-tabs` solo maneja la **barra**: el panel activo lo renderiza el consumidor con el
+  mismo signal del doble bind (ver ejemplo).
+- `ui-modal` usa `<dialog>` nativo: ESC, click al backdrop y botón ✕ cierran por el model.
+- Ningún `ui-*` contiene textos de negocio ni i18n: el texto lo pone el consumidor.
 
 ### De dominio
 | Componente | Qué muestra | Estado |
@@ -287,7 +338,8 @@ para el alumno; el profesor necesita trabajar rápido.
 - [x] Tipografías cargadas con fallback real — Chelsea Market / Comfortaa / Press Start 2P
       vía Google Fonts, con stack de fallback en `@theme`
 - [x] Componentes base de `shared/ui` (`ui-button`/`card`/`modal`/`input`/`textarea`/
-      `select`/`badge`) con tests — G6
+      `select`/`badge`/`progress`/`tabs`/`alert`) con tests — G6, más barrel único
+      `shared/ui/index.ts` para consumirlos desde un import
 - [x] Componentes de dominio `xp-bar`, `lives`, `avatar-sprite`, `hud`
 - [ ] `ui-node-icon` y `ui-ranking-row`
 - [x] Mapa 2.5D del curso con islas, caminos por progreso, paneo/zoom y avatar
