@@ -69,10 +69,13 @@ interface ConfettiPiece {
       flex: 1 1 0%;
       min-height: 0;
       width: 100%;
+      /* Sin scroll horizontal manual: la cámara mueve scrollLeft sola siguiendo al
+         explorador. El vertical sí queda libre (rueda/touch/teclado) pero recortado
+         por onViewportScroll() para que nunca se pueda ver más arriba de lo que ya
+         desbloqueaste — la barra se oculta igual, la interacción sigue funcionando. */
       overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior: contain;
-      /* El scroll sigue funcionando (rueda, touch, teclado) — solo se oculta la barra. */
       scrollbar-width: none;
       -ms-overflow-style: none;
       background: #382d23;
@@ -80,6 +83,9 @@ interface ConfettiPiece {
     }
     .map-viewport::-webkit-scrollbar {
       display: none;
+    }
+    .map-world-zoom {
+      position: relative;
     }
     /*
       En pantalla completa, el panel debe cubrir TODO el viewport real — pero el elemento
@@ -146,14 +152,11 @@ interface ConfettiPiece {
 
             <!-- Controles de cámara y pantalla completa -->
             <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="btn btn-xs border border-white/20 bg-white/10 ui-font text-[8px] text-white hover:bg-white/20"
-                (click)="scrollToGoal()"
-                title="Ver meta final en la cumbre"
-              >
-                ↑ META
-              </button>
+              <!-- Ni "ver meta" ni "ir al inicio": la cámara solo la mueve el propio
+                   recorrido del explorador (ver followPlayerScroll), nunca el jugador
+                   a mano — así nunca se asoma a una parte del mundo que todavía no
+                   desbloqueó. Este botón sí queda: no revela nada nuevo, solo re-centra
+                   sobre la posición actual (por si la ventana cambia de tamaño). -->
               <button
                 type="button"
                 class="btn btn-xs border border-white/20 bg-white/10 ui-font text-[8px] text-white hover:bg-white/20"
@@ -161,14 +164,6 @@ interface ConfettiPiece {
                 title="Centrar en el explorador"
               >
                 EXPLORADOR
-              </button>
-              <button
-                type="button"
-                class="btn btn-xs border border-white/20 bg-white/10 ui-font text-[8px] text-white hover:bg-white/20"
-                (click)="scrollToStart()"
-                title="Ir al inicio del camino"
-              >
-                ↓ INICIO
               </button>
               <div class="mx-1 h-4 w-px bg-white/20"></div>
               <button
@@ -191,13 +186,28 @@ interface ConfettiPiece {
           </div>
 
           <!-- VIEWPORT CON SCROLL VERTICAL (Ocupa 100% del ancho y alto) -->
-          <div #mapViewport class="map-viewport">
+          <div #mapViewport class="map-viewport" (scroll)="onViewportScroll()">
+            <!--
+              Wrapper del tamaño YA escalado: es lo que le da al scroll nativo de
+              .map-viewport un scrollHeight/scrollWidth correctos. Adentro, .map-world
+              mantiene su tamaño real (1448 x worldHeight, el mismo en el que están
+              calculadas las curvas del camino) y se agranda con transform:scale()
+              desde la esquina superior izquierda — así el wrapper y el resultado
+              visual escalado miden exactamente lo mismo.
+            -->
             <div
-              class="map-world relative w-full overflow-hidden"
+              class="map-world-zoom"
+              [style.width.px]="world().worldWidth * ZOOM"
+              [style.height.px]="world().worldHeight * ZOOM"
+            >
+            <div
+              class="map-world relative overflow-hidden"
+              [style.width.px]="world().worldWidth"
               [style.height.px]="world().worldHeight"
+              [style.transform]="'scale(' + ZOOM + ')'"
               [style.background-color]="'var(--ground)'"
               [style.background-image]="'url(' + world().tile + ')'"
-              style="background-repeat: repeat-y; background-size: 100% auto; image-rendering: pixelated;"
+              style="background-repeat: repeat-y; background-size: 100% auto; image-rendering: pixelated; transform-origin: top left;"
             >
               <!-- 1. Capa de Terreno y Caminos SVG -->
               <div class="vertical-terrain">
@@ -333,12 +343,18 @@ interface ConfettiPiece {
                 />
               </div>
 
-              <!-- 5. Tarjeta de Encuentro Flotante (.encounter) -->
+              <!-- 5. Tarjeta de Encuentro Flotante (.encounter) — con el mundo ×ZOOM más
+                   grande, esta tarjeta (position/tamaño heredados de .map-world) también
+                   se agranda ×ZOOM y su texto/botón terminan saliéndose del viewport. La
+                   escala inversa la deja siempre a su tamaño normal, sin importar el zoom
+                   del mapa (su posición no se toca: eso sigue resuelto en layout, antes
+                   de aplicar cualquier transform/scale). -->
               @if (sel(); as c) {
                 <div
                   class="encounter"
                   [style.--encounter-x]="c.x + '%'"
                   [style.--encounter-y]="c.y + '%'"
+                  [style.scale]="1 / ZOOM"
                   [class.below]="c.y < 15"
                 >
                   <button type="button" class="encounter-close" (click)="sel.set(null)" aria-label="Cerrar">×</button>
@@ -368,6 +384,7 @@ interface ConfettiPiece {
                   </button>
                 </div>
               }
+            </div>
             </div>
           </div>
 
@@ -675,6 +692,11 @@ export class UnidadMapa {
   protected readonly soundEnabled = signal<boolean>(true);
   protected readonly isExpanded = signal<boolean>(false);
 
+  // Cámara: el mundo se renderiza a su tamaño real (1448×worldHeight) y se escala
+  // con CSS transform (no cambiando el layout) — así los nodos, que ya topan contra
+  // su `max-width` en CSS, también se ven más grandes en vez de solo separarse más.
+  protected readonly ZOOM = 1.6;
+
   // Caminata del Avatar
   protected readonly playerPos = signal<{ x: number; y: number }>({ x: 50, y: 90.5 });
   protected readonly isWalking = signal<boolean>(false);
@@ -859,10 +881,17 @@ export class UnidadMapa {
   }
 
   // Interacción y Caminata
-  /** Tocar un nodo solo abre su tarjeta de encuentro — el avatar nunca se mueve por esto. */
+  /**
+   * Tocar un nodo solo abre su tarjeta de encuentro — el avatar nunca se mueve por
+   * esto. Sí re-centra la cámara en el avatar (con zoom, la tarjeta de un nodo lejos
+   * del centro puede quedar cortada contra el borde del viewport) — y de paso deja la
+   * vista exactamente donde arrancará el primer frame de la caminata si tocan
+   * "caminar hasta aquí", así no hay un salto brusco antes de empezar a moverse.
+   */
   protected onNodeClick(c: VerticalChallenge): void {
     if (this.isWalking()) return;
     this.sel.set(c);
+    this.scrollToPlayer();
   }
 
   /** Acción de la tarjeta de encuentro: caminar (si hace falta) o entrar directo. */
@@ -874,6 +903,13 @@ export class UnidadMapa {
     }
     if (this.needsWalkToOptional(c)) {
       this.walkToOptional(c);
+      return;
+    }
+    // "Repasar actividad" de un desafío principal ya completado y anterior al que
+    // camina el avatar (el inmediato siguiente ya lo cubre `isWalkingNext` arriba):
+    // también camina hasta ahí antes de abrirlo, en vez de abrir la tarjeta en seco.
+    if (!c.optional && c.id !== this.currentStopId()) {
+      this.walkToCompleted(c);
       return;
     }
     this.openActivity(c);
@@ -891,6 +927,37 @@ export class UnidadMapa {
       this.currentStopId.set(target.id);
       this.sel.set(target);
     });
+  }
+
+  /**
+   * "Repasar actividad" de un desafío principal viejo (ya completado, distinto de donde
+   * está parado el avatar): camina por el tramo real del camino —hacia adelante o atrás,
+   * concatenando las curvas de `roads` que hagan falta, igual que `mainRoadToBranchPoint`
+   * para los ramales— en vez de entrar directo a la tarjeta.
+   */
+  private walkToCompleted(target: VerticalChallenge): void {
+    this.sel.set(null);
+    const segment = this.mainRoadTo(target.id);
+    this.walkAlongRoad(segment, () => {
+      this.currentStopId.set(target.id);
+      this.openActivity(target);
+    });
+  }
+
+  /** Tramo del camino principal (curvas reales, no en línea recta) entre `currentStopId` y `targetId`, en cualquier sentido. */
+  private mainRoadTo(targetId: number): [number, number][] {
+    const w = this.world();
+    const from = this.currentStopId();
+    if (targetId === from) return [];
+
+    const points: [number, number][] = [];
+    const push = (pts: [number, number][]) => points.push(...(points.length ? pts.slice(1) : pts));
+    if (targetId > from) {
+      for (let id = from + 1; id <= targetId; id++) push(w.roads[id]);
+    } else {
+      for (let id = from; id > targetId; id--) push([...w.roads[id]].reverse());
+    }
+    return points;
   }
 
   /**
@@ -1009,6 +1076,10 @@ export class UnidadMapa {
       const dx = x - this.playerPos().x;
       if (Math.abs(dx) > 0.001) this.facing.set(dx < 0 ? 'izquierda' : 'derecha');
       this.playerPos.set({ x, y });
+      // Cámara pegada al jugador durante la caminata: el mundo se desplaza para
+      // mantenerlo centrado, en vez de que el avatar recorra un viewport fijo y
+      // haya que scrollear a mano después para volver a encontrarlo.
+      this.followPlayerScroll(x, y);
 
       if (elapsed - lastFootstep > 180) {
         const puff: WalkPuff = { id: Date.now() + Math.random(), x: (x / 100) * w.worldWidth, y: (y / 100) * w.worldHeight };
@@ -1129,22 +1200,54 @@ export class UnidadMapa {
   }
 
   // Navegación de Cámara
-  protected scrollToGoal(): void {
-    const el = this.mapViewport()?.nativeElement;
-    if (el) el.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  protected scrollToStart(): void {
-    const el = this.mapViewport()?.nativeElement;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-  }
-
   protected scrollToPlayer(): void {
     const el = this.mapViewport()?.nativeElement;
     if (!el) return;
     const w = this.world();
-    const playerY = (this.playerPos().y / 100) * w.worldHeight;
-    el.scrollTo({ top: playerY - el.clientHeight / 2, behavior: 'smooth' });
+    const p = this.playerPos();
+    el.scrollTo({
+      top: (p.y / 100) * w.worldHeight * this.ZOOM - el.clientHeight / 2,
+      left: (p.x / 100) * w.worldWidth * this.ZOOM - el.clientWidth / 2,
+      behavior: 'smooth',
+    });
+  }
+
+  /**
+   * Igual que `scrollToPlayer` pero sin animación CSS propia — se llama una vez por
+   * frame desde el loop de `walkAlongRoad` (ya animado a mano con RAF), así que fijar
+   * `scrollTop`/`scrollLeft` directo evita que compita con un `scrollTo({ behavior:
+   * 'smooth' })` propio del navegador y se sienta como dos cámaras peleando.
+   */
+  private followPlayerScroll(xPercent: number, yPercent: number): void {
+    const el = this.mapViewport()?.nativeElement;
+    if (!el) return;
+    const w = this.world();
+    el.scrollTop = (yPercent / 100) * w.worldHeight * this.ZOOM - el.clientHeight / 2;
+    el.scrollLeft = (xPercent / 100) * w.worldWidth * this.ZOOM - el.clientWidth / 2;
+  }
+
+  /**
+   * El scroll vertical queda libre (rueda/touch/teclado) para repasar cualquier tramo
+   * YA desbloqueado/superado, pero no más allá: recorta `scrollTop` para que nunca se
+   * pueda ver, arriba del todo, una parte del mundo posterior al próximo desafío
+   * disponible.
+   *
+   * Importante: el límite se calcula con `completedIds` (lo que el alumno RESOLVIÓ de
+   * verdad), no con `currentStopId` — ese solo marca dónde quedó PARADO el avatar, y
+   * "caminar hasta aquí" ya lo mueve al próximo nodo disponible antes de resolverlo.
+   * Si el límite usara `currentStopId`, apenas caminabas hasta el desafío 2 (sin
+   * completarlo todavía) ya se podía ver/scrollear hasta el 3, que sigue bloqueado.
+   */
+  protected onViewportScroll(): void {
+    const el = this.mapViewport()?.nativeElement;
+    if (!el) return;
+    const w = this.world();
+    const mainChallenges = w.challenges.filter((c) => !c.optional).sort((a, b) => a.id - b.id);
+    const frontier = mainChallenges.find((c) => !this.isCompleted(c));
+    const frontierId = frontier?.id ?? w.mainCount;
+    const frontierY = w.stops[frontierId]?.[1] ?? 0;
+    const minScrollTop = (frontierY / 100) * w.worldHeight * this.ZOOM - el.clientHeight / 2;
+    if (el.scrollTop < minScrollTop) el.scrollTop = minScrollTop;
   }
 
   protected toggleFullscreen(): void {
