@@ -3706,9 +3706,10 @@
     }
 
     // Altura real del avatar cargado (en unidades locales de `playerGroup`, o sea
-    // ya dividida por la escala vigente al medir) — se recalcula con cada modelo o
-    // cambio de outfit, así el "90% de altura" apunta siempre cerca de la cara sin
-    // importar el peinado/gorro equipado.
+    // ya dividida por la escala vigente al medir) — solo se usa para escalar cuánto
+    // se aleja la cámara (radius), no para apuntar: eso lo hace el hueso 'head' de
+    // abajo, así un gorro/mochila que agrande la caja no corre el encuadre hacia
+    // arriba (era el bug: se veía el pelo, no la cara).
     let avatarHeightLocal = 1.2;
     function measureAvatarHeight(model) {
       model.updateMatrixWorld(true);
@@ -3717,6 +3718,16 @@
       const groupScale = playerGroup.scale.y || 1;
       const height = (box.max.y - box.min.y) / groupScale;
       if (height > 0.05) avatarHeightLocal = height;
+    }
+
+    // Ancla real de la cara: el rig de KayKit (Rig_Medium) tiene un hueso 'head' —
+    // el mismo que usa el propio juego para colgar cascos/gorros (ver
+    // `targetModel.getObjectByName('head')` en applyModularParts) — mucho más
+    // confiable que estimar la altura de la cara como % de la caja del modelo,
+    // que se infla con cualquier accesorio (mochila, mascota, ítems en mano).
+    let avatarHeadBone = null;
+    function findAvatarHeadBone(model) {
+      return model.getObjectByName('head') || null;
     }
 
     const fichaThumbTarget = new THREE.Vector3();
@@ -3729,14 +3740,20 @@
 
       const scale = playerGroup.scale.y || 1;
       const totalHeight = avatarHeightLocal * scale;
-      // 0.85 de la altura total ≈ cuello/mentón, no la punta del pelo — deja algo de
-      // aire arriba. Radio bien más abierto que el primer intento (0.24 mostraba un
-      // primer plano tan cerrado que no se distinguía qué era) para que entre cabeza
-      // + hombros y se note que es una cara, no una mancha.
-      const faceY = playerGroup.position.y + totalHeight * 0.85;
       const radius = totalHeight * 0.65;
 
-      fichaThumbTarget.set(playerGroup.position.x, faceY, playerGroup.position.z);
+      if (avatarHeadBone) {
+        avatarHeadBone.getWorldPosition(fichaThumbTarget);
+        // El pivote del hueso 'head' suele quedar a la altura del cuello, con la
+        // cara/ojos un poco más arriba — nudge chico hacia arriba para no apuntar
+        // justo al mentón.
+        fichaThumbTarget.y += totalHeight * 0.06;
+      } else {
+        // Fallback si el GLB no trae el hueso (no debería pasar con estos personajes).
+        fichaThumbTarget.set(playerGroup.position.x, playerGroup.position.y + totalHeight * 0.85, playerGroup.position.z);
+      }
+      const faceY = fichaThumbTarget.y;
+
       fichaThumbCamera.position.set(
         fichaThumbTarget.x + Math.sin(fichaThumbAngle) * radius,
         faceY + totalHeight * 0.05,
@@ -3794,6 +3811,7 @@
         // recarga el GLB entero en vez de aplicar un cambio incremental.
         markForThumb(playerModel);
         measureAvatarHeight(playerModel);
+        avatarHeadBone = findAvatarHeadBone(playerModel);
         applyPet(playerGroup, config);
 
         const clips = await loadAnimClips();
