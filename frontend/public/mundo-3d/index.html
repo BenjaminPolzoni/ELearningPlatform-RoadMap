@@ -3731,10 +3731,10 @@
 
       avatarHeadBone.getWorldPosition(fichaThumbTarget);
       const standHeight = Math.max(0.05, fichaThumbTarget.y - playerGroup.position.y);
-      // 1.1x medido a ojo (verificado visualmente): con 0.4x-0.7x la cámara quedaba
-      // adentro de la cabeza — el hueso 'head' de este rig no está a la altura de
+      // 1.9x, ajustado a ojo en varias rondas (con 0.4x-0.7x la cámara quedaba
+      // adentro de la cabeza): el hueso 'head' de este rig no está a la altura de
       // "toda la altura parado" que asumía antes, así que necesita más distancia.
-      const radius = standHeight * 1.1;
+      const radius = standHeight * 1.9;
       // El pivote del hueso 'head' queda bastante más abajo de los ojos en este rig
       // (se veía cuello/pecho con un nudge chico) — este valor sí está confirmado
       // visualmente, no es una suposición.
