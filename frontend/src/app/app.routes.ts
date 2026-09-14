@@ -43,5 +43,11 @@ export const routes: Routes = [
     canActivate: [sesionGuard],
     loadComponent: () => import('./features/home/home').then((m) => m.Home),
   },
+  {
+    path: 'dev-showcase',
+    // Showroom temporal de la librería UI compartida (G6) — no es una pantalla
+    // de negocio; se usa aislada para probar los ui-* en ambos temas.
+    loadComponent: () => import('./dev/ui-showcase').then((m) => m.UiShowcase),
+  },
   { path: '**', redirectTo: '' },
 ];
