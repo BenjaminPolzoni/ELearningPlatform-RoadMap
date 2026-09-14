@@ -1167,57 +1167,65 @@
       <button class="btn-toggle-panel" id="btn-toggle-panel" title="Ocultar/mostrar panel">▾</button>
     </div>
     <div class="panel-body" id="panel-city-body">
-    <div class="subtitle">Añade unidades con nombre y bioma personalizado</div>
+    <div class="subtitle">Explorá el mapa de unidades del curso</div>
 
     <button class="btn-edit-char" id="btn-edit-char">👤 Personalizar Personaje</button>
 
-    <div class="form-group">
-      <label for="input-unit-name">Título / Nombre de la Unidad:</label>
-      <input type="text" id="input-unit-name" placeholder="Ej: Villa Verde, Oasis Místico..." value="Casa 1">
+    <!-- Autoría de unidades/biomas (título, bioma, descripción, generar, limpiar): esto
+         ahora lo hace el PROFESOR desde /profesor (Unidad.bioma, editor.ts) — el alumno
+         solo explora el mapa ya armado. Se deja oculto (no borrado) para no romper el
+         resto del script, que sigue usando estos ids cuando el HTML se abre suelto
+         (fuera del iframe de Angular) para pruebas del equipo 3D. -->
+    <div id="autoria-biomas" hidden>
+      <div class="form-group">
+        <label for="input-unit-name">Título / Nombre de la Unidad:</label>
+        <input type="text" id="input-unit-name" placeholder="Ej: Villa Verde, Oasis Místico..." value="Casa 1">
+      </div>
+
+      <div class="section-title">Selecciona el Bioma:</div>
+      <div class="biome-grid">
+        <div class="biome-btn biome-snow" data-biome="Nieve">
+          <span class="icon">❄️</span>
+          <span>Nieve</span>
+        </div>
+        <div class="biome-btn biome-desert" data-biome="Desierto">
+          <span class="icon">🏜️</span>
+          <span>Desierto</span>
+        </div>
+        <div class="biome-btn biome-forest selected" data-biome="Bosque">
+          <span class="icon">🌲</span>
+          <span>Bosque</span>
+        </div>
+        <div class="biome-btn biome-nether" data-biome="Nether">
+          <span class="icon">🔥</span>
+          <span>Nether</span>
+        </div>
+        <div class="biome-btn biome-arenisca" data-biome="Arenisca">
+          <span class="icon">🏛️</span>
+          <span>Arenisca</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="input-unit-desc">Descripción del Bioma:</label>
+        <textarea id="input-unit-desc" class="unit-desc-input" maxlength="144" placeholder="Ej: Aldea tranquila rodeada de pinos y naturaleza..."></textarea>
+        <div class="desc-counter-row">
+          <span>Máx. 144 caracteres</span>
+          <span id="desc-char-counter" class="counter-tag">144 disponibles</span>
+        </div>
+      </div>
+
+      <button class="btn-add-staged" id="btn-add-staged">➕ Añadir a la Lista de Biomas</button>
+
+      <div class="section-title" style="margin-top: 6px; display: flex; justify-content: space-between;">
+        <span>Biomas Planificados:</span>
+        <span id="staged-count" style="color: #2563eb; font-weight: 700;">0 listos</span>
+      </div>
+      <div class="units-container" id="units-list"></div>
+
+      <button class="btn-generate-map" id="btn-generate-map">🚀 Generar Mapa Completo</button>
+      <button class="btn-clear" id="btn-clear-all">Limpiar Todo</button>
     </div>
-
-    <div class="section-title">Selecciona el Bioma:</div>
-    <div class="biome-grid">
-      <div class="biome-btn biome-snow" data-biome="Nieve">
-        <span class="icon">❄️</span>
-        <span>Nieve</span>
-      </div>
-      <div class="biome-btn biome-desert" data-biome="Desierto">
-        <span class="icon">🏜️</span>
-        <span>Desierto</span>
-      </div>
-      <div class="biome-btn biome-forest selected" data-biome="Bosque">
-        <span class="icon">🌲</span>
-        <span>Bosque</span>
-      </div>
-      <div class="biome-btn biome-nether" data-biome="Nether">
-        <span class="icon">🔥</span>
-        <span>Nether</span>
-      </div>
-      <div class="biome-btn biome-arenisca" data-biome="Arenisca">
-        <span class="icon">🏛️</span>
-        <span>Arenisca</span>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label for="input-unit-desc">Descripción del Bioma:</label>
-      <textarea id="input-unit-desc" class="unit-desc-input" maxlength="144" placeholder="Ej: Aldea tranquila rodeada de pinos y naturaleza..."></textarea>
-      <div class="desc-counter-row">
-        <span>Máx. 144 caracteres</span>
-        <span id="desc-char-counter" class="counter-tag">144 disponibles</span>
-      </div>
-    </div>
-
-    <button class="btn-add-staged" id="btn-add-staged">➕ Añadir a la Lista de Biomas</button>
-
-    <div class="section-title" style="margin-top: 6px; display: flex; justify-content: space-between;">
-      <span>Biomas Planificados:</span>
-      <span id="staged-count" style="color: #2563eb; font-weight: 700;">0 listos</span>
-    </div>
-    <div class="units-container" id="units-list"></div>
-
-    <button class="btn-generate-map" id="btn-generate-map">🚀 Generar Mapa Completo</button>
 
     <label class="toggle-row">
       <input type="checkbox" id="check-follow-player" checked>
@@ -1226,7 +1234,6 @@
 
     <div class="info-bar">
       <span id="stat-units">0 unidades (0 cuadras, 0.0 m)</span>
-      <button class="btn-clear" id="btn-clear-all">Limpiar Todo</button>
     </div>
     </div>
   </div>
@@ -2133,14 +2140,36 @@
       }
     }
 
-    // Unidades reales del curso (frontend/src/app/mocks/seed.ts, NOMBRES_UNIDAD), en el
-    // mismo orden/bioma que BIOMA_A_UNIDAD_ID usa para el postMessage a Angular.
+    // Fallback solo para cuando este HTML se abre suelto (fuera del iframe de Angular),
+    // uso del equipo 3D en desarrollo. En producción las unidades reales llegan por el
+    // mensaje `setUnidades` (ver listener más abajo) y esto nunca se usa.
     const UNIDADES_POR_DEFECTO = [
       ['Fundamentos', 'Desierto'],
       ['Estructuras de control', 'Bosque'],
       ['Funciones', 'Arenisca'],
       ['Estructuras de datos', 'Nieve'],
     ];
+
+    // Mismo ciclo de fallback que usa unidad-mapa.ts (theme) para unidades sin `bioma`
+    // guardado todavía (roadmaps creados antes de este campo).
+    const BIOMA_FALLBACK_CICLO = ['Desierto', 'Bosque', 'Arenisca', 'Nieve'];
+
+    // Fuente de verdad real: Angular (mundo-3d.ts) manda las unidades del curso —
+    // con su id real — apenas el iframe termina de cargar. Reemplaza lo que haya
+    // armado `loadUnitsFromStorage()` al boot.
+    window.addEventListener('message', (event) => {
+      const data = event.data;
+      if (!data || data.type !== 'setUnidades' || !Array.isArray(data.unidades)) return;
+
+      units.length = 0;
+      data.unidades.forEach((u) => {
+        const biomeKey = u.bioma || BIOMA_FALLBACK_CICLO[(u.orden - 1) % BIOMA_FALLBACK_CICLO.length];
+        stageUnit(u.nombre, biomeKey, getDefaultBiomeDescription(biomeKey), u.id);
+      });
+      saveUnitsToStorage();
+      updateUIList();
+      rebuildCity();
+    });
 
     function loadUnitsFromStorage() {
       const saved = localStorage.getItem('modular_city_units');
@@ -2188,7 +2217,7 @@
       rebuildCity();
     });
 
-    function stageUnit(name, biomeKey, description) {
+    function stageUnit(name, biomeKey, description, unitId) {
       let model = '';
       if (biomeKey === 'Desierto') {
         model = 'Assets/House/Desierto/desierto_voxel_low_poly.glb';
@@ -2206,6 +2235,10 @@
 
       units.push({
         id: Date.now() + Math.random(),
+        // Id real de la Unidad en Angular (roadmap.models.ts) — llega desde el mensaje
+        // `setUnidades` de mundo-3d.ts. Sin esto (staging manual en el HTML standalone)
+        // el módulo entra en el modal "en construcción" en vez de navegar.
+        unitId: unitId,
         name: name,
         biome: biomeKey,
         description: description,
@@ -2908,6 +2941,7 @@
           name: unit.name,
           biome: biome.name,
           rawBiome: unit.biome,
+          unitId: unit.unitId,
           icon: biome.icon,
           x: unitCenterX,
           z: houseZ,
@@ -3155,18 +3189,11 @@
       if (e.target === modalDetails) closeDetailsModal();
     });
 
-    // Bioma (unit.biome, ej. "Desierto") -> id real de la Unidad en Angular (roadmap.models.ts).
-    // Mismo orden que el mapeo de temas en unidad-mapa.ts (desert=u1, jungle=u2, castle=u3, snow=u4).
-    const BIOMA_A_UNIDAD_ID = {
-      Desierto: 'u1',
-      Bosque: 'u2',
-      Arenisca: 'u3',
-      Nieve: 'u4',
-    };
-
     btnAccessModule.addEventListener('click', () => {
       if (!activeNearModule) return;
-      const unitId = activeNearModule.type === 'biome' ? BIOMA_A_UNIDAD_ID[activeNearModule.rawBiome] : undefined;
+      // El id real de la Unidad viaja con cada módulo desde que se armó en `stageUnit`
+      // (ver mensaje `setUnidades` más arriba) — nada de mapeos bioma->id hardcodeados.
+      const unitId = activeNearModule.type === 'biome' ? activeNearModule.unitId : undefined;
       if (unitId) {
         window.parent.postMessage({ type: 'enterUnit', unitId }, '*');
         return;

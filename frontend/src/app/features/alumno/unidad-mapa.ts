@@ -19,10 +19,11 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AvatarService } from '../../core/avatar/avatar.service';
 import { RoadmapDataPort } from '../../core/data/roadmap-data.port';
 import { RoadmapStore } from '../../core/data/roadmap.store';
-import { EstadoNodo } from '../../core/data/roadmap.models';
+import { descripcionPorDefecto, EstadoNodo, XP_POR_DIFICULTAD } from '../../core/data/roadmap.models';
 import { CURSO_SEED_ID } from '../../mocks/seed';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 import {
+  BIOMA_A_WORLD_THEME,
   castleArt,
   fortressArt,
   GeneratedWorld,
@@ -566,10 +567,16 @@ export class UnidadMapa {
 
   protected readonly unidad = computed(() => this.store.unidadPorId(this.id()));
 
-  // Determina el tema según el nombre u orden de la unidad
+  // Bioma elegido por el profesor (editor.ts) manda; si no hay o todavía no tiene tema 2D
+  // (ej. "Nether"), cae a la heurística vieja por nombre/orden — cubre unidades creadas
+  // antes de que existiera el campo `bioma`.
   protected readonly theme = computed<WorldTheme>(() => {
     const u = this.unidad();
     if (!u) return 'desert';
+    if (u.bioma) {
+      const temaDeBioma = BIOMA_A_WORLD_THEME[u.bioma];
+      if (temaDeBioma) return temaDeBioma;
+    }
     const nombre = u.nombre.toLowerCase();
     if (nombre.includes('desierto') || nombre.includes('fundamento') || u.orden === 1) return 'desert';
     if (nombre.includes('selva') || nombre.includes('control') || u.orden === 2) return 'jungle';
@@ -589,7 +596,9 @@ export class UnidadMapa {
   protected readonly world = computed<GeneratedWorld>(() => {
     const u = this.unidad();
     const currentTheme = this.theme();
-    const count = u ? Math.max(4, u.actividades.length) : 6;
+    // El camino principal tiene que ser exactamente el contenido que cargó el profesor —
+    // nada de rellenar con "Desafío 3", "Desafío 4" fantasma hasta un mínimo arbitrario.
+    const count = u ? u.actividades.length : 6;
 
     const baseChallenges: VerticalChallenge[] = Array.from({ length: count }, (_, i) => {
       const act = u?.actividades[i];
@@ -600,8 +609,13 @@ export class UnidadMapa {
         type: act?.tipo || 'Práctico',
         difficulty: act?.dificultad || 'Inicial',
         minutes: 8,
-        xp: 100 + i * 25,
-        description: act?.descripcion || `Aprende y consolida los fundamentos del desafío ${i + 1}.`,
+        // El XP real que carga el profesor (PAR-01, XP_POR_DIFICULTAD) — antes era un
+        // valor inventado por posición (100 + i*25) que no coincidía con la dificultad
+        // asignada. 'hito' no tiene dificultad: recompensa fija.
+        xp: act?.dificultad ? XP_POR_DIFICULTAD[act.dificultad] : 50,
+        // Si el profesor no escribió descripción, la misma que se le sugiere como
+        // placeholder en el editor (ver descripcionPorDefecto en roadmap.models.ts).
+        description: act?.descripcion || descripcionPorDefecto(act?.tipo ?? 'desafio-practico'),
         x: 50,
         y: 50,
       };

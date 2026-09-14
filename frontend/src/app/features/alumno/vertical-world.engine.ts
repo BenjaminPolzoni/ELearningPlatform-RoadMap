@@ -1,6 +1,16 @@
 import { EstadoNodo } from '../../core/data/roadmap.models';
+import { Bioma } from '../../core/data/biomas';
 
 export type WorldTheme = 'desert' | 'jungle' | 'castle' | 'snow';
+
+// Bioma (elegido por el profesor) -> tema del mapa 2D. `Nether` queda afuera a propósito:
+// todavía no tiene arte/tema 2D propio (ver core/data/biomas.ts).
+export const BIOMA_A_WORLD_THEME: Partial<Record<Bioma, WorldTheme>> = {
+  Desierto: 'desert',
+  Bosque: 'jungle',
+  Arenisca: 'castle',
+  Nieve: 'snow',
+};
 
 export interface QuestionData {
   pregunta: string;

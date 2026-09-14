@@ -4,12 +4,12 @@ import {
   Conexion,
   Dificultad,
   EstadoNodo,
-  Modalidad,
   Progreso,
   ProgresoNodo,
   Roadmap,
   TipoNodo,
 } from '../core/data/roadmap.models';
+import { Bioma } from '../core/data/biomas';
 
 // Curso de ejemplo (03-plan-de-implementacion.md, Fase 0): 4 unidades, 6 actividades
 // c/u, 12 alumnos. Es lo que desacopla a los 4 squads — nadie espera a nadie.
@@ -18,6 +18,8 @@ export const CURSO_SEED_ID = '11111111-1111-1111-1111-111111111111';
 
 const NOMBRES_UNIDAD = ['Fundamentos', 'Estructuras de control', 'Funciones', 'Estructuras de datos'];
 const UMBRALES = [0, 500, 1200, 2000];
+// Mismo resultado visual que ya daba la heurística de nombre/orden en unidad-mapa.ts.
+const BIOMAS_UNIDAD: Bioma[] = ['Desierto', 'Bosque', 'Arenisca', 'Nieve'];
 
 interface Fila {
   nombre: string;
@@ -25,25 +27,25 @@ interface Fila {
   esObligatorio: boolean;
   reintentos: number;
   descripcion?: string;
-  recurso?: string;
   dificultad?: Dificultad;
-  modalidad?: Modalidad;
 }
 
-// 6 actividades por unidad: teoría → 3 prácticas → desafío → boss.
+// 6 desafíos por unidad: teórico → 3 prácticos → desafío → boss. Ya no hay material de
+// solo lectura (RF-CUR-04): todo es un desafío, teórico o práctico, con su dificultad/XP.
 const PLANTILLA: Fila[] = [
-  { nombre: 'Teoría', tipo: 'teoria', esObligatorio: true, reintentos: 0,
-    descripcion: 'Material teórico de la unidad.', recurso: 'https://ejemplo.edu/teoria' },
-  { nombre: 'Práctica guiada', tipo: 'practica', esObligatorio: true, reintentos: 0,
-    descripcion: 'Ejercicios resueltos paso a paso.' },
-  { nombre: 'Práctica libre', tipo: 'practica', esObligatorio: false, reintentos: 0,
-    descripcion: 'Ejercitación adicional opcional.' },
-  { nombre: 'Ejercicio integrador', tipo: 'practica', esObligatorio: true, reintentos: 0,
-    descripcion: 'Combina los temas de la unidad.' },
-  { nombre: 'Desafío', tipo: 'desafio', esObligatorio: true, reintentos: 1,
-    dificultad: 'MEDIO', modalidad: 'practico' },
+  { nombre: 'Teoría', tipo: 'desafio-teorico', esObligatorio: true, reintentos: 0,
+    descripcion: 'Preguntas sobre los conceptos teóricos de la unidad.',
+    dificultad: 'BASICO' },
+  { nombre: 'Práctica guiada', tipo: 'desafio-practico', esObligatorio: true, reintentos: 0,
+    descripcion: 'Ejercicios resueltos paso a paso.', dificultad: 'BASICO' },
+  { nombre: 'Práctica libre', tipo: 'desafio-practico', esObligatorio: false, reintentos: 0,
+    descripcion: 'Ejercitación adicional opcional.', dificultad: 'BASICO' },
+  { nombre: 'Ejercicio integrador', tipo: 'desafio-practico', esObligatorio: true, reintentos: 0,
+    descripcion: 'Combina los temas de la unidad.', dificultad: 'MEDIO' },
+  { nombre: 'Desafío', tipo: 'desafio-practico', esObligatorio: true, reintentos: 1,
+    dificultad: 'MEDIO' },
   { nombre: 'Boss', tipo: 'boss', esObligatorio: true, reintentos: 1,
-    dificultad: 'AVANZADO', modalidad: 'practico' },
+    dificultad: 'AVANZADO' },
 ];
 
 // Grilla default de posición (misma serpentina de 4 columnas que calculaba
@@ -67,8 +69,9 @@ export function roadmapSeed(): Roadmap {
     nombre,
     umbralXpDesbloqueo: UMBRALES[i],
     orden: i + 1,
+    bioma: BIOMAS_UNIDAD[i],
     actividades: PLANTILLA.map((p, j): Actividad => {
-      const esDesafio = p.tipo === 'desafio' || p.tipo === 'boss';
+      const esDesafio = p.tipo !== 'hito';
       return {
         id: `u${i + 1}-a${j + 1}`,
         nombre: p.nombre,
@@ -77,9 +80,7 @@ export function roadmapSeed(): Roadmap {
         reintentosPermitidos: p.reintentos,
         desafioId: esDesafio ? `desafio-ext-${i + 1}-${j + 1}` : undefined,
         descripcion: p.descripcion,
-        recurso: p.recurso,
         dificultad: p.dificultad,
-        modalidad: p.modalidad,
         ...posicionSerpentina(j),
       };
     }),

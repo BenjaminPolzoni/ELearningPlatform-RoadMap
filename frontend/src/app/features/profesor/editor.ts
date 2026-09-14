@@ -1,8 +1,9 @@
-import { Component, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { RoadmapStore } from '../../core/data/roadmap.store';
 import { Unidad } from '../../core/data/roadmap.models';
+import { BIOMA_DEFAULT, BIOMAS, Bioma } from '../../core/data/biomas';
 import { ConfirmButton } from './confirm-button';
 import { SaveFeedbackToast } from './save-feedback-toast';
 
@@ -52,8 +53,36 @@ import { SaveFeedbackToast } from './save-feedback-toast';
                   <input class="input input-bordered input-sm w-28 tabular" type="number" min="0" name="umbralEdit"
                     [ngModel]="umbralEdit()" (ngModelChange)="umbralEdit.set($event)" />
                 </label>
-                <button class="btn btn-sm btn-primary" type="submit" [disabled]="!nombreEdit().trim()">guardar</button>
-                <button class="btn btn-sm btn-ghost" type="button" (click)="cancelarEdicion()">cancelar</button>
+                <div class="form-control w-full">
+                  <span class="label-text ui-font">Bioma</span>
+                  <div class="flex gap-1 flex-wrap">
+                    @for (b of biomas; track b.id) {
+                      <button type="button" class="btn btn-xs"
+                        [class.btn-primary]="biomaEdit() === b.id"
+                        [class.btn-outline]="biomaEdit() !== b.id"
+                        [disabled]="!b.disponible"
+                        [title]="b.disponible ? b.label : b.label + ' — Próximamente'"
+                        (click)="biomaEdit.set(b.id)">
+                        {{ b.icon }} {{ b.label }}@if (!b.disponible) { <span class="opacity-60"> · pronto</span> }
+                      </button>
+                    }
+                  </div>
+                  @if (previewBiomaEdit(); as pb) {
+                    <div class="mt-2">
+                      <span class="label-text ui-font opacity-70 text-[10px]">Vista previa del mapa</span>
+                      @if (pb.previewImage) {
+                        <img [src]="pb.previewImage" [alt]="'Vista previa del bioma ' + pb.label"
+                          class="rounded border border-base-300 w-40 h-28 object-cover" />
+                      } @else {
+                        <div class="rounded border border-dashed border-base-300 w-40 h-28 grid place-items-center text-[10px] text-center opacity-60 p-1">
+                          Mapa próximamente
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+                <button class="btn btn-sm btn-primary" type="submit" [disabled]="!nombreEdit().trim()">Guardar</button>
+                <button class="btn btn-sm btn-ghost" type="button" (click)="cancelarEdicion()">Cancelar</button>
               </form>
             } @else {
               <div class="card-body p-4 flex-row items-center gap-4">
@@ -62,7 +91,7 @@ import { SaveFeedbackToast } from './save-feedback-toast';
                 </span>
                 <div class="min-w-0 flex-1">
                   <a [routerLink]="['/profesor/unidad', u.id]" class="link link-primary font-bold">{{ u.nombre }}</a>
-                  <div class="text-xs opacity-70 ui-font">
+                  <div class="text-xs opacity-70">
                     se abre con {{ u.umbralXpDesbloqueo }} XP · {{ u.actividades.length }} contenidos
                     @if (u.actividades.length === 0) {
                       <span class="badge badge-warning badge-xs ml-1" title="RF-CUR-07">vacía</span>
@@ -74,9 +103,9 @@ import { SaveFeedbackToast } from './save-feedback-toast';
                   <button class="btn btn-xs btn-ghost" (click)="mover(u.id, 'abajo')" [disabled]="last" title="bajar">↓</button>
                 </div>
                 <a [routerLink]="['/profesor/unidad', u.id]" class="btn btn-sm btn-outline btn-primary shrink-0">
-                  contenido →
+                  Contenido →
                 </a>
-                <button class="btn btn-sm btn-outline shrink-0" (click)="editar(u)" title="editar nombre y umbral">editar</button>
+                <button class="btn btn-sm btn-outline shrink-0" (click)="editar(u)" title="editar nombre y umbral">Editar</button>
                 <app-confirm-button
                   class="shrink-0"
                   btnClass="btn btn-sm btn-ghost btn-square text-error"
@@ -111,6 +140,34 @@ import { SaveFeedbackToast } from './save-feedback-toast';
                 [ngModel]="umbral()" (ngModelChange)="umbral.set($event)"
               />
             </label>
+            <div class="form-control w-full">
+              <span class="label-text ui-font">Bioma</span>
+              <div class="flex gap-1 flex-wrap">
+                @for (b of biomas; track b.id) {
+                  <button type="button" class="btn btn-xs"
+                    [class.btn-primary]="bioma() === b.id"
+                    [class.btn-outline]="bioma() !== b.id"
+                    [disabled]="!b.disponible"
+                    [title]="b.disponible ? b.label : b.label + ' — Próximamente'"
+                    (click)="bioma.set(b.id)">
+                    {{ b.icon }} {{ b.label }}@if (!b.disponible) { <span class="opacity-60"> · pronto</span> }
+                  </button>
+                }
+              </div>
+              @if (previewBioma(); as pb) {
+                <div class="mt-2">
+                  <span class="label-text ui-font opacity-70 text-[10px]">Vista previa del mapa</span>
+                  @if (pb.previewImage) {
+                    <img [src]="pb.previewImage" [alt]="'Vista previa del bioma ' + pb.label"
+                      class="rounded border border-base-300 w-40 h-28 object-cover" />
+                  } @else {
+                    <div class="rounded border border-dashed border-base-300 w-40 h-28 grid place-items-center text-[10px] text-center opacity-60 p-1">
+                      Mapa próximamente
+                    </div>
+                  }
+                </div>
+              }
+            </div>
             <button class="btn btn-sm btn-primary" type="submit" [disabled]="!nombre().trim()">agregar</button>
             <button class="btn btn-sm btn-ghost" type="button" (click)="mostrarForm.set(false)">cancelar</button>
           </div>
@@ -134,13 +191,19 @@ export class Editor {
   protected readonly store = inject(RoadmapStore);
   private readonly nombreInputRef = viewChild<ElementRef<HTMLInputElement>>('nombreInput');
 
+  protected readonly biomas = BIOMAS;
+
   protected readonly mostrarForm = signal(false);
   protected readonly nombre = signal('');
   protected readonly umbral = signal(0);
+  protected readonly bioma = signal<Bioma>(BIOMA_DEFAULT);
+  protected readonly previewBioma = computed(() => this.biomas.find((b) => b.id === this.bioma()));
 
   protected readonly editandoId = signal<string | null>(null);
   protected readonly nombreEdit = signal('');
   protected readonly umbralEdit = signal(0);
+  protected readonly biomaEdit = signal<Bioma>(BIOMA_DEFAULT);
+  protected readonly previewBiomaEdit = computed(() => this.biomas.find((b) => b.id === this.biomaEdit()));
 
   /** Alt+U: agregar unidad, desde cualquier lugar de la pantalla (05 §7: atajos descubribles). */
   @HostListener('document:keydown', ['$event'])
@@ -160,11 +223,15 @@ export class Editor {
     e.preventDefault();
     const nombre = this.nombre().trim();
     if (!nombre) return;
-    this.store.agregarUnidad({ nombre, umbralXpDesbloqueo: Number(this.umbral()) || 0 }, () => {
-      this.nombre.set('');
-      this.umbral.set(0);
-      this.mostrarForm.set(false);
-    });
+    this.store.agregarUnidad(
+      { nombre, umbralXpDesbloqueo: Number(this.umbral()) || 0, bioma: this.bioma() },
+      () => {
+        this.nombre.set('');
+        this.umbral.set(0);
+        this.bioma.set(BIOMA_DEFAULT);
+        this.mostrarForm.set(false);
+      },
+    );
   }
 
   protected mover(unidadId: string, direccion: 'arriba' | 'abajo'): void {
@@ -175,6 +242,7 @@ export class Editor {
     this.editandoId.set(u.id);
     this.nombreEdit.set(u.nombre);
     this.umbralEdit.set(u.umbralXpDesbloqueo);
+    this.biomaEdit.set(u.bioma ?? BIOMA_DEFAULT);
   }
 
   protected cancelarEdicion(): void {
@@ -185,8 +253,10 @@ export class Editor {
     e.preventDefault();
     const nombre = this.nombreEdit().trim();
     if (!nombre) return;
-    this.store.editarUnidad(unidadId, { nombre, umbralXpDesbloqueo: Number(this.umbralEdit()) || 0 }, () =>
-      this.editandoId.set(null),
+    this.store.editarUnidad(
+      unidadId,
+      { nombre, umbralXpDesbloqueo: Number(this.umbralEdit()) || 0, bioma: this.biomaEdit() },
+      () => this.editandoId.set(null),
     );
   }
 }

@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, OnInit, inject, viewChild } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { AuthMockService } from '../../core/auth/auth-mock.service';
+import { RoadmapStore } from '../../core/data/roadmap.store';
 
 /**
  * Contrato de mensajes que manda la escena Three.js al host vía
@@ -24,15 +25,23 @@ function esMensajeMundo3d(data: unknown): data is MensajeMundo3d {
 @Component({
   selector: 'app-mundo-3d',
   standalone: true,
+  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mundo-3d">
-      <a class="cambiar-rol" (click)="cambiarRol()">⏻ Cambiar rol</a>
+      <div class="acciones-rol">
+        @if (auth.rol() === 'PROFESOR') {
+          <a routerLink="/profesor" class="btn-volver" title="Volver al editor del curso">← Editor</a>
+        }
+        <a class="cambiar-rol" (click)="cambiarRol()">⏻ Cambiar rol</a>
+      </div>
       <iframe
+        #frame
         title="Mundo 3D"
         [src]="mundo3dUrl"
         allow="autoplay; fullscreen; gamepad; pointer-lock"
         allowfullscreen
+        (load)="enviarUnidades()"
       ></iframe>
     </div>
   `,
@@ -48,11 +57,16 @@ function esMensajeMundo3d(data: unknown): data is MensajeMundo3d {
       border: 0;
       display: block;
     }
-    .cambiar-rol {
+    .acciones-rol {
       position: absolute;
       top: 0.6rem;
       right: 0.6rem;
       z-index: 20;
+      display: flex;
+      gap: 0.4rem;
+    }
+    .cambiar-rol,
+    .btn-volver {
       padding: 0.3rem 0.6rem;
       border: 1px solid rgba(255, 255, 255, 0.25);
       border-radius: 0.4rem;
@@ -61,8 +75,10 @@ function esMensajeMundo3d(data: unknown): data is MensajeMundo3d {
       font-size: 0.7rem;
       cursor: pointer;
       backdrop-filter: blur(4px);
+      text-decoration: none;
     }
-    .cambiar-rol:hover {
+    .cambiar-rol:hover,
+    .btn-volver:hover {
       background: rgba(20, 20, 30, 0.85);
     }
   `,
@@ -70,7 +86,9 @@ function esMensajeMundo3d(data: unknown): data is MensajeMundo3d {
 export class Mundo3d implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
-  private readonly auth = inject(AuthMockService);
+  protected readonly auth = inject(AuthMockService);
+  private readonly store = inject(RoadmapStore);
+  private readonly frame = viewChild<ElementRef<HTMLIFrameElement>>('frame');
 
   // Herramienta de exploración 3D (Three.js) que trajo el equipo de 3D — ver 3D/city_generator.html.
   // Se sirve como asset estático en frontend/public/mundo-3d/ (copia manual por ahora).
@@ -94,5 +112,22 @@ export class Mundo3d implements OnInit, OnDestroy {
   protected cambiarRol(): void {
     this.auth.salir();
     this.router.navigate(['/login']);
+  }
+
+  /**
+   * Le manda al visor las unidades reales del curso (id, nombre, orden, bioma) apenas
+   * termina de cargar — reemplaza al mapa de biomas hardcodeado/local que traía el
+   * prototipo 3D, así el mundo 3D deja de tener su propio catálogo de unidades.
+   */
+  protected enviarUnidades(): void {
+    const contentWindow = this.frame()?.nativeElement.contentWindow;
+    if (!contentWindow) return;
+    const unidades = this.store.unidades().map((u) => ({
+      id: u.id,
+      nombre: u.nombre,
+      orden: u.orden,
+      bioma: u.bioma,
+    }));
+    contentWindow.postMessage({ type: 'setUnidades', unidades }, '*');
   }
 }

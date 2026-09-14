@@ -55,6 +55,7 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
       umbralXpDesbloqueo: dto.umbralXpDesbloqueo,
       orden,
       actividades: [],
+      bioma: dto.bioma,
     };
     this.roadmap.unidades.push(unidad);
     this.guardar();
@@ -66,6 +67,7 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
     if (!unidad) return throwError(() => new RoadmapApiError(`No existe la unidad ${unidadId}`, 404));
     unidad.nombre = dto.nombre.trim();
     unidad.umbralXpDesbloqueo = Math.max(0, Math.trunc(dto.umbralXpDesbloqueo));
+    unidad.bioma = dto.bioma;
     this.guardar();
     return of(structuredClone(unidad));
   }
@@ -222,22 +224,21 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
   }
 
   /**
-   * Deja solo los campos que corresponden al tipo: un desafío lleva dificultad/modalidad
-   * y un `desafioId` (stub — en producción lo referencia el Motor de Desafíos, T03);
-   * el material lleva descripcion/recurso. Evita que un cambio de tipo deje datos colgando.
+   * Deja solo los campos que corresponden al tipo: cualquier desafío (teórico, práctico o
+   * boss) lleva dificultad y un `desafioId` (stub — en producción lo referencia el Motor de
+   * Desafíos, T03); solo 'hito' no. La descripción es libre para cualquier tipo — si el
+   * profesor la deja vacía, el mapa del alumno usa `descripcionPorDefecto()`.
    */
   private normalizar(dto: NuevaActividad, previa?: Actividad): Omit<Actividad, 'id' | 'posicionX' | 'posicionY'> {
-    const esDesafio = dto.tipo === 'desafio' || dto.tipo === 'boss';
+    const esDesafio = dto.tipo !== 'hito';
     return {
       nombre: dto.nombre.trim(),
       tipo: dto.tipo,
       esObligatorio: dto.esObligatorio,
       reintentosPermitidos: esDesafio ? Math.max(0, Math.min(3, dto.reintentosPermitidos)) : 0,
       desafioId: esDesafio ? (previa?.desafioId ?? `desafio-ext-${Date.now().toString(36)}`) : undefined,
-      descripcion: esDesafio ? undefined : dto.descripcion?.trim() || undefined,
-      recurso: esDesafio ? undefined : dto.recurso?.trim() || undefined,
+      descripcion: dto.descripcion?.trim() || undefined,
       dificultad: esDesafio ? (dto.dificultad ?? 'BASICO') : undefined,
-      modalidad: esDesafio ? (dto.modalidad ?? 'practico') : undefined,
     };
   }
 

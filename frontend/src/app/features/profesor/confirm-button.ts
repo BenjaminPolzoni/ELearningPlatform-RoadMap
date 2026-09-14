@@ -19,7 +19,7 @@ import { ChangeDetectionStrategy, Component, input, output, signal } from '@angu
         [attr.title]="title()"
         [attr.aria-label]="title()"
       >
-        ✕
+        🗑️
       </button>
     } @else {
       <span class="inline-flex items-center gap-1 whitespace-nowrap">

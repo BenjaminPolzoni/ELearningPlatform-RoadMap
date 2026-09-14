@@ -2,13 +2,35 @@
 // pero solo con lo que el mock necesita en Fases 0-2. El `HttpRoadmapAdapter` de Fase 3
 // generará los suyos desde el OpenAPI.
 
+import { Bioma } from './biomas';
+
 export type EstadoNodo = 'bloqueado' | 'habilitado' | 'completado' | 'fallado';
-export type TipoNodo = 'teoria' | 'practica' | 'desafio' | 'boss' | 'hito';
+// Este curso no usa material suelto (teoría/práctica de solo lectura): todo contenido es
+// un desafío, ya sea teórico o práctico (la modalidad va en el propio tipo, como en el
+// contrato real — ver docs/openapi/ms-roadmap.yaml, Nodo.tipo). `boss` e `hito` siguen
+// siendo tipos aparte (no seleccionables desde el editor por ahora).
+export type TipoNodo = 'desafio-teorico' | 'desafio-practico' | 'boss' | 'hito';
 
 // PAR-01: XP base por dificultad (100 / 250 / 500). Espejo de Dificultad del backend.
 export type Dificultad = 'BASICO' | 'MEDIO' | 'AVANZADO';
-// Un desafío puede ser teórico o práctico (RF-CUR-04).
-export type Modalidad = 'teorico' | 'practico';
+// Única fuente de verdad del XP por dificultad — la usan tanto el editor (para mostrarle
+// al profesor cuánto va a valer el desafío) como el mapa del alumno (para otorgarlo real).
+export const XP_POR_DIFICULTAD: Record<Dificultad, number> = { BASICO: 100, MEDIO: 250, AVANZADO: 500 };
+
+// Descripción que ve el alumno en el mapa cuando el profesor deja el campo vacío — el
+// editor la muestra como placeholder para que sepa qué va a salir si no escribe la suya.
+export function descripcionPorDefecto(tipo: TipoNodo): string {
+  switch (tipo) {
+    case 'desafio-teorico':
+      return 'Respondé las preguntas para demostrar que entendiste los conceptos de la unidad.';
+    case 'desafio-practico':
+      return 'Resolvé el ejercicio aplicando lo aprendido en la unidad.';
+    case 'boss':
+      return 'Superá el desafío final de la unidad.';
+    default:
+      return 'Contenido de la unidad.';
+  }
+}
 
 export interface Actividad {
   id: string;
@@ -17,12 +39,9 @@ export interface Actividad {
   esObligatorio: boolean;
   reintentosPermitidos: number; // 0-3 (RF-DES-07)
   desafioId?: string;
-  // Material (tipo teoria/practica): contenido que el alumno lee/practica.
   descripcion?: string;
-  recurso?: string; // URL o texto — ver nota de "subir material" en unidad-editor.ts
-  // Desafío (tipo desafio/boss): se evalúa y otorga XP.
+  // Se evalúa y otorga XP (todo tipo salvo 'hito').
   dificultad?: Dificultad;
-  modalidad?: Modalidad;
   // Posición del nodo en el editor gráfico del profesor (05-design-system.md §5/§6). El
   // adapter le asigna un default no solapado al crearla; el profesor la reubica arrastrando.
   posicionX: number;
@@ -36,9 +55,7 @@ export interface NuevaActividad {
   esObligatorio: boolean;
   reintentosPermitidos: number;
   descripcion?: string;
-  recurso?: string;
   dificultad?: Dificultad;
-  modalidad?: Modalidad;
 }
 
 export interface Unidad {
@@ -47,6 +64,9 @@ export interface Unidad {
   umbralXpDesbloqueo: number;
   orden: number;
   actividades: Actividad[];
+  // Ambientación visual (mapa 2D y mundo 3D). Opcional: unidades creadas antes de este
+  // campo caen al tema por heurística de nombre/orden (ver unidad-mapa.ts).
+  bioma?: Bioma;
 }
 
 export interface Roadmap {
@@ -61,6 +81,7 @@ export interface Roadmap {
 export interface NuevaUnidad {
   nombre: string;
   umbralXpDesbloqueo: number;
+  bioma?: Bioma;
 }
 
 /** Prerequisito: no se puede entrar a `nodoDestinoId` sin completar `nodoOrigenId`. */
