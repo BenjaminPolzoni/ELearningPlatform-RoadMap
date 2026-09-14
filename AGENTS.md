@@ -63,6 +63,10 @@ ramas hijas nacen de esa sub-rama, pero la raíz de todas sigue siendo `pruebas`
 4. `pruebas` → `main` **solo** con aprobación explícita del desarrollador principal, y
    solo después de validar en el entorno de pruebas.
 
+**Todo merge entre ramas se hace con `git merge --no-ff`** (nunca fast-forward) —
+deja un commit de merge explícito que marca dónde se integró cada sub-rama, en vez de
+diluir su historia en la rama destino.
+
 ## Commits y prácticas de código
 
 - **Atómicos, por fase lógica.** Terminaste la UI: commit. Terminaste la lógica de base
