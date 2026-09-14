@@ -1629,12 +1629,6 @@ button.rk-estado:hover {
   stroke: #f6d58c;
   stroke-width: 32;
 }
-.vertical-road .road-center {
-  stroke: #ffffff;
-  stroke-width: 6;
-  stroke-dasharray: 10 10;
-  opacity: 0.7;
-}
 .vertical-road .support-road-edge {
   stroke: #382008;
   stroke-width: 22;
@@ -1649,28 +1643,24 @@ button.rk-estado:hover {
 [data-theme='jungle'] .vertical-road .road-shadow { stroke: #1c2e14; }
 [data-theme='jungle'] .vertical-road .road-edge { stroke: #201103; }
 [data-theme='jungle'] .vertical-road .road-sand { stroke: #d5a86a; }
-[data-theme='jungle'] .vertical-road .road-center { stroke: #fae5b6; }
 [data-theme='jungle'] .vertical-road .support-road-edge { stroke: #201103; }
 [data-theme='jungle'] .vertical-road .support-road { stroke: #d5a86a; }
 
 [data-theme='castle'] .vertical-road .road-shadow { stroke: #0c0a14; }
 [data-theme='castle'] .vertical-road .road-edge { stroke: #1b1329; }
 [data-theme='castle'] .vertical-road .road-sand { stroke: #6a587d; }
-[data-theme='castle'] .vertical-road .road-center { stroke: #c4b4d8; }
 [data-theme='castle'] .vertical-road .support-road-edge { stroke: #1b1329; }
 [data-theme='castle'] .vertical-road .support-road { stroke: #6a587d; }
 
 [data-theme='snow'] .vertical-road .road-shadow { stroke: #334155; }
 [data-theme='snow'] .vertical-road .road-edge { stroke: #1e293b; }
 [data-theme='snow'] .vertical-road .road-sand { stroke: #cbd5e1; }
-[data-theme='snow'] .vertical-road .road-center { stroke: #ffffff; }
 [data-theme='snow'] .vertical-road .support-road-edge { stroke: #1e293b; }
 [data-theme='snow'] .vertical-road .support-road { stroke: #cbd5e1; }
 
 [data-theme='nether'] .vertical-road .road-shadow { stroke: #140406; }
 [data-theme='nether'] .vertical-road .road-edge { stroke: #1d1e26; }
 [data-theme='nether'] .vertical-road .road-sand { stroke: #353745; }
-[data-theme='nether'] .vertical-road .road-center { stroke: #f25500; }
 [data-theme='nether'] .vertical-road .support-road-edge { stroke: #1d1e26; }
 [data-theme='nether'] .vertical-road .support-road { stroke: #353745; }
 

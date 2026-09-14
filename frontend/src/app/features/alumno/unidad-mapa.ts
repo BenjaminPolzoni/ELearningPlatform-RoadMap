@@ -226,12 +226,10 @@ interface ConfettiPiece {
                   <path [attr.d]="roadPathD()" class="road-shadow" />
                   <path [attr.d]="roadPathD()" class="road-edge" />
                   <path [attr.d]="roadPathD()" class="road-sand" />
-                  <path [attr.d]="roadPathD()" class="road-center" />
                   <!-- Tramo final: del último desafío a la base del castillo/casa -->
                   <path [attr.d]="castleApproachD()" class="road-shadow" />
                   <path [attr.d]="castleApproachD()" class="road-edge" />
                   <path [attr.d]="castleApproachD()" class="road-sand" />
-                  <path [attr.d]="castleApproachD()" class="road-center" />
                 </svg>
 
                 <!-- Anillos conectores 16x16 en cada parada y bifurcacion del camino -->
