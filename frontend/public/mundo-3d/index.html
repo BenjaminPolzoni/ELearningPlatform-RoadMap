@@ -5437,6 +5437,19 @@
       buildOceanIsland(minMtX, maxMtX, -4.4, 4.4);
       buildOceanSkyAndClouds(minMtX, maxMtX);
 
+      // -------------------------------------------------------------
+      // 🏝️ SEGUNDA ISLA, VACÍA (para una futura expansión) — mismo paisaje
+      // que la isla principal (buildOceanIsland solo dibuja terreno, nunca
+      // agrega unidades/edificios), separada por un tramo de mar abierto al
+      // este del trofeo. No lleva buildOceanSkyAndClouds: esa función
+      // reinicia `activeClouds`, y llamarla de nuevo dejaría sin animar las
+      // nubes ya puestas sobre la isla principal.
+      // -------------------------------------------------------------
+      const nextIslandGap = 6;
+      const nextIslandWidth = 8.8;
+      const nextIslandMinX = maxMtX + nextIslandGap;
+      const nextIslandMaxX = nextIslandMinX + nextIslandWidth;
+      buildOceanIsland(nextIslandMinX, nextIslandMaxX, -4.4, 4.4);
 
       // Terreno base ceremonial del Trofeo con ancho total exacto de los biomas (8.8m, de Z = -4.4 a +4.4)
       const podioPlazaGeo = new THREE.BoxGeometry(podioLotWidth, 0.5, 8.8);
