@@ -2,6 +2,8 @@ import { firstValueFrom } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
 import { AuthMockService } from '../auth/auth-mock.service';
 import { InMemoryRankingAdapter } from './in-memory-ranking.adapter';
+import { RoadmapDataPort } from './roadmap-data.port';
+import { InMemoryRoadmapAdapter } from './in-memory-roadmap.adapter';
 import { VistaRankingAlumno, VistaRankingStaff } from './ranking.models';
 
 describe('InMemoryRankingAdapter — recorte por rol (RF-RNK-03 / 10)', () => {
@@ -9,7 +11,9 @@ describe('InMemoryRankingAdapter — recorte por rol (RF-RNK-03 / 10)', () => {
   let auth: AuthMockService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [InMemoryRankingAdapter] });
+    TestBed.configureTestingModule({
+      providers: [InMemoryRankingAdapter, { provide: RoadmapDataPort, useClass: InMemoryRoadmapAdapter }],
+    });
     adapter = TestBed.inject(InMemoryRankingAdapter);
     auth = TestBed.inject(AuthMockService);
   });

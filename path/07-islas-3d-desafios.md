@@ -208,8 +208,89 @@ ocultaba ahí (falso positivo de "está arreglado").
   confirmación visual del usuario** (memoria de sesión: la validación visual es
   tarea del usuario, no se abrió navegador para esto).
 
+## Ronda 4: kiosko de Ranking 3D junto al Trofeo
+
+Pedido: "quiero que diseñes un asset 3d para ver el ranking en el mundo 3d al
+lado del trofeo". Ya existía un `RankingPanel` completo en Angular (gabinete
+arcade neón: `frontend/src/app/features/ranking/ranking-panel.ts`, ya usado en
+el mapa 2D `mapa.ts`) — no había que rehacer el ranking, solo darle una entrada
+temática desde el mundo 3D.
+
+- **`frontend/public/mundo-3d/index.html`**:
+  - `createRankingScreenTexture()` + `buildRankingKiosk(x, z)` (nuevas, cerca de
+    `createChallengeNodeMarker`): cabina arcade bajo poli 100% procedural (sin GLB
+    de Blender — mismo patrón que la plaza/camino del Trofeo, que también son
+    primitivas de Three.js), con pantalla canvas-texture (paleta `--rk-*` del
+    panel real: violeta `#8b5cf6`, magenta `#f43f5e`, dorado `#f59e0b`),
+    marquesina con luz emissive, joystick y 2 botones, y el mismo cartel
+    `createNameBillboard` que usan el Trofeo y las casas.
+  - Se agrega en `rebuildCity()` justo después del Trofeo, en `(podioX, 2.6)`
+    (mismo lote/plaza, corrido al sur para no pisar el camino de tierra ni el
+    colisionador del trofeo) — con su propio `buildingColliders` y un
+    `interactiveModules` de `type: 'ranking'`.
+  - Al tocar "Ver Ranking" en proximidad (`btnAccessModule`, label agregado en
+    `checkProximityToModules`), el mundo 3D NO abre nada él mismo: manda
+    `window.parent.postMessage({ type: 'openRanking' }, '*')` — mismo patrón que
+    `enterActivity` para el modal de quiz.
+- **`frontend/src/app/features/alumno/mundo-3d.ts`**: escucha `openRanking`
+  (`esMensajeOpenRanking`), signal `rankingOpen`, y monta
+  `<app-ranking-panel (cerrar)="rankingOpen.set(false)" />` como overlay sobre el
+  iframe — el mismo componente que usa el mapa 2D, sin duplicar lógica de datos.
+
+Verificado en esta sesión: `ng build` compila limpio (chunk `mundo-3d` sin
+errores) y `ng test --watch=false` — 106/106 pasan. **No probado visualmente**
+(tarea del usuario): falta confirmar que el kiosko se vea bien parado junto al
+Trofeo (escala, que no se superponga con el camino/colisionador) y que
+"Ver Ranking" abra el panel correcto.
+
+## Ronda 5: podio holográfico (reemplaza al kiosko) + XP real en el Ranking
+
+Pedido: "hagamos el podio, dejalo lo más 3D que puedas, usa Three.js, assets de
+alguna página lo que sea" — reemplaza el kiosko arcade 100% procedural de la
+Ronda 4 por un asset GLB real ya existente en el proyecto (nunca llegó a
+usarse) más una pantalla holográfica.
+
+- **`frontend/public/mundo-3d/index.html`**: `buildRankingKiosk`/
+  `createRankingScreenTexture` (Ronda 4) → `buildRankingPodium(x, z)` (async) +
+  `createRankingHoloTexture()`.
+  - Carga `Assets/House/Podio/podio_estandartes_minecraft_low_poly (1).glb` con
+    `loadCityAssetGLB`, mismo patrón de auto-escalado/centrado que el Trofeo
+    Dorado (`Assets/House/Podio/trofeo_dorado_minecraft_low_poly.glb`).
+  - Pantalla holográfica flotante (canvas-texture, 680×640, con respaldo opaco
+    detrás: las esquinas redondeadas del canvas son transparentes y sin ese
+    respaldo el mar del fondo se "comía" el contraste del texto), anillo
+    proyector cian y partículas ascendentes violeta→cian entre el anillo y la
+    pantalla — todo animado reusando `activeRGBObjects`/`userData.updateRGB`
+    (el mismo mecanismo del teclado/mouse gamer RGB), sin tocar `animate()`.
+  - Fila de XP junto a cada nombre enmascarado en la pantalla (ej. "2.450 XP"),
+    decorativo — el dato real lo sigue mostrando el `RankingPanel` de Angular.
+  - Varias rondas de ajuste fino a ciegas (altura del conjunto respecto a la
+    altura total del modelo —los mástiles de los estandartes dominaban el
+    bounding box—, orientación de la pantalla, separación pantalla/aro, tamaño
+    del aro corrido hacia atrás en vez de achicado): **ninguno verificado
+    visualmente**, todo a partir de la descripción del usuario en cada vuelta.
+- **`frontend/src/app/core/data/in-memory-ranking.adapter.ts`**: bug real
+  (no cosmético) encontrado al revisar el pedido — completar un ejercicio nunca
+  movía el XP del ranking porque `InMemoryRankingAdapter` leía un fixture 100%
+  fijo (`ranking.seed.ts`, a propósito: "el ranking no debe bailar entre
+  cargas") sin ninguna conexión al `Progreso` real que sí actualiza el HUD/mapa
+  (`in-memory-roadmap.adapter.ts`). Fix (confirmado con el usuario antes de
+  tocarlo): inyecta `RoadmapDataPort` y pisa XP/nivel de la fila de `alu-01` con
+  el `Progreso` en vivo antes de reordenar la cohorte (`ordenarCohorte` +
+  `percentilDe` + `zonaDe`); el resto de la cohorte sigue siendo el fixture
+  fijo. Como el panel lee esto con `toSignal(...)`, debería reflejarse incluso
+  con el panel ya abierto.
+- **`frontend/src/app/core/data/in-memory-ranking.adapter.spec.ts`**: agrega el
+  provider de `RoadmapDataPort` (nueva dependencia del adapter).
+
+Verificado en esta sesión: tests de `in-memory-ranking.adapter.spec.ts` +
+`domain/ranking/*.spec.ts` (17/17) y `tsc --noEmit` limpios. **No probado
+visualmente** (tarea del usuario).
+
 
 ## Archivos tocados
 
 - `frontend/public/mundo-3d/index.html`
 - `frontend/src/app/features/alumno/mundo-3d.ts`
+- `frontend/src/app/core/data/in-memory-ranking.adapter.ts`
+- `frontend/src/app/core/data/in-memory-ranking.adapter.spec.ts`

@@ -1,10 +1,15 @@
 import { inject, Injectable } from '@angular/core';
-import { delay, Observable, of } from 'rxjs';
+import { delay, map, Observable } from 'rxjs';
 import { AuthMockService } from '../auth/auth-mock.service';
 import { AvatarService } from '../avatar/avatar.service';
 import { RankingDataPort } from './ranking-data.port';
+import { RoadmapDataPort } from './roadmap-data.port';
+import { Progreso } from './roadmap.models';
 import { FilaRanking, FilaRankingAnon, VistaRanking } from './ranking.models';
 import { cohorteMock, ALUMNO_ACTUAL_ID } from '../../mocks/ranking.seed';
+import { CURSO_SEED_ID } from '../../mocks/seed';
+import { nivelNodo } from '../../domain/ranking/nivel-nodo';
+import { ordenarCohorte, percentilDe, zonaDe } from '../../domain/ranking/ranking.reglas';
 
 /**
  * Implementación de {@link RankingDataPort} para Fases 0-2. Hace de servidor: arma la
@@ -18,19 +23,47 @@ import { cohorteMock, ALUMNO_ACTUAL_ID } from '../../mocks/ranking.seed';
 export class InMemoryRankingAdapter extends RankingDataPort {
   private readonly auth = inject(AuthMockService);
   private readonly avatarService = inject(AvatarService);
+  // El resto de la cohorte (`ranking.seed.ts`) es un fixture fijo a propósito
+  // (no debe "bailar" entre cargas), pero mi propia fila sí tiene que reflejar el
+  // XP que voy ganando de verdad — se pisa acá con el `Progreso` en vivo del
+  // `RoadmapDataPort` (el mismo dato que alimenta el HUD y el mapa).
+  private readonly roadmapPort = inject(RoadmapDataPort);
 
   getRanking(_cursoCohorteId: string): Observable<VistaRanking> {
-    // La fila propia muestra el avatar real de "Mi personaje", no el mock determinístico
-    // (el resto de la cohorte no tiene un avatar guardado — solo la sesión actual lo tiene).
-    const cohorte = cohorteMock().map((f) =>
-      f.alumnoId === ALUMNO_ACTUAL_ID ? { ...f, avatar: this.avatarService.avatar() } : f,
+    return this.roadmapPort.getProgreso(ALUMNO_ACTUAL_ID, CURSO_SEED_ID).pipe(
+      delay(300), // simula la latencia de red del BFF
+      map((progresoAlumno) => {
+        const cohorte = this.cohorteConMiXpReal(progresoAlumno);
+        const rol = this.auth.rol();
+        return rol === 'ALUMNO'
+          ? this.vistaAlumno(cohorte)
+          : this.vistaStaff(cohorte, rol === 'ADMIN' ? 'ADMIN' : 'PROFESOR');
+      }),
     );
-    const rol = this.auth.rol();
-    const vista: VistaRanking =
-      rol === 'ALUMNO'
-        ? this.vistaAlumno(cohorte)
-        : this.vistaStaff(cohorte, rol === 'ADMIN' ? 'ADMIN' : 'PROFESOR');
-    return of(vista).pipe(delay(300)); // simula la latencia de red del BFF
+  }
+
+  /**
+   * Pisa XP y nivel de mi fila con el Progreso real (avatar incluido: la fila propia
+   * muestra el de "Mi personaje", no el mock determinístico) y reordena la cohorte,
+   * porque mi XP real puede moverme de posición respecto del fixture.
+   */
+  private cohorteConMiXpReal(progresoAlumno: Progreso): FilaRanking[] {
+    const base = cohorteMock().map((f) =>
+      f.alumnoId === ALUMNO_ACTUAL_ID
+        ? {
+            ...f,
+            avatar: this.avatarService.avatar(),
+            xpTotal: progresoAlumno.xpTotal,
+            nivelNodo: nivelNodo(progresoAlumno),
+          }
+        : f,
+    );
+    const total = base.length;
+    return ordenarCohorte(base).map((fila) => ({
+      ...fila,
+      percentil: percentilDe(fila.posicion, total),
+      zona: zonaDe(fila.posicion, total),
+    }));
   }
 
   /** RF-RNK-03: fila propia identificada; todo lo demás anonimizado. */

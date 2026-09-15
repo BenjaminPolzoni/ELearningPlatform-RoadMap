@@ -5265,6 +5265,236 @@
       return marker;
     }
 
+    // -------------------------------------------------------------
+    // 🏅 PODIO DE RANKING (junto al Trofeo) — usa el asset real de podio con
+    // estandartes (Assets/House/Podio, mismo GLTFLoader que el Trofeo Dorado)
+    // más una pantalla holográfica flotante hecha con canvas-texture + blending
+    // aditivo y partículas, mismo mecanismo de animación (`activeRGBObjects` /
+    // `userData.updateRGB`) que usan el teclado y el mouse gamer RGB. Al tocar
+    // "Ver Ranking" cerca de este módulo, el mundo 3D no abre nada él mismo: manda
+    // `openRanking` al padre (ver click handler de `btnAccessModule` más abajo) —
+    // Angular ya tiene el panel completo (`RankingPanel`, el mismo "gabinete
+    // arcade" que usa el mapa 2D) y lo muestra como overlay sobre el iframe,
+    // igual que el modal de quiz.
+    // -------------------------------------------------------------
+    function createRankingHoloTexture() {
+      // Al doble de resolución que antes para que el texto no se vea borroso al
+      // agrandarse sobre el plano 3D (el canvas se veía nítido en el editor pero
+      // se pixelaba/emborronaba al escalarlo en la escena).
+      const canvas = document.createElement('canvas');
+      canvas.width = 680;
+      canvas.height = 640;
+      const ctx = canvas.getContext('2d');
+      const r = 36;
+
+      ctx.clearRect(0, 0, 680, 640);
+      // Fondo bien opaco: con blending aditivo (ver holoMat) un fondo muy
+      // translúcido dejaba "pasar" el pasto/cielo de la escena y lavaba el
+      // contraste del texto — por eso ahora el panel tapa de verdad.
+      ctx.fillStyle = 'rgba(6, 16, 22, 0.92)';
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.lineTo(680 - r, 0);
+      ctx.quadraticCurveTo(680, 0, 680, r);
+      ctx.lineTo(680, 640 - r);
+      ctx.quadraticCurveTo(680, 640, 680 - r, 640);
+      ctx.lineTo(r, 640);
+      ctx.quadraticCurveTo(0, 640, 0, 640 - r);
+      ctx.lineTo(0, r);
+      ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#22d3ee';
+      ctx.stroke();
+
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(34, 211, 238, 0.22)';
+      for (let y = 28; y < 640; y += 20) {
+        ctx.beginPath();
+        ctx.moveTo(20, y);
+        ctx.lineTo(660, y);
+        ctx.stroke();
+      }
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#a5f3fc';
+      ctx.font = '900 64px "Courier New", monospace';
+      ctx.shadowColor = '#22d3ee';
+      ctx.shadowBlur = 24;
+      ctx.fillText('RANKING', 340, 104);
+      ctx.shadowBlur = 0;
+
+      ctx.font = 'bold 30px "Courier New", monospace';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('· PROYECCIÓN EN VIVO ·', 340, 156);
+
+      const rows = [
+        ['1°', '#f59e0b', '2.450'],
+        ['2°', '#cbd5e1', '1.980'],
+        ['3°', '#fb923c', '1.340']
+      ];
+      rows.forEach(([label, color, xp], i) => {
+        const y = 264 + i * 108;
+        ctx.textAlign = 'left';
+        ctx.fillStyle = color;
+        ctx.font = '900 48px "Courier New", monospace';
+        ctx.fillText(label, 68, y);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 34px "Courier New", monospace';
+        ctx.fillText('? ? ? ? ? ?', 184, y);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#67e8f9';
+        ctx.font = '900 34px "Courier New", monospace';
+        ctx.fillText(xp + ' XP', 636, y);
+      });
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#67e8f9';
+      ctx.font = 'bold 28px "Courier New", monospace';
+      ctx.fillText('ACERCATE PARA VER TU PUESTO', 340, 596);
+
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    async function buildRankingPodium(x, z) {
+      const group = new THREE.Group();
+
+      // Altura de referencia por si el GLB no carga (createFallbackObject de
+      // loadCityAssetGLB); la pantalla y el anillo igual quedan bien ubicados.
+      let topY = 1.4;
+
+      try {
+        const podioModel = await loadCityAssetGLB('Assets/House/Podio/podio_estandartes_minecraft_low_poly (1).glb');
+        const podioPivot = new THREE.Group();
+
+        // Auto-escalar el podio a una altura razonable de plaza (~1.6m con estandartes)
+        const podioBox = new THREE.Box3().setFromObject(podioModel);
+        const podioSize = new THREE.Vector3();
+        podioBox.getSize(podioSize);
+        const podioScale = 1.6 / (podioSize.y || 1);
+        podioModel.scale.set(podioScale, podioScale, podioScale);
+
+        const podioScaledBox = new THREE.Box3().setFromObject(podioModel);
+        const podioCenter = new THREE.Vector3();
+        podioScaledBox.getCenter(podioCenter);
+        podioModel.position.set(-podioCenter.x, -podioScaledBox.min.y, -podioCenter.z);
+        podioPivot.add(podioModel);
+
+        // Misma orientación que el Trofeo: el frente mira hacia el inicio de la avenida (-X)
+        podioPivot.rotation.y = -Math.PI / 2;
+        group.add(podioPivot);
+
+        topY = podioScaledBox.max.y - podioScaledBox.min.y;
+      } catch (err) {
+        console.error('Error cargando modelo de Podio de Ranking:', err);
+      }
+
+      // Pantalla holográfica flotante con el top 3, mismo truco de canvas-texture
+      // que el resto de la ciudad, con blending aditivo para el look de hologram.
+      const holoGroup = new THREE.Group();
+      const screenHeight = 1.0;
+
+      // Respaldo sólido y opaco detrás de la textura: el canvas tiene esquinas
+      // redondeadas transparentes y, aunque el panel es casi opaco, contra el
+      // mar (mismo tono azul/cian) el plano se podía "camuflar" a lo lejos. Este
+      // fondo negro sin transparencia garantiza contraste sin importar qué haya
+      // detrás (mar, cielo, pasto).
+      const backingMat = new THREE.MeshBasicMaterial({ color: 0x03060a });
+      const backing = new THREE.Mesh(new THREE.BoxGeometry(1.14, 1.09, 0.03), backingMat);
+      backing.rotation.x = -0.06;
+      backing.position.z = -0.02;
+      holoGroup.add(backing);
+
+      const holoMat = new THREE.MeshBasicMaterial({
+        map: createRankingHoloTexture(),
+        transparent: true,
+        opacity: 0.97,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const holoScreen = new THREE.Mesh(new THREE.PlaneGeometry(1.05, screenHeight), holoMat);
+      holoScreen.rotation.x = -0.06;
+      holoGroup.add(holoScreen);
+      // Igual orientación que el Trofeo/casas: el frente mira hacia el inicio de
+      // la avenida (-X). Sin esto la pantalla queda de perfil, mirando al costado.
+      holoGroup.rotation.y = -Math.PI / 2;
+      const ringY = topY * 0.5;
+      // Separación visible entre el aro (proyector) y la pantalla flotante, para
+      // que se note que está "levitando" y no pegada al aro.
+      const holoGap = 0.22;
+      const holoBaseY = ringY + screenHeight / 2 + holoGap;
+      // Todo el conjunto (aro + pantalla + partículas) corrido hacia atrás
+      // (+X, alejándose de la avenida que mira a -X) para que no quede
+      // adelantado respecto del podio al verlo desde atrás.
+      const holoBackOffset = 0.3;
+      holoGroup.position.set(holoBackOffset, holoBaseY, 0);
+      group.add(holoGroup);
+
+      // Anillo proyector cian
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.42, 0.02, 8, 40),
+        new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: 0x22d3ee, emissiveIntensity: 1 })
+      );
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(holoBackOffset, ringY, 0);
+      group.add(ring);
+
+      // Motas de luz ascendentes (violeta -> cian) entre el anillo y la pantalla
+      const count = 50;
+      const positions = new Float32Array(count * 3);
+      const colors = new Float32Array(count * 3);
+      const phases = new Float32Array(count);
+      const speeds = new Float32Array(count);
+      const violetC = new THREE.Color(0x8b5cf6);
+      const cyanC = new THREE.Color(0x22d3ee);
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const rad = Math.random() * 0.38;
+        positions[i * 3] = Math.cos(ang) * rad;
+        positions[i * 3 + 2] = Math.sin(ang) * rad;
+        const col = violetC.clone().lerp(cyanC, Math.random());
+        colors[i * 3] = col.r;
+        colors[i * 3 + 1] = col.g;
+        colors[i * 3 + 2] = col.b;
+        phases[i] = Math.random();
+        speeds[i] = 0.15 + Math.random() * 0.2;
+      }
+      const particleGeo = new THREE.BufferGeometry();
+      particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      particleGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+      const particleMat = new THREE.PointsMaterial({
+        size: 0.035,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const particles = new THREE.Points(particleGeo, particleMat);
+      particles.position.x = holoBackOffset;
+      group.add(particles);
+
+      // Animación por frame reutilizando el mismo mecanismo que el teclado/mouse RGB.
+      // Las motas recorren justo el hueco entre el aro y la pantalla.
+      const riseHeight = holoGap + screenHeight / 2;
+      group.userData.updateRGB = (time) => {
+        ring.rotation.z = time * 0.6;
+        holoGroup.position.y = holoBaseY + Math.sin(time * 1.1) * 0.03;
+        const posAttr = particleGeo.attributes.position;
+        for (let i = 0; i < count; i++) {
+          const t = (time * speeds[i] + phases[i]) % 1;
+          posAttr.setY(i, ringY + t * riseHeight);
+        }
+        posAttr.needsUpdate = true;
+      };
+      activeRGBObjects.add(group);
+
+      group.position.set(x, 0, z);
+      return group;
+    }
+
     // Construye el terreno + camino + nodos + estructura meta de la isla de desafíos
     // de una unidad, y la agrega a cityGroup. `estados` es un array paralelo a
     // `unit.actividades` con 'bloqueado' | 'disponible' | 'completado' por actividad
@@ -5919,6 +6149,30 @@
         console.error('Error cargando modelo de Trofeo:', err);
       }
 
+      // Podio de Ranking, al lado del Trofeo (mismo lote/plaza ceremonial, corrido
+      // hacia el sur para no pisar el camino de tierra ni el colisionador del trofeo).
+      const rankingKioskX = podioX;
+      const rankingKioskZ = 2.6;
+      cityGroup.add(await buildRankingPodium(rankingKioskX, rankingKioskZ));
+      interactiveModules.push({
+        type: 'ranking',
+        name: 'Ranking de la Cohorte',
+        biome: 'Salón de la Fama',
+        icon: '🏅',
+        x: rankingKioskX,
+        z: rankingKioskZ,
+        radius: 1.6,
+        description: 'Consultá tu posición y la de tus compañeros en la tabla de puntajes.'
+      });
+      // Estimado a partir del asset de podio con estandartes (algo más ancho que
+      // el kiosko anterior por las banderas a los costados).
+      buildingColliders.push({
+        minX: rankingKioskX - 0.8,
+        maxX: rankingKioskX + 0.8,
+        minZ: rankingKioskZ - 0.6,
+        maxZ: rankingKioskZ + 0.6
+      });
+
       if (currentMode === 'city' && checkBuildingCollision(playerGroup.position.x, playerGroup.position.z)) {
         playerGroup.position.z = 0;
       }
@@ -6052,6 +6306,11 @@
         return;
       }
 
+      if (activeNearModule.type === 'ranking') {
+        window.parent.postMessage({ type: 'openRanking' }, '*');
+        return;
+      }
+
       if (activeNearModule.type === 'returnCity') {
         const spawnCols = Math.ceil(units.length / 2);
         const spawnAvenueLen = Math.max(spawnCols * UNIT_WIDTH, 6.0);
@@ -6105,7 +6364,9 @@
             ? (closest.locked ? 'Bloqueado' : 'Resolver Desafío')
             : closest.type === 'returnCity'
               ? 'Volver a la Ciudad'
-              : 'Acceder al Módulo';
+              : closest.type === 'ranking'
+                ? 'Ver Ranking'
+                : 'Acceder al Módulo';
         btnAccessModule.disabled = closest.type === 'challenge' && closest.locked;
         proximityPrompt.classList.add('visible');
       } else {

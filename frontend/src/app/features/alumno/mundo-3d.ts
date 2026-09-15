@@ -15,6 +15,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { AuthMockService } from '../../core/auth/auth-mock.service';
 import { RoadmapStore } from '../../core/data/roadmap.store';
 import { descripcionPorDefecto, Unidad, XP_POR_DIFICULTAD } from '../../core/data/roadmap.models';
+import { RankingPanel } from '../ranking/ranking-panel';
 import {
   BIOMA_A_WORLD_THEME,
   GeneratedWorld,
@@ -46,10 +47,21 @@ function esMensajeEnterActivity(data: unknown): data is MensajeEnterActivity {
   );
 }
 
+/**
+ * Mensaje que manda la escena Three.js cuando el jugador toca "Ver Ranking" cerca
+ * del podio holográfico que está junto al Trofeo (ver `buildRankingPodium` en
+ * index.html) — el mundo 3D no sabe nada del ranking en sí, solo avisa que hay que
+ * mostrarlo; Angular ya tiene el `RankingPanel` completo (mismo componente que usa
+ * el mapa 2D) y lo monta como overlay sobre el iframe.
+ */
+function esMensajeOpenRanking(data: unknown): data is { type: 'openRanking' } {
+  return !!data && typeof data === 'object' && (data as { type?: unknown }).type === 'openRanking';
+}
+
 @Component({
   selector: 'app-mundo-3d',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, RankingPanel],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mundo-3d">
@@ -180,6 +192,13 @@ function esMensajeEnterActivity(data: unknown): data is MensajeEnterActivity {
           </div>
         </div>
       }
+
+      <!-- PANEL DE RANKING — mismo componente que usa el mapa 2D (mapa.ts), reusado
+           como overlay encima del iframe 3D: tocar "Ver Ranking" en el podio junto
+           al Trofeo abre esto en vez de una pantalla aparte. -->
+      @if (rankingOpen()) {
+        <app-ranking-panel (cerrar)="rankingOpen.set(false)" />
+      }
     </div>
   `,
   styles: `
@@ -235,8 +254,12 @@ export class Mundo3d implements OnInit, OnDestroy {
   private readonly onMensaje = (evento: MessageEvent): void => {
     if (esMensajeEnterActivity(evento.data)) {
       this.abrirDesafio(evento.data.unitId, evento.data.actividadId);
+    } else if (esMensajeOpenRanking(evento.data)) {
+      this.rankingOpen.set(true);
     }
   };
+
+  protected readonly rankingOpen = signal(false);
 
   ngOnInit(): void {
     window.addEventListener('message', this.onMensaje);
