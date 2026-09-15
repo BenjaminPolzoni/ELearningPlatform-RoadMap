@@ -4,6 +4,7 @@ import {
   ElementRef,
   OnDestroy,
   OnInit,
+  computed,
   effect,
   inject,
   signal,
@@ -13,23 +14,35 @@ import { Router, RouterLink } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { AuthMockService } from '../../core/auth/auth-mock.service';
 import { RoadmapStore } from '../../core/data/roadmap.store';
-import { XP_POR_DIFICULTAD } from '../../core/data/roadmap.models';
+import { descripcionPorDefecto, Unidad, XP_POR_DIFICULTAD } from '../../core/data/roadmap.models';
+import {
+  BIOMA_A_WORLD_THEME,
+  GeneratedWorld,
+  generateVerticalWorld,
+  QuestionData,
+  VerticalChallenge,
+  WorldTheme,
+} from './vertical-world.engine';
 
 /**
  * Contrato de mensajes que manda la escena Three.js al host vía
- * `window.parent.postMessage` cuando el jugador entra a una unidad.
+ * `window.parent.postMessage` cuando el jugador toca un nodo de desafío jugable en
+ * su isla 3D (el teletransporte ciudad↔isla lo maneja el propio mundo 3D; ya no hace
+ * falta navegar de ruta para eso).
  */
-interface MensajeMundo3d {
-  type: 'enterUnit';
+interface MensajeEnterActivity {
+  type: 'enterActivity';
   unitId: string;
+  actividadId: string;
 }
 
-function esMensajeMundo3d(data: unknown): data is MensajeMundo3d {
+function esMensajeEnterActivity(data: unknown): data is MensajeEnterActivity {
   return (
     !!data &&
     typeof data === 'object' &&
-    (data as { type?: unknown }).type === 'enterUnit' &&
-    typeof (data as { unitId?: unknown }).unitId === 'string'
+    (data as { type?: unknown }).type === 'enterActivity' &&
+    typeof (data as { unitId?: unknown }).unitId === 'string' &&
+    typeof (data as { actividadId?: unknown }).actividadId === 'string'
   );
 }
 
@@ -54,6 +67,119 @@ function esMensajeMundo3d(data: unknown): data is MensajeMundo3d {
         allowfullscreen
         (load)="onFrameLoad()"
       ></iframe>
+
+      <!-- MODAL DE ACTIVIDAD Y PREGUNTAS (Quiz interactivo) — mismo componente visual
+           que el mapa 2D (unidad-mapa.ts), reusado como overlay encima del iframe 3D
+           persistente: tocar un nodo de desafío en la isla 3D abre esto en vez de
+           navegar a otra ruta. -->
+      @if (activeChallenge(); as c) {
+        <div class="modal modal-open backdrop-blur-md z-50">
+          <div class="modal-box max-w-xl border-4 border-primary bg-[#1C1E2B] p-6 text-white shadow-2xl chaflan">
+            <div class="flex items-start justify-between gap-3 border-b-2 border-white/10 pb-3">
+              <div>
+                <span class="ui-font text-[8px] text-accent tracking-widest">
+                  {{ isCompleted(c) ? 'MODO REPASO' : c.recovery ? 'RECUPERACIÓN DE VIDA' : 'DESAFÍO ' + c.id }} · ACTIVIDAD
+                </span>
+                <h2 class="title-font mt-1 text-xl text-primary">{{ c.title }}</h2>
+              </div>
+              <button
+                class="btn btn-ghost btn-sm text-lg text-white/70 hover:text-white"
+                (click)="closeActivity()"
+                aria-label="Cerrar actividad"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div class="my-4">
+              @if (!isQuizResolved()) {
+                <p class="text-base text-[#F3EAFF] leading-relaxed mb-4">
+                  {{ currentQuestion(c).pregunta }}
+                </p>
+
+                <div class="flex flex-col gap-2.5" role="group" aria-label="Opciones de respuesta">
+                  @for (opt of currentQuestion(c).opciones; track $index) {
+                    <button
+                      type="button"
+                      class="flex items-center justify-between rounded-lg border-2 p-3 text-left transition-all text-sm"
+                      [class.border-primary]="selectedAnswer() === $index"
+                      [class.bg-primary/20]="selectedAnswer() === $index"
+                      [class.border-white/10]="selectedAnswer() !== $index"
+                      [class.bg-black/30]="selectedAnswer() !== $index"
+                      [class.hover:border-primary/50]="selectedAnswer() !== $index"
+                      (click)="selectedAnswer.set($index)"
+                    >
+                      <span class="flex items-center gap-3">
+                        <span class="ui-font text-[9px] text-accent">
+                          {{ ['A', 'B', 'C', 'D'][$index] }}.
+                        </span>
+                        <span>{{ opt }}</span>
+                      </span>
+                      @if (selectedAnswer() === $index) {
+                        <span class="text-primary font-bold">●</span>
+                      }
+                    </button>
+                  }
+                </div>
+
+                @if (quizFeedback()) {
+                  <div class="alert alert-error mt-4 text-xs ui-font py-2.5">
+                    <span>{{ quizFeedback() }}</span>
+                  </div>
+                }
+              } @else {
+                <div class="flex flex-col items-center py-6 text-center">
+                  <div class="text-5xl mb-3 animate-bounce">
+                    {{ c.recovery ? '♥' : '🏆' }}
+                  </div>
+                  <span class="ui-font text-[9px] text-accent">
+                    {{ isCompleted(c) ? '¡CONOCIMIENTO REFORZADO!' : c.recovery ? '¡VIDA RECUPERADA!' : '¡DESAFÍO COMPLETADO!' }}
+                  </span>
+                  <h3 class="title-font text-2xl text-primary mt-1">
+                    {{ c.id === activeWorld()?.mainCount ? '¡HAS LLEGADO A LA META!' : '¡Excelente trabajo explorador!' }}
+                  </h3>
+                  <p class="mt-3 text-sm text-[#E0E2EC] max-w-md opacity-90">
+                    {{ currentQuestion(c).explicacion }}
+                  </p>
+
+                  <div class="mt-5 flex items-center gap-4 rounded-xl border border-primary/40 bg-black/40 px-5 py-2.5">
+                    <span class="ui-font text-[9px] text-white/70">Recompensa obtenida:</span>
+                    <strong class="ui-font text-sm text-accent">
+                      +{{ c.xp }} XP
+                      @if (c.recovery) {
+                        · +1 VIDA ♥
+                      }
+                    </strong>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="modal-action border-t-2 border-white/10 pt-3">
+              @if (!isQuizResolved()) {
+                <button
+                  type="button"
+                  class="btn btn-primary w-full ui-font text-[9px]"
+                  [disabled]="selectedAnswer() === null"
+                  (click)="checkAnswer(c)"
+                >
+                  COMPROBAR RESPUESTA →
+                </button>
+              } @else {
+                <button type="button" class="btn btn-primary w-full ui-font text-[9px]" (click)="onCompleteActivity(c)">
+                  {{
+                    c.optional
+                      ? 'VOLVER AL MAPA →'
+                      : c.id < (activeWorld()?.mainCount ?? c.id)
+                        ? 'CONTINUAR AL DESAFÍO ' + (c.id + 1) + ' →'
+                        : '¡FINALIZAR UNIDAD! →'
+                  }}
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: `
@@ -107,8 +233,8 @@ export class Mundo3d implements OnInit, OnDestroy {
     this.sanitizer.bypassSecurityTrustResourceUrl('mundo-3d/index.html');
 
   private readonly onMensaje = (evento: MessageEvent): void => {
-    if (esMensajeMundo3d(evento.data)) {
-      this.router.navigate(['/alumno/unidad', evento.data.unitId]);
+    if (esMensajeEnterActivity(evento.data)) {
+      this.abrirDesafio(evento.data.unitId, evento.data.actividadId);
     }
   };
 
@@ -141,11 +267,12 @@ export class Mundo3d implements OnInit, OnDestroy {
 
   /**
    * Le manda al visor las unidades reales del curso (id, nombre, orden, bioma, si ya
-   * está resuelta) más el xp/vidas vigentes del alumno — reemplaza al mapa de biomas
-   * hardcodeado/local que traía el prototipo 3D y alimenta la ficha del explorador
-   * (vidas, XP, contador de unidades resueltas). Un `effect` en vez de un solo envío
-   * al `load` del iframe: así la ficha se actualiza sola si el alumno vuelve al mundo
-   * 3D después de sumar XP o resolver una unidad en otra pantalla.
+   * está resuelta, y sus actividades con estado de completado) más el xp/vidas
+   * vigentes del alumno — alimenta tanto la ficha del explorador como las islas de
+   * desafíos 3D (una por unidad, ver `buildChallengeIsland` en index.html). Un
+   * `effect` en vez de un solo envío al `load` del iframe: así la ciudad/islas se
+   * actualizan solas apenas el alumno completa un desafío (ver `onCompleteActivity`
+   * más abajo, que llama a `store.sumarProgreso` y dispara este mismo effect de nuevo).
    */
   private readonly sincronizarEstado = effect(() => {
     if (this.cargas() === 0) return;
@@ -178,6 +305,14 @@ export class Mundo3d implements OnInit, OnDestroy {
         umbralXpDesbloqueo: u.umbralXpDesbloqueo,
         xpUnidad,
         xpUnidadMax,
+        actividades: u.actividades.map((a) => ({
+          id: a.id,
+          nombre: a.nombre,
+          tipo: a.tipo,
+          dificultad: a.dificultad,
+          descripcion: a.descripcion,
+          completada: completados.has(a.id),
+        })),
       };
     });
 
@@ -191,4 +326,175 @@ export class Mundo3d implements OnInit, OnDestroy {
       '*',
     );
   });
+
+  // Desafíos y Actividad Interactiva (isla 3D) — mismo modelo de datos e interacción
+  // que unidad-mapa.ts (mapa 2D), portado como overlay sobre el iframe persistente en
+  // vez de una ruta separada.
+  protected readonly activeUnitId = signal<string | null>(null);
+  protected readonly activeWorld = signal<GeneratedWorld | null>(null);
+  protected readonly activeChallenge = signal<VerticalChallenge | null>(null);
+  protected readonly selectedAnswer = signal<number | null>(null);
+  protected readonly isQuizResolved = signal<boolean>(false);
+  protected readonly quizFeedback = signal<string | null>(null);
+  protected readonly soundEnabled = signal<boolean>(true);
+  private readonly localVidas = signal<number>(3);
+
+  protected readonly vidas = computed(() => this.store.progreso()?.vidasVigentes ?? this.localVidas());
+
+  // Misma heurística de theme que unidad-mapa.ts: prioriza el bioma elegido por el
+  // profesor y cae a nombre/orden para unidades viejas sin bioma o con uno sin tema 2D.
+  private resolverTheme(u: Unidad): WorldTheme {
+    if (u.bioma) {
+      const temaDeBioma = BIOMA_A_WORLD_THEME[u.bioma];
+      if (temaDeBioma) return temaDeBioma;
+    }
+    const nombre = u.nombre.toLowerCase();
+    if (nombre.includes('desierto') || nombre.includes('fundamento') || u.orden === 1) return 'desert';
+    if (nombre.includes('selva') || nombre.includes('control') || u.orden === 2) return 'jungle';
+    if (nombre.includes('castillo') || (nombre.includes('funcion') && !nombre.includes('concurrencia')) || u.orden === 3)
+      return 'castle';
+    if (
+      nombre.includes('nieve') ||
+      nombre.includes('montaña') ||
+      nombre.includes('taiga') ||
+      nombre.includes('estructura de datos') ||
+      u.orden === 4
+    )
+      return 'snow';
+    if (
+      nombre.includes('nether') ||
+      nombre.includes('lava') ||
+      nombre.includes('concurrencia') ||
+      nombre.includes('redes') ||
+      u.orden === 5
+    )
+      return 'nether';
+    return (['desert', 'jungle', 'castle', 'snow', 'nether'] as const)[(u.orden - 1) % 5];
+  }
+
+  private abrirDesafio(unitId: string, actividadId: string): void {
+    const u = this.store.unidadPorId(unitId);
+    if (!u) return;
+
+    const theme = this.resolverTheme(u);
+    const baseChallenges: VerticalChallenge[] = u.actividades.map((act, i) => ({
+      id: i + 1,
+      actividadId: act.id,
+      title: act.nombre,
+      type: act.tipo,
+      difficulty: act.dificultad || 'BASICO',
+      minutes: 8,
+      xp: act.dificultad ? XP_POR_DIFICULTAD[act.dificultad] : 50,
+      description: act.descripcion || descripcionPorDefecto(act.tipo),
+      x: 50,
+      y: 50,
+    }));
+    const world = generateVerticalWorld(theme, baseChallenges);
+    const challenge = world.challenges.find((c) => c.actividadId === actividadId);
+    if (!challenge) return;
+
+    this.activeUnitId.set(unitId);
+    this.activeWorld.set(world);
+    this.openActivity(challenge);
+  }
+
+  protected openActivity(c: VerticalChallenge): void {
+    this.selectedAnswer.set(null);
+    this.isQuizResolved.set(false);
+    this.quizFeedback.set(null);
+    this.activeChallenge.set(c);
+  }
+
+  protected closeActivity(): void {
+    this.activeChallenge.set(null);
+    this.activeWorld.set(null);
+    this.activeUnitId.set(null);
+  }
+
+  protected isCompleted(c: VerticalChallenge): boolean {
+    if (!c.actividadId) return false;
+    return (this.store.progreso()?.nodos ?? []).some((n) => n.nodoId === c.actividadId && n.estado === 'completado');
+  }
+
+  protected currentQuestion(c: VerticalChallenge): QuestionData {
+    return (
+      this.activeWorld()?.questions[c.id] ?? {
+        pregunta: '¿Cuál es el propósito principal de esta actividad?',
+        opciones: ['Aprender y validar los conceptos', 'Saltar al final sin responder', 'Ninguna de las anteriores'],
+        correcta: 0,
+        explicacion: '¡Excelente! Resolver las actividades te permite progresar y subir de nivel.',
+      }
+    );
+  }
+
+  protected checkAnswer(c: VerticalChallenge): void {
+    const ans = this.selectedAnswer();
+    if (ans === null) return;
+    const q = this.currentQuestion(c);
+
+    if (ans === q.correcta) {
+      this.isQuizResolved.set(true);
+      this.quizFeedback.set(null);
+      this.playAudioTone(true);
+    } else {
+      this.playAudioTone(false);
+      if (!this.isCompleted(c) && !c.recovery) {
+        this.localVidas.update((v) => Math.max(0, v - 1));
+        this.store.sumarProgreso(0, undefined, this.localVidas());
+      }
+      this.quizFeedback.set(
+        this.vidas() === 0 && !c.recovery
+          ? '¡Te has quedado sin vidas! Ve al nodo de recuperación para recargar tus corazones.'
+          : 'Respuesta incorrecta. Revisa la consigna y vuelve a intentarlo.',
+      );
+    }
+  }
+
+  protected onCompleteActivity(c: VerticalChallenge): void {
+    const wasAlreadyCompleted = this.isCompleted(c);
+    if (!wasAlreadyCompleted) {
+      this.store.sumarProgreso(c.xp, c.actividadId, this.localVidas());
+    }
+    if (c.recovery) {
+      this.localVidas.set(3);
+      this.store.sumarProgreso(0, undefined, 3);
+    }
+    this.closeActivity();
+    // El `effect` `sincronizarEstado` ya se dispara solo (store.progreso() cambió con
+    // sumarProgreso) y le manda a la isla 3D el estado de actividades actualizado —
+    // no hace falta un mensaje aparte para refrescar el nodo recién completado.
+  }
+
+  // Efectos de Sonido Web Audio — igual que unidad-mapa.ts.
+  private playAudioTone(success: boolean): void {
+    if (!this.soundEnabled()) return;
+    try {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      const now = ctx.currentTime;
+
+      if (success) {
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(659.25, now + 0.08);
+        osc.frequency.setValueAtTime(783.99, now + 0.16);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      } else {
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.setValueAtTime(146.83, now + 0.1);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        osc.start(now);
+        osc.stop(now + 0.28);
+      }
+    } catch {}
+  }
 }

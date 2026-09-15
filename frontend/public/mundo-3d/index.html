@@ -1033,6 +1033,13 @@
       transform: scale(1.04);
       box-shadow: 0 6px 18px rgba(2, 132, 199, 0.5);
     }
+    .btn-access-module:disabled {
+      background: #475569;
+      cursor: not-allowed;
+      opacity: 0.7;
+      box-shadow: none;
+      transform: none;
+    }
 
     /* Modal Dialogs */
     .app-modal-overlay {
@@ -4203,6 +4210,12 @@
         scene.fog.near = 45;
         scene.fog.far = 135;
 
+        // Volver de "creador" siempre deja al jugador en la avenida, nunca dentro de
+        // una isla de desafíos — evita quedar con `currentZone` de una isla vieja
+        // (clamp de movimiento equivocado) con ninguna isla mostrándose.
+        currentZone = 'city';
+        showOnlyChallengeIsland(null);
+
         // Spawn player near the Shop at the beginning of the avenue, facing down the street (+X)
         const spawnCols = Math.ceil(units.length / 2);
         const spawnAvenueLen = Math.max(spawnCols * UNIT_WIDTH, 6.0);
@@ -4480,6 +4493,16 @@
       'Assets/House/Arenisca/portal_arenisca_floral_low_poly.glb'
     ];
 
+    // Tinte de arena/roca por bioma para las islas de desafíos (buildChallengeIsland):
+    // mismo terreno de buildOceanIsland, pero recoloreado para que la isla de Nieve se
+    // vea helada/blanquecina (referencia pedida), y las demás con un tono acorde.
+    const ISLAND_TINTS = {
+      Nieve: { sand: 0xf1f5f9, wetSand: 0xdbeafe, rock: 0xcbd5e1 },
+      Desierto: { sand: 0xf4d29c, wetSand: 0xd9a86a, rock: 0xa8845c },
+      Bosque: { sand: 0x8a9a5b, wetSand: 0x6b7a45, rock: 0x4b5d4a },
+      Arenisca: { sand: 0xdfba87, wetSand: 0xc9a06a, rock: 0xa88d6b },
+      Nether: { sand: 0x3f2a2a, wetSand: 0x2a1a1a, rock: 0x27272a }
+    };
     const units = [];
     const UNIT_WIDTH = 2.8;
     const cityGroup = new THREE.Group();
@@ -4587,7 +4610,7 @@
       units.length = 0;
       data.unidades.forEach((u) => {
         const biomeKey = u.bioma || BIOMA_FALLBACK_CICLO[(u.orden - 1) % BIOMA_FALLBACK_CICLO.length];
-        stageUnit(u.nombre, biomeKey, getDefaultBiomeDescription(biomeKey), u.id, !!u.resuelta);
+        stageUnit(u.nombre, biomeKey, getDefaultBiomeDescription(biomeKey), u.id, !!u.resuelta, Array.isArray(u.actividades) ? u.actividades : []);
       });
       saveUnitsToStorage();
       updateUIList();
@@ -4643,7 +4666,7 @@
       rebuildCity();
     });
 
-    function stageUnit(name, biomeKey, description, unitId, resuelta) {
+    function stageUnit(name, biomeKey, description, unitId, resuelta, actividades) {
       let model = '';
       if (biomeKey === 'Desierto') {
         model = 'Assets/House/Desierto/desierto_voxel_low_poly.glb';
@@ -4669,7 +4692,12 @@
         biome: biomeKey,
         description: description,
         model: model,
-        resuelta: !!resuelta
+        resuelta: !!resuelta,
+        // Actividades de la unidad (id, nombre, tipo, dificultad, completada) que manda
+        // `setUnidades` — alimentan la isla 3D de desafíos de esta unidad (ver
+        // `buildChallengeIsland`). Sin esto (staging manual en el HTML standalone) la
+        // isla se construye sin nodos.
+        actividades: Array.isArray(actividades) ? actividades : []
       });
 
       saveUnitsToStorage();
@@ -4796,6 +4824,56 @@
       return sprite;
     }
 
+    // Cartel flotante de un nodo de desafío (isla de desafíos): número + nombre +
+    // estado, mismo truco de canvas-texture que createNameBillboard.
+    function createChallengeNodeBillboard(index, title, estadoLabel, colorHex) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 420;
+      canvas.height = 130;
+      const ctx = canvas.getContext('2d');
+
+      const r = 20;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+      ctx.beginPath();
+      ctx.moveTo(r, 0);
+      ctx.lineTo(420 - r, 0);
+      ctx.quadraticCurveTo(420, 0, 420, r);
+      ctx.lineTo(420, 130 - r);
+      ctx.quadraticCurveTo(420, 130, 420 - r, 130);
+      ctx.lineTo(r, 130);
+      ctx.quadraticCurveTo(0, 130, 0, 130 - r);
+      ctx.lineTo(0, r);
+      ctx.quadraticCurveTo(0, 0, r, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = colorHex;
+      ctx.stroke();
+
+      ctx.font = 'bold 30px -apple-system, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Desafío ' + index, 210, 42);
+
+      ctx.font = '22px -apple-system, sans-serif';
+      ctx.fillStyle = '#e2e8f0';
+      const maxChars = 26;
+      const shortTitle = title.length > maxChars ? title.slice(0, maxChars - 1) + '…' : title;
+      ctx.fillText(shortTitle, 210, 76);
+
+      ctx.font = 'bold 20px -apple-system, sans-serif';
+      ctx.fillStyle = colorHex;
+      ctx.fillText(estadoLabel, 210, 108);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const mat = new THREE.SpriteMaterial({ map: texture, transparent: true });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(1.7, 0.53, 1);
+      return sprite;
+    }
+
     // -------------------------------------------------------------
     // BUILDING COLLISIONS SYSTEM
     // -------------------------------------------------------------
@@ -4818,6 +4896,48 @@
 
     let interactiveModules = [];
 
+    // Islas de desafíos (una por unidad): límites de cada isla (para el clamp de
+    // movimiento) y su punto de entrada (para el teletransporte desde la ciudad),
+    // indexados por el id real de la Unidad (`unit.unitId`). Se reconstruyen enteros
+    // en cada rebuildCity(), igual que buildingColliders/interactiveModules.
+    let challengeIslandBounds = {};
+    let challengeIslandEntry = {};
+    // Grupo raíz (terreno + camino + nodos + estructura) de cada isla de desafíos —
+    // se mantienen todas construidas pero OCULTAS (`.visible = false`) salvo la de la
+    // unidad donde está parado el jugador: no queremos las N islas visibles en fila
+    // desde la ciudad, solo la isla activa cuando se teletransporta a una unidad.
+    let challengeIslandGroups = {};
+    // Zona donde está parado el jugador: 'city' (avenida principal) o el unitId de la
+    // isla de desafíos en la que está — determina qué límites de movimiento aplicar
+    // y qué isla queda visible.
+    let currentZone = 'city';
+    // `rebuildCity()` es async (carga GLBs por unidad) y se dispara desde varios
+    // lugares (boot con `loadUnitsFromStorage()`, cada `setUnidades` de Angular,
+    // sumar XP, etc.) — si dos llamadas se solapan, la más vieja seguía agregando
+    // islas/casas a `cityGroup` después de que la más nueva ya había limpiado y
+    // reconstruido todo, dejando islas "huérfanas" fuera de `challengeIslandGroups`
+    // que `showOnlyChallengeIsland` trataba como ciudad principal (=> visibles desde
+    // la isla central). Cada llamada toma un token al empezar y aborta apenas deja
+    // de ser la más reciente.
+    let rebuildToken = 0;
+
+    // Muestra únicamente la isla de `unitId` (o, si `unitId` es null, la ciudad
+    // principal) y oculta todo lo demás — incluida la isla central de la ciudad
+    // (avenida, casas, tienda, trofeo, nubes) cuando el jugador está dentro de una
+    // isla de desafíos, para que no se vea de fondo. Se llama al teletransportar y
+    // de nuevo al final de cada rebuildCity() para no perder la visibilidad tras un
+    // rebuild automático (p.ej. al sumar XP).
+    function showOnlyChallengeIsland(unitId) {
+      const islandGroups = new Set(Object.values(challengeIslandGroups));
+      cityGroup.children.forEach((child) => {
+        // Todo lo que cuelga directo de cityGroup y NO es una isla de desafíos es
+        // "ciudad principal" (isla central + casas + tienda + trofeo + nubes).
+        child.visible = islandGroups.has(child) ? false : unitId === null;
+      });
+      if (unitId && challengeIslandGroups[unitId]) {
+        challengeIslandGroups[unitId].visible = true;
+      }
+    }
 
     // -------------------------------------------------------------
     // 🌊 ISLA COSTERA ORGÁNICA Y OCÉANO ANIMADO
@@ -4881,6 +5001,29 @@
       opacity: 0.82
     });
 
+    // Variantes de arena/roca clonadas y recoloreadas por bioma para las islas de
+    // desafíos (buildChallengeIsland) — se cachean para no clonar materiales de nuevo
+    // en cada rebuildCity(). El océano/espuma no se tiñen (queda agua neutra en todas).
+    const islandMatsCache = {};
+    function getIslandMatsForBiome(biomeKey) {
+      if (islandMatsCache[biomeKey]) return islandMatsCache[biomeKey];
+      const tint = ISLAND_TINTS[biomeKey];
+      const mats = tint
+        ? {
+            sand: sandMat.clone(),
+            wetSand: wetSandMat.clone(),
+            rock: coastalRockMat.clone()
+          }
+        : { sand: sandMat, wetSand: wetSandMat, rock: coastalRockMat };
+      if (tint) {
+        mats.sand.color.setHex(tint.sand);
+        mats.wetSand.color.setHex(tint.wetSand);
+        mats.rock.color.setHex(tint.rock);
+      }
+      islandMatsCache[biomeKey] = mats;
+      return mats;
+    }
+
     function createCloudCluster(scale = 1.0) {
       const cloud = new THREE.Group();
       const mainW = (4.0 + Math.random() * 2.5) * scale;
@@ -4932,7 +5075,8 @@
       }
     }
 
-    function buildOceanIsland(minX, maxX, minZ, maxZ) {
+    function buildOceanIsland(minX, maxX, minZ, maxZ, mats) {
+      mats = mats || { sand: sandMat, wetSand: wetSandMat, rock: coastalRockMat };
       const islandGroup = new THREE.Group();
       const centerX = (minX + maxX) / 2;
       const lenX = maxX - minX;
@@ -4955,7 +5099,7 @@
 
       // 2. BASE INTERIOR DE ROCA Y TIERRA (Bajo toda la isla, ancho completo de 8.8m)
       const underGeo = new THREE.BoxGeometry(lenX + 0.4, 0.4, lenZ + 0.4);
-      const underMesh = new THREE.Mesh(underGeo, coastalRockMat);
+      const underMesh = new THREE.Mesh(underGeo, mats.rock);
       underMesh.position.set(centerX, -0.65, 0);
       underMesh.receiveShadow = false;
       islandGroup.add(underMesh);
@@ -4973,7 +5117,7 @@
         const beachZ = minZ - beachD / 2;
 
         const beachGeo = new THREE.BoxGeometry(segW, 0.24, beachD);
-        const beachMesh = new THREE.Mesh(beachGeo, (i % 2 === 0) ? sandMat : wetSandMat);
+        const beachMesh = new THREE.Mesh(beachGeo, (i % 2 === 0) ? mats.sand : mats.wetSand);
         beachMesh.position.set(segX, -0.36, beachZ);
         beachMesh.receiveShadow = false;
         islandGroup.add(beachMesh);
@@ -4987,20 +5131,20 @@
         const beachZ = maxZ + beachD / 2;
 
         const beachGeo = new THREE.BoxGeometry(segW, 0.24, beachD);
-        const beachMesh = new THREE.Mesh(beachGeo, (i % 2 === 1) ? sandMat : wetSandMat);
+        const beachMesh = new THREE.Mesh(beachGeo, (i % 2 === 1) ? mats.sand : mats.wetSand);
         beachMesh.position.set(segX, -0.36, beachZ);
         beachMesh.receiveShadow = false;
         islandGroup.add(beachMesh);
       }
 
       // --- Cabo Oeste (Detrás de la Tienda): Playa continua que cubre los 8.8m de ancho ---
-      const westCape = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.24, lenZ), sandMat);
+      const westCape = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.24, lenZ), mats.sand);
       westCape.position.set(minX - 1.2, -0.36, 0);
       westCape.receiveShadow = false;
       islandGroup.add(westCape);
 
       // --- Cabo Este (Detrás del Trofeo Dorado): Promontorio rocoso continuo de 8.8m de ancho ---
-      const eastCape = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.24, lenZ), coastalRockMat);
+      const eastCape = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.24, lenZ), mats.rock);
       eastCape.position.set(maxX + 1.2, -0.36, 0);
       eastCape.receiveShadow = false;
       islandGroup.add(eastCape);
@@ -5018,7 +5162,7 @@
       ];
 
       coastalBoulders.forEach((b) => {
-        const boulder = new THREE.Mesh(new THREE.BoxGeometry(b.s, b.s * 0.7, b.s), coastalRockMat);
+        const boulder = new THREE.Mesh(new THREE.BoxGeometry(b.s, b.s * 0.7, b.s), mats.rock);
         boulder.position.set(b.dx, -0.36 + (b.s * 0.35) / 2, b.dz);
         boulder.rotation.set(0.1, Math.random() * Math.PI, 0.1);
         boulder.castShadow = true;
@@ -5027,18 +5171,246 @@
       });
 
       // 2 Pequeños islotes de arena en aguas poco profundas
-      const islet1 = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.22, 1.8), sandMat);
+      const islet1 = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.22, 1.8), mats.sand);
       islet1.position.set(centerX - 4.5, -0.35, minZ - 3.8);
       islandGroup.add(islet1);
 
-      const islet2 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.22, 1.9), sandMat);
+      const islet2 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.22, 1.9), mats.sand);
       islet2.position.set(centerX + 5.0, -0.35, maxZ + 3.6);
       islandGroup.add(islet2);
 
       cityGroup.add(islandGroup);
+      return islandGroup;
+    }
+
+    // -------------------------------------------------------------
+    // 🗺️ ISLA DE DESAFÍOS POR UNIDAD (camino + nodos jugables en 3D)
+    // -------------------------------------------------------------
+    // Calcula, para las actividades de una unidad, la posición 3D de cada nodo de
+    // desafío dentro de la isla (avanzando en +X desde minX hacia maxX, "carril" en Z
+    // alternado) — mismo espíritu que generateVerticalWorld en vertical-world.engine.ts
+    // (2D), pero mapeado a los ejes de la isla en vez de a un % de pantalla.
+    function layoutChallengeNodes3D(actividades, minX, maxX, minZ, maxZ) {
+      const n = actividades.length;
+      const nodes = [];
+      if (n === 0) return nodes;
+
+      const margin = 1.1;
+      const usableMinX = minX + margin;
+      const usableMaxX = maxX - margin;
+      const lanes = [0, 2.0, -2.0, 1.1, -1.1, 2.6, -2.6];
+      const stepX = n > 1 ? (usableMaxX - usableMinX) / n : 0;
+
+      for (let i = 0; i < n; i++) {
+        const x = n > 1 ? usableMinX + stepX * (i + 0.5) : (usableMinX + usableMaxX) / 2;
+        const zLane = lanes[i % lanes.length];
+        const z = THREE.MathUtils.clamp(zLane, minZ + 0.8, maxZ - 0.8);
+        nodes.push({ x, z, actividad: actividades[i], index: i + 1 });
+      }
+      return nodes;
+    }
+
+    // Construye el camino (franjas en escuadra, sin curvas) que conecta el punto de
+    // entrada -> cada nodo en orden -> la estructura meta, y lo agrega a `group`.
+    function buildChallengePathStrips(group, points, pathMat) {
+      for (let i = 0; i < points.length - 1; i++) {
+        const from = points[i];
+        const to = points[i + 1];
+        // Tramo 1: avanza en X manteniendo el "carril" Z de origen
+        if (Math.abs(to.x - from.x) > 0.05) {
+          const seg = new THREE.Mesh(new THREE.BoxGeometry(Math.abs(to.x - from.x) + 0.6, 0.02, 0.9), pathMat);
+          seg.position.set((from.x + to.x) / 2, 0.011, from.z);
+          seg.receiveShadow = true;
+          group.add(seg);
+        }
+        // Tramo 2: jog en Z hasta el carril de destino, ya en la X de destino
+        if (Math.abs(to.z - from.z) > 0.05) {
+          const seg = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.02, Math.abs(to.z - from.z) + 0.6), pathMat);
+          seg.position.set(to.x, 0.011, (from.z + to.z) / 2);
+          seg.receiveShadow = true;
+          group.add(seg);
+        }
+      }
+    }
+
+    // Pedestal + cartel flotante de un nodo de desafío, coloreado según su estado.
+    function createChallengeNodeMarker(node, estado) {
+      const marker = new THREE.Group();
+      const color = estado === 'completado' ? 0xfacc15 : estado === 'disponible' ? 0x22d3ee : 0x64748b;
+      const colorHex = '#' + color.toString(16).padStart(6, '0');
+      const estadoLabel = estado === 'completado' ? '✓ COMPLETADO' : estado === 'disponible' ? '¡DISPONIBLE!' : '🔒 BLOQUEADO';
+
+      const pedestalGeo = new THREE.CylinderGeometry(0.42, 0.5, 0.24, 8);
+      const pedestalMat = new THREE.MeshStandardMaterial({
+        color,
+        roughness: 0.5,
+        emissive: color,
+        emissiveIntensity: estado === 'disponible' ? 0.9 : estado === 'completado' ? 0.5 : 0.05
+      });
+      const pedestal = new THREE.Mesh(pedestalGeo, pedestalMat);
+      pedestal.position.y = 0.12;
+      pedestal.castShadow = true;
+      marker.add(pedestal);
+
+      const postGeo = new THREE.CylinderGeometry(0.05, 0.06, 1.1, 6);
+      const post = new THREE.Mesh(postGeo, pedestalMat);
+      post.position.y = 0.24 + 0.55;
+      marker.add(post);
+
+      const billboard = createChallengeNodeBillboard(node.index, node.actividad.nombre || ('Desafío ' + node.index), estadoLabel, colorHex);
+      billboard.position.y = 0.24 + 1.1 + 0.32;
+      marker.add(billboard);
+
+      marker.position.set(node.x, 0, node.z);
+      return marker;
+    }
+
+    // Construye el terreno + camino + nodos + estructura meta de la isla de desafíos
+    // de una unidad, y la agrega a cityGroup. `estados` es un array paralelo a
+    // `unit.actividades` con 'bloqueado' | 'disponible' | 'completado' por actividad
+    // (ver rebuildCity, que lo deriva de `actividad.completada` de forma secuencial,
+    // igual que isAvailable() en el mapa 2D).
+    async function buildChallengeIsland(unit, minX, maxX, estados) {
+      // Todo lo de esta isla cuelga de un único grupo, oculto por defecto: solo se
+      // muestra la isla de la unidad activa (ver showOnlyChallengeIsland), nunca las
+      // N islas juntas en fila.
+      const islandRoot = new THREE.Group();
+      islandRoot.visible = false;
+      cityGroup.add(islandRoot);
+
+      const minZ = -4.4;
+      const maxZ = 4.4;
+      const mats = getIslandMatsForBiome(unit.biome);
+      const terrainGroup = buildOceanIsland(minX, maxX, minZ, maxZ, mats);
+      islandRoot.add(terrainGroup);
+
+      // buildOceanIsland solo dibuja el borde (playas) y la base rocosa por debajo —
+      // sin esto, el interior de la isla queda hueco (se ve el mar/la roca del fondo
+      // a través, como "hundida") porque nada cubre la superficie entre las playas.
+      // Mismo patrón que el terreno de cada lote en la avenida de la ciudad (lotMesh
+      // en rebuildCity): una plataforma sólida del ancho/profundidad total de la isla.
+      const islandGroundMat = new THREE.MeshStandardMaterial({
+        color: (BIOMES[unit.biome] || BIOMES['Bosque']).groundColor,
+        roughness: 0.9
+      });
+      const islandGroundGeo = new THREE.BoxGeometry(maxX - minX, 0.5, maxZ - minZ);
+      const islandGround = new THREE.Mesh(islandGroundGeo, islandGroundMat);
+      islandGround.position.set((minX + maxX) / 2, -0.25, 0);
+      islandGround.receiveShadow = true;
+      islandRoot.add(islandGround);
+
+      const pathMat = new THREE.MeshStandardMaterial({ color: 0x8a6340, roughness: 0.96 });
+      const entryPoint = { x: minX + 0.6, z: 0 };
+      const nodes = layoutChallengeNodes3D(unit.actividades, minX, maxX, minZ, maxZ);
+
+      const routePoints = [entryPoint, ...nodes];
+
+      // Estructura meta (reusa el mismo GLB Blender por bioma que ya usa la casa de la
+      // ciudad) al final del camino, más allá del último nodo.
+      const goalX = nodes.length ? Math.min(maxX - 0.9, nodes[nodes.length - 1].x + 1.8) : (minX + maxX) / 2;
+      const goalPoint = { x: goalX, z: 0 };
+      routePoints.push(goalPoint);
+
+      buildChallengePathStrips(islandRoot, routePoints, pathMat);
+
+      nodes.forEach((node, i) => {
+        const estado = estados[i] || 'bloqueado';
+        const marker = createChallengeNodeMarker(node, estado);
+        islandRoot.add(marker);
+
+        interactiveModules.push({
+          type: 'challenge',
+          name: '🧩 Desafío ' + node.index + ': ' + (node.actividad.nombre || ''),
+          biome: unit.biome,
+          unitId: unit.unitId,
+          actividadId: node.actividad.id,
+          icon: estado === 'completado' ? '✅' : estado === 'disponible' ? '🧩' : '🔒',
+          locked: estado !== 'disponible' && estado !== 'completado',
+          x: node.x,
+          z: node.z,
+          radius: 1.4,
+          description: node.actividad.descripcion || ''
+        });
+      });
+
+      // Decoración lateral simple por bioma a lo largo del camino (assets Blender ya
+      // en el repo, sin usar hasta ahora: path-stones-*; el resto reusa el mismo truco
+      // de recolor/props que ya usa rebuildCity para la flora de cada casa).
+      const stoneFile = (routePoints.length > 4) ? 'path-stones-long.glb' : 'path-stones-short.glb';
+      for (let i = 0; i < routePoints.length - 1; i++) {
+        const midX = (routePoints[i].x + routePoints[i + 1].x) / 2;
+        const midZ = (routePoints[i].z + routePoints[i + 1].z) / 2;
+        const stone = await loadCityAssetGLB(stoneFile);
+        stone.position.set(midX, 0.01, midZ + 0.7);
+        islandRoot.add(stone);
+      }
+
+      for (let i = 0; i < nodes.length; i++) {
+        const side = i % 2 === 0 ? 1 : -1;
+        const decoX = nodes[i].x + 0.6 * side;
+        const decoZ = nodes[i].z - 1.1 * side;
+        if (unit.biome === 'Nieve') {
+          const snowTree = await loadCityAssetGLB('tree-small.glb');
+          snowTree.position.set(decoX, 0, decoZ);
+          snowTree.traverse((c) => {
+            if (c.isMesh && c.material) {
+              const m = c.material.clone();
+              m.color.setHex(0xe2e8f0);
+              c.material = m;
+            }
+          });
+          islandRoot.add(snowTree);
+        } else if (unit.biome === 'Bosque') {
+          const tree = await loadCityAssetGLB('tree-large.glb');
+          tree.position.set(decoX, 0, decoZ);
+          islandRoot.add(tree);
+        } else if (unit.biome === 'Desierto' || unit.biome === 'Arenisca') {
+          const planter = await loadCityAssetGLB('planter.glb');
+          planter.position.set(decoX, 0, decoZ);
+          islandRoot.add(planter);
+        }
+      }
+
+      const structure = await loadCityAssetGLB(unit.model);
+      const structurePivot = new THREE.Group();
+      const box = new THREE.Box3().setFromObject(structure);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      let s = 1.0;
+      if (unit.biome === 'Arenisca') {
+        s = 1.85 / (size.y || 13.66);
+      } else {
+        s = 2.1 / Math.max(size.x, size.z);
+      }
+      structure.scale.set(s, s, s);
+      const scaledBox = new THREE.Box3().setFromObject(structure);
+      const center = new THREE.Vector3();
+      scaledBox.getCenter(center);
+      structure.position.set(-center.x, -scaledBox.min.y, -center.z);
+      structurePivot.add(structure);
+      structurePivot.position.set(goalPoint.x, 0, goalPoint.z);
+      structurePivot.rotation.y = -Math.PI / 2;
+      islandRoot.add(structurePivot);
+
+      challengeIslandBounds[unit.unitId] = { minX, maxX, minZ, maxZ };
+      challengeIslandEntry[unit.unitId] = entryPoint;
+      challengeIslandGroups[unit.unitId] = islandRoot;
+
+      // Volver a la Ciudad: módulo de proximidad fijo en el punto de entrada de la isla.
+      interactiveModules.push({
+        type: 'returnCity',
+        name: '⬅️ Volver a la Ciudad',
+        biome: '',
+        icon: '⬅️',
+        x: entryPoint.x,
+        z: entryPoint.z,
+        radius: 1.3,
+        description: ''
+      });
     }
 
     async function rebuildCity() {
+      const myRebuildToken = ++rebuildToken;
       buildingColliders = [];
       interactiveModules = [];
       while (cityGroup.children.length > 0) {
@@ -5201,6 +5573,7 @@
 
       // Build each house intercalated across the street (North vs South)
       for (let i = 0; i < count; i++) {
+        if (myRebuildToken !== rebuildToken) return;
         const unit = units[i];
         const biome = BIOMES[unit.biome] || BIOMES['Bosque'];
         const col = Math.floor(i / 2);
@@ -5438,18 +5811,45 @@
       buildOceanSkyAndClouds(minMtX, maxMtX);
 
       // -------------------------------------------------------------
-      // 🏝️ SEGUNDA ISLA, VACÍA (para una futura expansión) — mismo paisaje
-      // que la isla principal (buildOceanIsland solo dibuja terreno, nunca
-      // agrega unidades/edificios), separada por un tramo de mar abierto al
-      // este del trofeo. No lleva buildOceanSkyAndClouds: esa función
-      // reinicia `activeClouds`, y llamarla de nuevo dejaría sin animar las
-      // nubes ya puestas sobre la isla principal.
+      // 🏝️ ISLAS DE DESAFÍOS, UNA POR UNIDAD — al este de la ciudad, separadas por
+      // tramos de mar abierto. Se reconstruyen enteras en cada rebuildCity() (mismo
+      // patrón que las casas de la avenida: parsedGLTCache hace que reconstruir sea
+      // barato). No llevan buildOceanSkyAndClouds: esa función reinicia
+      // `activeClouds`, y llamarla de nuevo dejaría sin animar las nubes ya puestas
+      // sobre la isla principal.
       // -------------------------------------------------------------
-      const nextIslandGap = 6;
-      const nextIslandWidth = 8.8;
-      const nextIslandMinX = maxMtX + nextIslandGap;
-      const nextIslandMaxX = nextIslandMinX + nextIslandWidth;
-      buildOceanIsland(nextIslandMinX, nextIslandMaxX, -4.4, 4.4);
+      challengeIslandBounds = {};
+      challengeIslandEntry = {};
+      challengeIslandGroups = {};
+      let nextChallengeIslandMinX = maxMtX + 6;
+      for (let ci = 0; ci < units.length; ci++) {
+        if (myRebuildToken !== rebuildToken) return;
+        const unit = units[ci];
+        const islandWidth = Math.max(8.8, 2.2 * Math.max(unit.actividades.length, 1) + 2.2);
+        const islandMinX = nextChallengeIslandMinX;
+        const islandMaxX = islandMinX + islandWidth;
+
+        // Igual criterio que isAvailable() en el mapa 2D: el primer desafío no
+        // completado queda disponible, el resto bloqueado hasta llegar a él.
+        let unlocked = true;
+        const estados = unit.actividades.map((act) => {
+          if (act.completada) return 'completado';
+          if (unlocked) {
+            unlocked = false;
+            return 'disponible';
+          }
+          return 'bloqueado';
+        });
+
+        await buildChallengeIsland(unit, islandMinX, islandMaxX, estados);
+        nextChallengeIslandMinX = islandMaxX + 6;
+      }
+      if (myRebuildToken !== rebuildToken) return;
+
+      // Solo la isla de la unidad donde está parado el jugador (si hay alguna) queda
+      // visible tras reconstruir — evita que un rebuild automático (p.ej. al sumar XP)
+      // vuelva a mostrar las demás islas.
+      showOnlyChallengeIsland(currentZone === 'city' ? null : currentZone);
 
       // Terreno base ceremonial del Trofeo con ancho total exacto de los biomas (8.8m, de Z = -4.4 a +4.4)
       const podioPlazaGeo = new THREE.BoxGeometry(podioLotWidth, 0.5, 8.8);
@@ -5630,13 +6030,47 @@
       if (e.target === modalDetails) closeDetailsModal();
     });
 
+    // Teletransporte de avatar + cámara (misma cámara relativa que ya usa switchMode
+    // al entrar en modo ciudad) — usado para entrar/salir de una isla de desafíos sin
+    // navegar de ruta Angular.
+    function teleportPlayerTo(x, z, facingAngle) {
+      playerGroup.position.set(x, 0, z);
+      playerGroup.rotation.set(0, facingAngle || 0, 0);
+      controls.target.set(x, 0.3, z);
+      camera.position.set(x - 3.2, 2.2, z);
+    }
+
     btnAccessModule.addEventListener('click', () => {
       if (!activeNearModule) return;
+
+      if (activeNearModule.type === 'challenge') {
+        if (activeNearModule.locked) return;
+        window.parent.postMessage(
+          { type: 'enterActivity', unitId: activeNearModule.unitId, actividadId: activeNearModule.actividadId },
+          '*'
+        );
+        return;
+      }
+
+      if (activeNearModule.type === 'returnCity') {
+        const spawnCols = Math.ceil(units.length / 2);
+        const spawnAvenueLen = Math.max(spawnCols * UNIT_WIDTH, 6.0);
+        const spawnStartX = -spawnAvenueLen / 2 + UNIT_WIDTH / 2;
+        const shopX = spawnStartX - UNIT_WIDTH / 2 - 3.2 / 2;
+        currentZone = 'city';
+        showOnlyChallengeIsland(null);
+        teleportPlayerTo(shopX + 1.4, 0, Math.PI / 2);
+        return;
+      }
+
       // El id real de la Unidad viaja con cada módulo desde que se armó en `stageUnit`
       // (ver mensaje `setUnidades` más arriba) — nada de mapeos bioma->id hardcodeados.
       const unitId = activeNearModule.type === 'biome' ? activeNearModule.unitId : undefined;
-      if (unitId) {
-        window.parent.postMessage({ type: 'enterUnit', unitId }, '*');
+      if (unitId && challengeIslandEntry[unitId]) {
+        currentZone = unitId;
+        showOnlyChallengeIsland(unitId);
+        const entry = challengeIslandEntry[unitId];
+        teleportPlayerTo(entry.x, entry.z, Math.PI / 2);
         return;
       }
       openConstructionModal(activeNearModule.name, activeNearModule.description);
@@ -5665,7 +6099,14 @@
       if (closest) {
         activeNearModule = closest;
         promptIcon.innerText = closest.icon;
-        promptTargetName.innerText = closest.name + ' (' + closest.biome + ')';
+        promptTargetName.innerText = closest.biome ? closest.name + ' (' + closest.biome + ')' : closest.name;
+        btnAccessModule.textContent =
+          closest.type === 'challenge'
+            ? (closest.locked ? 'Bloqueado' : 'Resolver Desafío')
+            : closest.type === 'returnCity'
+              ? 'Volver a la Ciudad'
+              : 'Acceder al Módulo';
+        btnAccessModule.disabled = closest.type === 'challenge' && closest.locked;
         proximityPrompt.classList.add('visible');
       } else {
         activeNearModule = null;
@@ -5809,14 +6250,24 @@
           playAnimation('idle');
         }
 
-        const numCols = Math.ceil(units.length / 2);
-        const avenueLen = Math.max(numCols * UNIT_WIDTH, 6.0);
-        const startStreetX = -avenueLen / 2 + UNIT_WIDTH / 2;
-        const lastColX = startStreetX + (numCols > 0 ? (numCols - 1) : 0) * UNIT_WIDTH;
-        const minStreetX = startStreetX - UNIT_WIDTH / 2 - 3.2 - 0.5;
-        const maxStreetX = lastColX + UNIT_WIDTH / 2 + 3.6 + 0.5;
-        playerGroup.position.x = THREE.MathUtils.clamp(playerGroup.position.x, minStreetX, maxStreetX);
-        playerGroup.position.z = THREE.MathUtils.clamp(playerGroup.position.z, -3.8, 3.8);
+        if (currentZone === 'city') {
+          const numCols = Math.ceil(units.length / 2);
+          const avenueLen = Math.max(numCols * UNIT_WIDTH, 6.0);
+          const startStreetX = -avenueLen / 2 + UNIT_WIDTH / 2;
+          const lastColX = startStreetX + (numCols > 0 ? (numCols - 1) : 0) * UNIT_WIDTH;
+          const minStreetX = startStreetX - UNIT_WIDTH / 2 - 3.2 - 0.5;
+          const maxStreetX = lastColX + UNIT_WIDTH / 2 + 3.6 + 0.5;
+          playerGroup.position.x = THREE.MathUtils.clamp(playerGroup.position.x, minStreetX, maxStreetX);
+          playerGroup.position.z = THREE.MathUtils.clamp(playerGroup.position.z, -3.8, 3.8);
+        } else {
+          // Parado en una isla de desafíos: clamp a sus propios límites (no a la
+          // avenida principal, que queda lejos en -X).
+          const bounds = challengeIslandBounds[currentZone];
+          if (bounds) {
+            playerGroup.position.x = THREE.MathUtils.clamp(playerGroup.position.x, bounds.minX + 0.4, bounds.maxX - 0.4);
+            playerGroup.position.z = THREE.MathUtils.clamp(playerGroup.position.z, bounds.minZ + 0.4, bounds.maxZ - 0.4);
+          }
+        }
 
         if (followPlayerCheckbox.checked) {
           // Trasladar cámara y target juntos para mantener fija la distancia/ángulo
