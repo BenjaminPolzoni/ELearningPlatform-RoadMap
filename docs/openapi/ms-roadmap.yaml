@@ -727,6 +727,9 @@ components:
         nombre: { type: string }
         umbralXpDesbloqueo: { type: integer }
         orden: { type: integer }
+        # Ambientación visual de la unidad (mapa 2D y mundo 3D), la elige el profesor.
+        # Opcional: secciones creadas antes de este campo no lo traen.
+        bioma: { type: string, enum: [Desierto, Bosque, Arenisca, Nieve, Nether, Espacio] }
 
     Seccion:
       allOf:
@@ -746,8 +749,9 @@ components:
           description: >
             ⚠️ Extensión propuesta sobre el modelo original — ver 02-modelo-de-datos.md §4.
             RECUPERACION ya NO es un tipo de nodo: el pool de recuperación es por curso
-            (DesafioRecuperacion), no un nodo del mapa.
-          enum: [TEORIA, PRACTICA, DESAFIO_TEORICO, DESAFIO_PRACTICO, HITO, BOSS]
+            (DesafioRecuperacion), no un nodo del mapa. TEORIA/PRACTICA (material de solo
+            lectura) se sacaron: este curso solo tiene desafíos (teóricos o prácticos).
+          enum: [DESAFIO_TEORICO, DESAFIO_PRACTICO, HITO, BOSS]
         desafioId:
           type: string
           format: uuid
