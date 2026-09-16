@@ -344,6 +344,7 @@ Una Historia de Usuario está *Done* solo si cumple **todo**:
 | [`04-engine-2-5d.md`](04-engine-2-5d.md) | Squad Engine |
 | [`05-design-system.md`](05-design-system.md) | Squad UI |
 | [`06-contrato-api.md`](06-contrato-api.md) | Squad Backend |
+| [`08-tutorial-primeros-pasos.md`](08-tutorial-primeros-pasos.md) | Guía breve de entrada al mundo 3D |
 | [`deuda-tecnica/`](deuda-tecnica/README.md) | Todo el equipo — lo que quedó pendiente sin bloquear nada |
 
 ---
