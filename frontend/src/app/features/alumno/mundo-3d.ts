@@ -17,6 +17,8 @@ import { RoadmapStore } from '../../core/data/roadmap.store';
 import { descripcionPorDefecto, Unidad, XP_POR_DIFICULTAD } from '../../core/data/roadmap.models';
 import { RankingPanel } from '../ranking/ranking-panel';
 import { toEmbedUrl } from './recurso-embed.util';
+import { TutorialCard } from './tutorial/tutorial-card';
+import { isTutorialScene, TutorialState } from './tutorial/tutorial-state';
 import {
   BIOMA_A_WORLD_THEME,
   GeneratedWorld,
@@ -71,7 +73,7 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
 @Component({
   selector: 'app-mundo-3d',
   standalone: true,
-  imports: [RouterLink, RankingPanel],
+  imports: [RouterLink, RankingPanel, TutorialCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mundo-3d">
@@ -89,6 +91,30 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
         allowfullscreen
         (load)="onFrameLoad()"
       ></iframe>
+
+      @if (tutorialAvailable()) {
+        @if (tutorialVisible()) {
+          <app-tutorial-card class="tutorial-dock" [step]="tutorial.step()"
+            [targetName]="tutorial.step() === 3 ? tutorial.destination()!.activityName : tutorial.destination()!.unitName"
+            [returnToCity]="tutorial.scene()!.zone !== 'city' && tutorial.step() === 2"
+            (skip)="skipTutorial()" />
+        }
+        @if (tutorial.helpEmpty()) {
+          <section class="tutorial-notice tutorial-dock" role="status">
+            <strong>Explorá a tu ritmo</strong>
+            <p>Todavía no hay desafíos disponibles para practicar.</p>
+            <p>WASD: moverte · Shift: correr · Rueda: zoom.</p>
+            <button type="button" (click)="tutorial.helpEmpty.set(false); focusWorld()">Entendido</button>
+          </section>
+        }
+        @if (tutorial.celebration()) {
+          <div class="tutorial-notice tutorial-dock" role="status">✓ ¡Listo! Ya sabés explorar.
+            <p>Podés repetir la guía desde Ayuda.</p>
+          </div>
+        }
+        <button class="tutorial-help" type="button" aria-label="Repetir tutorial de primeros pasos"
+          (click)="restartTutorial()"><span aria-hidden="true">?</span> Ayuda</button>
+      }
 
       <!-- MODAL DE ACTIVIDAD Y PREGUNTAS (Quiz interactivo) — mismo componente visual
            que el mapa 2D (unidad-mapa.ts), reusado como overlay encima del iframe 3D
@@ -257,6 +283,18 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
       display: flex;
       gap: 0.4rem;
     }
+    .tutorial-dock { position:absolute; left:20px; bottom:20px; z-index:25; }
+    .tutorial-help { position:absolute; right:20px; bottom:20px; z-index:25;
+      display:flex; align-items:center; gap:7px; border:1px solid #57747d; border-radius:6px;
+      padding:8px 12px; background:#121620ed; color:#cfe9ed; font-size:12px; cursor:pointer; }
+    .tutorial-help span { display:grid; place-items:center; border:1px solid #82b5bd;
+      border-radius:50%; width:18px; height:18px; color:#7ffaff; }
+    .tutorial-help:hover { border-color:#7ffaff; }
+    .tutorial-help:focus-visible, .tutorial-notice button:focus-visible { outline:2px solid #7ffaff; outline-offset:4px; }
+    .tutorial-notice { width:280px; padding:16px; border:1px solid #7ffaff80; border-radius:4px 14px 4px 4px;
+      background:#121620f5; color:#e3f4f6; font-size:14px; box-shadow:0 8px 24px #0004; }
+    .tutorial-notice p { margin:8px 0 0; color:#b9cbd2; line-height:1.5; font-size:13px; }
+    .tutorial-notice button { margin-top:12px; color:#7ffaff; border:0; background:transparent; cursor:pointer; padding:6px; }
     .cambiar-rol,
     .btn-volver {
       padding: 0.3rem 0.6rem;
@@ -281,6 +319,30 @@ export class Mundo3d implements OnInit, OnDestroy {
   protected readonly auth = inject(AuthMockService);
   private readonly store = inject(RoadmapStore);
   private readonly frame = viewChild<ElementRef<HTMLIFrameElement>>('frame');
+  protected readonly tutorial = new TutorialState((() => {
+    try { return window.localStorage; } catch { return undefined; }
+  })());
+  protected readonly tutorialAvailable = computed(() => this.auth.rol() === 'ALUMNO' &&
+    !!this.tutorial.scene()?.ready && !this.tutorial.scene()?.busy && !this.activeChallenge() && !this.rankingOpen());
+  protected readonly tutorialVisible = computed(() => this.tutorialAvailable() &&
+    this.tutorial.status() === 'activo' && !!this.tutorial.destination());
+
+  private readonly synchronizeTutorial = effect(() => {
+    const destination = this.tutorial.destination();
+    this.sendTutorial({
+      type: 'tutorialControl', visible: this.tutorialVisible(),
+      step: this.tutorial.step(), attempt: this.tutorial.attempt(),
+      unitId: destination?.unitId ?? null, activityId: destination?.activityId ?? null,
+      paused: !!this.activeChallenge() || this.rankingOpen(),
+    });
+  });
+
+  private sendTutorial(message: object): void {
+    this.frame()?.nativeElement.contentWindow?.postMessage(message, window.location.origin);
+  }
+  protected focusWorld(): void { this.frame()?.nativeElement.contentWindow?.focus(); }
+  protected skipTutorial(): void { this.tutorial.skip(); this.focusWorld(); }
+  protected restartTutorial(): void { this.tutorial.restart(); this.focusWorld(); }
 
   // Herramienta de exploración 3D (Three.js) que trajo el equipo de 3D — ver 3D/city_generator.html.
   // Se sirve como asset estático en frontend/public/mundo-3d/ (copia manual por ahora).
@@ -288,6 +350,16 @@ export class Mundo3d implements OnInit, OnDestroy {
     this.sanitizer.bypassSecurityTrustResourceUrl('mundo-3d/index.html');
 
   private readonly onMensaje = (evento: MessageEvent): void => {
+    // El mundo embebido es el único emisor autorizado, también para sus acciones previas.
+    if (evento.origin !== window.location.origin || evento.source !== this.frame()?.nativeElement.contentWindow) return;
+    if (isTutorialScene(evento.data)) {
+      if (this.auth.rol() === 'ALUMNO') this.tutorial.receiveScene(evento.data);
+      return;
+    }
+    if (evento.data?.type === 'tutorialMoved' && Number.isInteger(evento.data.attempt)) {
+      if (this.tutorialVisible()) this.tutorial.moved(evento.data.attempt);
+      return;
+    }
     if (esMensajeEnterActivity(evento.data)) {
       this.abrirDesafio(evento.data.unitId, evento.data.actividadId);
     } else if (esMensajeOpenRanking(evento.data)) {
@@ -305,6 +377,7 @@ export class Mundo3d implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     window.removeEventListener('message', this.onMensaje);
+    this.tutorial.dispose();
   }
 
   protected cambiarRol(): void {
@@ -323,6 +396,7 @@ export class Mundo3d implements OnInit, OnDestroy {
   private readonly cargas = signal(0);
 
   protected onFrameLoad(): void {
+    this.tutorial.scene.set(null);
     this.cargas.update((n) => n + 1);
   }
 
@@ -346,7 +420,7 @@ export class Mundo3d implements OnInit, OnDestroy {
     );
     // Misma definición de "unidad resuelta" que el mapa 2D (mapa.ts `islas`): solo mira
     // las actividades obligatorias, así una "Práctica libre" opcional sin hacer no la traba.
-    const unidades = this.store.unidades().map((u) => {
+    const unidades = [...this.store.unidades()].sort((a, b) => a.orden - b.orden).map((u) => {
       const obligatorias = u.actividades.filter((a) => a.esObligatorio);
       const resuelta = obligatorias.length > 0 && obligatorias.every((a) => completados.has(a.id));
       // Actividades viejas (de antes de que el editor pidiera dificultad al crearlas)
@@ -387,7 +461,7 @@ export class Mundo3d implements OnInit, OnDestroy {
         // todavía) — alimenta el billboard dinámico del hub 3D hasta que haya cálculo real.
         rachaDias: 10,
       },
-      '*',
+      window.location.origin,
     );
   });
 
@@ -464,6 +538,7 @@ export class Mundo3d implements OnInit, OnDestroy {
     this.activeUnitId.set(unitId);
     this.activeWorld.set(world);
     this.openActivity(challenge);
+    this.tutorial.opened(unitId, actividadId);
   }
 
   protected openActivity(c: VerticalChallenge): void {
@@ -477,6 +552,8 @@ export class Mundo3d implements OnInit, OnDestroy {
     this.activeChallenge.set(null);
     this.activeWorld.set(null);
     this.activeUnitId.set(null);
+    this.tutorial.closedChallenge();
+    this.focusWorld();
   }
 
   protected isCompleted(c: VerticalChallenge): boolean {

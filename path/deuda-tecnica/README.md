@@ -27,8 +27,12 @@ el momento, no se archiva acá.
 | [tarea-deuda-05-design-system.md](tarea-deuda-05-design-system.md) | `05-design-system.md` | 4 | 1 |
 | [tarea-deuda-06-contrato-api.md](tarea-deuda-06-contrato-api.md) | `06-contrato-api.md` | 8 | 2 |
 | [tarea-deuda-07-islas-3d-desafios.md](tarea-deuda-07-islas-3d-desafios.md) | `07-islas-3d-desafios.md` | 7 | 0 |
+| [tarea-deuda-08-tutorial-primeros-pasos.md](tarea-deuda-08-tutorial-primeros-pasos.md) | `08-tutorial-primeros-pasos.md` | 2 | 0 |
 
-**Total: 27 ítems abiertos, 4 pagados.** Última revisión: Ronda 6 de islas 3D (bioma
+**Total: 30 ítems abiertos, 4 pagados.** Última revisión: tutorial de primeros pasos
+agrega 2 deudas (persistencia por identidad y encuadre inicial del mercado).
+Corrección de conteo: las filas anteriores sumaban 28 abiertos, no 27.
+Antes: Ronda 6 de islas 3D (bioma
 Espacio + estructuras + vehículos + mascotas) abrió `07-islas-3d-desafios.md` con 7
 ítems. Antes: al integrar el avatar GLB se agregó el `.dockerignore` faltante y se
 pagó el ítem #3 de arquitectura. Antes: se registró
