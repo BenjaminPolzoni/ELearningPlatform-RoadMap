@@ -1,7 +1,7 @@
 // Bioma visual de una unidad, elegido por el profesor (editor.ts). Las claves coinciden
 // con las carpetas de assets del mundo 3D (frontend/public/mundo-3d/Assets/House/<Bioma>),
 // para no tener que traducir/remapear nada del lado del visor 3D.
-export type Bioma = 'Desierto' | 'Bosque' | 'Arenisca' | 'Nieve' | 'Nether';
+export type Bioma = 'Desierto' | 'Bosque' | 'Arenisca' | 'Nieve' | 'Nether' | 'Espacio';
 
 export interface BiomaInfo {
   id: Bioma;
@@ -22,6 +22,8 @@ export const BIOMAS: BiomaInfo[] = [
   { id: 'Arenisca', label: 'Arenisca', icon: '🏛️', disponible: true, previewImage: '/mapa_castillo_tile.png' },
   { id: 'Nieve', label: 'Nieve', icon: '❄️', disponible: true, previewImage: '/mapa_nieve_tile.png' },
   { id: 'Nether', label: 'Nether', icon: '🔥', disponible: false },
+  // Espacio: islas sin agua/nubes, nodos-planeta y nave como avatar (ver buildChallengeIsland en mundo-3d/index.html).
+  { id: 'Espacio', label: 'Espacio', icon: '🚀', disponible: true },
 ];
 
 export const BIOMA_DEFAULT: Bioma = 'Desierto';

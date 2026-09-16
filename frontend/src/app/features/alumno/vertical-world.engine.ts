@@ -1,7 +1,7 @@
 import { EstadoNodo } from '../../core/data/roadmap.models';
 import { Bioma } from '../../core/data/biomas';
 
-export type WorldTheme = 'desert' | 'jungle' | 'castle' | 'snow' | 'nether';
+export type WorldTheme = 'desert' | 'jungle' | 'castle' | 'snow' | 'nether' | 'space';
 
 // Bioma (elegido por el profesor) -> tema del mapa 2D. `Nether` queda afuera a propósito:
 // todavía no tiene arte/tema 2D propio (ver core/data/biomas.ts).
@@ -10,6 +10,7 @@ export const BIOMA_A_WORLD_THEME: Partial<Record<Bioma, WorldTheme>> = {
   Bosque: 'jungle',
   Arenisca: 'castle',
   Nieve: 'snow',
+  Espacio: 'space',
 };
 
 export interface QuestionData {
@@ -91,6 +92,16 @@ export const WORLD_APPEARANCE: Record<WorldTheme, WorldAppearanceConfig> = {
     setting: 'Nether, basaltos y ríos de lava',
     support: 'Caldero de magma',
     lanes: [36, 64, 58, 40, 32, 48, 68, 62, 44, 34, 54, 60],
+  },
+  // Espacio: fondo oscuro reutilizando el tile más oscuro disponible (no hay tile
+  // estrellado propio todavía — ver deuda técnica); la meta es la estación orbital.
+  space: {
+    tile: '/nether_animado.gif',
+    goal: 'estacion',
+    goalName: 'Estación Orbital del Saber',
+    setting: 'Espacio profundo, planetas y estrellas',
+    support: 'Sonda de suministros',
+    lanes: [50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
   },
 };
 
@@ -314,7 +325,9 @@ export const roadJointSvg = (theme: WorldTheme = 'desert') => {
           ? '#1E293B'
           : theme === 'nether'
             ? '#1D1E26'
-            : '#382008';
+            : theme === 'space'
+              ? '#0B1026'
+              : '#382008';
   const fill =
     theme === 'jungle'
       ? '#D5A86A'
@@ -324,7 +337,9 @@ export const roadJointSvg = (theme: WorldTheme = 'desert') => {
           ? '#CBD5E1'
           : theme === 'nether'
             ? '#353745'
-            : '#F6D58C';
+            : theme === 'space'
+              ? '#2A3358'
+              : '#F6D58C';
   const highlight =
     theme === 'jungle'
       ? '#FAE5B6'
@@ -334,7 +349,9 @@ export const roadJointSvg = (theme: WorldTheme = 'desert') => {
           ? '#FFFFFF'
           : theme === 'nether'
             ? '#F25500'
-            : '#FFEAA7';
+            : theme === 'space'
+              ? '#8B5CF6'
+              : '#FFEAA7';
   const core =
     theme === 'jungle'
       ? '#8B5A2B'
@@ -344,7 +361,9 @@ export const roadJointSvg = (theme: WorldTheme = 'desert') => {
           ? '#64748B'
           : theme === 'nether'
             ? '#5A0E16'
-            : '#D97706';
+            : theme === 'space'
+              ? '#1B2140'
+              : '#D97706';
 
   return `<svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
     <!-- Anillo exterior -->
@@ -383,6 +402,19 @@ export const castleArt = castleGoalArt;
 export const templeArt = templeGoalArt;
 export const fortressArt = fortressGoalArt;
 export const lodgeArt = lodgeGoalArt;
+// Meta del tema `space`: planeta anillado 16x16 (el 3D usa los GLB de Espacio/Nodos).
+export const spaceGoalArt = `<svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
+  <rect x="0" y="15" width="16" height="1" fill="#0B1026" opacity="0.5"/>
+  <rect x="6" y="7" width="1" height="1" fill="#FFFFFF"/>
+  <rect x="12" y="3" width="1" height="1" fill="#FFFFFF"/>
+  <rect x="3" y="2" width="1" height="1" fill="#FFFFFF"/>
+  <rect x="4" y="5" width="8" height="7" fill="#7C3AED"/>
+  <rect x="5" y="4" width="6" height="9" fill="#8B5CF6"/>
+  <rect x="5" y="6" width="2" height="2" fill="#C4B5FD"/>
+  <rect x="2" y="8" width="12" height="2" fill="#F59E0B"/>
+  <rect x="1" y="7" width="14" height="1" fill="#FDE68A"/>
+</svg>`;
+export const stationArt = spaceGoalArt;
 
 // Pixel art helpers
 const pixelCheckSvg = (x: number, y: number) =>

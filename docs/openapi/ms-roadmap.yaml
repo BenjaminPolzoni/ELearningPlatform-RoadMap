@@ -729,7 +729,7 @@ components:
         orden: { type: integer }
         # Ambientación visual de la unidad (mapa 2D y mundo 3D), la elige el profesor.
         # Opcional: secciones creadas antes de este campo no lo traen.
-        bioma: { type: string, enum: [Desierto, Bosque, Arenisca, Nieve, Nether] }
+        bioma: { type: string, enum: [Desierto, Bosque, Arenisca, Nieve, Nether, Espacio] }
 
     Seccion:
       allOf:

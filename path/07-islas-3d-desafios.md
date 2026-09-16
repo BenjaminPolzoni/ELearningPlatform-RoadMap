@@ -294,3 +294,111 @@ visualmente** (tarea del usuario).
 - `frontend/src/app/features/alumno/mundo-3d.ts`
 - `frontend/src/app/core/data/in-memory-ranking.adapter.ts`
 - `frontend/src/app/core/data/in-memory-ranking.adapter.spec.ts`
+
+## Ronda 6: bioma Espacio + estructuras + vehículos + mascotas GLB
+
+32 GLBs movidos de `~/Downloads` a `frontend/public/mundo-3d/Assets/` (ver árbol en
+el plan): `Estructuras/` (gazebo, billboard, templo, trampilla), `Decoracion/`
+(bancos), `Mascotas/` (5 pets), `Vehiculos/` (bote + nave), `House/Espacio/`
+(lander = casa de la unidad espacial en el hub), `Espacio/Nodos/` (10 planetas),
+`Espacio/Decoracion/` (nave, ovni, cometa, asteroides, sonda).
+
+- **Metas por bioma** (`GOAL_MODEL_BY_BIOME` en `buildChallengeIsland`): Nieve→iglú,
+  Bosque→templo maya, Desierto→pirámide, Espacio→sonda; el resto conserva su casa.
+- **Hub**: gazebo del ranking (tabla holo flotante, reusa `openRanking`), billboard
+  de racha dinámico (fondo + fuego + días, `drawStreakBillboard`, mock `rachaDias=10`
+  vía `setUnidades`), templo (nuevo mensaje `openMateriales` → ruta
+  `/alumno/materiales`, mock estático en secciones), trampilla (gozne animado; el
+  GLB trae UNA sola malla `Trapdoor`, sin marco separado — verificado por
+  inspección — así que la apertura anima la pieza entera), bancos decorativos.
+- **Vehículos** al final de cada ruta, pasando la meta: bote (olas) en islas
+  clásicas, nave (cometa) en órbita; viajan a la siguiente unidad con overlay de
+  "cargando" (los GLB ya están en `parsedGLTCache`).
+- **Espacio** (`Bioma` nuevo, elegible en el editor; seed u5 `Concurrencia y Redes`
+  ahora es Espacio; enum OpenAPI actualizado): sin isla/agua/nubes — plataforma
+  oscura + `Points` de estrellas; nodos = planetas con aro de estado; decor flotante;
+  `setSpaceMode` oculta el avatar y muestra la nave con el mismo control, y lo
+  restaura intacto al salir (también tras recargar el outfit).
+- **Mascotas GLB** (perro, libélula, pez, rana, salamandra) en el selector del
+  creador + `cosmetics.js` + `avatar-preview.html`; orbitan igual que las
+  procedurales. No entraron a `AvatarConfig` 2D (solo 3D, como las existentes).
+- **2D**: `WorldTheme 'space'` + `WORLD_APPEARANCE.space` (tile oscuro reusado) +
+  arte de meta `spaceGoalArt`; heurísticas de `unidad-mapa.ts`/`mundo-3d.ts`
+  reconocen espacio/orbital/planeta.
+
+Verificado en esta sesión: `node --check` de los 3 scripts (index, preview,
+cosmetics) limpio. **No probado visualmente** (tarea del usuario).
+
+## Ronda 7: mascotas voladoras vs. de tierra
+
+Las GLB nuevas no vuelan: el selector del creador se partió en dos `<optgroup>`
+(🛸 Voladoras: dron/búho/murciélago/fantasma/libélula/pez — orbitan; 🐾 De tierra:
+perro/rana/salamandra — siguen caminando en un slot local del `playerGroup` con
+`updateGroundPet`, así heredan movimiento, teletransportes y modo nave). El
+comportamiento viaja en `userData.behavior`; espejado en `avatar-preview.html` y
+`cosmetics.js` (ahí el catálogo suma `mode` por entrada). Sección retitulada a
+"🐾 Mascota" con caption explicativa.
+
+Verificado: `node --check` ×3, `tsc`, 106/106 tests. **No probado visualmente**
+(tarea del usuario; revisar escala/altura de pies de perro/rana/salamandra).
+
+## Ronda 8: resize de mascotas + reubicaciones + colisiones + vacío espacial
+
+- **Mascotas normalizadas**: `fitPetToSize` (Box3 real → tamaño objetivo) en los 3
+  archivos — el pez traía escala ×100 en su JSON y el `0.5` fijo las agrandaba a
+  todas. Objetivos: voladoras 0.35, perro 0.5, rana 0.35, salamandra 0.4.
+- **Gazebo retirado** (modelo, holo, módulo y colisionador); el ranking queda solo
+  en el podio del Trofeo.
+- **Templo como arco de paso** en `(podioX−2.2, 0)` sobre el camino ceremonial, sin
+  colisionador; **trampilla + billboard al lote-parque junto a Nieve** (con fallback
+  a la plaza ceremonial si el nº de unidades es par). Trampilla y templo caminables
+  por decisión del usuario.
+- **Colisiones desde la geometría real** (`addColliderFor` con Box3 post-transform):
+  tienda, casas, trofeo, podio, billboard, bancos, cercos, macetas/árboles sueltos,
+  meta, vehículo, planetas y rocas bajas de órbita. La decoración de lote vive
+  dentro de la caja de su casa a propósito. `claimSpot` grita en consola si un
+  emplazamiento pisa otro colisionador; `auditOverlaps()` audita pares al final de
+  cada `rebuildCity` (excluye casas por lo anterior).
+- **Trampilla que sí cierra**: `setTrapdoor` nul-safe con animación cancelable,
+  resync en rebuilds, auto-cierre al alejarse/cambiar de módulo y botón con estado
+  (Abrir/Cerrar).
+- **Órbita = vacío**: plataforma eliminada (el clamp de la isla acota el
+  movimiento), planetas reajustados a Ø1.0 centrados en el aro (r=0.72, estilo
+  Saturno), camino y losas reemplazados por `buildStarTrail` (puntitos), decoración
+  en 3 capas (cerca/medio/lejos, 12 piezas), estrellas 500→900 más grandes y
+  `updateZoneSky` (negro-azulado `0x030612` en órbita, celeste restaurado al salir,
+  también tras rebuilds por XP) + luz violeta tenue por isla.
+
+Verificado: `node --check` ×3, `tsc`, 106/106 tests, `ng build` OK. **No probado
+visualmente** (tarea del usuario).
+
+## Ronda 9: ajustes visuales espaciales + agujero negro + barco 5× + pez suelo
+
+- **Anillos O de planetas translúcidos y debajo**: el aro (TorusGeometry r=0.72)
+  baja 0.55 unidades debajo del planeta y gana `transparent: true, opacity: 0.55`.
+  El planeta se centra 0.28 unidades más arriba para quedar "dentro del aro" estilo
+  Saturno sin tocarlo. Colisionador de planetas reducido (`pad: -0.6`) para permitir
+  acercarse más.
+- **Estrellas 360°**: `buildStarfield` ahora distribuye 1400 puntos en una cáscara
+  esférica (R=70) usando distribución uniforme esférica (θ, φ) en vez de un prisma
+  cúbico — el jugador ve estrellas en todas las direcciones.
+- **Agujero negro como meta de órbita**: el vehículo al final de la ruta espacial
+  cambia de `Spaceship-veh.glb` a `Blackhole-dec.glb` (movido desde `~/Downloads` a
+  `Assets/Espacio/Decoracion/`). Escala 2.5, centrado por bbox, sin colisionador
+  circular grande. El ícono del interactivo cambia a 🕳️.
+- **Barco 5× en agua**: en biomas clásicos el `Ship-veh.glb` se escala ×5 y se
+  ubica en el agua al lado de la isla `(vehicleX+3.5, -0.6, 3.8)`, pero el
+  colisionador/interacción se queda en la posición original de la isla para que el
+  jugador no tenga que ir al agua.
+- **Más decoración espacial**: `spaceDeco` crece de 12 a 21 entradas — asteroids
+  bajos (4 nuevos cerca del camino), Spaceprobe-dec reemplaza spaceship-dec en la
+  capa cercana (2 sondas), cometas lejanos adicionales (3 más en mediano/alto
+  alcance), asteroids flotantes lejanos (2 más).
+- **Pez en el suelo**: `fitPetToSize` ahora traslada la mascota hacia arriba para
+  que su bbox min.y quede en 0 después de escalar — corrige el bug donde Fish-pet
+  (con ×100 en su JSON) quedaba abaixo del piso.
+- **Panel de perfil más ancho**: `.ui-panel` crece de 216px a 280px, avatar frame
+  de 54px a 72px, drawer handle shift de 244px a 308px.
+
+Verificado: `node --check` ×3, `tsc`, 106/106 tests, `ng build` OK. **No probado
+visualmente** (tarea del usuario).

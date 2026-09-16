@@ -26,9 +26,12 @@ el momento, no se archiva acá.
 | [tarea-deuda-04-engine-2-5d.md](tarea-deuda-04-engine-2-5d.md) | `04-engine-2-5d.md` | 3 | 0 |
 | [tarea-deuda-05-design-system.md](tarea-deuda-05-design-system.md) | `05-design-system.md` | 4 | 1 |
 | [tarea-deuda-06-contrato-api.md](tarea-deuda-06-contrato-api.md) | `06-contrato-api.md` | 8 | 2 |
+| [tarea-deuda-07-islas-3d-desafios.md](tarea-deuda-07-islas-3d-desafios.md) | `07-islas-3d-desafios.md` | 7 | 0 |
 
-**Total: 20 ítems abiertos, 4 pagados.** Última revisión: al integrar el avatar GLB se
-agregó el `.dockerignore` faltante y se pagó el ítem #3 de arquitectura. Antes: se registró
+**Total: 27 ítems abiertos, 4 pagados.** Última revisión: Ronda 6 de islas 3D (bioma
+Espacio + estructuras + vehículos + mascotas) abrió `07-islas-3d-desafios.md` con 7
+ítems. Antes: al integrar el avatar GLB se agregó el `.dockerignore` faltante y se
+pagó el ítem #3 de arquitectura. Antes: se registró
 la falta de assets para el bioma de nieve en el rediseño pixel art estático (`04-engine-2-5d.md`
 ítem #3). Antes: al implementar el avatar 3D low-poly se registró que Three.js todavía se
 descarga desde un CDN. Antes: al rediseñar el avatar (género +

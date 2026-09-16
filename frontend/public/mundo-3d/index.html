@@ -163,6 +163,11 @@
       border-color: #3b82f6;
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     }
+    .creator-hint {
+      font-size: 0.72rem;
+      color: #64748b;
+      margin: 2px 2px 8px;
+    }
 
     /* Weapon & Item Selector Grids */
     .items-scroll-grid {
@@ -423,7 +428,7 @@
        derecho — antes se quedaba fijo en el borde de la pantalla y el panel
        abierto lo dejaba flotando encima de su propio contenido. */
     #panel-city-wrap:not(.collapsed) .drawer-handle {
-      --dx: 244px;
+      --dx: 348px;
     }
     .drawer-handle .drawer-icon {
       width: 22px;
@@ -454,7 +459,7 @@
       top: 50%;
       left: 16px;
       z-index: 10;
-      width: 216px;
+      width: 320px;
       max-width: calc(100vw - 32px);
       background: linear-gradient(165deg, #1B1740 0%, #161328 60%, #0D0B1E 100%);
       border: 2px solid #00E5FF;
@@ -482,8 +487,8 @@
 
     .ficha-avatar-frame {
       position: relative;
-      width: 54px;
-      height: 54px;
+      width: 84px;
+      height: 84px;
       flex-shrink: 0;
       display: grid;
       place-items: center;
@@ -1037,8 +1042,53 @@
       background: #475569;
       cursor: not-allowed;
       opacity: 0.7;
-      box-shadow: none;
-      transform: none;
+    }
+
+    /* Transiciones de viaje en vehículo: olas (barco) y cometa (nave). Fullscreen
+       durante ~1.9s mientras se carga la siguiente unidad (ver startVehicleTransition). */
+    .vehicle-transition {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s;
+    }
+    .vehicle-transition.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .vehicle-transition .trans-emoji {
+      font-size: 4rem;
+      animation: trans-bob 0.9s ease-in-out infinite alternate;
+    }
+    .vehicle-transition .trans-text {
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+    }
+    #trans-wave {
+      background: linear-gradient(180deg, rgba(2, 132, 199, 0.88) 0%, rgba(12, 74, 110, 0.94) 100%);
+    }
+    #trans-comet {
+      background: linear-gradient(180deg, rgba(5, 7, 15, 0.93) 0%, rgba(76, 29, 149, 0.9) 100%);
+    }
+    #trans-comet .trans-emoji {
+      animation: trans-comet-fly 0.7s linear infinite;
+    }
+    @keyframes trans-bob {
+      from { transform: translateY(-10px) rotate(-6deg); }
+      to { transform: translateY(10px) rotate(6deg); }
+    }
+    @keyframes trans-comet-fly {
+      from { transform: translate(-30px, 20px); }
+      to { transform: translate(30px, -20px); }
     }
 
     /* Modal Dialogs */
@@ -1325,15 +1375,24 @@
     </select>
 
 
-    <!-- 7. MASCOTA VOLADORA -->
-    <div class="section-title">🛸 Mascota Voladora</div>
+    <!-- 7. MASCOTA (voladora o de tierra, ver grupos del selector) -->
+    <div class="section-title">🐾 Mascota</div>
     <select id="select-pet" class="creator-select">
       <option value="none">🚫 Ninguna</option>
-      <option value="drone">🛸 Dron</option>
-      <option value="owl">🦉 Búho</option>
-      <option value="bat">🦇 Murciélago</option>
-      <option value="ghost">👻 Fantasma</option>
+      <optgroup label="🛸 Voladoras (orbitan)">
+        <option value="drone">🛸 Dron</option>
+        <option value="owl">🦉 Búho</option>
+        <option value="bat">🦇 Murciélago</option>
+        <option value="ghost">👻 Fantasma</option>
+        <option value="dragonfly">🪰 Libélula</option>
+      </optgroup>
+      <optgroup label="🐾 De tierra (te siguen caminando)">
+        <option value="dog">🐶 Perrito</option>
+        <option value="frog">🐸 Rana</option>
+        <option value="salamander">🦎 Salamandra</option>
+      </optgroup>
     </select>
+    <div class="creator-hint">Las voladoras orbitan a la altura de la cabeza; las de tierra te siguen caminando.</div>
 
     <!-- 8. ARMA PRINCIPAL (MANO DER.) -->
     <div class="section-title">🗡️ Arma / Mano Derecha</div>
@@ -1575,6 +1634,18 @@
       <span id="prompt-target-name">Módulo</span>
     </div>
     <button class="btn-access-module" id="btn-access-module">Acceder al Módulo</button>
+  </div>
+
+  <!-- TRANSICIONES DE VIAJE (ver startVehicleTransition): olas para el barco. -->
+  <div class="vehicle-transition" id="trans-wave">
+    <div class="trans-emoji">🌊</div>
+    <div class="trans-text" id="trans-wave-text">Cargando siguiente unidad…</div>
+  </div>
+
+  <!-- TRANSICIÓN DE VIAJE: cometa para la nave espacial. -->
+  <div class="vehicle-transition" id="trans-comet">
+    <div class="trans-emoji">☄️</div>
+    <div class="trans-text" id="trans-comet-text">Cargando siguiente unidad…</div>
   </div>
 
   <!-- MODAL: EN CONSTRUCCIÓN -->
@@ -1939,7 +2010,7 @@
       setVal('select-head-item', characterConfig.headItem || 'none');
 
 
-      // 8. Mascota Voladora
+      // 8. Mascota (voladora u de tierra — el comportamiento va en userData.behavior)
       setVal('select-pet', characterConfig.pet || 'none');
 
       // 9. Manos
@@ -3468,8 +3539,53 @@
     }
 
     let activePetObject = null;
+    let petLoadToken = 0;
+
+    // Mascotas GLB elegibles en la personalización (Assets/Mascotas/): carga async
+    // con caché. Las voladoras orbitan (ver updateFlyingPet); las de tierra siguen
+    // al jugador caminando en un slot local del playerGroup (ver GROUND_PETS).
+    const GLB_PETS = {
+      dog: 'dog-pet.glb',
+      dragonfly: 'Dragonfly-pet.glb',
+      frog: 'Frog-pet.glb',
+      salamander: 'Salamander-pet.glb'
+    };
+    // Las procedurales vuelan todas; de las GLB solo libélula vuela. Perro, rana
+    // y salamandra caminan en el suelo.
+    const FLYING_PETS = new Set(['drone', 'owl', 'bat', 'ghost', 'dragonfly']);
+    // Escala y altura de pies por mascota de tierra (origen de cada GLB en su base).
+    const PET_TARGET_SIZE = {
+      dog: 0.5,
+      frog: 0.35,
+      salamander: 0.4,
+      dragonfly: 0.35
+    };
+    const GROUND_PET_TUNING = {
+      dog: { feetY: 0 },
+      frog: { feetY: 0 },
+      salamander: { feetY: 0 }
+    };
+    // Normaliza cualquier mascota GLB al tamaño de las procedurales
+    // (dron: cuerpo Ø~0.2, ~0.36 con hélices) midiendo su Box3 real.
+    function fitPetToSize(obj, petType) {
+      const box = new THREE.Box3().setFromObject(obj);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const target = PET_TARGET_SIZE[petType] || 0.35;
+      const s = target / Math.max(size.x || 1, size.y || 1, size.z || 1);
+      obj.scale.multiplyScalar(s);
+      // Mascotas de tierra: base en y=0. Mascotas voladoras: no tocar Y (orbitan).
+      const isFlying = FLYING_PETS.has(petType);
+      if (!isFlying) {
+        const scaledBox = new THREE.Box3().setFromObject(obj);
+        obj.position.y -= scaledBox.min.y;
+      }
+      return s;
+    }
+    const glbPetCache = new Map();
 
     function applyPet(parentGroup, config) {
+      const myToken = ++petLoadToken;
       if (activePetObject && activePetObject.parent) {
         activePetObject.parent.remove(activePetObject);
         activePetObject = null;
@@ -3481,14 +3597,56 @@
       else if (petType === 'owl') activePetObject = createFlyingOwl();
       else if (petType === 'bat') activePetObject = createFlyingBat();
       else if (petType === 'ghost') activePetObject = createFlyingGhost();
+      else if (GLB_PETS[petType]) {
+        const file = GLB_PETS[petType];
+        const groundTuning = GROUND_PET_TUNING[petType];
+        const attach = (obj) => {
+          if (myToken !== petLoadToken) return;
+          fitPetToSize(obj, petType);
+          obj.traverse((c) => {
+            if (c.isMesh) {
+              c.castShadow = true;
+              c.receiveShadow = false;
+            }
+          });
+          // Comportamiento de movimiento (ver updateFlyingPet): 'ground' camina en
+          // un slot local del playerGroup; el resto orbita en el aire.
+          obj.userData.behavior = groundTuning ? 'ground' : 'fly';
+          obj.userData.feetY = groundTuning ? groundTuning.feetY : 0;
+          activePetObject = obj;
+          if (parentGroup) parentGroup.add(activePetObject);
+        };
+        if (glbPetCache.has(file)) {
+          attach(glbPetCache.get(file).clone(true));
+          return;
+        }
+        loader.load(
+          'Assets/Mascotas/' + file,
+          (gltf) => {
+            glbPetCache.set(file, gltf.scene);
+            attach(gltf.scene.clone(true));
+          },
+          undefined,
+          (err) => {
+            console.warn('No se pudo cargar la mascota:', file, err);
+          }
+        );
+        return;
+      }
 
       if (activePetObject && parentGroup) {
+        // Las procedurales (dron/búho/murciélago/fantasma) son todas voladoras.
+        if (!activePetObject.userData.behavior) activePetObject.userData.behavior = 'fly';
         parentGroup.add(activePetObject);
       }
     }
 
     function updateFlyingPet(time, delta) {
       if (!activePetObject || !activePetObject.parent) return;
+      if (activePetObject.userData.behavior === 'ground') {
+        updateGroundPet(time, delta);
+        return;
+      }
       const speed = 1.6;
       const radius = 0.55;
       const height = 0.82;
@@ -3501,6 +3659,26 @@
       activePetObject.rotation.z = -0.15;
       if (activePetObject.userData && activePetObject.userData.updateAnim) {
         activePetObject.userData.updateAnim(time, delta);
+      }
+    }
+
+    // Mascotas de tierra: siguen al jugador caminando en un slot local del
+    // playerGroup (atrás-derecha, en el suelo), así heredan gratis movimiento,
+    // teletransportes y el modo nave espacial. Lerp para que no teletransporte
+    // seco al cambiar de mascota o de zona.
+    function updateGroundPet(time) {
+      const pet = activePetObject;
+      const feetY = pet.userData.feetY || 0;
+      const targetX = 0.65;
+      const targetZ = -0.9;
+      const k = 0.12;
+      pet.position.x += (targetX - pet.position.x) * k;
+      pet.position.z += (targetZ - pet.position.z) * k;
+      pet.position.y = feetY + Math.abs(Math.sin(time * 6)) * 0.03;
+      pet.rotation.y += (0 - pet.rotation.y) * k;
+      pet.rotation.z = 0;
+      if (pet.userData && pet.userData.updateAnim) {
+        pet.userData.updateAnim(time, 0);
       }
     }
 
@@ -3806,6 +3984,9 @@
         markForThumb(playerModel);
         avatarHeadBone = findAvatarHeadBone(playerModel);
         applyPet(playerGroup, config);
+        // Recargar el outfit vacía playerGroup (se pierde la nave): re-aplica el
+        // modo orbital si el jugador estaba en una isla de Espacio.
+        setSpaceMode(spaceMode);
 
         const clips = await loadAnimClips();
         if (loadId !== currentModelLoadingId) return;
@@ -4096,7 +4277,7 @@
       });
     }
 
-    // 8. Mascota Voladora
+    // 8. Mascota (voladora u de tierra — el comportamiento va en userData.behavior)
     const selectPet = document.getElementById('select-pet');
     if (selectPet) {
       selectPet.addEventListener('change', (e) => {
@@ -4482,6 +4663,16 @@
         skyColor: 0xfef08a,
         fogColor: 0xfef08a,
         badgeClass: 'badge-arenisca'
+      },
+      Espacio: {
+        name: 'Espacio',
+        icon: '🚀',
+        groundColor: 0x1b2140,
+        roadColor: 0x2a3358,
+        curbColor: 0x8b5cf6,
+        skyColor: 0x05070f,
+        fogColor: 0x05070f,
+        badgeClass: 'badge-espacio'
       }
     };
 
@@ -4490,7 +4681,8 @@
       'Assets/House/Desierto/desierto_voxel_low_poly.glb',
       'Assets/House/Nieve/iglu_nieve_minecraft_low_poly (1).glb',
       'Assets/House/Nether/portal_nether_sin_fondo (1).glb',
-      'Assets/House/Arenisca/portal_arenisca_floral_low_poly.glb'
+      'Assets/House/Arenisca/portal_arenisca_floral_low_poly.glb',
+      'Assets/House/Espacio/Lander-dec.glb'
     ];
 
     // Tinte de arena/roca por bioma para las islas de desafíos (buildChallengeIsland):
@@ -4501,7 +4693,8 @@
       Desierto: { sand: 0xf4d29c, wetSand: 0xd9a86a, rock: 0xa8845c },
       Bosque: { sand: 0x8a9a5b, wetSand: 0x6b7a45, rock: 0x4b5d4a },
       Arenisca: { sand: 0xdfba87, wetSand: 0xc9a06a, rock: 0xa88d6b },
-      Nether: { sand: 0x3f2a2a, wetSand: 0x2a1a1a, rock: 0x27272a }
+      Nether: { sand: 0x3f2a2a, wetSand: 0x2a1a1a, rock: 0x27272a },
+      Espacio: { sand: 0x1b2140, wetSand: 0x11162e, rock: 0x2a3358 }
     };
     const units = [];
     const UNIT_WIDTH = 2.8;
@@ -4575,6 +4768,7 @@
       if (biomeKey === 'Desierto') return 'Asentamiento en las dunas con arquitectura voxel.';
       if (biomeKey === 'Nether') return 'Dimensión oscura con portal de obsidiana y magma ardiente.';
       if (biomeKey === 'Arenisca') return 'Templo antiguo con portal monumental de arenisca y vegetación mística.';
+      if (biomeKey === 'Espacio') return 'Sector orbital: cada desafío es un planeta y viajás en tu nave.';
       return 'Bioma modular.';
     }
 
@@ -4618,6 +4812,10 @@
 
       if (typeof data.vidasVigentes === 'number') renderLives(data.vidasVigentes);
       if (typeof data.xpTotal === 'number') renderProgresoUnidad(data.unidades, data.xpTotal);
+      // Racha para el billboard dinámico del hub (mundo-3d.ts manda el mock hasta que
+      // haya cálculo real) — se redibuja sobre el cartel ya construido si existe.
+      currentStreakDias = typeof data.rachaDias === 'number' ? data.rachaDias : currentStreakDias;
+      drawStreakBillboard(currentStreakDias);
     });
 
     function loadUnitsFromStorage() {
@@ -4678,6 +4876,9 @@
         model = 'Assets/House/Nether/portal_nether_sin_fondo (1).glb';
       } else if (biomeKey === 'Arenisca') {
         model = 'Assets/House/Arenisca/portal_arenisca_floral_low_poly.glb';
+      } else if (biomeKey === 'Espacio') {
+        // Vista interactiva de la unidad espacial en el roadmap general: el módulo de aterrizaje.
+        model = 'Assets/House/Espacio/Lander-dec.glb';
       } else {
         model = HOUSE_MODELS[Math.floor(Math.random() * HOUSE_MODELS.length)];
       }
@@ -4892,6 +5093,60 @@
         }
       }
       return false;
+    }
+
+    // Colisionador desde la geometría real ya colocada: mide el Box3 del objeto
+    // con su posición/rotación final (respeta su forma y tamaño, no estimados a
+    // mano). Llamar DESPUÉS de posicionar/rotar y agregar a la escena.
+    function addColliderFor(obj, pad, label) {
+      obj.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(obj);
+      const p = (typeof pad === 'number') ? pad : 0.05;
+      buildingColliders.push({
+        minX: box.min.x - p,
+        maxX: box.max.x + p,
+        minZ: box.min.z - p,
+        maxZ: box.max.z + p,
+        label: label || 'struct'
+      });
+    }
+
+    function rectsOverlap(a, b) {
+      return a.minX < b.maxX && a.maxX > b.minX && a.minZ < b.maxZ && a.maxZ > b.minZ;
+    }
+
+    // Reserva un rectángulo de suelo: si pisa otro colisionador ya registrado lo
+    // grita por consola (etiqueta incluida) en vez de solaparse en silencio.
+    // Devuelve true si el lugar está libre.
+    function claimSpot(label, x, z, halfW, halfD) {
+      const rect = { minX: x - halfW, maxX: x + halfW, minZ: z - halfD, maxZ: z + halfD };
+      for (const box of buildingColliders) {
+        if (rectsOverlap(rect, box)) {
+          console.error('[overlap] "' + label + '" pisa otro colisionador en (' + x + ', ' + z + ')');
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Auditoría dev: tras cada rebuildCity lista pares de colisionadores que se
+    // intersectan. Las casas/lotes se excluyen: su decoración de lote vive a
+    // propósito dentro de su caja (ver flora en rebuildCity) — lo que auditamos
+    // son las piezas sueltas (plaza, islas) que nunca deben tocarse.
+    function auditOverlaps() {
+      for (let i = 0; i < buildingColliders.length; i++) {
+        for (let j = i + 1; j < buildingColliders.length; j++) {
+          const a = buildingColliders[i];
+          const b = buildingColliders[j];
+          if ((a.label || '').indexOf('house') === 0 || (b.label || '').indexOf('house') === 0) continue;
+          if (rectsOverlap(a, b)) {
+            console.warn(
+              '[overlap] "' + (a.label || i) + '" y "' + (b.label || j) + '" se intersectan: ' +
+              JSON.stringify(a) + ' vs ' + JSON.stringify(b)
+            );
+          }
+        }
+      }
     }
 
     let interactiveModules = [];
@@ -5500,6 +5755,302 @@
     // `unit.actividades` con 'bloqueado' | 'disponible' | 'completado' por actividad
     // (ver rebuildCity, que lo deriva de `actividad.completada` de forma secuencial,
     // igual que isAvailable() en el mapa 2D).
+    // -------------------------------------------------------------
+    // 🚀 BIOMA ESPACIO + ESTRUCTURAS + VEHÍCULOS + RACHA
+    // -------------------------------------------------------------
+    // Nodos-planeta del bioma Espacio (Assets/Espacio/Nodos/): cada desafío es un
+    // planeta distinto; si hay más nodos que modelos, se repiten en ciclo.
+    const PLANET_MODELS = [
+      'Assets/Espacio/Nodos/waterPlanet-dec.glb',
+      'Assets/Espacio/Nodos/Neptune-dec.glb',
+      'Assets/Espacio/Nodos/earth-dec.glb',
+      'Assets/Espacio/Nodos/whitePlanet-dec.glb',
+      'Assets/Espacio/Nodos/Jupiter2-dec.glb',
+      'Assets/Espacio/Nodos/saturnPlanet-dec.glb',
+      'Assets/Espacio/Nodos/purple-Planet.glb',
+      'Assets/Espacio/Nodos/Moon-dec.glb',
+      'Assets/Espacio/Nodos/Jupiter-dec.glb',
+      'Assets/Espacio/Nodos/lavaPlanet-dec.glb'
+    ];
+    // Meta al final de la ruta por bioma: iglú (nieve), templo maya (selva),
+    // pirámide (desierto) y sonda espacial (órbita); el resto conserva su casa.
+    const GOAL_MODEL_BY_BIOME = {
+      Nieve: 'Assets/House/Nieve/Igloo-dec.glb',
+      Bosque: 'Assets/House/Bosque/mayantemple-dec.glb',
+      Desierto: 'Assets/House/Desierto/Pyramid-dec.glb',
+      Espacio: 'Assets/Espacio/Decoracion/Spaceprobe-dec.glb'
+    };
+    function goalModelFor(unit) {
+      return GOAL_MODEL_BY_BIOME[unit.biome] || unit.model;
+    }
+    function unitById(unitId) {
+      return units.find((u) => u.unitId === unitId);
+    }
+
+    // Coloca un GLB de estructura con auto-escala (mismo patrón que las casas de
+    // la avenida) y lo devuelve en un pivote centrado — el llamador lo agrega a
+    // la escena y registra colisionador/módulo si corresponde.
+    async function placeStructureGLB(url, x, z, targetSize, rotY) {
+      const model = await loadCityAssetGLB(url);
+      const pivot = new THREE.Group();
+      const box = new THREE.Box3().setFromObject(model);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const s = targetSize / Math.max(size.x || 1, size.z || 1);
+      model.scale.set(s, s, s);
+      const scaledBox = new THREE.Box3().setFromObject(model);
+      const center = new THREE.Vector3();
+      scaledBox.getCenter(center);
+      model.position.set(-center.x, -scaledBox.min.y, -center.z);
+      pivot.add(model);
+      pivot.position.set(x, 0, z);
+      pivot.rotation.y = rotY || 0;
+      return pivot;
+    }
+
+    // ---- Billboard dinámico de racha (hub, junto a la tienda) ----
+    // Diseño con fondo + fuego pixelado + nº de días: se redibuja con
+    // drawStreakBillboard() cada vez que llega `setUnidades` (ver handler) o al
+    // reconstruir la ciudad. Mock (rachaDias=10) hasta el cálculo real.
+    let currentStreakDias = 10;
+    let streakCanvas = null;
+    let streakCtx = null;
+    let streakTexture = null;
+    function drawStreakBillboard(dias) {
+      if (!streakCtx || !streakTexture) return;
+      const ctx = streakCtx;
+      const W = 512;
+      const H = 256;
+      ctx.clearRect(0, 0, W, H);
+      // Fondo: panel oscuro con marco degradado noche/ambar.
+      const bg = ctx.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#0f172a');
+      bg.addColorStop(1, '#1e1b4b');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = '#f59e0b';
+      ctx.strokeRect(8, 8, W - 16, H - 16);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(245, 158, 11, 0.35)';
+      ctx.strokeRect(22, 22, W - 44, H - 44);
+      // Fuego pixelado (llama exterior/interior + brillo).
+      const fx = 96;
+      const fy = 88;
+      ctx.fillStyle = '#ef4444';
+      ctx.fillRect(fx - 34, fy, 68, 70);
+      ctx.fillRect(fx - 22, fy - 26, 44, 30);
+      ctx.fillStyle = '#f97316';
+      ctx.fillRect(fx - 22, fy + 12, 44, 58);
+      ctx.fillRect(fx - 12, fy - 10, 24, 26);
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillRect(fx - 12, fy + 26, 24, 44);
+      ctx.fillStyle = '#fffbeb';
+      ctx.fillRect(fx - 5, fy + 38, 10, 32);
+      // Número de días + etiqueta.
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 120px "Courier New", monospace';
+      ctx.fillText(String(dias), 340, 150);
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = 'bold 34px "Courier New", monospace';
+      ctx.fillText('DÍAS DE RACHA', 256, 214);
+      streakTexture.needsUpdate = true;
+    }
+    function buildStreakBillboard() {
+      const group = new THREE.Group();
+      streakCanvas = document.createElement('canvas');
+      streakCanvas.width = 512;
+      streakCanvas.height = 256;
+      streakCtx = streakCanvas.getContext('2d');
+      streakTexture = new THREE.CanvasTexture(streakCanvas);
+      const panel = new THREE.Mesh(
+        new THREE.PlaneGeometry(2.4, 1.2),
+        new THREE.MeshBasicMaterial({ map: streakTexture, transparent: false })
+      );
+      panel.position.y = 1.7;
+      group.add(panel);
+      const postMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
+      [-0.9, 0.9].forEach((dx) => {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.2, 0.12), postMat);
+        post.position.set(dx, 0.6, -0.05);
+        post.castShadow = true;
+        group.add(post);
+      });
+      drawStreakBillboard(currentStreakDias);
+      return group;
+    }
+
+    // ---- Plataforma orbital + estrellas (bioma Espacio: sin isla, sin agua, sin nubes) ----
+    // NOTA: la plataforma visible se eliminó — la órbita es vacío puro, el
+    // movimiento lo acota el clamp de challengeIslandBounds. Solo queda el cielo.
+    const activeStarfields = [];
+    const activeSpaceFloat = [];
+    function buildStarfield(group, minX, maxX) {
+      // Esfera de estrellas 360°: puntos distribuidos en una cáscara esférica
+      // que envuelve al jugador desde todos los ángulos.
+      const count = 1400;
+      const pos = new Float32Array(count * 3);
+      const cx = (minX + maxX) / 2;
+      const R = 70;
+      for (let i = 0; i < count; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        pos[i * 3]     = cx + R * Math.sin(phi) * Math.cos(theta);
+        pos[i * 3 + 1] = R * Math.sin(phi) * Math.sin(theta);
+        pos[i * 3 + 2] = R * Math.cos(phi);
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.18, transparent: true, opacity: 0.9 });
+      const stars = new THREE.Points(geo, mat);
+      group.add(stars);
+      activeStarfields.push({ points: stars, cx });
+    }
+
+    // Cielo según la zona: la órbita es azul casi negro, la ciudad celeste.
+    // Se llama en cada cambio de zona (entrar/salir/volver/vehículo) y al final
+    // de cada rebuildCity (un rebuild por XP no debe devolver el cielo celeste
+    // si el jugador está en órbita).
+    const SKY_CITY = { bg: 0x38bdf8, fog: 0x93c5fd, near: 45, far: 135 };
+    const SKY_SPACE = { bg: 0x030612, fog: 0x030612, near: 25, far: 110 };
+    function updateZoneSky() {
+      const u = (typeof currentZone !== 'undefined' && currentZone !== 'city') ? unitById(currentZone) : null;
+      const sky = (u && u.biome === 'Espacio') ? SKY_SPACE : SKY_CITY;
+      scene.background.setHex(sky.bg);
+      scene.fog.color.setHex(sky.fog);
+      scene.fog.near = sky.near;
+      scene.fog.far = sky.far;
+    }
+
+    // Sendero de puntitos estrella-luz entre los planetas (reemplaza camino y
+    // piedras en órbita): mismo recorrido en escuadra que buildChallengePathStrips.
+    function buildStarTrail(group, points) {
+      const dotGeo = new THREE.SphereGeometry(0.05, 6, 6);
+      const dotMat = new THREE.MeshBasicMaterial({ color: 0xc4b5fd });
+      const step = 0.55;
+      for (let i = 0; i < points.length - 1; i++) {
+        const a = points[i];
+        const b = points[i + 1];
+        const legs = [[a.x, a.z, b.x, a.z], [b.x, a.z, b.x, b.z]];
+        for (const [x1, z1, x2, z2] of legs) {
+          const len = Math.hypot(x2 - x1, z2 - z1);
+          const n = Math.max(1, Math.floor(len / step));
+          for (let k = 0; k <= n; k++) {
+            const dot = new THREE.Mesh(dotGeo, dotMat);
+            dot.position.set(x1 + ((x2 - x1) * k) / n, 0.06, z1 + ((z2 - z1) * k) / n);
+            group.add(dot);
+          }
+        }
+      }
+    }
+
+    // ---- Nave como avatar (bioma Espacio) ----
+    // El personaje "va adentro": se oculta el modelo del avatar y se muestra la
+    // nave con el mismo movimiento/cámara (todo cuelga de playerGroup). Al salir
+    // se restaura el avatar con su personalización intacta (nunca se recarga).
+    let spaceShipMesh = null;
+    let spaceShipLoading = null;
+    let spaceMode = false;
+    function ensureSpaceShip() {
+      if (spaceShipMesh || spaceShipLoading) return spaceShipLoading;
+      spaceShipLoading = loadCityAssetGLB('Assets/Vehiculos/Spaceship-veh.glb').then((ship) => {
+        const box = new THREE.Box3().setFromObject(ship);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const s = 0.9 / Math.max(size.x || 1, size.y || 1, size.z || 1);
+        ship.scale.set(s, s, s);
+        ship.position.y = 0.35;
+        spaceShipMesh = ship;
+        if (spaceMode && playerGroup && !spaceShipMesh.parent) playerGroup.add(spaceShipMesh);
+        return ship;
+      });
+      return spaceShipLoading;
+    }
+    function setSpaceMode(on) {
+      spaceMode = on;
+      if (on) {
+        ensureSpaceShip().then(() => {
+          if (!spaceMode) return;
+          if (typeof playerModel !== 'undefined' && playerModel) playerModel.visible = false;
+          if (spaceShipMesh && playerGroup && !spaceShipMesh.parent) playerGroup.add(spaceShipMesh);
+          if (spaceShipMesh) spaceShipMesh.visible = true;
+        });
+      } else {
+        if (typeof playerModel !== 'undefined' && playerModel) playerModel.visible = true;
+        if (spaceShipMesh) spaceShipMesh.visible = false;
+      }
+    }
+
+    // ---- Viaje en vehículo al final de la ruta ----
+    // Barco = transición de olas, nave = transición de cometa. Durante la transición
+    // se muestra "cargando" la siguiente unidad (los GLB ya están en parsedGLTCache
+    // por el rebuild, así que el teletransporte es inmediato al terminar el efecto).
+    function startVehicleTransition(module) {
+      const isComet = module.vehicleKind === 'comet';
+      const overlay = document.getElementById(isComet ? 'trans-comet' : 'trans-wave');
+      const label = document.getElementById(isComet ? 'trans-comet-text' : 'trans-wave-text');
+      const idx = units.findIndex((u) => u.unitId === module.unitId);
+      const next = idx >= 0 ? units[idx + 1] : undefined;
+      if (label) label.innerText = next ? 'Cargando ' + next.name + '…' : 'Volviendo a la ciudad…';
+      if (overlay) overlay.classList.add('active');
+      setTimeout(() => {
+        if (overlay) overlay.classList.remove('active');
+        if (next && challengeIslandEntry[next.unitId]) {
+          currentZone = next.unitId;
+          showOnlyChallengeIsland(next.unitId);
+          const entry = challengeIslandEntry[next.unitId];
+          teleportPlayerTo(entry.x, entry.z, Math.PI / 2);
+          const nu = unitById(next.unitId);
+          setSpaceMode(!!nu && nu.biome === 'Espacio');
+          updateZoneSky();
+        } else {
+          const spawnCols = Math.ceil(units.length / 2);
+          const spawnAvenueLen = Math.max(spawnCols * UNIT_WIDTH, 6.0);
+          const spawnStartX = -spawnAvenueLen / 2 + UNIT_WIDTH / 2;
+          const shopBackX = spawnStartX - UNIT_WIDTH / 2 - 3.2 / 2;
+          currentZone = 'city';
+          showOnlyChallengeIsland(null);
+          teleportPlayerTo(shopBackX + 1.4, 0, Math.PI / 2);
+          setSpaceMode(false);
+          updateZoneSky();
+        }
+      }, 1900);
+    }
+
+    // ---- Trampilla de ejercicios ocultos (hub) ----
+    // El GLB trae UNA sola malla ('Trapdoor', sin marco separado — verificado por
+    // inspección del chunk JSON), así que la "apertura" anima la pieza entera sobre
+    // un gozne en su borde, en vez de separar puerta de marco.
+    let hubTrapdoorPivot = null;
+    let trapdoorOpen = false;
+    let trapdoorAnim = null;
+    function setTrapdoor(open, withModal) {
+      // Rebuilds abortados o en curso pueden dejar el pivote nulo o colgado de un
+      // grupo ya descartado: en ese caso no hay nada que animar.
+      if (!hubTrapdoorPivot || !hubTrapdoorPivot.parent) {
+        if (!hubTrapdoorPivot) console.warn('[trampilla] pivote nulo (rebuild en curso?)');
+        trapdoorOpen = false;
+        trapdoorAnim = null;
+        return;
+      }
+      trapdoorOpen = open;
+      // Cancela cualquier animación en curso y arranca desde el ángulo vivo.
+      trapdoorAnim = { from: hubTrapdoorPivot.rotation.x, to: open ? -1.85 : 0, t: 0 };
+      if (open && withModal) {
+        openConstructionModal(
+          '🚪 Ejercicios ocultos',
+          'Acá van a vivir ejercicios extra más escondidos. Tocá de nuevo la trampilla para cerrarla.'
+        );
+      }
+    }
+    function toggleTrapdoor() {
+      setTrapdoor(!trapdoorOpen, true);
+    }
+    function closeTrapdoorSilent() {
+      if (trapdoorOpen) setTrapdoor(false, false);
+    }
+
     async function buildChallengeIsland(unit, minX, maxX, estados) {
       // Todo lo de esta isla cuelga de un único grupo, oculto por defecto: solo se
       // muestra la isla de la unidad activa (ver showOnlyChallengeIsland), nunca las
@@ -5510,9 +6061,19 @@
 
       const minZ = -4.4;
       const maxZ = 4.4;
-      const mats = getIslandMatsForBiome(unit.biome);
-      const terrainGroup = buildOceanIsland(minX, maxX, minZ, maxZ, mats);
-      islandRoot.add(terrainGroup);
+      const isSpaceIsland = unit.biome === 'Espacio';
+      if (isSpaceIsland) {
+        // Órbita: vacío puro, sin isla, sin agua y sin nubes — solo estrellas.
+        buildStarfield(islandRoot, minX, maxX);
+        // Luz azulada tenue para que los planetas se lean como cuerpos en la
+        // oscuridad (la isla visible es la única con luz propia encendida).
+        const spaceLight = new THREE.PointLight(0x8b5cf6, 15, 30);
+        spaceLight.position.set((minX + maxX) / 2, 7, 0);
+        islandRoot.add(spaceLight);
+      } else {
+        const mats = getIslandMatsForBiome(unit.biome);
+        const terrainGroup = buildOceanIsland(minX, maxX, minZ, maxZ, mats);
+        islandRoot.add(terrainGroup);
 
       // buildOceanIsland solo dibuja el borde (playas) y la base rocosa por debajo —
       // sin esto, el interior de la isla queda hueco (se ve el mar/la roca del fondo
@@ -5528,8 +6089,12 @@
       islandGround.position.set((minX + maxX) / 2, -0.25, 0);
       islandGround.receiveShadow = true;
       islandRoot.add(islandGround);
+      }
 
-      const pathMat = new THREE.MeshStandardMaterial({ color: 0x8a6340, roughness: 0.96 });
+      const pathMat = new THREE.MeshStandardMaterial({
+        color: isSpaceIsland ? 0x2a3358 : 0x8a6340,
+        roughness: 0.96
+      });
       const entryPoint = { x: minX + 0.6, z: 0 };
       const nodes = layoutChallengeNodes3D(unit.actividades, minX, maxX, minZ, maxZ);
 
@@ -5541,12 +6106,62 @@
       const goalPoint = { x: goalX, z: 0 };
       routePoints.push(goalPoint);
 
-      buildChallengePathStrips(islandRoot, routePoints, pathMat);
+      if (isSpaceIsland) {
+        buildStarTrail(islandRoot, routePoints);
+      } else {
+        buildChallengePathStrips(islandRoot, routePoints, pathMat);
+      }
 
-      nodes.forEach((node, i) => {
-        const estado = estados[i] || 'bloqueado';
-        const marker = createChallengeNodeMarker(node, estado);
-        islandRoot.add(marker);
+      for (let ni = 0; ni < nodes.length; ni++) {
+        const node = nodes[ni];
+        const estado = estados[ni] || 'bloqueado';
+        if (isSpaceIsland) {
+          // Cada desafío es un planeta distinto (se repiten en ciclo si hay más
+          // nodos que modelos). El planeta queda DENTRO del aro de estado: se
+          // ajusta a 1.0 de diámetro (aro r=0.72) y se centra su caja en la
+          // altura del aro, estilo Saturno.
+          const planetGLB = await loadCityAssetGLB(PLANET_MODELS[ni % PLANET_MODELS.length]);
+          const pBox = new THREE.Box3().setFromObject(planetGLB);
+          const pSize = new THREE.Vector3();
+          pBox.getSize(pSize);
+          const ps = 1.0 / Math.max(pSize.x || 1, pSize.y || 1, pSize.z || 1);
+          planetGLB.scale.set(ps, ps, ps);
+          const planetMarker = new THREE.Group();
+          const ringY = 0.62;
+          const pScaledBox = new THREE.Box3().setFromObject(planetGLB);
+          const pCenter = new THREE.Vector3();
+          pScaledBox.getCenter(pCenter);
+          planetGLB.position.y = ringY - pCenter.y;
+          planetMarker.add(planetGLB);
+          const ringColor = estado === 'completado' ? 0xfacc15 : estado === 'disponible' ? 0x22d3ee : 0x64748b;
+          const ring = new THREE.Mesh(
+            new THREE.TorusGeometry(0.72, 0.05, 8, 32),
+            new THREE.MeshStandardMaterial({
+              color: ringColor,
+              emissive: ringColor,
+              emissiveIntensity: estado === 'disponible' ? 0.9 : estado === 'completado' ? 0.5 : 0.05,
+              transparent: true,
+              opacity: 0.55
+            })
+          );
+          ring.rotation.x = -Math.PI / 2;
+          ring.position.y = ringY - 0.55;
+          planetMarker.add(ring);
+          const estadoLabel = estado === 'completado' ? '✓ COMPLETADO' : estado === 'disponible' ? '¡DISPONIBLE!' : '🔒 BLOQUEADO';
+          const planetBillboard = createChallengeNodeBillboard(
+            node.index, node.actividad.nombre || ('Planeta ' + node.index), estadoLabel,
+            '#' + ringColor.toString(16).padStart(6, '0')
+          );
+          planetBillboard.position.y = 1.75;
+          planetMarker.add(planetBillboard);
+          planetMarker.position.set(node.x, 0, node.z);
+          islandRoot.add(planetMarker);
+          addColliderFor(planetMarker, -0.6, 'planeta');
+          activeSpaceFloat.push({ obj: planetGLB, baseY: planetGLB.position.y, amp: 0.08, speed: 1.2, phase: ni * 0.9 });
+        } else {
+          const marker = createChallengeNodeMarker(node, estado);
+          islandRoot.add(marker);
+        }
 
         interactiveModules.push({
           type: 'challenge',
@@ -5561,11 +6176,14 @@
           radius: 1.4,
           description: node.actividad.descripcion || ''
         });
-      });
+      }
 
       // Decoración lateral simple por bioma a lo largo del camino (assets Blender ya
       // en el repo, sin usar hasta ahora: path-stones-*; el resto reusa el mismo truco
       // de recolor/props que ya usa rebuildCity para la flora de cada casa).
+      // Losas de camino: solo en islas clásicas (en órbita va el sendero de
+      // puntitos, ver buildStarTrail arriba).
+      if (!isSpaceIsland) {
       const stoneFile = (routePoints.length > 4) ? 'path-stones-long.glb' : 'path-stones-short.glb';
       for (let i = 0; i < routePoints.length - 1; i++) {
         const midX = (routePoints[i].x + routePoints[i + 1].x) / 2;
@@ -5574,7 +6192,49 @@
         stone.position.set(midX, 0.01, midZ + 0.7);
         islandRoot.add(stone);
       }
+      }
 
+      if (isSpaceIsland) {
+        // Decoración en tres capas de profundidad con los 6 assets de decoración
+        // (la sonda es la meta): cerca dentro del área, medio flotando alto y
+        // lejos fuera del alcance (se ven contra el cielo, no se tocan).
+        const midIslandX = (minX + maxX) / 2;
+        const spaceDeco = [
+          { file: 'Assets/Espacio/Decoracion/asteroid-dec.glb', x: minX + 1.4, y: 0.25, z: 3.2, s: 0.8, float: false },
+          { file: 'Assets/Espacio/Decoracion/asteroids-dec.glb', x: maxX - 3.0, y: 0.3, z: -3.1, s: 0.9, float: false },
+          { file: 'Assets/Espacio/Decoracion/Comet-dec.glb', x: midIslandX - 3.0, y: 1.2, z: 3.4, s: 0.6, float: true },
+          { file: 'Assets/Espacio/Decoracion/Spaceprobe-dec.glb', x: minX + 2.0, y: 3.1, z: -3.0, s: 1.1, float: true },
+          { file: 'Assets/Espacio/Decoracion/UFO-dec.glb', x: midIslandX, y: 5.0, z: 2.2, s: 1.2, float: true },
+          { file: 'Assets/Espacio/Decoracion/Comet-dec.glb', x: maxX - 2.0, y: 2.6, z: -2.6, s: 0.9, float: true },
+          { file: 'Assets/Espacio/Decoracion/UFO-dec.glb', x: midIslandX - 18, y: 8.0, z: -14.0, s: 3.0, float: true },
+          { file: 'Assets/Espacio/Decoracion/Comet-dec.glb', x: midIslandX + 22, y: 6.0, z: 10.0, s: 2.5, float: true },
+          { file: 'Assets/Espacio/Decoracion/asteroids-dec.glb', x: midIslandX + 16, y: 3.0, z: -18.0, s: 3.2, float: false },
+          { file: 'Assets/Espacio/Decoracion/Spaceprobe-dec.glb', x: midIslandX - 24, y: 5.0, z: 12.0, s: 2.2, float: true },
+          { file: 'Assets/Espacio/Decoracion/asteroid-dec.glb', x: midIslandX + 10, y: 2.0, z: 20.0, s: 2.0, float: false },
+          { file: 'Assets/Espacio/Decoracion/asteroids-dec.glb', x: midIslandX - 12, y: 7.0, z: 18.0, s: 2.6, float: true },
+          { file: 'Assets/Espacio/Decoracion/asteroid-dec.glb', x: midIslandX - 6, y: 0.4, z: -5.5, s: 0.7, float: false },
+          { file: 'Assets/Espacio/Decoracion/asteroids-dec.glb', x: midIslandX + 8, y: 0.3, z: 5.0, s: 0.65, float: false },
+          { file: 'Assets/Espacio/Decoracion/asteroid-dec.glb', x: maxX - 1.5, y: 0.2, z: 4.0, s: 0.6, float: false },
+          { file: 'Assets/Espacio/Decoracion/asteroids-dec.glb', x: minX + 3.0, y: 0.35, z: -2.0, s: 0.75, float: false },
+          { file: 'Assets/Espacio/Decoracion/Comet-dec.glb', x: midIslandX - 14, y: 4.0, z: -8.0, s: 1.5, float: true },
+          { file: 'Assets/Espacio/Decoracion/Spaceprobe-dec.glb', x: midIslandX + 28, y: 3.5, z: -10.0, s: 1.8, float: true },
+          { file: 'Assets/Espacio/Decoracion/asteroid-dec.glb', x: midIslandX + 20, y: 1.5, z: 8.0, s: 1.4, float: false },
+          { file: 'Assets/Espacio/Decoracion/asteroids-dec.glb', x: midIslandX - 20, y: 2.5, z: -22.0, s: 2.0, float: true },
+          { file: 'Assets/Espacio/Decoracion/Comet-dec.glb', x: midIslandX + 30, y: 8.0, z: 15.0, s: 1.8, float: true }
+        ];
+        for (const d of spaceDeco) {
+          const deco = await loadCityAssetGLB(d.file);
+          const dBox = new THREE.Box3().setFromObject(deco);
+          const dSize = new THREE.Vector3();
+          dBox.getSize(dSize);
+          const ds = d.s / Math.max(dSize.x || 1, dSize.y || 1, dSize.z || 1);
+          deco.scale.set(ds, ds, ds);
+          deco.position.set(d.x, d.y, d.z);
+          islandRoot.add(deco);
+          if (!d.float && d.y < 1.5) addColliderFor(deco, 0, 'roca-espacial');
+          if (d.float) activeSpaceFloat.push({ obj: deco, baseY: d.y, amp: 0.18, speed: 0.8, phase: d.x });
+        }
+      } else {
       for (let i = 0; i < nodes.length; i++) {
         const side = i % 2 === 0 ? 1 : -1;
         const decoX = nodes[i].x + 0.6 * side;
@@ -5590,18 +6250,23 @@
             }
           });
           islandRoot.add(snowTree);
+          addColliderFor(snowTree, 0, 'arbol-isla');
         } else if (unit.biome === 'Bosque') {
           const tree = await loadCityAssetGLB('tree-large.glb');
           tree.position.set(decoX, 0, decoZ);
           islandRoot.add(tree);
+          addColliderFor(tree, 0, 'arbol-isla');
         } else if (unit.biome === 'Desierto' || unit.biome === 'Arenisca') {
           const planter = await loadCityAssetGLB('planter.glb');
           planter.position.set(decoX, 0, decoZ);
           islandRoot.add(planter);
+          addColliderFor(planter, 0, 'maceta-isla');
         }
       }
+      }
 
-      const structure = await loadCityAssetGLB(unit.model);
+      // Meta por bioma (iglú / templo maya / pirámide / sonda — ver GOAL_MODEL_BY_BIOME).
+      const structure = await loadCityAssetGLB(goalModelFor(unit));
       const structurePivot = new THREE.Group();
       const box = new THREE.Box3().setFromObject(structure);
       const size = new THREE.Vector3();
@@ -5621,6 +6286,56 @@
       structurePivot.position.set(goalPoint.x, 0, goalPoint.z);
       structurePivot.rotation.y = -Math.PI / 2;
       islandRoot.add(structurePivot);
+      addColliderFor(structurePivot, 0.05, 'meta-isla');
+
+      // Vehículo estético al final de la ruta, junto a la meta y pasando la línea
+      // de llegada: barco en islas clásicas, agujero negro en órbita. Interactuar
+      // viaja a la siguiente unidad con su transición (olas / cometa).
+      const vehicleKind = isSpaceIsland ? 'comet' : 'boat';
+      const vehicle = await loadCityAssetGLB(
+        isSpaceIsland ? 'Assets/Espacio/Decoracion/Blackhole-dec.glb' : 'Assets/Vehiculos/Ship-veh.glb'
+      );
+      const vBox = new THREE.Box3().setFromObject(vehicle);
+      const vSize = new THREE.Vector3();
+      vBox.getSize(vSize);
+      const vehicleX = Math.min(maxX - 0.8, goalPoint.x + 2.4);
+      if (isSpaceIsland) {
+        // Agujero negro: 3× más grande, centrado en su bbox, en el extremo de la
+        // ruta (más allá del último nodo/planeta) para no solaparlos.
+        const vs = 7.5 / Math.max(vSize.x || 1, vSize.y || 1, vSize.z || 1);
+        vehicle.scale.set(vs, vs, vs);
+        const vCenter = new THREE.Vector3();
+        vBox.getCenter(vCenter);
+        vehicle.position.set(vehicleX - vCenter.x * vs, -vCenter.y * vs, 1.9 - vCenter.z * vs);
+        vehicle.rotation.y = -Math.PI / 2;
+        islandRoot.add(vehicle);
+        // Sin colisionador: el agujero negro es solo visual; la interacción
+        // funciona por proximidad (interactiveModules con radius).
+      } else {
+        // Barco: 5× más grande, flotando en el agua al lado de la isla.
+        // El punto de interacción se queda donde estaba (sobre la isla) para que
+        // el jugador no tenga que ir al agua a interactuar.
+        const vs = (1.5 * 5) / Math.max(vSize.x || 1, vSize.y || 1, vSize.z || 1);
+        vehicle.scale.set(vs, vs, vs);
+        vehicle.position.set(vehicleX + 3.5, -0.6, 3.8);
+        vehicle.rotation.y = -Math.PI / 4;
+        islandRoot.add(vehicle);
+        // Colisionador se queda en la posición original (isla) para interacción
+        addColliderFor(vehicle, 0.05, 'vehiculo-isla');
+      }
+      interactiveModules.push({
+        type: 'vehicle',
+        name: isSpaceIsland ? '🕳️ Agujero negro' : '🚤 Bote',
+        biome: unit.biome,
+        unitId: unit.unitId,
+        vehicleKind,
+        icon: isSpaceIsland ? '🕳️' : '🚤',
+        locked: false,
+        x: vehicleX,
+        z: 1.9,
+        radius: 1.7,
+        description: 'Viajar a la siguiente unidad.'
+      });
 
       challengeIslandBounds[unit.unitId] = { minX, maxX, minZ, maxZ };
       challengeIslandEntry[unit.unitId] = entryPoint;
@@ -5643,6 +6358,13 @@
       const myRebuildToken = ++rebuildToken;
       buildingColliders = [];
       interactiveModules = [];
+      // Las islas se reconstruyen enteras: soltar estrellas/flotantes viejos (el
+      // animate ya ignora los sin padre, esto evita que crezcan sin cota).
+      activeStarfields.length = 0;
+      activeSpaceFloat.length = 0;
+      // La trampilla del hub se vuelve a construir abajo con el resto.
+      hubTrapdoorPivot = null;
+      trapdoorAnim = null;
       while (cityGroup.children.length > 0) {
         cityGroup.remove(cityGroup.children[0]);
       }
@@ -5669,11 +6391,9 @@
       mainSun.shadow.camera.updateProjectionMatrix();
 
       if (currentMode === 'city') {
-        // Cielo azul vibrante de montaña con nubes
-        scene.background.setHex(0x38bdf8);
-        scene.fog.color.setHex(0x93c5fd);
-        scene.fog.near = 45;
-        scene.fog.far = 135;
+        // Cielo según la zona donde esté parado el jugador (ver updateZoneSky):
+        // un rebuild por XP no debe devolver el celeste si está en órbita.
+        updateZoneSky();
       }
 
       // -------------------------------------------------------------
@@ -5704,10 +6424,12 @@
         loadCityAssetGLB('planter.glb').then(p1 => {
           p1.position.set(shopX, 0.01, -2.8);
           cityGroup.add(p1);
+          addColliderFor(p1, 0, 'maceta-tienda');
         });
         loadCityAssetGLB('planter.glb').then(p2 => {
           p2.position.set(shopX, 0.01, 2.8);
           cityGroup.add(p2);
+          addColliderFor(p2, 0, 'maceta-tienda');
         });
       } catch (e) {}
 
@@ -5753,13 +6475,8 @@
           description: 'Puesto comercial con productos, armas y pociones mágicas.'
         });
 
-        // Colisionador sólido de la tienda (mostrador, estantes y paredes)
-        buildingColliders.push({
-          minX: shopX - 1.2,
-          maxX: shopX + 0.65,
-          minZ: -1.35,
-          maxZ: 1.35
-        });
+        // Colisionador de la tienda medido sobre el modelo ya colocado.
+        addColliderFor(shopPivot, 0.05, 'shop');
       } catch (err) {
         console.error('Error cargando modelo de Tienda:', err);
       }
@@ -5884,6 +6601,7 @@
           fence.position.set(unitCenterX, 0, fenceZ);
           fence.rotation.y = isSouth ? Math.PI : 0;
           unitGroup.add(fence);
+          addColliderFor(fence, 0, 'cerco');
         }
 
         // 5. Flora & Biome Features
@@ -5982,15 +6700,9 @@
 
         cityGroup.add(unitGroup);
 
-        // Register house collision box
-        housePivot.updateMatrixWorld(true);
-        const houseBox = new THREE.Box3().setFromObject(housePivot);
-        buildingColliders.push({
-          minX: houseBox.min.x,
-          maxX: houseBox.max.x,
-          minZ: houseBox.min.z,
-          maxZ: houseBox.max.z
-        });
+        // Colisionador de la casa medido sobre el modelo ya colocado (la
+        // decoración del lote vive dentro de esta caja a propósito).
+        addColliderFor(housePivot, 0.05, 'house:' + unit.biome);
       }
 
       // Si el número de biomas es impar, llenar el lote vacío de enfrente con una sección de césped (plaza/parque verde)
@@ -6009,15 +6721,18 @@
         parkMesh.receiveShadow = true;
         parkGroup.add(parkMesh);
 
-        // 2. Jardineras y arbolito decorativo en la zona de césped
+        // Jardineras y arbolito al fondo del lote para dejar el frente libre
+        // (la trampilla y el billboard viven ahí cuando el hub reclama el parque).
         try {
           const planter = await loadCityAssetGLB('planter.glb');
-          planter.position.set(emptyLotCenterX, 0.01, emptyLotZ);
+          planter.position.set(emptyLotCenterX - 0.8, 0.01, 3.6);
           parkGroup.add(planter);
+          addColliderFor(planter, 0, 'maceta-parque');
 
           const parkTree = await loadCityAssetGLB('tree-small.glb');
-          parkTree.position.set(emptyLotCenterX - 0.7, 0, emptyLotZ);
+          parkTree.position.set(emptyLotCenterX + 1.0, 0, 3.6);
           parkGroup.add(parkTree);
+          addColliderFor(parkTree, 0, 'arbol-parque');
         } catch (e) {
           console.warn('Error cargando decoración del parque impar:', e);
         }
@@ -6138,13 +6853,8 @@
           description: 'Monumento ceremonial de la victoria al final del camino.'
         });
 
-        // Colisionador físico sólido del trofeo (pedestal, escalón y copa)
-        buildingColliders.push({
-          minX: podioX - 0.75,
-          maxX: podioX + 0.75,
-          minZ: -0.95,
-          maxZ: 0.95
-        });
+        // Colisionador del trofeo medido sobre el modelo ya colocado.
+        addColliderFor(trofeoPivot, 0.05, 'trofeo');
       } catch (err) {
         console.error('Error cargando modelo de Trofeo:', err);
       }
@@ -6153,7 +6863,8 @@
       // hacia el sur para no pisar el camino de tierra ni el colisionador del trofeo).
       const rankingKioskX = podioX;
       const rankingKioskZ = 2.6;
-      cityGroup.add(await buildRankingPodium(rankingKioskX, rankingKioskZ));
+      const podiumGroup = await buildRankingPodium(rankingKioskX, rankingKioskZ);
+      cityGroup.add(podiumGroup);
       interactiveModules.push({
         type: 'ranking',
         name: 'Ranking de la Cohorte',
@@ -6166,16 +6877,98 @@
       });
       // Estimado a partir del asset de podio con estandartes (algo más ancho que
       // el kiosko anterior por las banderas a los costados).
-      buildingColliders.push({
-        minX: rankingKioskX - 0.8,
-        maxX: rankingKioskX + 0.8,
-        minZ: rankingKioskZ - 0.6,
-        maxZ: rankingKioskZ + 0.6
-      });
+      addColliderFor(podiumGroup, 0.1, 'podio');
+
+      // -------------------------------------------------------------
+      // 🏛️ ESTRUCTURAS DEL HUB (billboard, bancos, templo, trampilla)
+      // -------------------------------------------------------------
+      try {
+        // NOTA: el Gazebo del Ranking se retiró — el ranking se consulta solo en
+        // el podio junto al Trofeo (buildRankingPodium). Su lugar lo ocupa la
+        // trampilla (ver abajo).
+        // Billboard de racha con diseño + fuego + días dinámicos (ver
+        // drawStreakBillboard): vive en el lote-parque junto a la casa de Nieve
+        // (o en la plaza ceremonial si no hay parque con este nº de unidades).
+        const hasParkLot = count > 0 && count % 2 !== 0;
+        const parkLotX = startX + (count > 0 ? Math.floor((count - 1) / 2) : 0) * UNIT_WIDTH;
+        const streakGroup = buildStreakBillboard();
+        if (hasParkLot) {
+          streakGroup.position.set(parkLotX + 0.7, 0, 2.2);
+          streakGroup.rotation.y = Math.PI;
+        } else {
+          streakGroup.position.set(podioX - 1.4, 0, 2.6);
+          streakGroup.rotation.y = Math.PI / 2;
+        }
+        cityGroup.add(streakGroup);
+        claimSpot('billboard de racha', streakGroup.position.x, streakGroup.position.z, 1.25, 0.3);
+        addColliderFor(streakGroup, 0.05, 'billboard');
+
+        // Bancos decorativos flanqueando la tienda.
+        const bench1 = await placeStructureGLB('Assets/Decoracion/Bench-dec.glb', shopX + 1.6, 1.9, 1.0, Math.PI);
+        cityGroup.add(bench1);
+        addColliderFor(bench1, 0.05, 'banco');
+        const bench2 = await placeStructureGLB('Assets/Decoracion/Bench-dec.glb', shopX + 2.8, -1.9, 1.0, 0);
+        cityGroup.add(bench2);
+        addColliderFor(bench2, 0.05, 'banco');
+
+        // Templo del material teórico como arco de paso a la izquierda de la
+        // tienda: se atraviesa caminando (sin colisionador).
+        const templeX = shopX - 3.5;
+        claimSpot('templo (arco de paso)', templeX, 0, 1.0, 1.0);
+        const templePivot = await placeStructureGLB('Assets/Estructuras/Temple-dec.glb', templeX, 0, 2.0, -Math.PI / 2);
+        cityGroup.add(templePivot);
+        interactiveModules.push({
+          type: 'materiales',
+          name: '📜 Templo del Saber',
+          biome: 'Material teórico',
+          icon: '📜',
+          x: templeX,
+          z: 0,
+          radius: 1.9,
+          description: 'Archivos, PDFs y videos de la materia.'
+        });
+
+        // Trampilla de ejercicios ocultos: gozne animado (ver toggleTrapdoor),
+        // caminable (sin colisionador). Vive en el parque junto a Nieve.
+        const trapdoorModel = await loadCityAssetGLB('Assets/Estructuras/Trapdoor-dec.glb');
+        const tBox = new THREE.Box3().setFromObject(trapdoorModel);
+        const tSize = new THREE.Vector3();
+        tBox.getSize(tSize);
+        const ts = 1.1 / Math.max(tSize.x || 1, tSize.z || 1);
+        trapdoorModel.scale.set(ts, ts, ts);
+        const tScaled = new THREE.Box3().setFromObject(trapdoorModel);
+        const tCenter = new THREE.Vector3();
+        tScaled.getCenter(tCenter);
+        // Gozne en el borde: se corre la pieza medio fondo para pivotar ahí.
+        trapdoorModel.position.set(-tCenter.x, -tScaled.min.y + 0.02, -tCenter.z + (tScaled.max.z - tScaled.min.z) / 2);
+        hubTrapdoorPivot = new THREE.Group();
+        hubTrapdoorPivot.add(trapdoorModel);
+        const trapdoorX = hasParkLot ? parkLotX - 0.9 : podioX - 1.4;
+        const trapdoorZ = hasParkLot ? 1.9 : -2.6;
+        hubTrapdoorPivot.position.set(trapdoorX, 0, trapdoorZ);
+        claimSpot('trampilla', trapdoorX, trapdoorZ, 0.6, 0.6);
+        trapdoorOpen = false;
+        cityGroup.add(hubTrapdoorPivot);
+        interactiveModules.push({
+          type: 'trapdoor',
+          name: '🚪 Ejercicios ocultos',
+          biome: 'Trampilla',
+          icon: '🚪',
+          x: trapdoorX,
+          z: trapdoorZ,
+          radius: 1.8,
+          description: 'Ejercicios extra más escondidos.'
+        });
+      } catch (e) {
+        console.warn('Error cargando estructuras del hub:', e);
+      }
 
       if (currentMode === 'city' && checkBuildingCollision(playerGroup.position.x, playerGroup.position.z)) {
         playerGroup.position.z = 0;
       }
+
+      // Auditoría dev de solapamientos (ver auditOverlaps).
+      auditOverlaps();
     }
 
     function updateUIList() {
@@ -6259,6 +7052,7 @@
 
     function closeConstructionModal() {
       modalConstruction.classList.remove('active');
+      if (trapdoorOpen) setTrapdoor(false, false);
     }
 
     btnCloseConst.addEventListener('click', closeConstructionModal);
@@ -6311,6 +7105,21 @@
         return;
       }
 
+      if (activeNearModule.type === 'materiales') {
+        window.parent.postMessage({ type: 'openMateriales' }, '*');
+        return;
+      }
+
+      if (activeNearModule.type === 'vehicle') {
+        startVehicleTransition(activeNearModule);
+        return;
+      }
+
+      if (activeNearModule.type === 'trapdoor') {
+        toggleTrapdoor();
+        return;
+      }
+
       if (activeNearModule.type === 'returnCity') {
         const spawnCols = Math.ceil(units.length / 2);
         const spawnAvenueLen = Math.max(spawnCols * UNIT_WIDTH, 6.0);
@@ -6319,6 +7128,9 @@
         currentZone = 'city';
         showOnlyChallengeIsland(null);
         teleportPlayerTo(shopX + 1.4, 0, Math.PI / 2);
+        // De vuelta al roadmap general: avatar normal otra vez, sin vehículos.
+        setSpaceMode(false);
+        updateZoneSky();
         return;
       }
 
@@ -6330,6 +7142,10 @@
         showOnlyChallengeIsland(unitId);
         const entry = challengeIslandEntry[unitId];
         teleportPlayerTo(entry.x, entry.z, Math.PI / 2);
+        // En órbita se viaja en la nave (avatar oculto); en islas clásicas, avatar normal.
+        const entered = unitById(unitId);
+        setSpaceMode(!!entered && entered.biome === 'Espacio');
+        updateZoneSky();
         return;
       }
       openConstructionModal(activeNearModule.name, activeNearModule.description);
@@ -6339,6 +7155,7 @@
       if (currentMode !== 'city') {
         proximityPrompt.classList.remove('visible');
         activeNearModule = null;
+        closeTrapdoorSilent();
         return;
       }
 
@@ -6357,6 +7174,8 @@
 
       if (closest) {
         activeNearModule = closest;
+        // Si el foco pasó a otro módulo, la trampilla se cierra sola.
+        if (closest.type !== 'trapdoor') closeTrapdoorSilent();
         promptIcon.innerText = closest.icon;
         promptTargetName.innerText = closest.biome ? closest.name + ' (' + closest.biome + ')' : closest.name;
         btnAccessModule.textContent =
@@ -6366,12 +7185,20 @@
               ? 'Volver a la Ciudad'
               : closest.type === 'ranking'
                 ? 'Ver Ranking'
-                : 'Acceder al Módulo';
+                : closest.type === 'materiales'
+                  ? 'Ver materiales'
+                  : closest.type === 'vehicle'
+                    ? 'Viajar →'
+                    : closest.type === 'trapdoor'
+                      ? (trapdoorOpen ? 'Cerrar trampilla' : 'Abrir trampilla')
+                      : 'Acceder al Módulo';
         btnAccessModule.disabled = closest.type === 'challenge' && closest.locked;
         proximityPrompt.classList.add('visible');
       } else {
         activeNearModule = null;
         proximityPrompt.classList.remove('visible');
+        // Al alejarse de la trampilla se cierra sola (sin modal).
+        closeTrapdoorSilent();
       }
     }
 
@@ -6468,6 +7295,30 @@
               c.position.x = c.userData.minX;
             }
           }
+        }
+
+        // Órbita: rotación lenta de los campos de estrellas + flotación de
+        // planetas y decoración espacial (ver activeSpaceFloat).
+        if (activeStarfields.length > 0) {
+          for (const sf of activeStarfields) {
+            if (sf.points.parent) sf.points.rotation.y += delta * 0.004;
+          }
+        }
+        if (activeSpaceFloat.length > 0) {
+          const tSec = now * 0.001;
+          for (const f of activeSpaceFloat) {
+            if (f.obj.parent) f.obj.position.y = f.baseY + Math.sin(tSec * f.speed + f.phase) * f.amp;
+          }
+        }
+
+        // Gozne de la trampilla del hub (ver toggleTrapdoor).
+        if (trapdoorAnim && hubTrapdoorPivot) {
+          trapdoorAnim.t = Math.min(1, trapdoorAnim.t + delta / 0.9);
+          const k = trapdoorAnim.t < 0.5
+            ? 2 * trapdoorAnim.t * trapdoorAnim.t
+            : 1 - Math.pow(-2 * trapdoorAnim.t + 2, 2) / 2;
+          hubTrapdoorPivot.rotation.x = trapdoorAnim.from + (trapdoorAnim.to - trapdoorAnim.from) * k;
+          if (trapdoorAnim.t >= 1) trapdoorAnim = null;
         }
 
         if (isPlayerLoaded) {

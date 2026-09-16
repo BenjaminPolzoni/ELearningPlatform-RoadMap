@@ -59,6 +59,15 @@ function esMensajeOpenRanking(data: unknown): data is { type: 'openRanking' } {
   return !!data && typeof data === 'object' && (data as { type?: unknown }).type === 'openRanking';
 }
 
+/**
+ * Mensaje que manda la escena Three.js cuando el jugador entra al Templo del hub
+ * (ver `Estructuras/Temple-dec.glb` en index.html) — abre la pestaña de material
+ * teórico (mock estático hasta que se conecte el servicio de contenidos).
+ */
+function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales' } {
+  return !!data && typeof data === 'object' && (data as { type?: unknown }).type === 'openMateriales';
+}
+
 @Component({
   selector: 'app-mundo-3d',
   standalone: true,
@@ -283,6 +292,8 @@ export class Mundo3d implements OnInit, OnDestroy {
       this.abrirDesafio(evento.data.unitId, evento.data.actividadId);
     } else if (esMensajeOpenRanking(evento.data)) {
       this.rankingOpen.set(true);
+    } else if (esMensajeOpenMateriales(evento.data)) {
+      this.router.navigate(['/alumno/materiales']);
     }
   };
 
@@ -372,6 +383,9 @@ export class Mundo3d implements OnInit, OnDestroy {
         unidades,
         xpTotal: progreso?.xpTotal ?? 0,
         vidasVigentes: progreso?.vidasVigentes ?? 3,
+        // Racha mockeada igual que en mapa.ts (`rachaDias = signal(10)`, sin mecánica
+        // todavía) — alimenta el billboard dinámico del hub 3D hasta que haya cálculo real.
+        rachaDias: 10,
       },
       '*',
     );
@@ -419,7 +433,8 @@ export class Mundo3d implements OnInit, OnDestroy {
       u.orden === 5
     )
       return 'nether';
-    return (['desert', 'jungle', 'castle', 'snow', 'nether'] as const)[(u.orden - 1) % 5];
+    if (nombre.includes('espacio') || nombre.includes('orbital') || nombre.includes('planeta')) return 'space';
+    return (['desert', 'jungle', 'castle', 'snow', 'nether', 'space'] as const)[(u.orden - 1) % 6];
   }
 
   private abrirDesafio(unitId: string, actividadId: string): void {

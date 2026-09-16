@@ -67,11 +67,17 @@ export const COSMETICS_CATALOG = {
     { id: 'smokebomb.gltf', name: '💨 Bomba Humo' },
   ],
   pet: [
-    { id: 'none', name: '🚫 Ninguno' },
-    { id: 'drone', name: '🛸 Cyber Drone' },
-    { id: 'owl', name: '🦉 Búho Mágico' },
-    { id: 'bat', name: '🦇 Murciélago' },
-    { id: 'ghost', name: '👻 Fantasmita' },
+    { id: 'none', name: '🚫 Ninguno', mode: 'none' },
+    { id: 'drone', name: '🛸 Cyber Drone', mode: 'fly' },
+    { id: 'owl', name: '🦉 Búho Mágico', mode: 'fly' },
+    { id: 'bat', name: '🦇 Murciélago', mode: 'fly' },
+    { id: 'ghost', name: '👻 Fantasmita', mode: 'fly' },
+    // Mascotas GLB elegibles en la personalización (frontend/public/mundo-3d/Assets/Mascotas/).
+    // mode: 'fly' orbitan a la altura de la cabeza; 'ground' siguen caminando en el suelo.
+    { id: 'dog', name: '🐶 Perrito', mode: 'ground' },
+    { id: 'dragonfly', name: '🪰 Libélula', mode: 'fly' },
+    { id: 'frog', name: '🐸 Rana', mode: 'ground' },
+    { id: 'salamander', name: '🦎 Salamandra', mode: 'ground' },
   ]
 };
 
@@ -1120,8 +1126,40 @@ export const COSMETICS_CATALOG = {
     }
 
     let activePetObject = null;
+    let petLoadToken = 0;
+
+    // Mascotas GLB (Assets/Mascotas/): carga async con caché. Voladoras orbitan;
+    // perro/rana/salamandra caminan en el suelo (ver updateFlyingPet).
+    const GLB_PETS = {
+      dog: 'dog-pet.glb',
+      dragonfly: 'Dragonfly-pet.glb',
+      frog: 'Frog-pet.glb',
+      salamander: 'Salamander-pet.glb',
+    };
+    const GROUND_PET_TUNING = {
+      dog: { feetY: 0 },
+      frog: { feetY: 0 },
+      salamander: { feetY: 0 },
+    };
+    const PET_TARGET_SIZE = {
+      dog: 0.5,
+      frog: 0.35,
+      salamander: 0.4,
+      dragonfly: 0.35,
+    };
+    function fitPetToSize(obj, petType) {
+      const box = new THREE.Box3().setFromObject(obj);
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const target = PET_TARGET_SIZE[petType] || 0.35;
+      const s = target / Math.max(size.x || 1, size.y || 1, size.z || 1);
+      obj.scale.multiplyScalar(s);
+      return s;
+    }
+    const glbPetCache = new Map();
 
     function applyPet(parentGroup, config) {
+      const myToken = ++petLoadToken;
       if (activePetObject && activePetObject.parent) {
         activePetObject.parent.remove(activePetObject);
         activePetObject = null;
@@ -1133,14 +1171,53 @@ export const COSMETICS_CATALOG = {
       else if (petType === 'owl') activePetObject = createFlyingOwl();
       else if (petType === 'bat') activePetObject = createFlyingBat();
       else if (petType === 'ghost') activePetObject = createFlyingGhost();
+      else if (GLB_PETS[petType]) {
+        const file = GLB_PETS[petType];
+        const groundTuning = GROUND_PET_TUNING[petType];
+        const attach = (obj) => {
+          if (myToken !== petLoadToken) return;
+          fitPetToSize(obj, petType);
+          obj.traverse((c) => {
+            if (c.isMesh) {
+              c.castShadow = true;
+              c.receiveShadow = false;
+            }
+          });
+          obj.userData.behavior = groundTuning ? 'ground' : 'fly';
+          obj.userData.feetY = groundTuning ? groundTuning.feetY : 0;
+          activePetObject = obj;
+          if (parentGroup) parentGroup.add(activePetObject);
+        };
+        if (glbPetCache.has(file)) {
+          attach(glbPetCache.get(file).clone(true));
+          return;
+        }
+        loader.load(
+          'Assets/Mascotas/' + file,
+          (gltf) => {
+            glbPetCache.set(file, gltf.scene);
+            attach(gltf.scene.clone(true));
+          },
+          undefined,
+          (err) => {
+            console.warn('No se pudo cargar la mascota:', file, err);
+          }
+        );
+        return;
+      }
 
       if (activePetObject && parentGroup) {
+        if (!activePetObject.userData.behavior) activePetObject.userData.behavior = 'fly';
         parentGroup.add(activePetObject);
       }
     }
 
     function updateFlyingPet(time, delta) {
       if (!activePetObject || !activePetObject.parent) return;
+      if (activePetObject.userData.behavior === 'ground') {
+        updateGroundPet(time);
+        return;
+      }
       const speed = 1.6;
       const radius = 0.55;
       const height = 0.82;
@@ -1153,6 +1230,22 @@ export const COSMETICS_CATALOG = {
       activePetObject.rotation.z = -0.15;
       if (activePetObject.userData && activePetObject.userData.updateAnim) {
         activePetObject.userData.updateAnim(time, delta);
+      }
+    }
+
+    // Mascotas de tierra: slot local atrás-derecha del playerGroup, en el suelo
+    // (misma lógica que index.html).
+    function updateGroundPet(time) {
+      const pet = activePetObject;
+      const feetY = pet.userData.feetY || 0;
+      const k = 0.12;
+      pet.position.x += (0.65 - pet.position.x) * k;
+      pet.position.z += (-0.9 - pet.position.z) * k;
+      pet.position.y = feetY + Math.abs(Math.sin(time * 6)) * 0.03;
+      pet.rotation.y += (0 - pet.rotation.y) * k;
+      pet.rotation.z = 0;
+      if (pet.userData && pet.userData.updateAnim) {
+        pet.userData.updateAnim(time, 0);
       }
     }
 

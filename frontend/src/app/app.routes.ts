@@ -37,6 +37,13 @@ export const routes: Routes = [
     loadComponent: () => import('./features/alumno/unidad-mapa').then((m) => m.UnidadMapa),
   },
   {
+    // Material teórico (mock estático): se entra desde el Templo del mundo 3D vía
+    // postMessage `openMateriales` — ver features/alumno/materiales.ts.
+    path: 'alumno/materiales',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/alumno/materiales').then((m) => m.Materiales),
+  },
+  {
     path: 'insignias',
     canActivate: [sesionGuard],
     loadComponent: () => import('./features/insignias/catalogo').then((m) => m.Catalogo),

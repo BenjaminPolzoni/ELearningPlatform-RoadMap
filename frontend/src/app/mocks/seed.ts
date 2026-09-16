@@ -26,7 +26,8 @@ const NOMBRES_UNIDAD = [
 ];
 const UMBRALES = [0, 500, 1200, 2000, 3200];
 // Mismo resultado visual que ya daba la heurística de nombre/orden en unidad-mapa.ts.
-const BIOMAS_UNIDAD: Bioma[] = ['Desierto', 'Bosque', 'Arenisca', 'Nieve', 'Nether'];
+// La 5ª unidad usa el bioma Espacio (nodos-planeta + nave como avatar en el mundo 3D).
+const BIOMAS_UNIDAD: Bioma[] = ['Desierto', 'Bosque', 'Arenisca', 'Nieve', 'Espacio'];
 
 interface Fila {
   nombre: string;

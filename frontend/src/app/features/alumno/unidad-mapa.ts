@@ -644,7 +644,8 @@ export class UnidadMapa {
       u.orden === 5
     )
       return 'nether';
-    return (['desert', 'jungle', 'castle', 'snow', 'nether'] as const)[(u.orden - 1) % 5];
+    if (nombre.includes('espacio') || nombre.includes('orbital') || nombre.includes('planeta')) return 'space';
+    return (['desert', 'jungle', 'castle', 'snow', 'nether', 'space'] as const)[(u.orden - 1) % 6];
   });
 
   // Lista de desafíos y generación del mundo vertical
