@@ -1729,6 +1729,7 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
     import { createTutorialBridge } from './tutorial-bridge.js';
+    import { createProgressCelebration } from './progress-celebration.js';
 
     // -------------------------------------------------------------
     // THREE.JS SCENE SETUP
@@ -7430,6 +7431,7 @@
       }
       renderFichaThumb(delta);
       tutorialBridge.update(now);
+      progressCelebration.update(now);
     }
 
     function tutorialSceneBusy() {
@@ -7448,6 +7450,11 @@
         .map(m => ({ unitId: m.unitId, activityId: m.actividadId, unitName: unit.name,
           activityName: unit.actividades?.find(a => a.id === m.actividadId)?.nombre || m.name,
           completed: !!unit.actividades?.find(a => a.id === m.actividadId)?.completada }))),
+    }));
+    const progressCelebration = createProgressCelebration(scene, () => ({
+      ready: tutorialDataReceived && tutorialMapReady && isPlayerLoaded,
+      busy: tutorialSceneBusy() || tutorialBridge.paused,
+      zone: currentZone, revision: rebuildToken, modules: interactiveModules, units, player: playerGroup,
     }));
     animate();
   </script>
