@@ -1728,6 +1728,7 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { createTutorialBridge } from './tutorial-bridge.js';
 
     // -------------------------------------------------------------
     // THREE.JS SCENE SETUP
@@ -1859,6 +1860,7 @@
     // -------------------------------------------------------------
     const loader = new GLTFLoader();
     const modelCache = new Map();
+    const tutorialFailedAssets = new Set();
     const assetSizes = new Map();
 
     function updateSceneWeight() {
@@ -1874,19 +1876,23 @@
       try {
         const res = await fetch(url);
         if (!res.ok) {
+          tutorialFailedAssets.add(url);
           console.warn('GLB HTTP error:', res.status, url);
           return null;
         }
         const buf = await res.arrayBuffer();
         if (buf.byteLength < 20) {
+          tutorialFailedAssets.add(url);
           console.warn('GLB buffer too small:', url);
           return null;
         }
         assetSizes.set(url, buf.byteLength);
         updateSceneWeight();
         modelCache.set(url, buf);
+        tutorialFailedAssets.delete(url);
         return buf;
       } catch (e) {
+        tutorialFailedAssets.add(url);
         console.error('Error fetching GLB:', url, e);
         return null;
       }
@@ -1912,7 +1918,10 @@
     };
 
     function loadSavedCharacterConfig() {
-      const saved = localStorage.getItem('modular_character_config');
+      // Corrección: una política de almacenamiento no debe impedir entrar al mundo
+      // ni usar el tutorial durante la sesión (08-tutorial-primeros-pasos).
+      let saved = null;
+      try { saved = localStorage.getItem('modular_character_config'); } catch { /* Defaults en memoria. */ }
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -3952,6 +3961,7 @@
 
     async function loadCharacterModel(config) {
       const loadId = ++currentModelLoadingId;
+      isPlayerLoaded = false;
       const topClass = config.topStyle || config.characterClass || 'Knight';
       const url = 'Assets/CharacterV2/Characters/gltf/' + topClass + '.glb';
 
@@ -4601,8 +4611,9 @@
     // KEYBOARD INPUT CONTROLS (WASD)
     // -------------------------------------------------------------
     const keys = {};
+    window.addEventListener('blur', () => { for (const key of Object.keys(keys)) keys[key] = false; });
     window.addEventListener('keydown', (e) => {
-      if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+      if (tutorialBridge.paused || document.activeElement?.matches('input, textarea, select, button, [contenteditable]')) return;
       keys[e.code] = true;
     });
 
@@ -4797,9 +4808,13 @@
     // Fuente de verdad real: Angular (mundo-3d.ts) manda las unidades del curso —
     // con su id real — apenas el iframe termina de cargar. Reemplaza lo que haya
     // armado `loadUnitsFromStorage()` al boot.
+    let tutorialDataReceived = false;
+    let tutorialMapReady = false;
     window.addEventListener('message', (event) => {
+      if (event.origin !== window.location.origin || event.source !== window.parent) return;
       const data = event.data;
       if (!data || data.type !== 'setUnidades' || !Array.isArray(data.unidades)) return;
+      tutorialDataReceived = true;
 
       units.length = 0;
       data.unidades.forEach((u) => {
@@ -4819,7 +4834,8 @@
     });
 
     function loadUnitsFromStorage() {
-      const saved = localStorage.getItem('modular_city_units');
+      let saved = null;
+      try { saved = localStorage.getItem('modular_city_units'); } catch { /* Angular enviará las unidades. */ }
       if (!saved) {
         UNIDADES_POR_DEFECTO.forEach(([nombre, bioma]) => stageUnit(nombre, bioma, getDefaultBiomeDescription(bioma)));
         updateUIList();
@@ -4936,11 +4952,13 @@
             });
             parsedGLTCache[url] = obj.clone(true);
             resolve(obj);
-          }, undefined, (err) => {
+          }, (err) => {
+            tutorialFailedAssets.add(url);
             console.warn('GLTF parse error, using fallback for:', filename, err);
             resolve(createFallbackObject(filename));
           });
         } catch (err) {
+          tutorialFailedAssets.add(url);
           console.warn('GLTF exception, using fallback for:', filename, err);
           resolve(createFallbackObject(filename));
         }
@@ -6344,6 +6362,7 @@
       // Volver a la Ciudad: módulo de proximidad fijo en el punto de entrada de la isla.
       interactiveModules.push({
         type: 'returnCity',
+        unitId: unit.unitId,
         name: '⬅️ Volver a la Ciudad',
         biome: '',
         icon: '⬅️',
@@ -6355,6 +6374,7 @@
     }
 
     async function rebuildCity() {
+      tutorialMapReady = false;
       const myRebuildToken = ++rebuildToken;
       buildingColliders = [];
       interactiveModules = [];
@@ -6969,6 +6989,7 @@
 
       // Auditoría dev de solapamientos (ver auditOverlaps).
       auditOverlaps();
+      if (myRebuildToken === rebuildToken) tutorialMapReady = true;
     }
 
     function updateUIList() {
@@ -7089,24 +7110,25 @@
     }
 
     btnAccessModule.addEventListener('click', () => {
+      if (tutorialBridge.paused) return;
       if (!activeNearModule) return;
 
       if (activeNearModule.type === 'challenge') {
         if (activeNearModule.locked) return;
         window.parent.postMessage(
           { type: 'enterActivity', unitId: activeNearModule.unitId, actividadId: activeNearModule.actividadId },
-          '*'
+          window.location.origin
         );
         return;
       }
 
       if (activeNearModule.type === 'ranking') {
-        window.parent.postMessage({ type: 'openRanking' }, '*');
+        window.parent.postMessage({ type: 'openRanking' }, window.location.origin);
         return;
       }
 
       if (activeNearModule.type === 'materiales') {
-        window.parent.postMessage({ type: 'openMateriales' }, '*');
+        window.parent.postMessage({ type: 'openMateriales' }, window.location.origin);
         return;
       }
 
@@ -7321,7 +7343,9 @@
           if (trapdoorAnim.t >= 1) trapdoorAnim = null;
         }
 
-        if (isPlayerLoaded) {
+        if (isPlayerLoaded && !tutorialBridge.paused && !tutorialSceneBusy()) {
+        const tutorialStartX = playerGroup.position.x;
+        const tutorialStartZ = playerGroup.position.z;
         const isSprinting = keys['ShiftLeft'] || keys['ShiftRight'];
         const speed = isSprinting ? 4.5 : 2.5;
 
@@ -7381,6 +7405,7 @@
           }
         }
 
+        tutorialBridge.moved(Math.hypot(playerGroup.position.x - tutorialStartX, playerGroup.position.z - tutorialStartZ));
         if (followPlayerCheckbox.checked) {
           // Trasladar cámara y target juntos para mantener fija la distancia/ángulo
           // (antes solo se movía el target y la distancia cámara-personaje se
@@ -7404,8 +7429,26 @@
         renderer.render(scene, camera);
       }
       renderFichaThumb(delta);
+      tutorialBridge.update(now);
     }
 
+    function tutorialSceneBusy() {
+      return currentMode !== 'city' || modalCharCard.style.display !== 'none' ||
+        !!document.querySelector('#modal-construction.active, #modal-details.active, #trans-wave.active, #trans-comet.active');
+    }
+    const tutorialBridge = createTutorialBridge(scene, () => ({
+      ready: tutorialDataReceived && tutorialMapReady && isPlayerLoaded && !units.some(u => tutorialFailedAssets.has(u.model)),
+      busy: tutorialSceneBusy() || !panelCity.classList.contains('collapsed'),
+      zone: currentZone,
+      revision: rebuildToken,
+      modules: interactiveModules,
+      destinations: () => units.flatMap(unit => interactiveModules
+        .filter(m => m.type === 'challenge' && m.unitId === unit.unitId && !m.locked)
+        .filter(m => unit.actividades?.find(a => a.id === m.actividadId)?.tipo !== 'teoria')
+        .map(m => ({ unitId: m.unitId, activityId: m.actividadId, unitName: unit.name,
+          activityName: unit.actividades?.find(a => a.id === m.actividadId)?.nombre || m.name,
+          completed: !!unit.actividades?.find(a => a.id === m.actividadId)?.completada }))),
+    }));
     animate();
   </script>
 </body>
