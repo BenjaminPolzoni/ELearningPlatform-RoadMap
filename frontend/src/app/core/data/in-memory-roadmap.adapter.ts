@@ -226,11 +226,14 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
   /**
    * Deja solo los campos que corresponden al tipo: cualquier desafío (teórico, práctico o
    * boss) lleva dificultad y un `desafioId` (stub — en producción lo referencia el Motor de
-   * Desafíos, T03); solo 'hito' no. La descripción es libre para cualquier tipo — si el
-   * profesor la deja vacía, el mapa del alumno usa `descripcionPorDefecto()`.
+   * Desafíos, T03); 'hito' y 'teoria' no, porque no se evalúan. 'teoria' en cambio lleva
+   * `recursoUrl`/`recursoTipo` (link externo al material). La descripción es libre para
+   * cualquier tipo — si el profesor la deja vacía, el mapa del alumno usa
+   * `descripcionPorDefecto()`.
    */
   private normalizar(dto: NuevaActividad, previa?: Actividad): Omit<Actividad, 'id' | 'posicionX' | 'posicionY'> {
-    const esDesafio = dto.tipo !== 'hito';
+    const esTeoria = dto.tipo === 'teoria';
+    const esDesafio = dto.tipo !== 'hito' && !esTeoria;
     return {
       nombre: dto.nombre.trim(),
       tipo: dto.tipo,
@@ -239,6 +242,8 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
       desafioId: esDesafio ? (previa?.desafioId ?? `desafio-ext-${Date.now().toString(36)}`) : undefined,
       descripcion: dto.descripcion?.trim() || undefined,
       dificultad: esDesafio ? (dto.dificultad ?? 'BASICO') : undefined,
+      recursoUrl: esTeoria ? dto.recursoUrl?.trim() || undefined : undefined,
+      recursoTipo: esTeoria ? (dto.recursoTipo ?? 'pdf') : undefined,
     };
   }
 

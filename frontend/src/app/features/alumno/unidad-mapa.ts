@@ -15,12 +15,13 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { UpperCasePipe } from '@angular/common';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-browser';
 import { AvatarService } from '../../core/avatar/avatar.service';
 import { RoadmapDataPort } from '../../core/data/roadmap-data.port';
 import { RoadmapStore } from '../../core/data/roadmap.store';
 import { descripcionPorDefecto, EstadoNodo, XP_POR_DIFICULTAD } from '../../core/data/roadmap.models';
 import { CURSO_SEED_ID } from '../../mocks/seed';
+import { toEmbedUrl } from './recurso-embed.util';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 import {
   BIOMA_A_WORLD_THEME,
@@ -403,7 +404,15 @@ interface ConfettiPiece {
             <div class="flex items-start justify-between gap-3 border-b-2 border-white/10 pb-3">
               <div>
                 <span class="ui-font text-[8px] text-accent tracking-widest">
-                  {{ isCompleted(c) ? 'MODO REPASO' : c.recovery ? 'RECUPERACIÓN DE VIDA' : 'DESAFÍO ' + c.id }} · ACTIVIDAD
+                  {{
+                    c.type === 'teoria'
+                      ? 'CONTENIDO TEÓRICO'
+                      : isCompleted(c)
+                        ? 'MODO REPASO'
+                        : c.recovery
+                          ? 'RECUPERACIÓN DE VIDA'
+                          : 'DESAFÍO ' + c.id
+                  }} · ACTIVIDAD
                 </span>
                 <h2 class="title-font mt-1 text-xl text-primary">{{ c.title }}</h2>
               </div>
@@ -418,7 +427,17 @@ interface ConfettiPiece {
 
             <!-- Contenido de la Actividad / Pregunta -->
             <div class="my-4">
-              @if (!isQuizResolved()) {
+              @if (c.type === 'teoria') {
+                <!-- Nodo de contenido teórico: material embebido (PDF/video/PPT vía link
+                     externo), sin quiz — leer/ver alcanza para continuar. -->
+                <p class="text-sm text-[#E0E2EC] opacity-90 mb-3">{{ c.description }}</p>
+                <div class="rounded-lg overflow-hidden border border-white/10 bg-black/30" style="aspect-ratio: 16/9">
+                  <iframe [src]="embedUrl(c)" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
+                </div>
+                <a [href]="c.recursoUrl" target="_blank" rel="noopener" class="link link-primary text-xs mt-2 inline-block">
+                  Abrir en pestaña nueva ↗
+                </a>
+              } @else if (!isQuizResolved()) {
                 <p class="text-base text-[#F3EAFF] leading-relaxed mb-4">
                   {{ currentQuestion(c).pregunta }}
                 </p>
@@ -486,7 +505,15 @@ interface ConfettiPiece {
 
             <!-- Botones de Acción del Modal -->
             <div class="modal-action border-t-2 border-white/10 pt-3">
-              @if (!isQuizResolved()) {
+              @if (c.type === 'teoria') {
+                <button
+                  type="button"
+                  class="btn btn-primary w-full ui-font text-[9px]"
+                  (click)="onCompleteActivity(c)"
+                >
+                  {{ c.id < world().mainCount ? 'CONTINUAR AL DESAFÍO ' + (c.id + 1) + ' →' : 'CONTINUAR →' }}
+                </button>
+              } @else if (!isQuizResolved()) {
                 <button
                   type="button"
                   class="btn btn-primary w-full ui-font text-[9px]"
@@ -639,11 +666,14 @@ export class UnidadMapa {
         minutes: 8,
         // El XP real que carga el profesor (PAR-01, XP_POR_DIFICULTAD) — antes era un
         // valor inventado por posición (100 + i*25) que no coincidía con la dificultad
-        // asignada. 'hito' no tiene dificultad: recompensa fija.
-        xp: act?.dificultad ? XP_POR_DIFICULTAD[act.dificultad] : 50,
+        // asignada. 'hito' no tiene dificultad: recompensa fija. 'teoria' no se evalúa:
+        // no otorga XP.
+        xp: act?.tipo === 'teoria' ? 0 : act?.dificultad ? XP_POR_DIFICULTAD[act.dificultad] : 50,
         // Si el profesor no escribió descripción, la misma que se le sugiere como
         // placeholder en el editor (ver descripcionPorDefecto en roadmap.models.ts).
         description: act?.descripcion || descripcionPorDefecto(act?.tipo ?? 'desafio-practico'),
+        recursoUrl: act?.recursoUrl,
+        recursoTipo: act?.recursoTipo,
         x: 50,
         y: 50,
       };
@@ -1148,6 +1178,12 @@ export class UnidadMapa {
         explicacion: '¡Excelente! Resolver las actividades te permite progresar y subir de nivel.',
       }
     );
+  }
+
+  /** URL embebible del material de un nodo 'teoria' (ver recurso-embed.util.ts). */
+  protected embedUrl(c: VerticalChallenge): SafeResourceUrl {
+    const url = toEmbedUrl(c.recursoTipo ?? 'pdf', c.recursoUrl ?? '');
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
   protected checkAnswer(c: VerticalChallenge): void {

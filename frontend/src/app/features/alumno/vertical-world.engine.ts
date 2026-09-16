@@ -30,6 +30,9 @@ export interface VerticalChallenge {
   description: string;
   optional?: boolean;
   recovery?: boolean;
+  // Solo para nodos 'teoria': link externo al material y su tipo (ver recurso-embed.util.ts).
+  recursoUrl?: string;
+  recursoTipo?: 'pdf' | 'video' | 'ppt';
   x: number; // percentage 0-100
   y: number; // percentage 0-100
   branchFrom?: [number, number];

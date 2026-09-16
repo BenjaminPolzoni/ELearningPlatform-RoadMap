@@ -10,6 +10,7 @@ const PAD_Y = 28;
 const BTN = 22;
 
 const GLIFO: Record<TipoNodo, string> = {
+  teoria: '▤',
   'desafio-teorico': '◇',
   'desafio-practico': '◆',
   boss: '★',
@@ -17,6 +18,7 @@ const GLIFO: Record<TipoNodo, string> = {
 };
 
 const ETIQUETA_TIPO: Record<TipoNodo, string> = {
+  teoria: 'Contenido teórico',
   'desafio-teorico': 'Desafío teórico',
   'desafio-practico': 'Desafío práctico',
   boss: 'Boss',
@@ -208,6 +210,8 @@ export class NodoCanvas {
         return 'var(--color-accent)';
       case 'hito':
         return 'var(--color-warning)';
+      case 'teoria':
+        return 'var(--color-info)';
       default:
         return 'var(--color-info)';
     }

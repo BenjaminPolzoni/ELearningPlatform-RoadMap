@@ -5,11 +5,18 @@
 import { Bioma } from './biomas';
 
 export type EstadoNodo = 'bloqueado' | 'habilitado' | 'completado' | 'fallado';
-// Este curso no usa material suelto (teoría/práctica de solo lectura): todo contenido es
-// un desafío, ya sea teórico o práctico (la modalidad va en el propio tipo, como en el
-// contrato real — ver docs/openapi/ms-roadmap.yaml, Nodo.tipo). `boss` e `hito` siguen
-// siendo tipos aparte (no seleccionables desde el editor por ahora).
-export type TipoNodo = 'desafio-teorico' | 'desafio-practico' | 'boss' | 'hito';
+// 'teoria' es material de lectura (PDF/video/PPT vía link externo, ver `recursoUrl` en
+// `Actividad`), sin evaluación ni XP — pensado para ir como primer nodo de la unidad,
+// antes del desafío que evalúa ese contenido. El resto son desafíos evaluados, ya sea
+// teórico o práctico (la modalidad va en el propio tipo, como en el contrato real — ver
+// docs/openapi/ms-roadmap.yaml, Nodo.tipo). `boss` e `hito` siguen siendo tipos aparte
+// (no seleccionables desde el editor por ahora).
+export type TipoNodo = 'teoria' | 'desafio-teorico' | 'desafio-practico' | 'boss' | 'hito';
+
+// Tipo de recurso externo que carga el profesor para un nodo 'teoria' — el proyecto no
+// tiene backend de subida de archivos, así que el "contenido" es siempre un link (YouTube,
+// Google Drive, OneDrive, etc.), nunca un archivo propio.
+export type TipoRecursoTeoria = 'pdf' | 'video' | 'ppt';
 
 // PAR-01: XP base por dificultad (100 / 250 / 500). Espejo de Dificultad del backend.
 export type Dificultad = 'BASICO' | 'MEDIO' | 'AVANZADO';
@@ -21,6 +28,8 @@ export const XP_POR_DIFICULTAD: Record<Dificultad, number> = { BASICO: 100, MEDI
 // editor la muestra como placeholder para que sepa qué va a salir si no escribe la suya.
 export function descripcionPorDefecto(tipo: TipoNodo): string {
   switch (tipo) {
+    case 'teoria':
+      return 'Revisá el material antes de encarar el desafío de la unidad.';
     case 'desafio-teorico':
       return 'Respondé las preguntas para demostrar que entendiste los conceptos de la unidad.';
     case 'desafio-practico':
@@ -40,8 +49,12 @@ export interface Actividad {
   reintentosPermitidos: number; // 0-3 (RF-DES-07)
   desafioId?: string;
   descripcion?: string;
-  // Se evalúa y otorga XP (todo tipo salvo 'hito').
+  // Se evalúa y otorga XP (todo tipo salvo 'hito' y 'teoria').
   dificultad?: Dificultad;
+  // Solo para tipo 'teoria': link externo al material (PDF/video/PPT) y su tipo, para
+  // saber cómo embeberlo en el mapa del alumno (ver recurso-embed.util.ts).
+  recursoUrl?: string;
+  recursoTipo?: TipoRecursoTeoria;
   // Posición del nodo en el editor gráfico del profesor (05-design-system.md §5/§6). El
   // adapter le asigna un default no solapado al crearla; el profesor la reubica arrastrando.
   posicionX: number;
@@ -56,6 +69,8 @@ export interface NuevaActividad {
   reintentosPermitidos: number;
   descripcion?: string;
   dificultad?: Dificultad;
+  recursoUrl?: string;
+  recursoTipo?: TipoRecursoTeoria;
 }
 
 export interface Unidad {

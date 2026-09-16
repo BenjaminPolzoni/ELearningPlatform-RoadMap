@@ -8,6 +8,7 @@ import {
   ProgresoNodo,
   Roadmap,
   TipoNodo,
+  TipoRecursoTeoria,
 } from '../core/data/roadmap.models';
 import { Bioma } from '../core/data/biomas';
 
@@ -34,11 +35,18 @@ interface Fila {
   reintentos: number;
   descripcion?: string;
   dificultad?: Dificultad;
+  recursoUrl?: string;
+  recursoTipo?: TipoRecursoTeoria;
 }
 
-// 6 desafíos por unidad: teórico → 3 prácticos → desafío → boss. Ya no hay material de
-// solo lectura (RF-CUR-04): todo es un desafío, teórico o práctico, con su dificultad/XP.
+// 7 nodos por unidad: contenido teórico (lectura, sin evaluación) → quiz teórico → 3
+// prácticos → desafío → boss. El primer nodo es de ejemplo para probar el 3er tipo de
+// contenido (ver PLAN_CONTENIDO_TEORICO.md): un link externo (acá, un video de muestra)
+// que el alumno mira antes de encarar el quiz teórico que evalúa esos conceptos.
 const PLANTILLA: Fila[] = [
+  { nombre: 'Introducción de la unidad', tipo: 'teoria', esObligatorio: true, reintentos: 0,
+    descripcion: 'Mirá el video antes de encarar el desafío teórico de la unidad.',
+    recursoUrl: 'https://www.youtube.com/watch?v=EjemploVid1', recursoTipo: 'video' },
   { nombre: 'Teoría', tipo: 'desafio-teorico', esObligatorio: true, reintentos: 0,
     descripcion: 'Preguntas sobre los conceptos teóricos de la unidad.',
     dificultad: 'BASICO' },
@@ -77,7 +85,7 @@ export function roadmapSeed(): Roadmap {
     orden: i + 1,
     bioma: BIOMAS_UNIDAD[i],
     actividades: PLANTILLA.map((p, j): Actividad => {
-      const esDesafio = p.tipo !== 'hito';
+      const esDesafio = p.tipo !== 'hito' && p.tipo !== 'teoria';
       return {
         id: `u${i + 1}-a${j + 1}`,
         nombre: p.nombre,
@@ -87,6 +95,8 @@ export function roadmapSeed(): Roadmap {
         desafioId: esDesafio ? `desafio-ext-${i + 1}-${j + 1}` : undefined,
         descripcion: p.descripcion,
         dificultad: p.dificultad,
+        recursoUrl: p.recursoUrl,
+        recursoTipo: p.recursoTipo,
         ...posicionSerpentina(j),
       };
     }),

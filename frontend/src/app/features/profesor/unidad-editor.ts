@@ -9,6 +9,7 @@ import {
   descripcionPorDefecto,
   NuevaActividad,
   TipoNodo,
+  TipoRecursoTeoria,
   XP_POR_DIFICULTAD,
 } from '../../core/data/roadmap.models';
 import { ConfirmButton } from './confirm-button';
@@ -16,7 +17,7 @@ import { NodoCanvas } from './nodo-canvas';
 import { SaveFeedbackToast } from './save-feedback-toast';
 
 // Tipos creables desde este formulario — 'boss'/'hito' quedan afuera (ver roadmap.models.ts).
-type TipoContenido = 'desafio-teorico' | 'desafio-practico';
+type TipoContenido = 'teoria' | 'desafio-teorico' | 'desafio-practico';
 type Vista = 'lista' | 'mapa';
 
 /**
@@ -151,6 +152,7 @@ type Vista = 'lista' | 'mapa';
                   <label class="form-control">
                     <span class="label-text ui-font">Tipo</span>
                     <select class="select select-bordered select-sm" [ngModel]="tipo()" (ngModelChange)="tipo.set($event)" name="tipo">
+                      <option value="teoria">Contenido teórico</option>
                       <option value="desafio-teorico">Desafío teórico</option>
                       <option value="desafio-practico">Desafío práctico</option>
                     </select>
@@ -175,20 +177,43 @@ type Vista = 'lista' | 'mapa';
                     Si la dejás vacía, el alumno ve la descripción sugerida de arriba.
                   </span>
                 </label>
-                <div class="flex flex-wrap gap-3">
-                  <label class="form-control">
-                    <span class="label-text ui-font">Dificultad</span>
-                    <select class="select select-bordered select-sm" [ngModel]="dificultad()" (ngModelChange)="dificultad.set($event)" name="dificultad">
-                      <option value="BASICO">Básico · 100 XP</option>
-                      <option value="MEDIO">Medio · 250 XP</option>
-                      <option value="AVANZADO">Avanzado · 500 XP</option>
-                    </select>
-                  </label>
-                  <label class="form-control">
-                    <span class="label-text ui-font">Reintentos (0-3)</span>
-                    <input class="input input-bordered input-sm w-24 tabular" type="number" min="0" max="3" [ngModel]="reintentos()" (ngModelChange)="reintentos.set($event)" name="reintentos" />
-                  </label>
-                </div>
+                @if (tipo() === 'teoria') {
+                  <div class="flex flex-wrap gap-3">
+                    <label class="form-control">
+                      <span class="label-text ui-font">Tipo de recurso</span>
+                      <select class="select select-bordered select-sm" [ngModel]="recursoTipo()" (ngModelChange)="recursoTipo.set($event)" name="recursoTipo">
+                        <option value="pdf">PDF</option>
+                        <option value="video">Video</option>
+                        <option value="ppt">Presentación (PPT)</option>
+                      </select>
+                    </label>
+                    <label class="form-control flex-1 min-w-52">
+                      <span class="label-text ui-font">URL del recurso</span>
+                      <input
+                        class="input input-bordered input-sm" type="url" [ngModel]="recursoUrl()" (ngModelChange)="recursoUrl.set($event)"
+                        name="recursoUrl" placeholder="https://..." required
+                      />
+                    </label>
+                  </div>
+                  <span class="text-xs opacity-60 -mt-2">
+                    Link a un recurso externo (YouTube, Google Drive, OneDrive, etc.) — el proyecto no sube archivos propios.
+                  </span>
+                } @else {
+                  <div class="flex flex-wrap gap-3">
+                    <label class="form-control">
+                      <span class="label-text ui-font">Dificultad</span>
+                      <select class="select select-bordered select-sm" [ngModel]="dificultad()" (ngModelChange)="dificultad.set($event)" name="dificultad">
+                        <option value="BASICO">Básico · 100 XP</option>
+                        <option value="MEDIO">Medio · 250 XP</option>
+                        <option value="AVANZADO">Avanzado · 500 XP</option>
+                      </select>
+                    </label>
+                    <label class="form-control">
+                      <span class="label-text ui-font">Reintentos (0-3)</span>
+                      <input class="input input-bordered input-sm w-24 tabular" type="number" min="0" max="3" [ngModel]="reintentos()" (ngModelChange)="reintentos.set($event)" name="reintentos" />
+                    </label>
+                  </div>
+                }
 
                 <label class="label cursor-pointer justify-start gap-3">
                   <input type="checkbox" class="checkbox checkbox-sm" [ngModel]="esObligatorio()" (ngModelChange)="esObligatorio.set($event)" name="obligatorio" />
@@ -244,6 +269,8 @@ export class UnidadEditor {
   protected readonly descripcion = signal('');
   protected readonly dificultad = signal<Dificultad>('BASICO');
   protected readonly reintentos = signal(1);
+  protected readonly recursoUrl = signal('');
+  protected readonly recursoTipo = signal<TipoRecursoTeoria>('pdf');
 
   /** Alt+A: agregar contenido — equivalente al Alt+U de la pantalla de unidades. */
   @HostListener('document:keydown', ['$event'])
@@ -265,13 +292,16 @@ export class UnidadEditor {
     const nombre = this.nombre().trim();
     if (!nombre) return;
 
+    const esTeoria = this.tipo() === 'teoria';
     const dto: NuevaActividad = {
       nombre,
       tipo: this.tipo(),
       esObligatorio: this.esObligatorio(),
-      reintentosPermitidos: Number(this.reintentos()) || 0,
+      reintentosPermitidos: esTeoria ? 0 : Number(this.reintentos()) || 0,
       descripcion: this.descripcion(),
-      dificultad: this.dificultad(),
+      dificultad: esTeoria ? undefined : this.dificultad(),
+      recursoUrl: esTeoria ? this.recursoUrl().trim() : undefined,
+      recursoTipo: esTeoria ? this.recursoTipo() : undefined,
     };
 
     const id = this.editandoId();
@@ -286,12 +316,14 @@ export class UnidadEditor {
     this.editandoId.set(a.id);
     this.mostrarForm.set(true);
     // 'boss'/'hito' no están en el selector — al editar uno caen a desafío práctico.
-    this.tipo.set(a.tipo === 'desafio-teorico' ? 'desafio-teorico' : 'desafio-practico');
+    this.tipo.set(a.tipo === 'teoria' ? 'teoria' : a.tipo === 'desafio-teorico' ? 'desafio-teorico' : 'desafio-practico');
     this.nombre.set(a.nombre);
     this.esObligatorio.set(a.esObligatorio);
     this.descripcion.set(a.descripcion ?? '');
     this.dificultad.set(a.dificultad ?? 'BASICO');
     this.reintentos.set(a.reintentosPermitidos);
+    this.recursoUrl.set(a.recursoUrl ?? '');
+    this.recursoTipo.set(a.recursoTipo ?? 'pdf');
   }
 
   protected cancelar(): void {
@@ -304,13 +336,14 @@ export class UnidadEditor {
 
   // ── helpers de presentación ────────────────────────────────
   protected esDesafio(tipo: TipoNodo): boolean {
-    return tipo !== 'hito';
+    return tipo !== 'hito' && tipo !== 'teoria';
   }
   protected xpDe(d: Dificultad): number {
     return XP_POR_DIFICULTAD[d];
   }
   protected icono(tipo: TipoNodo): string {
     switch (tipo) {
+      case 'teoria': return '📖';
       case 'desafio-teorico': return '🧠';
       case 'desafio-practico': return '⚔️';
       case 'boss': return '👑';
@@ -320,6 +353,7 @@ export class UnidadEditor {
   protected etiquetaTipo(a: Actividad): string {
     switch (a.tipo) {
       case 'boss': return 'boss';
+      case 'teoria': return 'contenido teórico';
       case 'desafio-teorico': return 'desafío teórico';
       case 'desafio-practico': return 'desafío práctico';
       default: return 'hito';
@@ -331,6 +365,7 @@ export class UnidadEditor {
       case 'desafio-practico':
         return 'badge-primary';
       case 'boss': return 'badge-secondary';
+      case 'teoria': return 'badge-accent';
       default: return 'badge-info badge-outline';
     }
   }
@@ -350,5 +385,7 @@ export class UnidadEditor {
     this.descripcion.set('');
     this.dificultad.set('BASICO');
     this.reintentos.set(1);
+    this.recursoUrl.set('');
+    this.recursoTipo.set('pdf');
   }
 }
