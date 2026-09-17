@@ -77,6 +77,8 @@ app:
   api:
     # El Gateway reenvía el path completo sin reescribir (deck Tema 01, slide 25).
     base-path: /api/roadmap
+    public-path: /api/roadmap/public
+    private-path: /api/roadmap
   kafka:
     topics:
       # ⚠️ Nombre asumido — el Tema 11 define el contrato de eventos real de la

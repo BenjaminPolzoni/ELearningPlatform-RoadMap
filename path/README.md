@@ -344,6 +344,8 @@ Una Historia de Usuario está *Done* solo si cumple **todo**:
 | [`04-engine-2-5d.md`](04-engine-2-5d.md) | Squad Engine |
 | [`05-design-system.md`](05-design-system.md) | Squad UI |
 | [`06-contrato-api.md`](06-contrato-api.md) | Squad Backend |
+| [`07-islas-3d-desafios.md`](07-islas-3d-desafios.md) | Squad Engine |
+| [`08-comunicacion-gateway.md`](08-comunicacion-gateway.md) | Squad Backend — checklist pre-deploy con Gateway |
 | [`deuda-tecnica/`](deuda-tecnica/README.md) | Todo el equipo — lo que quedó pendiente sin bloquear nada |
 
 ---

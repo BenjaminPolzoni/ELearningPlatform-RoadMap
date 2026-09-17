@@ -6,6 +6,9 @@ Mock de la plataforma de e-learning gamificada (TUP · UTN-FRC) — módulo Tema
 épicas, modelo de datos, arquitectura, engine 2.5D, design system y contrato de API.
 Este README es solo el quickstart técnico.
 
+📝 **Cada contribuyente debe documentar su commit o sesión** siguiendo
+[`docs/REGISTRO-DE-CONTRIBUCIONES.md`](docs/REGISTRO-DE-CONTRIBUCIONES.md).
+
 ## Prerrequisitos
 
 | Herramienta | Versión | Notas |

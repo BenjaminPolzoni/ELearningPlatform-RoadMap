@@ -152,5 +152,6 @@ export function progresoSeed(alumnoId: string): Progreso {
     xpTotal: alumnoId === 'alu-01' ? 350 : 0,
     vidasVigentes: 3,
     nodos,
+    lecturasContenido: [],
   };
 }

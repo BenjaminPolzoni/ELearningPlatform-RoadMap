@@ -117,6 +117,13 @@ export interface Progreso {
   xpTotal: number;
   vidasVigentes: number; // PAR-12: máx 3
   nodos: ProgresoNodo[];
+  /** Movimientos append-only del mock para marcar contenido teórico como leído. */
+  lecturasContenido?: LecturaContenido[];
+}
+
+export interface LecturaContenido {
+  nodoId: string;
+  registradoEn: string;
 }
 
 // En producción esto lo consolida el BFF desde Identidad — acá viene del seed (stub).

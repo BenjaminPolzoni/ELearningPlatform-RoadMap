@@ -49,5 +49,6 @@ export abstract class RoadmapDataPort {
     nodoId?: string,
     vidas?: number,
   ): Observable<Progreso>;
+  abstract marcarContenidoLeido(alumnoId: string, cursoCohorteId: string, nodoId: string): Observable<Progreso>;
   abstract getAlumnos(cursoCohorteId: string): Observable<Alumno[]>;
 }

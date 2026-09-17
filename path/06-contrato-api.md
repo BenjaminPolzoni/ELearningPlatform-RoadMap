@@ -135,6 +135,8 @@ Registrarse en Eureka **no** alcanza. El Gateway usa una *allowlist* (`include-e
 | Método y path | Rol | Para qué |
 |---|---|---|
 | `GET /alumnos/{aid}/progreso?curso_cohorte_id={cc}` | ALUMNO (propio) · PROFESOR | Estado de cada nodo para ese alumno |
+| `POST /roadmaps/{cc}/nodos/{nodo}/lectura` | ALUMNO (por `X-User-Id`) | Marcar contenido `TEORIA`/`CONTENIDO` como leído, append-only e idempotente |
+| `GET /roadmaps/{cc}/unidades/{unidad}/avance-lectura` | ALUMNO (por `X-User-Id`) | Proyección de lecturas sobre contenido teórico obligatorio activo |
 
 ### XP
 | Método y path | Rol | Para qué |
@@ -306,6 +308,9 @@ son **testeables sin levantar Spring**, y ese es el punto.
 ## 9. Checklist del squad
 
 - [x] `docs/openapi/ms-roadmap.yaml` v0 — contrato completo, cada path marcado `[IMPLEMENTADO]`/`[PLANEADO]`
+- [x] Lectura de contenido teórico — `lectura_contenido` append-only con unicidad por
+      alumno/curso-cohorte/nodo, validación de nodo activo, pertenencia y desbloqueo, más
+      proyección `avance-lectura` sobre contenido obligatorio activo.
 - [x] Esqueleto Boot 4.1.1 + Java 21 + Postgres 17 — `roadmap-service`, compila y corre
 - [x] Migraciones Flyway del modelo propio — `V1__init_schema.sql`, espejo exacto de las 12 entidades
 - [x] Dockerfile multi-stage + `docker-compose.yml` — `docker compose config` valida sin errores

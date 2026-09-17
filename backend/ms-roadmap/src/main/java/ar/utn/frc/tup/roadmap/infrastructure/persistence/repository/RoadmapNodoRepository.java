@@ -12,6 +12,10 @@ public interface RoadmapNodoRepository extends JpaRepository<RoadmapNodoEntity, 
 
     List<RoadmapNodoEntity> findBySeccionIdAndActivoTrue(UUID seccionId);
 
+    List<RoadmapNodoEntity> findBySeccionIdAndActivoTrueAndTipoIn(
+        UUID seccionId, List<ar.utn.frc.tup.roadmap.domain.model.TipoNodo> tipos
+    );
+
     Optional<RoadmapNodoEntity> findByIdAndActivoTrue(UUID id);
 
     /** Todos los nodos activos de un conjunto de secciones — para armar el grafo del editor. */

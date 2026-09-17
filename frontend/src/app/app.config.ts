@@ -7,6 +7,8 @@ import { RankingDataPort } from './core/data/ranking-data.port';
 import { InMemoryRankingAdapter } from './core/data/in-memory-ranking.adapter';
 import { InsigniasDataPort } from './core/data/insignias-data.port';
 import { InMemoryInsigniasAdapter } from './core/data/in-memory-insignias.adapter';
+import { BancoDataPort } from './core/data/banco-data.port';
+import { InMemoryBancoAdapter } from './core/data/in-memory-banco.adapter';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,5 +24,8 @@ export const appConfig: ApplicationConfig = {
     // Fase 3: idem — no hay endpoint de catálogo todavía (solo el de insignias ganadas
     // está [PLANEADO] en 06-contrato-api.md).
     { provide: InsigniasDataPort, useClass: InMemoryInsigniasAdapter },
+    // Banco (Tema 08): monedas, XP y vidas como fuente de verdad. Mock con caché
+    // 30s y degradación a indisponible si el "servicio" falla.
+    { provide: BancoDataPort, useClass: InMemoryBancoAdapter },
   ],
 };

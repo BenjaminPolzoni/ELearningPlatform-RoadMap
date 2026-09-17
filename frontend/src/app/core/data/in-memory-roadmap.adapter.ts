@@ -215,6 +215,31 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
     return of(structuredClone(p));
   }
 
+  marcarContenidoLeido(alumnoId: string, cursoCohorteId: string, nodoId: string): Observable<Progreso> {
+    if (cursoCohorteId !== this.roadmap.cursoCohorteId) {
+      return throwError(() => new RoadmapApiError('No existe el curso-cohorte', 404));
+    }
+    const actividad = this.nodo(nodoId);
+    if (!actividad || actividad.tipo !== 'teoria') {
+      return throwError(() => new RoadmapApiError('El nodo no es contenido teórico', 400));
+    }
+    const p = this.cargarProgreso(alumnoId);
+    const estado = p.nodos.find((item) => item.nodoId === nodoId)?.estado;
+    if (estado === 'bloqueado') {
+      return throwError(() => new RoadmapApiError('La unidad todavía no está desbloqueada', 403));
+    }
+    p.lecturasContenido ??= [];
+    if (!p.lecturasContenido.some((lectura) => lectura.nodoId === nodoId)) {
+      p.lecturasContenido.push({ nodoId, registradoEn: new Date().toISOString() });
+    }
+    const progresoNodo = p.nodos.find((item) => item.nodoId === nodoId);
+    if (progresoNodo) progresoNodo.estado = 'completado';
+    else p.nodos.push({ nodoId, estado: 'completado' });
+    this.guardarProgreso(alumnoId, p);
+    if (alumnoId === 'alu-01') this.progresoSubject.next(structuredClone(p));
+    return of(structuredClone(p));
+  }
+
   getAlumnos(_cursoCohorteId: string): Observable<Alumno[]> {
     return of(structuredClone(this.alumnos));
   }
@@ -310,11 +335,17 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
   private cargarProgreso(alumnoId: string): Progreso {
     try {
       const raw = localStorage.getItem(`${PROGRESO_LS_KEY}-${alumnoId}`);
-      if (raw) return JSON.parse(raw) as Progreso;
+      if (raw) {
+        const progreso = JSON.parse(raw) as Progreso;
+        progreso.lecturasContenido ??= [];
+        return progreso;
+      }
     } catch {
       /* ignore */
     }
-    return progresoSeed(alumnoId);
+    const progreso = progresoSeed(alumnoId);
+    progreso.lecturasContenido ??= [];
+    return progreso;
   }
 
   private guardarProgreso(alumnoId: string, p: Progreso): void {

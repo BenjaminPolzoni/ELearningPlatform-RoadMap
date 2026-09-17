@@ -641,6 +641,71 @@ paths:
                     type: array
                     items: { type: string, format: uuid }
 
+  /roadmaps/{cc}/nodos/{nodoId}/lectura:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+      - name: nodoId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    post:
+      summary: "[IMPLEMENTADO] Marcar contenido teórico como leído"
+      description: >
+        El alumno se identifica exclusivamente por X-User-Id. La operación es
+        append-only e idempotente por alumno, curso-cohorte y nodo. Solo acepta nodos
+        TEORIA/CONTENIDO activos y desbloqueados para el alumno.
+      tags: [progreso]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201":
+          description: Lectura registrada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LecturaContenido" }
+        "200":
+          description: Lectura ya existente (operación idempotente)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LecturaContenido" }
+        "400":
+          description: Falta X-User-Id o el nodo no es contenido teórico
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+        "404":
+          description: Roadmap o nodo inexistente/inactivo
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+        "403":
+          description: El alumno no tiene la unidad desbloqueada
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+        "409":
+          description: Curso archivado
+          content:
+            application/problem+json:
+              schema: { $ref: "#/components/schemas/ProblemDetail" }
+
+  /roadmaps/{cc}/unidades/{unidadId}/avance-lectura:
+    parameters:
+      - $ref: "#/components/parameters/cursoCohorteId"
+      - name: unidadId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      summary: "[IMPLEMENTADO] Avance de lectura de contenidos obligatorios de una unidad"
+      tags: [progreso]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Proyección calculada desde lecturas y contenido activo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AvanceLecturaUnidad" }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -749,9 +814,9 @@ components:
           description: >
             ⚠️ Extensión propuesta sobre el modelo original — ver 02-modelo-de-datos.md §4.
             RECUPERACION ya NO es un tipo de nodo: el pool de recuperación es por curso
-            (DesafioRecuperacion), no un nodo del mapa. TEORIA/PRACTICA (material de solo
-            lectura) se sacaron: este curso solo tiene desafíos (teóricos o prácticos).
-          enum: [DESAFIO_TEORICO, DESAFIO_PRACTICO, HITO, BOSS]
+            (DesafioRecuperacion), no un nodo del mapa. TEORIA/CONTENIDO son materiales de
+            solo lectura; los demás tipos son actividades.
+          enum: [TEORIA, CONTENIDO, PRACTICA, DESAFIO_TEORICO, DESAFIO_PRACTICO, HITO, BOSS]
         desafioId:
           type: string
           format: uuid
@@ -771,6 +836,23 @@ components:
       description: >
         El estado del nodo (BLOQUEADO/HABILITADO/…) NO viaja acá: es por alumno y vive en
         ProgresoNodo (GET /alumnos/{aid}/progreso), no en el grafo del editor.
+
+    LecturaContenido:
+      type: object
+      properties:
+        alumnoId: { type: string, format: uuid }
+        cursoCohorteId: { type: string, format: uuid }
+        nodoId: { type: string, format: uuid }
+        registradoEn: { type: string, format: date-time }
+        nueva: { type: boolean }
+
+    AvanceLecturaUnidad:
+      type: object
+      properties:
+        unidadId: { type: string, format: uuid }
+        contenidosObligatorios: { type: integer }
+        contenidosLeidos: { type: integer }
+        porcentaje: { type: integer, minimum: 0, maximum: 100 }
 
     NuevaConexion:
       type: object

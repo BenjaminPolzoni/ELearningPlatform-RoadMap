@@ -33,6 +33,16 @@ export class RoadmapStore {
     this.port.registrarProgreso('alu-01', CURSO_SEED_ID, xpGanado, nodoId, vidas).subscribe();
   }
 
+  marcarContenidoLeido(nodoId: string, onOk: () => void = () => {}): void {
+    this.port.marcarContenidoLeido('alu-01', CURSO_SEED_ID, nodoId).subscribe({
+      next: () => {
+        this.feedback.ok('Lectura registrada ✓');
+        onOk();
+      },
+      error: (err) => this.feedback.error(this.mensaje(err, 'No se pudo registrar la lectura')),
+    });
+  }
+
   recargar(): void {
     this.port.getRoadmap(CURSO_SEED_ID).subscribe((r) => this._roadmap.set(r));
   }

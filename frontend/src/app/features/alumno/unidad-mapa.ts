@@ -509,9 +509,10 @@ interface ConfettiPiece {
                 <button
                   type="button"
                   class="btn btn-primary w-full ui-font text-[9px]"
+                  [disabled]="isCompleted(c)"
                   (click)="onCompleteActivity(c)"
                 >
-                  {{ c.id < world().mainCount ? 'CONTINUAR AL DESAFÍO ' + (c.id + 1) + ' →' : 'CONTINUAR →' }}
+                  {{ isCompleted(c) ? 'LECTURA REGISTRADA ✓' : 'MARCAR COMO LEÍDO Y CONTINUAR →' }}
                 </button>
               } @else if (!isQuizResolved()) {
                 <button
@@ -1213,9 +1214,18 @@ export class UnidadMapa {
 
   protected onCompleteActivity(c: VerticalChallenge): void {
     const wasAlreadyCompleted = this.isCompleted(c);
+    if (c.type === 'teoria' && !wasAlreadyCompleted) {
+      this.store.marcarContenidoLeido(c.actividadId ?? '', () => this.finalizarActividad(c));
+      return;
+    }
+    this.finalizarActividad(c);
+  }
+
+  private finalizarActividad(c: VerticalChallenge): void {
+    const wasAlreadyCompleted = this.isCompleted(c);
     if (!wasAlreadyCompleted) {
       this.completedIds.update((ids) => [...ids, c.id]);
-      this.store.sumarProgreso(c.xp, c.actividadId, this.localVidas());
+      if (c.type !== 'teoria') this.store.sumarProgreso(c.xp, c.actividadId, this.localVidas());
     }
     if (c.recovery) {
       this.localVidas.set(3);

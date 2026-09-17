@@ -7,6 +7,8 @@ import ar.utn.frc.tup.roadmap.domain.exception.CurvaNivelesInvalidaException;
 import ar.utn.frc.tup.roadmap.domain.exception.CursoArchivadoException;
 import ar.utn.frc.tup.roadmap.domain.exception.NodoInvalidoException;
 import ar.utn.frc.tup.roadmap.domain.exception.NodoNoEncontradoException;
+import ar.utn.frc.tup.roadmap.domain.exception.LecturaContenidoNoPermitidaException;
+import ar.utn.frc.tup.roadmap.domain.exception.LecturaContenidoNoAutorizadaException;
 import ar.utn.frc.tup.roadmap.domain.exception.PoolRecuperacionVacioException;
 import ar.utn.frc.tup.roadmap.domain.exception.RecuperacionNoCorrespondeException;
 import ar.utn.frc.tup.roadmap.domain.exception.RoadmapNoEncontradoException;
@@ -51,10 +53,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
         ConexionInvalidaException.class,
         NodoInvalidoException.class,
-        CurvaNivelesInvalidaException.class
+        CurvaNivelesInvalidaException.class,
+        LecturaContenidoNoPermitidaException.class
     })
     public ProblemDetail manejarReglaViolada(RuntimeException ex, WebRequest req) {
         return construir(HttpStatus.BAD_REQUEST, ex.getMessage(), req);
+    }
+
+    @ExceptionHandler(LecturaContenidoNoAutorizadaException.class)
+    public ProblemDetail manejarNoAutorizado(RuntimeException ex, WebRequest req) {
+        return construir(HttpStatus.FORBIDDEN, ex.getMessage(), req);
     }
 
     /** Falla de {@code @Valid} en un @RequestBody — también sale como problem+json. */

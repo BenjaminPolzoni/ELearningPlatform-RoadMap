@@ -16,6 +16,7 @@ package ar.utn.frc.tup.roadmap.domain.model;
  */
 public enum TipoNodo {
     TEORIA,
+    CONTENIDO,
     PRACTICA,
     DESAFIO_TEORICO,
     DESAFIO_PRACTICO,

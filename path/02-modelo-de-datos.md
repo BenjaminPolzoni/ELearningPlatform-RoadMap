@@ -56,6 +56,9 @@ RoadmapConexion
 ProgresoNodo
   id, alumno_id, curso_cohorte_id, nodo_id, estado, intentos_usados, completado_en
 
+LecturaContenido
+  id, alumno_id, curso_cohorte_id, nodo_id, registrado_en
+
 MovimientoXP                ← historial, nunca se sobrescribe
   id, alumno_id, curso_cohorte_id, nodo_id, tipo, monto,
   rubric_version, origen_evento_id, registrado_en
@@ -92,6 +95,12 @@ RankingEntrada              «vista materializada»
 EstadoAcademicoFinal
   alumno_id, curso_cohorte_id, estado, confirmado_por, confirmado_en
 ```
+
+`LecturaContenido` es un ledger append-only e idempotente: la unicidad `(alumno_id,
+curso_cohorte_id, nodo_id)` evita duplicar la marca de lectura. La proyección
+`avance_lectura_unidad` se calcula con sus filas y solo el contenido teórico obligatorio
+activo de la unidad; una baja posterior del nodo no borra la lectura histórica ni la
+cuenta en el denominador vigente.
 
 ### Caches externos (no somos dueños)
 
