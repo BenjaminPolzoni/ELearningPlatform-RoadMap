@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RoadmapDataPort } from './roadmap-data.port';
-import { NuevaActividad, NuevaUnidad, Roadmap, Unidad } from './roadmap.models';
+import { NuevaActividad, NuevaUnidad, Progreso, Roadmap, Unidad } from './roadmap.models';
 import { CURSO_SEED_ID } from '../../mocks/seed';
 import { SaveFeedbackService } from '../services/save-feedback.service';
 
@@ -29,8 +29,15 @@ export class RoadmapStore {
     this.recargar();
   }
 
-  sumarProgreso(xpGanado: number, nodoId?: string, vidas?: number): void {
-    this.port.registrarProgreso('alu-01', CURSO_SEED_ID, xpGanado, nodoId, vidas).subscribe();
+  sumarProgreso(xpGanado: number, nodoId?: string, vidas?: number,
+    onOk: (progreso: Progreso) => void = () => {}, onError: () => void = () => {}): void {
+    this.port.registrarProgreso('alu-01', CURSO_SEED_ID, xpGanado, nodoId, vidas).subscribe({
+      next: onOk,
+      error: () => {
+        this.feedback.error('No se pudo guardar el progreso. Intentá nuevamente.');
+        onError();
+      },
+    });
   }
 
   marcarContenidoLeido(nodoId: string, onOk: () => void = () => {}): void {

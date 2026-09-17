@@ -17,6 +17,8 @@ import { RoadmapStore } from '../../core/data/roadmap.store';
 import { descripcionPorDefecto, Unidad, XP_POR_DIFICULTAD } from '../../core/data/roadmap.models';
 import { RankingPanel } from '../ranking/ranking-panel';
 import { toEmbedUrl } from './recurso-embed.util';
+import { TutorialCard } from './tutorial/tutorial-card';
+import { isTutorialScene, TutorialState } from './tutorial/tutorial-state';
 import {
   BIOMA_A_WORLD_THEME,
   GeneratedWorld,
@@ -71,7 +73,7 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
 @Component({
   selector: 'app-mundo-3d',
   standalone: true,
-  imports: [RouterLink, RankingPanel],
+  imports: [RouterLink, RankingPanel, TutorialCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mundo-3d">
@@ -89,6 +91,41 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
         allowfullscreen
         (load)="onFrameLoad()"
       ></iframe>
+
+      <div class="reward-announcement" role="status" aria-live="polite" aria-atomic="true">
+        @if (rewardNotice(); as reward) {
+          <div class="reward-toast">
+            <span aria-hidden="true">✦</span>
+            <div><strong>{{ reward.unitCompleted ? '¡Unidad completada!' : '¡Desafío completado!' }}</strong>
+              <p>{{ reward.unitCompleted ? reward.unitName : 'Un paso más en tu camino' }}</p></div>
+            @if (reward.xp > 0) { <b>+{{ reward.xp }} XP</b> }
+          </div>
+        }
+      </div>
+
+      @if (tutorialAvailable()) {
+        @if (tutorialVisible()) {
+          <app-tutorial-card class="tutorial-dock" [step]="tutorial.step()"
+            [targetName]="tutorial.step() === 3 ? tutorial.destination()!.activityName : tutorial.destination()!.unitName"
+            [returnToCity]="tutorial.scene()!.zone !== 'city' && tutorial.step() === 2"
+            (skip)="skipTutorial()" />
+        }
+        @if (tutorial.helpEmpty()) {
+          <section class="tutorial-notice tutorial-dock" role="status">
+            <strong>Explorá a tu ritmo</strong>
+            <p>Todavía no hay desafíos disponibles para practicar.</p>
+            <p>WASD: moverte · Shift: correr · Rueda: zoom.</p>
+            <button type="button" (click)="tutorial.helpEmpty.set(false); focusWorld()">Entendido</button>
+          </section>
+        }
+        @if (tutorial.celebration()) {
+          <div class="tutorial-notice tutorial-dock" role="status">✓ ¡Listo! Ya sabés explorar.
+            <p>Podés repetir la guía desde Ayuda.</p>
+          </div>
+        }
+        <button class="tutorial-help" type="button" aria-label="Repetir tutorial de primeros pasos"
+          (click)="restartTutorial()"><span aria-hidden="true">?</span> Ayuda</button>
+      }
 
       <!-- MODAL DE ACTIVIDAD Y PREGUNTAS (Quiz interactivo) — mismo componente visual
            que el mapa 2D (unidad-mapa.ts), reusado como overlay encima del iframe 3D
@@ -183,9 +220,9 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
                   </p>
 
                   <div class="mt-5 flex items-center gap-4 rounded-xl border border-primary/40 bg-black/40 px-5 py-2.5">
-                    <span class="ui-font text-[9px] text-white/70">Recompensa obtenida:</span>
+                    <span class="ui-font text-[9px] text-white/70">{{ isCompleted(c) ? 'Práctica completada' : 'Recompensa al continuar:' }}</span>
                     <strong class="ui-font text-sm text-accent">
-                      +{{ c.xp }} XP
+                      @if (!isCompleted(c)) { +{{ c.xp }} XP }
                       @if (c.recovery) {
                         · +1 VIDA ♥
                       }
@@ -196,8 +233,9 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
             </div>
 
             <div class="modal-action border-t-2 border-white/10 pt-3">
+              @if (saveError()) { <p role="alert" class="text-red-300 text-sm">{{ saveError() }}</p> }
               @if (c.type === 'teoria') {
-                <button type="button" class="btn btn-primary w-full ui-font text-[9px]" (click)="onCompleteActivity(c)">
+                <button type="button" [disabled]="savingProgress()" class="btn btn-primary w-full ui-font text-[9px]" (click)="onCompleteActivity(c)">
                   {{
                     c.id < (activeWorld()?.mainCount ?? c.id)
                       ? 'CONTINUAR AL DESAFÍO ' + (c.id + 1) + ' →'
@@ -214,7 +252,7 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
                   COMPROBAR RESPUESTA →
                 </button>
               } @else {
-                <button type="button" class="btn btn-primary w-full ui-font text-[9px]" (click)="onCompleteActivity(c)">
+                <button type="button" [disabled]="savingProgress()" class="btn btn-primary w-full ui-font text-[9px]" (click)="onCompleteActivity(c)">
                   {{
                     c.optional
                       ? 'VOLVER AL MAPA →'
@@ -238,6 +276,14 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
     </div>
   `,
   styles: `
+    .reward-announcement { position: absolute; bottom: 145px; left: 50%; transform: translateX(-50%); z-index: 26; pointer-events: none; width: max-content; max-width: calc(100% - 40px); }
+    .reward-toast { display: flex; align-items: center; gap: 18px; padding: 16px 22px; border: 1px solid #facc1570; border-radius: 12px; background: #121620f2; color: #fff8dd; box-shadow: 0 8px 32px #0005; animation: reward-in .2s ease-out; }
+    .reward-toast > span { color: #facc15; font-size: 28px; }
+    .reward-toast strong, .reward-toast b { font-family: var(--font-pixel); font-size: 11px; }
+    .reward-toast b { color: #facc15; white-space: nowrap; }
+    .reward-toast p { margin: 6px 0 0; font-size: 13px; color: #ded9c7; max-width: 320px; overflow-wrap: anywhere; }
+    @keyframes reward-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @media (prefers-reduced-motion: reduce) { .reward-toast { animation: none; } }
     .mundo-3d {
       position: fixed;
       inset: 0;
@@ -257,6 +303,18 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
       display: flex;
       gap: 0.4rem;
     }
+    .tutorial-dock { position:absolute; left:20px; bottom:20px; z-index:25; }
+    .tutorial-help { position:absolute; right:20px; bottom:20px; z-index:25;
+      display:flex; align-items:center; gap:7px; border:1px solid #57747d; border-radius:6px;
+      padding:8px 12px; background:#121620ed; color:#cfe9ed; font-size:12px; cursor:pointer; }
+    .tutorial-help span { display:grid; place-items:center; border:1px solid #82b5bd;
+      border-radius:50%; width:18px; height:18px; color:#7ffaff; }
+    .tutorial-help:hover { border-color:#7ffaff; }
+    .tutorial-help:focus-visible, .tutorial-notice button:focus-visible { outline:2px solid #7ffaff; outline-offset:4px; }
+    .tutorial-notice { width:280px; padding:16px; border:1px solid #7ffaff80; border-radius:4px 14px 4px 4px;
+      background:#121620f5; color:#e3f4f6; font-size:14px; box-shadow:0 8px 24px #0004; }
+    .tutorial-notice p { margin:8px 0 0; color:#b9cbd2; line-height:1.5; font-size:13px; }
+    .tutorial-notice button { margin-top:12px; color:#7ffaff; border:0; background:transparent; cursor:pointer; padding:6px; }
     .cambiar-rol,
     .btn-volver {
       padding: 0.3rem 0.6rem;
@@ -276,11 +334,43 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
   `,
 })
 export class Mundo3d implements OnInit, OnDestroy {
+  protected readonly savingProgress = signal(false);
+  protected readonly saveError = signal<string | null>(null);
+  protected readonly rewardNotice = signal<{ xp: number; unitCompleted: boolean; unitName: string } | null>(null);
+  private rewardTimer?: ReturnType<typeof setTimeout>;
+  private rewardFallback?: ReturnType<typeof setTimeout>;
+  private pendingReward: { type: 'celebrateProgress'; id: string; unitId: string; activityId: string;
+    xp: number; unitCompleted: boolean; unitName: string } | null = null;
+  private destroyed = false;
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
   protected readonly auth = inject(AuthMockService);
   private readonly store = inject(RoadmapStore);
   private readonly frame = viewChild<ElementRef<HTMLIFrameElement>>('frame');
+  protected readonly tutorial = new TutorialState((() => {
+    try { return window.localStorage; } catch { return undefined; }
+  })());
+  protected readonly tutorialAvailable = computed(() => this.auth.rol() === 'ALUMNO' &&
+    !!this.tutorial.scene()?.ready && !this.tutorial.scene()?.busy && !this.activeChallenge() && !this.rankingOpen() && !this.rewardNotice());
+  protected readonly tutorialVisible = computed(() => this.tutorialAvailable() &&
+    this.tutorial.status() === 'activo' && !!this.tutorial.destination());
+
+  private readonly synchronizeTutorial = effect(() => {
+    const destination = this.tutorial.destination();
+    this.sendTutorial({
+      type: 'tutorialControl', visible: this.tutorialVisible(),
+      step: this.tutorial.step(), attempt: this.tutorial.attempt(),
+      unitId: destination?.unitId ?? null, activityId: destination?.activityId ?? null,
+      paused: !!this.activeChallenge() || this.rankingOpen(),
+    });
+  });
+
+  private sendTutorial(message: object): void {
+    this.frame()?.nativeElement.contentWindow?.postMessage(message, window.location.origin);
+  }
+  protected focusWorld(): void { this.frame()?.nativeElement.contentWindow?.focus(); }
+  protected skipTutorial(): void { this.tutorial.skip(); this.focusWorld(); }
+  protected restartTutorial(): void { this.tutorial.restart(); this.focusWorld(); }
 
   // Herramienta de exploración 3D (Three.js) que trajo el equipo de 3D — ver 3D/city_generator.html.
   // Se sirve como asset estático en frontend/public/mundo-3d/ (copia manual por ahora).
@@ -288,6 +378,20 @@ export class Mundo3d implements OnInit, OnDestroy {
     this.sanitizer.bypassSecurityTrustResourceUrl('mundo-3d/index.html');
 
   private readonly onMensaje = (evento: MessageEvent): void => {
+    // El mundo embebido es el único emisor autorizado, también para sus acciones previas.
+    if (evento.origin !== window.location.origin || evento.source !== this.frame()?.nativeElement.contentWindow) return;
+    if (evento.data?.type === 'celebrationStarted' && evento.data.id === this.pendingReward?.id) {
+      this.showReward();
+      return;
+    }
+    if (isTutorialScene(evento.data)) {
+      if (this.auth.rol() === 'ALUMNO') this.tutorial.receiveScene(evento.data);
+      return;
+    }
+    if (evento.data?.type === 'tutorialMoved' && Number.isInteger(evento.data.attempt)) {
+      if (this.tutorialVisible()) this.tutorial.moved(evento.data.attempt);
+      return;
+    }
     if (esMensajeEnterActivity(evento.data)) {
       this.abrirDesafio(evento.data.unitId, evento.data.actividadId);
     } else if (esMensajeOpenRanking(evento.data)) {
@@ -304,7 +408,11 @@ export class Mundo3d implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
+    clearTimeout(this.rewardTimer);
+    clearTimeout(this.rewardFallback);
     window.removeEventListener('message', this.onMensaje);
+    this.tutorial.dispose();
   }
 
   protected cambiarRol(): void {
@@ -323,6 +431,7 @@ export class Mundo3d implements OnInit, OnDestroy {
   private readonly cargas = signal(0);
 
   protected onFrameLoad(): void {
+    this.tutorial.scene.set(null);
     this.cargas.update((n) => n + 1);
   }
 
@@ -346,13 +455,13 @@ export class Mundo3d implements OnInit, OnDestroy {
     );
     // Misma definición de "unidad resuelta" que el mapa 2D (mapa.ts `islas`): solo mira
     // las actividades obligatorias, así una "Práctica libre" opcional sin hacer no la traba.
-    const unidades = this.store.unidades().map((u) => {
+    const unidades = [...this.store.unidades()].sort((a, b) => a.orden - b.orden).map((u) => {
       const obligatorias = u.actividades.filter((a) => a.esObligatorio);
       const resuelta = obligatorias.length > 0 && obligatorias.every((a) => completados.has(a.id));
       // Actividades viejas (de antes de que el editor pidiera dificultad al crearlas)
       // pueden no tenerla guardada — tratarlas como BASICO en vez de 0 XP, así no
       // quedan invisibles para el cálculo de progreso de la unidad.
-      const xpDe = (a: (typeof u.actividades)[number]) => XP_POR_DIFICULTAD[a.dificultad ?? 'BASICO'];
+      const xpDe = (a: (typeof u.actividades)[number]) => a.tipo === 'teoria' ? 0 : XP_POR_DIFICULTAD[a.dificultad ?? 'BASICO'];
       // XP de ESTA unidad (no el total del alumno): cuánto ganó de sus desafíos vs. cuánto
       // ganaría completando todos — es lo que muestra la ficha para la unidad en curso.
       const xpUnidad = u.actividades.filter((a) => completados.has(a.id)).reduce((sum, a) => sum + xpDe(a), 0);
@@ -387,7 +496,7 @@ export class Mundo3d implements OnInit, OnDestroy {
         // todavía) — alimenta el billboard dinámico del hub 3D hasta que haya cálculo real.
         rachaDias: 10,
       },
-      '*',
+      window.location.origin,
     );
   });
 
@@ -450,7 +559,7 @@ export class Mundo3d implements OnInit, OnDestroy {
       difficulty: act.dificultad || 'BASICO',
       minutes: 8,
       // 'teoria' no se evalúa: no otorga XP (ver mismo criterio en unidad-mapa.ts).
-      xp: act.tipo === 'teoria' ? 0 : act.dificultad ? XP_POR_DIFICULTAD[act.dificultad] : 50,
+      xp: act.tipo === 'teoria' ? 0 : XP_POR_DIFICULTAD[act.dificultad ?? 'BASICO'],
       description: act.descripcion || descripcionPorDefecto(act.tipo),
       recursoUrl: act.recursoUrl,
       recursoTipo: act.recursoTipo,
@@ -464,9 +573,11 @@ export class Mundo3d implements OnInit, OnDestroy {
     this.activeUnitId.set(unitId);
     this.activeWorld.set(world);
     this.openActivity(challenge);
+    this.tutorial.opened(unitId, actividadId);
   }
 
   protected openActivity(c: VerticalChallenge): void {
+    this.saveError.set(null);
     this.selectedAnswer.set(null);
     this.isQuizResolved.set(false);
     this.quizFeedback.set(null);
@@ -474,9 +585,12 @@ export class Mundo3d implements OnInit, OnDestroy {
   }
 
   protected closeActivity(): void {
+    if (this.savingProgress()) return;
     this.activeChallenge.set(null);
     this.activeWorld.set(null);
     this.activeUnitId.set(null);
+    if (!this.pendingReward && !this.rewardNotice()) this.tutorial.closedChallenge();
+    this.focusWorld();
   }
 
   protected isCompleted(c: VerticalChallenge): boolean {
@@ -525,18 +639,52 @@ export class Mundo3d implements OnInit, OnDestroy {
   }
 
   protected onCompleteActivity(c: VerticalChallenge): void {
+    if (this.savingProgress() || this.activeChallenge() !== c || (c.type !== 'teoria' && !this.isQuizResolved())) return;
     const wasAlreadyCompleted = this.isCompleted(c);
-    if (!wasAlreadyCompleted) {
-      this.store.sumarProgreso(c.xp, c.actividadId, this.localVidas());
-    }
-    if (c.recovery) {
-      this.localVidas.set(3);
-      this.store.sumarProgreso(0, undefined, 3);
-    }
-    this.closeActivity();
+    if (wasAlreadyCompleted && !c.recovery) { this.closeActivity(); return; }
+    const unitId = this.activeUnitId();
+    const unit = unitId ? this.store.unidadPorId(unitId) : undefined;
+    const previous = this.store.progreso();
+    const previousXp = previous?.xpTotal ?? 0;
+    const required = unit?.actividades.filter(a => a.esObligatorio) ?? [];
+    const wasResolved = required.length > 0 && required.every(a => previous?.nodos.some(n => n.nodoId === a.id && n.estado === 'completado'));
+    this.savingProgress.set(true);
+    this.saveError.set(null);
+    this.store.sumarProgreso(wasAlreadyCompleted ? 0 : c.xp, c.actividadId, c.recovery ? 3 : this.localVidas(), confirmed => {
+      if (this.destroyed) return;
+      this.savingProgress.set(false);
+      if (c.recovery) this.localVidas.set(3);
+      if (!c.recovery && c.type !== 'teoria' && unitId && c.actividadId &&
+          confirmed.nodos.some(n => n.nodoId === c.actividadId && n.estado === 'completado')) {
+        this.pendingReward = { type: 'celebrateProgress', id: crypto.randomUUID(), unitId, activityId: c.actividadId,
+          xp: Math.max(0, confirmed.xpTotal - previousXp), unitName: unit?.nombre ?? '',
+          unitCompleted: !wasResolved && required.length > 0 && required.every(a => confirmed.nodos.some(n => n.nodoId === a.id && n.estado === 'completado')) };
+        this.sendTutorial(this.pendingReward);
+        // A missing scene must never hide a successfully saved reward.
+        clearTimeout(this.rewardFallback);
+        this.rewardFallback = setTimeout(() => this.showReward(), 3000);
+      }
+      this.closeActivity();
+    }, () => {
+      if (this.destroyed) return;
+      this.savingProgress.set(false);
+      this.saveError.set('No se pudo guardar. Intentá continuar nuevamente.');
+    });
     // El `effect` `sincronizarEstado` ya se dispara solo (store.progreso() cambió con
     // sumarProgreso) y le manda a la isla 3D el estado de actividades actualizado —
     // no hace falta un mensaje aparte para refrescar el nodo recién completado.
+  }
+
+  private showReward(): void {
+    if (!this.pendingReward || this.destroyed) return;
+    clearTimeout(this.rewardFallback);
+    clearTimeout(this.rewardTimer);
+    this.rewardNotice.set(this.pendingReward);
+    this.pendingReward = null;
+    this.rewardTimer = setTimeout(() => {
+      this.rewardNotice.set(null);
+      this.tutorial.closedChallenge();
+    }, 2500);
   }
 
   // Efectos de Sonido Web Audio — igual que unidad-mapa.ts.
