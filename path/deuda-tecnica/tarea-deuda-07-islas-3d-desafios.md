@@ -109,3 +109,24 @@ como meta); agregar la meta es sumar una línea al mapa cuando exista el asset.
 
 **Cómo se paga:** cuando el equipo 3D entregue la meta de arenisca, agregarla al
 mapa. Sin trigger claro todavía.
+
+---
+
+## 🔴 8. Panel Mi personaje duplica el catálogo de la ciudad y el preview recarga por debounce
+
+**Qué falta:** (a) las 13 listas de opciones del panel (rontend/src/app/features/play/avatar-opciones.ts)
+duplican los <select> del editor de la ciudad (rontend/public/mundo-3d/index.html);
+si la ciudad agrega una opción hay que copiarla a mano; (b) el preview 3D del panel
+recarga el iframe de vatar-preview.html con debounce porque ese preview lee la config
+solo al cargar (no escucha storage ni postMessage).
+
+**Dónde vive:** rontend/src/app/features/play/avatar-panel.ts,
+rontend/src/app/features/play/avatar-opciones.ts.
+
+**Por qué no bloquea la tarea actual:** el panel guarda en la misma clave que la ciudad
+y el preview muestra el personaje actualizado tras cada cambio; la duplicación solo
+cuesta mantenimiento y la recarga es rápida (GLBs cacheados por el navegador).
+
+**Cómo se paga:** (a) cuando Identidad exponga el catálogo por API, ambas UIs lo consumen;
+(b) agregando un listener de message/storage a vatar-preview.html y posteando la
+config en vez de recargar. Sin trigger claro todavía.

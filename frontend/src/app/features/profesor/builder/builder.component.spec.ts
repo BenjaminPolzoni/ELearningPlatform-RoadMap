@@ -49,6 +49,15 @@ describe('BuilderComponent (Educa)', () => {
     expect(store.current()?.unidades.length).toBeGreaterThan(0);
   });
 
+  it('el host scrollea puertas adentro (el shell recorta con overflow hidden)', () => {
+    // RF-NFR-05: el shell (app.css :host + app.html main) es 100vh/98vh con
+    // overflow hidden. Si el host no acota su altura con scroll propio, una
+    // asignatura con muchas unidades queda recortada e inalcanzable.
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.classList.contains('h-full')).toBe(true);
+    expect(host.classList.contains('overflow-y-auto')).toBe(true);
+  });
+
   it('agrega una nueva unidad y permite editar su bioma', () => {
     component.addUnidad('Unidad Glacial');
     const u = store.current()!.unidades.find((x) => x.titulo === 'Unidad Glacial');

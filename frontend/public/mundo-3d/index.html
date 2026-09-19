@@ -7410,7 +7410,7 @@
           icon: biome.icon,
           x: unitCenterX,
           z: houseZ,
-          radius: 2.2,
+          radius: 3.4,
           description: unit.description || getDefaultBiomeDescription(unit.biome)
         });
 
@@ -7806,25 +7806,26 @@
     }
 
     btnAccessModule.addEventListener('click', () => {
-      if (tutorialBridge.paused) return;
       if (!activeNearModule) return;
+
+      console.log('[Mundo3D] Click en botón de módulo:', activeNearModule.type, activeNearModule.name, activeNearModule);
 
       if (activeNearModule.type === 'challenge') {
         if (activeNearModule.locked) return;
         window.parent.postMessage(
           { type: 'enterActivity', unitId: activeNearModule.unitId, actividadId: activeNearModule.actividadId },
-          window.location.origin
+          '*'
         );
         return;
       }
 
       if (activeNearModule.type === 'ranking') {
-        window.parent.postMessage({ type: 'openRanking' }, window.location.origin);
+        window.parent.postMessage({ type: 'openRanking' }, '*');
         return;
       }
 
       if (activeNearModule.type === 'materiales') {
-        window.parent.postMessage({ type: 'openMateriales' }, window.location.origin);
+        window.parent.postMessage({ type: 'openMateriales' }, '*');
         return;
       }
 
@@ -7852,20 +7853,17 @@
         return;
       }
 
-      // El id real de la Unidad viaja con cada módulo desde que se armó en `stageUnit`
-      // (ver mensaje `setUnidades` más arriba) — nada de mapeos bioma->id hardcodeados.
-      const unitId = activeNearModule.type === 'biome' ? activeNearModule.unitId : undefined;
-      if (unitId && challengeIslandEntry[unitId]) {
-        currentZone = unitId;
-        showOnlyChallengeIsland(unitId);
-        const entry = challengeIslandEntry[unitId];
-        teleportPlayerTo(entry.x, entry.z, Math.PI / 2);
-        // En órbita se viaja en la nave (avatar oculto); en islas clásicas, avatar normal.
-        const entered = unitById(unitId);
-        setSpaceMode(!!entered && entered.biome === 'Espacio');
-        updateZoneSky();
+      // Al presionar "Acceder al Módulo" en una casa/bioma, navega al mapa de hexágonos 3D de Educa para esta unidad.
+      if (activeNearModule.type === 'biome') {
+        const unitId = activeNearModule.unitId || activeNearModule.name || '1';
+        console.log('[Mundo3D] Enviando openUnitPlay con unitId:', unitId);
+        window.parent.postMessage(
+          { type: 'openUnitPlay', unitId: String(unitId) },
+          '*'
+        );
         return;
       }
+
       openConstructionModal(activeNearModule.name, activeNearModule.description);
     });
 
@@ -7909,7 +7907,11 @@
                     ? 'Viajar →'
                     : closest.type === 'trapdoor'
                       ? (trapdoorOpen ? 'Cerrar trampilla' : 'Abrir trampilla')
-                      : 'Acceder al Módulo';
+                      : closest.type === 'shop'
+                        ? 'Ver Tienda'
+                        : closest.type === 'trofeo'
+                          ? 'Ver Trofeo'
+                          : 'Acceder al Módulo';
         btnAccessModule.disabled = closest.type === 'challenge' && closest.locked;
         proximityPrompt.classList.add('visible');
       } else {

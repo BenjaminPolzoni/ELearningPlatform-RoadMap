@@ -23,14 +23,18 @@ el momento, no se archiva acá.
 | [tarea-deuda-01-arquitectura-y-stack.md](tarea-deuda-01-arquitectura-y-stack.md) | `01-arquitectura-y-stack.md` | 2 | 1 |
 | [tarea-deuda-02-modelo-de-datos.md](tarea-deuda-02-modelo-de-datos.md) | `02-modelo-de-datos.md` | 2 | 0 |
 | [tarea-deuda-03-plan-de-implementacion.md](tarea-deuda-03-plan-de-implementacion.md) | `03-plan-de-implementacion.md` | 2 | 0 |
-| [tarea-deuda-04-engine-2-5d.md](tarea-deuda-04-engine-2-5d.md) | `04-engine-2-5d.md` | 3 | 0 |
+| [tarea-deuda-04-engine-2-5d.md](tarea-deuda-04-engine-2-5d.md) | `04-engine-2-5d.md` | 4 | 0 |
 | [tarea-deuda-05-design-system.md](tarea-deuda-05-design-system.md) | `05-design-system.md` | 4 | 1 |
 | [tarea-deuda-06-contrato-api.md](tarea-deuda-06-contrato-api.md) | `06-contrato-api.md` | 8 | 2 |
-| [tarea-deuda-07-islas-3d-desafios.md](tarea-deuda-07-islas-3d-desafios.md) | `07-islas-3d-desafios.md` | 7 | 0 |
+| [tarea-deuda-07-islas-3d-desafios.md](tarea-deuda-07-islas-3d-desafios.md) | `07-islas-3d-desafios.md` | 8 | 0 |
 | [tarea-deuda-08-tutorial-primeros-pasos.md](tarea-deuda-08-tutorial-primeros-pasos.md) | `08-tutorial-primeros-pasos.md` | 2 | 0 |
 | [tarea-deuda-09-celebraciones-progreso-3d.md](tarea-deuda-09-celebraciones-progreso-3d.md) | `09-celebraciones-progreso-3d.md` | 1 | 0 |
 
-**Total: 31 ítems abiertos, 4 pagados.** Última revisión: celebraciones de progreso
+**Total: 33 ítems abiertos, 4 pagados.** Última revisión: mapa de islas + panel Mi
+personaje (duplicación de catálogo y preview por recarga como deuda en
+`07-islas-3d-desafios.md` ítem #8). Antes: el personaje 3D de la ciudad
+ahora se muestra en el mundo hexagonal (duplicación del ensamblado como deuda en
+`04-engine-2-5d.md` ítem #4). Antes: celebraciones de progreso
 agrega idempotencia del adapter mock compartido. Antes: tutorial de primeros pasos
 agrega 2 deudas (persistencia por identidad y encuadre inicial del mercado).
 Corrección de conteo: las filas anteriores sumaban 28 abiertos, no 27.

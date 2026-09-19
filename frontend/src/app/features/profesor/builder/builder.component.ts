@@ -38,9 +38,12 @@ const BIOMA_LABEL: Record<Biome, { icon: string; label: string }> = {
   selector: 'app-builder',
   standalone: true,
   imports: [RouterLink, UiBadge, UiCard, EditorComponent],
+  // El shell raíz (app.html) es h-[98vh] con overflow hidden: esta vista scrollea
+  // puertas adentro con altura acotada (h-full), igual que avatar-editor y catálogo.
+  host: { class: 'block w-full h-full overflow-y-auto' },
   template: `
     @if (store.current(); as a) {
-      <div class="mx-auto max-w-4xl p-6 min-h-screen overflow-y-auto">
+      <div class="mx-auto max-w-4xl p-6">
         <!-- Barra de navegación superior -->
         <div class="flex items-center justify-between gap-4 border-b border-base-300 pb-4">
           <a routerLink="/profesor" class="btn btn-sm btn-ghost ui-font text-[9px]">

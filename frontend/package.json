@@ -18,10 +18,12 @@
     "@angular/platform-browser": "^22.1.0",
     "@angular/router": "^22.1.0",
     "@tailwindcss/postcss": "^4.3.3",
+    "@types/three": "^0.186.0",
     "daisyui": "^5.7.28",
     "postcss": "^8.5.28",
     "rxjs": "~7.8.0",
     "tailwindcss": "^4.3.3",
+    "three": "^0.186.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {

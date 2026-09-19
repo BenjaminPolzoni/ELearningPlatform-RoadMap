@@ -27,10 +27,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/profesor/builder/builder.component').then((m) => m.BuilderComponent),
   },
   {
-    // Mundo 3D (mundo-3d.ts embebe la herramienta de exploración): cada casa es una
-    // unidad/bioma; al entrar avisa por postMessage y acá se navega al mapa de
-    // desafíos de esa unidad. Reemplaza al viejo mapa isométrico de islas.
+    // Entrada del alumno: Mis Clases (lista de asignaturas del StoreService,
+    // las creadas por el profesor). Elegir una lleva al hub de mundos /play/:id.
     path: 'alumno',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/alumno/mis-clases').then((m) => m.MisClases),
+  },
+  {
+    // Mundo 3D ciudad+islas de una asignatura (antes /alumno). El :id es el id de
+    // la asignatura en el StoreService; el componente hace store.open(id).
+    path: 'alumno/curso/:id',
     canActivate: [sesionGuard],
     loadComponent: () => import('./features/alumno/mundo-3d').then((m) => m.Mundo3d),
   },
@@ -54,14 +60,33 @@ export const routes: Routes = [
     loadComponent: () => import('./features/alumno/materiales').then((m) => m.Materiales),
   },
   {
+    // Hub de mundos de la asignatura (Educa)
+    path: 'play/:id',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/play/worlds.component').then((m) => m.WorldsComponent),
+  },
+  {
+    // Mapa de hexágonos 3D (Educa) por unidad
+    path: 'play/:id/:unidadId',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/play/play.component').then((m) => m.PlayComponent),
+  },
+  {
+    path: 'alumno/play/:unidadId',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/play/play.component').then((m) => m.PlayComponent),
+  },
+  {
     path: 'insignias',
     canActivate: [sesionGuard],
     loadComponent: () => import('./features/insignias/catalogo').then((m) => m.Catalogo),
   },
   {
+    // La raíz siempre cae al selector de rol (login mock Fase 0). Con rol ya
+    // guardado en localStorage también: la lista/mundo se alcanza por sus rutas.
     path: '',
-    canActivate: [sesionGuard],
-    loadComponent: () => import('./features/home/home').then((m) => m.Home),
+    redirectTo: 'login',
+    pathMatch: 'full',
   },
   { path: '**', redirectTo: '' },
 ];

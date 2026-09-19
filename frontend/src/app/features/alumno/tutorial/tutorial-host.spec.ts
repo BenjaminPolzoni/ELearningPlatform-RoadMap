@@ -1,6 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+import { vi } from 'vitest';
 import { RoadmapStore } from '../../../core/data/roadmap.store';
 import { Mundo3d } from '../mundo-3d';
 
@@ -54,5 +55,13 @@ describe('Puente seguro de primeros pasos', () => {
     message(snapshot);
     expect(root.querySelector('app-tutorial-card')).toBeNull();
     expect(root.querySelector('.tutorial-help')).toBeNull();
+  });
+
+  it('navega al mapa de hexágonos al recibir openUnitPlay', async () => {
+    const { message } = await setup();
+    const router = TestBed.inject(Router);
+    const spy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+    message({ type: 'openUnitPlay', unitId: 'u1-fundamentos' });
+    expect(spy).toHaveBeenCalledWith(expect.arrayContaining(['/play', expect.any(String), 'u1-fundamentos']));
   });
 });

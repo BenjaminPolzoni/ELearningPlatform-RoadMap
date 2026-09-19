@@ -10,10 +10,12 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { AuthMockService } from '../../core/auth/auth-mock.service';
 import { RoadmapStore } from '../../core/data/roadmap.store';
+import { StoreService } from '../../core/educa/store.service';
+import { CURSO_SEED_ID } from '../../mocks/seed';
 import { descripcionPorDefecto, Unidad, XP_POR_DIFICULTAD } from '../../core/data/roadmap.models';
 import { RankingPanel } from '../ranking/ranking-panel';
 import { toEmbedUrl } from './recurso-embed.util';
@@ -47,6 +49,23 @@ function esMensajeEnterActivity(data: unknown): data is MensajeEnterActivity {
     (data as { type?: unknown }).type === 'enterActivity' &&
     typeof (data as { unitId?: unknown }).unitId === 'string' &&
     typeof (data as { actividadId?: unknown }).actividadId === 'string'
+  );
+}
+
+/**
+ * Mensaje para navegar al mapa hexagonal de Educa correspondiente a la unidad.
+ */
+interface MensajeOpenUnitPlay {
+  type: 'openUnitPlay';
+  unitId: string;
+}
+
+function esMensajeOpenUnitPlay(data: unknown): data is MensajeOpenUnitPlay {
+  return (
+    !!data &&
+    typeof data === 'object' &&
+    (data as { type?: unknown }).type === 'openUnitPlay' &&
+    typeof (data as { unitId?: unknown }).unitId === 'string'
   );
 }
 
@@ -343,9 +362,11 @@ export class Mundo3d implements OnInit, OnDestroy {
     xp: number; unitCompleted: boolean; unitName: string } | null = null;
   private destroyed = false;
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly sanitizer = inject(DomSanitizer);
   protected readonly auth = inject(AuthMockService);
   private readonly store = inject(RoadmapStore);
+  private readonly educaStore = inject(StoreService);
   private readonly frame = viewChild<ElementRef<HTMLIFrameElement>>('frame');
   protected readonly tutorial = new TutorialState((() => {
     try { return window.localStorage; } catch { return undefined; }
@@ -379,7 +400,11 @@ export class Mundo3d implements OnInit, OnDestroy {
 
   private readonly onMensaje = (evento: MessageEvent): void => {
     // El mundo embebido es el único emisor autorizado, también para sus acciones previas.
-    if (evento.origin !== window.location.origin || evento.source !== this.frame()?.nativeElement.contentWindow) return;
+    const frameWin = this.frame()?.nativeElement?.contentWindow;
+    if (frameWin && evento.source !== frameWin) return;
+    if (evento.origin !== window.location.origin && evento.origin !== 'null' && evento.origin !== '') {
+      if (!evento.origin.startsWith('http://localhost') && !evento.origin.startsWith('http://127.0.0.1')) return;
+    }
     if (evento.data?.type === 'celebrationStarted' && evento.data.id === this.pendingReward?.id) {
       this.showReward();
       return;
@@ -398,12 +423,30 @@ export class Mundo3d implements OnInit, OnDestroy {
       this.rankingOpen.set(true);
     } else if (esMensajeOpenMateriales(evento.data)) {
       this.router.navigate(['/alumno/materiales']);
+    } else if (esMensajeOpenUnitPlay(evento.data)) {
+      console.log('[Mundo3D Host] Procesando openUnitPlay:', evento.data);
+      const course = this.educaStore.current() ?? this.educaStore.listAll()[0];
+      const courseId = course?.id ?? CURSO_SEED_ID;
+      console.log('[Mundo3D Host] Navegando a /play:', courseId, evento.data.unitId);
+      this.router
+        .navigate(['/play', courseId, evento.data.unitId])
+        .catch(() => false)
+        .then((success) => {
+          console.log('[Mundo3D Host] Router navigate resultado:', success);
+          if (!success) {
+            this.router.navigate(['/alumno/play', evento.data.unitId]).catch(() => false);
+          }
+        });
     }
   };
 
   protected readonly rankingOpen = signal(false);
 
   ngOnInit(): void {
+    // La ruta trae el id de la asignatura (/alumno/curso/:id): se abre en el
+    // StoreService para sincronizar el roadmap que muestra este mundo.
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) this.educaStore.open(id);
     window.addEventListener('message', this.onMensaje);
   }
 
