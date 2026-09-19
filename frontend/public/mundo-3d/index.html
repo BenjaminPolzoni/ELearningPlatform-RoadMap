@@ -1248,12 +1248,11 @@
       <option value="Mage">Arquetipo C (Mago)</option>
       <option value="Ranger">Arquetipo D (Arquero)</option>
       <option value="Rogue">Arquetipo E (Pícaro)</option>
-      <option value="Rogue_Hooded">Arquetipo F (Encapuchado)</option>
-      <option value="Skeleton_Warrior">Arquetipo G (Esqueleto Guerrero)</option>
-      <option value="Skeleton_Mage">Arquetipo H (Esqueleto Mago)</option>
-      <option value="Skeleton_Rogue">Arquetipo I (Esqueleto Pícaro)</option>
-      <option value="Skeleton_Minion">Arquetipo J (Esqueleto Minion)</option>
-      <option value="Mannequin">Arquetipo K (Maniquí)</option>
+      <option value="Skeleton_Warrior">Arquetipo F (Esqueleto Guerrero)</option>
+      <option value="Skeleton_Mage">Arquetipo G (Esqueleto Mago)</option>
+      <option value="Skeleton_Rogue">Arquetipo H (Esqueleto Pícaro)</option>
+      <option value="Skeleton_Minion">Arquetipo I (Esqueleto Minion)</option>
+      <option value="Mannequin">Arquetipo J (Maniquí)</option>
     </select>
 
 
@@ -1265,13 +1264,52 @@
       <option value="Mage">Cabeza C (Mago)</option>
       <option value="Ranger">Cabeza D (Arquero)</option>
       <option value="Rogue">Cabeza E (Pícaro)</option>
-      <option value="Rogue_Hooded">Cabeza F (Encapuchado)</option>
-      <option value="Skeleton_Warrior">Cabeza G (Esqueleto Guerrero)</option>
-      <option value="Skeleton_Mage">Cabeza H (Esqueleto Mago)</option>
-      <option value="Skeleton_Rogue">Cabeza I (Esqueleto Pícaro)</option>
-      <option value="Skeleton_Minion">Cabeza J (Esqueleto Minion)</option>
-      <option value="Mannequin">Cabeza K (Maniquí)</option>
+      <option value="Skeleton_Warrior">Cabeza F (Esqueleto Guerrero)</option>
+      <option value="Skeleton_Mage">Cabeza G (Esqueleto Mago)</option>
+      <option value="Skeleton_Rogue">Cabeza H (Esqueleto Pícaro)</option>
+      <option value="Skeleton_Minion">Cabeza I (Esqueleto Minion)</option>
+      <option value="Mannequin">Cabeza J (Maniquí)</option>
     </select>
+
+    <!-- 1.1 CABELLO -->
+    <div class="section-title">💇 Cabello</div>
+    <select id="select-hair-style" class="creator-select">
+      <option value="default">👤 Original / Por Defecto</option>
+      <option value="mage">🧙 Mago (Largo / Blanco)</option>
+      <option value="ranger">🏹 Arquero (Ondulado / Castaño)</option>
+      <option value="knight">🛡️ Caballero (Corto)</option>
+      <option value="rogue">🗡️ Pícaro (Despeinado)</option>
+      <option value="none">🚫 Ninguno (Bárbaro / Rapado)</option>
+    </select>
+    <div class="color-picker-row" id="picker-hair-row">
+      <span style="font-size:0.75rem; color:#64748b; font-weight:600;">Color Pelo:</span>
+      <div class="color-swatch active" style="background:#ffffff;" data-color="#ffffff" title="Original"></div>
+      <div class="color-swatch" style="background:#1E1726;" data-color="#1E1726" title="Negro"></div>
+      <div class="color-swatch" style="background:#6B4226;" data-color="#6B4226" title="Castaño"></div>
+      <div class="color-swatch" style="background:#E6C27A;" data-color="#E6C27A" title="Rubio"></div>
+      <div class="color-swatch" style="background:#C2502A;" data-color="#C2502A" title="Pelirrojo"></div>
+      <div class="color-swatch" style="background:#CFCAD6;" data-color="#CFCAD6" title="Canoso"></div>
+      <input type="color" id="input-hair-color" class="color-input-custom" value="#ffffff" title="Elegir otro color">
+    </div>
+
+    <!-- 1.2 COSMÉTICO CARA -->
+    <div class="section-title">🎭 Cosmético cara</div>
+    <select id="select-beard-style" class="creator-select">
+      <option value="none">🚫 Ninguno</option>
+      <option value="long">🧔 Barba larga (Bárbaro)</option>
+      <option value="short">🧔 Barba corta (Arquero)</option>
+      <option value="mask">🥷 Tapaboca (Encapuchado)</option>
+    </select>
+    <div class="color-picker-row" id="picker-beard-row">
+      <span style="font-size:0.75rem; color:#64748b; font-weight:600;">Color:</span>
+      <div class="color-swatch active" style="background:#ffffff;" data-color="#ffffff" title="Original"></div>
+      <div class="color-swatch" style="background:#1E1726;" data-color="#1E1726" title="Negro"></div>
+      <div class="color-swatch" style="background:#6B4226;" data-color="#6B4226" title="Castaño"></div>
+      <div class="color-swatch" style="background:#E6C27A;" data-color="#E6C27A" title="Rubio"></div>
+      <div class="color-swatch" style="background:#C2502A;" data-color="#C2502A" title="Pelirrojo"></div>
+      <div class="color-swatch" style="background:#CFCAD6;" data-color="#CFCAD6" title="Canoso"></div>
+      <input type="color" id="input-beard-color" class="color-input-custom" value="#ffffff" title="Elegir otro color">
+    </div>
 
     <!-- 2. PARTE SUPERIOR -->
     <div class="section-title">👕 Parte Superior</div>
@@ -1281,7 +1319,7 @@
       <option value="Mage">Parte Superior C (Mago)</option>
       <option value="Ranger">Parte Superior D (Arquero)</option>
       <option value="Rogue">Parte Superior E (Pícaro)</option>
-      <option value="Rogue_Hooded">Parte Superior F (Encapuchado)</option>
+      <option value="Rogue_Hooded">Parte Superior F (Torso Encapuchado)</option>
       <option value="Skeleton_Warrior">Parte Superior G (Esqueleto Guerrero)</option>
       <option value="Skeleton_Mage">Parte Superior H (Esqueleto Mago)</option>
       <option value="Skeleton_Rogue">Parte Superior I (Esqueleto Pícaro)</option>
@@ -1340,11 +1378,22 @@
       <option value="none">🚫 Ninguno</option>
       <option value="cape">🧣 Capa</option>
       <option value="backpack">🎒 Mochila</option>
-      <option value="laptop_bag">💼 Bolso Notebook</option>
       <option value="keyboard_back">⌨️ Teclado Gamer</option>
       <option value="giant_usb">💾 USB Gigante</option>
-      <option value="quiver">🏹 Carcaj</option>
-      <option value="Skeleton_Quiver.gltf">🏹 Carcaj Esquelético</option>
+      <option value="guitar">🎸 Guitarra</option>
+      <option value="shield_badge.gltf">🛡️ Escudo Emblema</option>
+      <option value="shield_badge_color.gltf">🛡️ Escudo Emblema Color</option>
+      <option value="shield_round.gltf">🛡️ Escudo Redondo</option>
+      <option value="shield_round_barbarian.gltf">🛡️ Escudo Bárbaro</option>
+      <option value="shield_round_color.gltf">🛡️ Escudo Redondo Color</option>
+      <option value="shield_spikes.gltf">🛡️ Escudo con Púas</option>
+      <option value="shield_spikes_color.gltf">🛡️ Escudo Púas Color</option>
+      <option value="shield_square.gltf">🛡️ Escudo Cuadrado</option>
+      <option value="shield_square_color.gltf">🛡️ Escudo Cuadrado Color</option>
+      <option value="Skeleton_Shield_Large_A.gltf">🛡️ Escudo Grande A</option>
+      <option value="Skeleton_Shield_Large_B.gltf">🛡️ Escudo Grande B</option>
+      <option value="Skeleton_Shield_Small_A.gltf">🛡️ Escudo Pequeño A</option>
+      <option value="Skeleton_Shield_Small_B.gltf">🛡️ Escudo Pequeño B</option>
     </select>
 
     <!-- Color picker for Backpack -->
@@ -1357,6 +1406,13 @@
       <div class="color-swatch" style="background:#7c3aed;" data-color="#7c3aed" title="Púrpura"></div>
       <div class="color-swatch" style="background:#ea580c;" data-color="#ea580c" title="Naranja"></div>
       <input type="color" id="input-backpack-color" class="color-input-custom" value="#2563eb" title="Elegir otro color">
+    </div>
+
+    <!-- Color picker for Guitarra -->
+    <div class="color-picker-row" id="picker-guitar-row" style="display: none;">
+      <span style="font-size:0.75rem; color:#64748b; font-weight:600;">Color Guitarra:</span>
+      <div class="color-swatch active" style="background:#ec4899;" data-guitar="A" title="Rosa"></div>
+      <div class="color-swatch" style="background:#2563eb;" data-guitar="B" title="Azul"></div>
     </div>
 
     <!-- 6. COSMÉTICO DE CABEZA -->
@@ -1372,27 +1428,41 @@
       <option value="skel_helmet">🪖 Casco Esqueleto Guerrero</option>
       <option value="skel_mage_hat">🧙 Sombrero Esqueleto Mago</option>
       <option value="skel_hood">🥷 Capucha Esqueleto Pícaro</option>
+      <option value="star_orbit">⭐ Estrellitas</option>
+      <option value="flower_antennae">🌸 Flores Antena</option>
     </select>
 
+    <!-- Color picker for Estrellitas -->
+    <div class="color-picker-row" id="picker-star-row" style="display: none;">
+      <span style="font-size:0.75rem; color:#64748b; font-weight:600;">Color Estrellas:</span>
+      <div class="color-swatch active" style="background:#eab308;" data-star="yellow" title="Amarilla"></div>
+      <div class="color-swatch" style="background:#2563eb;" data-star="blue" title="Azul"></div>
+      <div class="color-swatch" style="background:#16a34a;" data-star="green" title="Verde"></div>
+      <div class="color-swatch" style="background:#dc2626;" data-star="red" title="Roja"></div>
+    </div>
 
-    <!-- 7. MASCOTA (voladora o de tierra, ver grupos del selector) -->
-    <div class="section-title">🐾 Mascota</div>
+
+    <!-- 7. MASCOTA VOLADORA -->
+    <div class="section-title">🛸 Mascota Voladora</div>
     <select id="select-pet" class="creator-select">
       <option value="none">🚫 Ninguna</option>
-      <optgroup label="🛸 Voladoras (orbitan)">
-        <option value="drone">🛸 Dron</option>
-        <option value="owl">🦉 Búho</option>
-        <option value="bat">🦇 Murciélago</option>
-        <option value="ghost">👻 Fantasma</option>
-        <option value="dragonfly">🪰 Libélula</option>
-      </optgroup>
-      <optgroup label="🐾 De tierra (te siguen caminando)">
-        <option value="dog">🐶 Perrito</option>
-        <option value="frog">🐸 Rana</option>
-        <option value="salamander">🦎 Salamandra</option>
-      </optgroup>
+      <option value="drone">🛸 Dron</option>
+      <option value="owl">🦉 Búho</option>
+      <option value="bat">🦇 Murciélago</option>
+      <option value="ghost">👻 Fantasma</option>
+      <option value="chicken">🐔 Gallina</option>
+      <option value="dog">🐶 Perrito</option>
+      <option value="dragonfly">🪰 Libélula</option>
+      <option value="frog">🐸 Rana</option>
+      <option value="salamander">🦎 Salamandra</option>
     </select>
-    <div class="creator-hint">Las voladoras orbitan a la altura de la cabeza; las de tierra te siguen caminando.</div>
+
+    <!-- Color picker for Gallina -->
+    <div class="color-picker-row" id="picker-chicken-row" style="display: none;">
+      <span style="font-size:0.75rem; color:#64748b; font-weight:600;">Color Gallina:</span>
+      <div class="color-swatch active" style="background:#f5f0e6;" data-chicken="A" title="Blanca"></div>
+      <div class="color-swatch" style="background:#8d5a2b;" data-chicken="B" title="Marrón"></div>
+    </div>
 
     <!-- 8. ARMA PRINCIPAL (MANO DER.) -->
     <div class="section-title">🗡️ Arma / Mano Derecha</div>
@@ -1413,21 +1483,14 @@
       <option value="wand.gltf">✨ Varita</option>
       <option value="bow_withString.gltf">🏹 Arco</option>
       <option value="crossbow_1handed.gltf">🎯 Ballesta</option>
-      <option value="shield_badge.gltf">🛡️ Escudo Insignia</option>
-      <option value="shield_round.gltf">🛡️ Escudo Redondo</option>
-      <option value="shield_spikes.gltf">🛡️ Escudo Púas</option>
-      <option value="shield_square.gltf">🛡️ Escudo Cuadrado</option>
       <option value="Skeleton_Blade.gltf">🗡️ Espada Esquelética</option>
       <option value="Skeleton_Axe.gltf">🪓 Hacha Esquelética</option>
       <option value="Skeleton_Staff.gltf">🪄 Báculo Esquelético</option>
       <option value="Skeleton_Crossbow.gltf">🎯 Ballesta Esquelética</option>
-      <option value="Skeleton_Shield_Large_A.gltf">🛡️ Escudo Grande A</option>
-      <option value="Skeleton_Shield_Large_B.gltf">🛡️ Escudo Grande B</option>
-      <option value="Skeleton_Shield_Small_A.gltf">🛡️ Escudo Pequeño A</option>
-      <option value="Skeleton_Shield_Small_B.gltf">🛡️ Escudo Pequeño B</option>
       <option value="mug_full.gltf">🍺 Jarra Llena</option>
       <option value="mug_empty.gltf">🍺 Jarra Vacía</option>
       <option value="smokebomb.gltf">💨 Bomba Humo</option>
+      <option value="puzzlecube_complete.gltf">🧩 Cubo Rubik</option>
     </select>
 
     <!-- 9. MANO IZQUIERDA -->
@@ -1440,10 +1503,6 @@
       <option value="energy_can">⚡ Red Bull</option>
       <option value="pokeball">🔴 Pokéball</option>
       <option value="keyboard_gamer">⌨️ Teclado Gamer</option>
-      <option value="shield_badge.gltf">🛡️ Escudo Insignia</option>
-      <option value="shield_round.gltf">🛡️ Escudo Redondo</option>
-      <option value="shield_spikes.gltf">🛡️ Escudo Púas</option>
-      <option value="shield_square.gltf">🛡️ Escudo Cuadrado</option>
       <option value="sword_1handed.gltf">🗡️ Espada 1M</option>
       <option value="sword_2handed.gltf">⚔️ Espada 2M</option>
       <option value="axe_1handed.gltf">🪓 Hacha 1M</option>
@@ -1457,13 +1516,10 @@
       <option value="Skeleton_Axe.gltf">🪓 Hacha Esquelética</option>
       <option value="Skeleton_Staff.gltf">🪄 Báculo Esquelético</option>
       <option value="Skeleton_Crossbow.gltf">🎯 Ballesta Esquelética</option>
-      <option value="Skeleton_Shield_Large_A.gltf">🛡️ Escudo Grande A</option>
-      <option value="Skeleton_Shield_Large_B.gltf">🛡️ Escudo Grande B</option>
-      <option value="Skeleton_Shield_Small_A.gltf">🛡️ Escudo Pequeño A</option>
-      <option value="Skeleton_Shield_Small_B.gltf">🛡️ Escudo Pequeño B</option>
       <option value="mug_full.gltf">🍺 Jarra Llena</option>
       <option value="mug_empty.gltf">🍺 Jarra Vacía</option>
       <option value="smokebomb.gltf">💨 Bomba Humo</option>
+      <option value="puzzlecube_complete.gltf">🧩 Cubo Rubik</option>
     </select>
 
     <button class="btn-card-2d" id="btn-card-2d" type="button">🪪 Ficha de Personaje 2D</button>
@@ -1695,6 +1751,14 @@
             <span id="card-val-class" style="font-weight: 700; color: #0f172a;">Caballero</span>
           </div>
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #64748b; font-weight: 600;">Cabello:</span>
+            <span id="card-val-hair" style="font-weight: 700; color: #0f172a;">Original 👤</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #64748b; font-weight: 600;">Cara:</span>
+            <span id="card-val-beard" style="font-weight: 700; color: #0f172a;">Ninguna 🚫</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
             <span style="color: #64748b; font-weight: 600;">Capa:</span>
             <span id="card-val-cape" style="font-weight: 700; color: #0f172a;">Sí</span>
           </div>
@@ -1728,6 +1792,14 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import {
+      remapSkinnedMesh,
+      splitLegGeometry,
+      applyShoesTint,
+      isHeadMesh,
+      extractFaceGeometry,
+      createAvatarMounter,
+    } from './avatar-modular-core.js';
     import { createTutorialBridge } from './tutorial-bridge.js';
     import { createProgressCelebration } from './progress-celebration.js';
 
@@ -1905,6 +1977,10 @@
     const characterConfig = {
       characterClass: 'Knight',
       headStyle: 'Knight',
+      hairStyle: 'default',
+      hairColor: '#ffffff',
+      beardStyle: 'none',
+      beardColor: '#ffffff',
       topStyle: 'Knight',
       pantsStyle: 'Knight',
       shoesStyle: 'Knight',
@@ -1912,17 +1988,17 @@
       showCape: true,
       backItem: 'backpack',
       backpackColor: '#2563eb',
+      guitarColor: 'A',
       headItem: 'headphones',
+      starOrbitColor: 'yellow',
+      chickenVariant: 'A',
       pet: 'drone',
       rightHandItem: 'mouse_gamer',
       leftHandItem: 'mate_argentino'
     };
 
     function loadSavedCharacterConfig() {
-      // Corrección: una política de almacenamiento no debe impedir entrar al mundo
-      // ni usar el tutorial durante la sesión (08-tutorial-primeros-pasos).
-      let saved = null;
-      try { saved = localStorage.getItem('modular_character_config'); } catch { /* Defaults en memoria. */ }
+      const saved = localStorage.getItem('modular_character_config');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -1933,29 +2009,66 @@
           console.warn('Failed parsing character config:', e);
         }
       }
-      const validClasses = ['Knight', 'Barbarian', 'Mage', 'Ranger', 'Rogue', 'Rogue_Hooded', 'Skeleton_Warrior', 'Skeleton_Mage', 'Skeleton_Rogue', 'Skeleton_Minion', 'Mannequin'];
+      const validClasses = ['Knight', 'Barbarian', 'Mage', 'Ranger', 'Rogue', 'Skeleton_Warrior', 'Skeleton_Mage', 'Skeleton_Rogue', 'Skeleton_Minion', 'Mannequin'];
+      const legacyHooded = (characterConfig.characterClass === 'Rogue_Hooded' || characterConfig.headStyle === 'Rogue_Hooded');
+      if (legacyHooded) {
+        // Migración: cabeza Encapuchado retirada → Pícaro, pero se conserva el torso si era full-hooded.
+        if (!characterConfig.topStyle && characterConfig.characterClass === 'Rogue_Hooded') characterConfig.topStyle = 'Rogue_Hooded';
+        if (characterConfig.characterClass === 'Rogue_Hooded') characterConfig.characterClass = 'Rogue';
+        if (characterConfig.headStyle === 'Rogue_Hooded') characterConfig.headStyle = 'Rogue';
+      }
       if (!characterConfig.characterClass || !validClasses.includes(characterConfig.characterClass)) {
         characterConfig.characterClass = 'Knight';
       }
       if (!characterConfig.headStyle) characterConfig.headStyle = characterConfig.characterClass || 'Knight';
+      if (!characterConfig.hairStyle) characterConfig.hairStyle = 'default';
+      if (!characterConfig.beardStyle) {
+        if (characterConfig.characterClass === 'Barbarian') characterConfig.beardStyle = 'long';
+        else if (characterConfig.characterClass === 'Ranger') characterConfig.beardStyle = 'short';
+        else characterConfig.beardStyle = 'none';
+      }
       if (!characterConfig.topStyle) characterConfig.topStyle = characterConfig.characterClass || 'Knight';
       if (!characterConfig.pantsStyle) characterConfig.pantsStyle = characterConfig.characterClass || 'Knight';
       if (!characterConfig.shoesStyle) characterConfig.shoesStyle = characterConfig.characterClass || 'Knight';
       if (!characterConfig.shoesColor) characterConfig.shoesColor = '#ffffff';
+      if (!characterConfig.hairColor) characterConfig.hairColor = '#ffffff';
+      if (!characterConfig.beardColor) characterConfig.beardColor = '#ffffff';
 
       if (characterConfig.showCape === undefined) characterConfig.showCape = (characterConfig.backItem === 'cape');
       if (!characterConfig.backItem) {
-        characterConfig.backItem = characterConfig.showCape ? 'cape' : (characterConfig.showQuiver ? 'quiver' : 'backpack');
+        characterConfig.backItem = characterConfig.showCape ? 'cape' : 'backpack';
+      }
+      if (characterConfig.backItem === 'quiver' || characterConfig.backItem === 'Skeleton_Quiver.gltf') {
+        characterConfig.backItem = 'shield_badge.gltf';
       }
       if (!characterConfig.backpackColor) characterConfig.backpackColor = '#2563eb';
+      if (!['A', 'B'].includes(characterConfig.guitarColor)) characterConfig.guitarColor = 'A';
+      if (!['A', 'B'].includes(characterConfig.chickenVariant)) characterConfig.chickenVariant = 'A';
       if (!characterConfig.headItem) {
         if (characterConfig.showHelmet) characterConfig.headItem = 'helmet';
         else if (characterConfig.showHat) characterConfig.headItem = 'bear_hat';
         else characterConfig.headItem = 'headphones';
       }
+      // Migración: antes eran 4 ids (uno por color), ahora es un solo id + starOrbitColor.
+      const legacyStar = String(characterConfig.headItem || '').match(/^star_orbit_(yellow|blue|green|red)$/);
+      if (legacyStar) {
+        characterConfig.headItem = 'star_orbit';
+        characterConfig.starOrbitColor = legacyStar[1];
+      }
+      if (!['yellow', 'blue', 'green', 'red'].includes(characterConfig.starOrbitColor)) {
+        characterConfig.starOrbitColor = 'yellow';
+      }
+      if (characterConfig.headItem === 'mining_helmet') characterConfig.headItem = 'none';
+      if (characterConfig.backItem === 'laptop_bag') characterConfig.backItem = 'backpack';
       if (!characterConfig.pet) characterConfig.pet = 'drone';
       if (characterConfig.rightHandItem === undefined) characterConfig.rightHandItem = 'mouse_gamer';
       if (characterConfig.leftHandItem === undefined) characterConfig.leftHandItem = 'mate_argentino';
+      // Los escudos ahora son solo de espalda: si estaban en mano, se sueltan.
+      for (const campoMano of ['rightHandItem', 'leftHandItem']) {
+        if (typeof characterConfig[campoMano] === 'string' && /shield/i.test(characterConfig[campoMano])) {
+          characterConfig[campoMano] = 'none';
+        }
+      }
       if (characterConfig.rightHandItem && characterConfig.rightHandItem.includes('spellbook')) {
         characterConfig.rightHandItem = 'keyboard_gamer';
       }
@@ -1984,6 +2097,22 @@
 
       // 2. Cabeza
       setVal('select-head-style', characterConfig.headStyle || characterConfig.characterClass || 'Knight');
+
+      // 2.1 Cabello
+      setVal('select-hair-style', characterConfig.hairStyle || 'default');
+      document.querySelectorAll('#picker-hair-row .color-swatch').forEach(sw => {
+        sw.classList.toggle('active', sw.getAttribute('data-color') === characterConfig.hairColor);
+      });
+      const inputHairColor = document.getElementById('input-hair-color');
+      if (inputHairColor) inputHairColor.value = characterConfig.hairColor || '#ffffff';
+
+    // 2.2 Cosmético cara
+      setVal('select-beard-style', characterConfig.beardStyle || 'none');
+      document.querySelectorAll('#picker-beard-row .color-swatch').forEach(sw => {
+        sw.classList.toggle('active', sw.getAttribute('data-color') === characterConfig.beardColor);
+      });
+      const inputBeardColor = document.getElementById('input-beard-color');
+      if (inputBeardColor) inputBeardColor.value = characterConfig.beardColor || '#ffffff';
 
       // 3. Parte Superior
       setVal('select-top', characterConfig.topStyle || characterConfig.characterClass || 'Knight');
@@ -2015,13 +2144,34 @@
       });
       const inputBackColor = document.getElementById('input-backpack-color');
       if (inputBackColor) inputBackColor.value = characterConfig.backpackColor || '#2563eb';
+      const pickerGuitarRow = document.getElementById('picker-guitar-row');
+      if (pickerGuitarRow) {
+        pickerGuitarRow.style.display = (characterConfig.backItem === 'guitar') ? 'flex' : 'none';
+      }
+      document.querySelectorAll('#picker-guitar-row .color-swatch').forEach(sw => {
+        sw.classList.toggle('active', sw.getAttribute('data-guitar') === characterConfig.guitarColor);
+      });
 
       // 7. Cosmético de Cabeza
       setVal('select-head-item', characterConfig.headItem || 'none');
+      const pickerStarRow = document.getElementById('picker-star-row');
+      if (pickerStarRow) {
+        pickerStarRow.style.display = (characterConfig.headItem === 'star_orbit') ? 'flex' : 'none';
+      }
+      document.querySelectorAll('#picker-star-row .color-swatch').forEach(sw => {
+        sw.classList.toggle('active', sw.getAttribute('data-star') === characterConfig.starOrbitColor);
+      });
 
 
-      // 8. Mascota (voladora u de tierra — el comportamiento va en userData.behavior)
+      // 8. Mascota Voladora
       setVal('select-pet', characterConfig.pet || 'none');
+      const pickerChickenRow = document.getElementById('picker-chicken-row');
+      if (pickerChickenRow) {
+        pickerChickenRow.style.display = (characterConfig.pet === 'chicken') ? 'flex' : 'none';
+      }
+      document.querySelectorAll('#picker-chicken-row .color-swatch').forEach(sw => {
+        sw.classList.toggle('active', sw.getAttribute('data-chicken') === characterConfig.chickenVariant);
+      });
 
       // 9. Manos
       setVal('select-rhand', characterConfig.rightHandItem || 'none');
@@ -2041,120 +2191,7 @@
       return gltf;
     }
 
-    function remapSkinnedMesh(mesh, targetSkeleton) {
-      const cloned = mesh.clone();
-      cloned.geometry = mesh.geometry.clone();
-
-      // Mapear nombres de huesos originales a índices del esqueleto destino
-      const originalBones = mesh.skeleton.bones.map(b => b.name);
-      const targetBoneIndices = originalBones.map(name =>
-        targetSkeleton.bones.findIndex(b => b.name === name)
-      );
-
-      const skinIndices = cloned.geometry.attributes.skinIndex;
-      const newIndices = skinIndices.clone();
-      for (let i = 0; i < skinIndices.count; i++) {
-        for (let j = 0; j < 4; j++) {
-          const origIdx = skinIndices.getComponent(i, j);
-          const mappedIdx = targetBoneIndices[origIdx];
-          newIndices.setComponent(i, j, mappedIdx !== -1 ? mappedIdx : 0);
-        }
-      }
-      cloned.geometry.setAttribute('skinIndex', newIndices);
-      cloned.bind(targetSkeleton, mesh.bindMatrix);
-      return cloned;
-    }
-
-    const legSplitCache = new Map();
-
-    function splitLegGeometry(mesh, cutoffY = 0.15) {
-      const cacheKey = mesh.name + '_' + cutoffY;
-      if (legSplitCache.has(cacheKey)) return legSplitCache.get(cacheKey);
-
-      const geom = mesh.geometry;
-      const pos = geom.attributes.position;
-      const index = geom.index;
-
-      const pantsIndices = [];
-      const shoesIndices = [];
-
-      const triCount = index ? index.count / 3 : pos.count / 3;
-
-      for (let i = 0; i < triCount; i++) {
-        const iA = index ? index.getX(i * 3) : i * 3;
-        const iB = index ? index.getX(i * 3 + 1) : i * 3 + 1;
-        const iC = index ? index.getX(i * 3 + 2) : i * 3 + 2;
-
-        const yA = pos.getY(iA);
-        const yB = pos.getY(iB);
-        const yC = pos.getY(iC);
-        const avgY = (yA + yB + yC) / 3;
-
-        if (avgY >= cutoffY) {
-          pantsIndices.push(iA, iB, iC);
-        } else {
-          shoesIndices.push(iA, iB, iC);
-        }
-      }
-
-      const pantsGeom = geom.clone();
-      pantsGeom.setIndex(pantsIndices);
-
-      const shoesGeom = geom.clone();
-      shoesGeom.setIndex(shoesIndices);
-
-      const res = { pantsGeom, shoesGeom };
-      legSplitCache.set(cacheKey, res);
-      return res;
-    }
-
-    function applyShoesTint(shoesMesh, colorHex) {
-      if (!shoesMesh || !shoesMesh.geometry || !colorHex) return;
-      shoesMesh.material = shoesMesh.material.clone();
-      shoesMesh.material.vertexColors = true;
-      const geom = shoesMesh.geometry;
-      const pos = geom.attributes.position;
-      const targetColor = new THREE.Color(colorHex);
-      const colorAttr = new Float32Array(pos.count * 3);
-      for (let i = 0; i < pos.count; i++) {
-        const y = pos.getY(i);
-        if (y < 0.035) {
-          colorAttr[i * 3] = 0.95;
-          colorAttr[i * 3 + 1] = 0.95;
-          colorAttr[i * 3 + 2] = 0.95;
-        } else {
-          colorAttr[i * 3] = targetColor.r;
-          colorAttr[i * 3 + 1] = targetColor.g;
-          colorAttr[i * 3 + 2] = targetColor.b;
-        }
-      }
-      geom.setAttribute('color', new THREE.BufferAttribute(colorAttr, 3));
-      shoesMesh.material.onBeforeCompile = (shader) => {
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <color_fragment>',
-          `
-          #if defined( USE_COLOR )
-            float lum = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
-            diffuseColor.rgb = vColor.rgb * (lum * 0.7 + 0.4);
-          #endif
-          `
-        );
-      };
-    }
-
-    function isHeadMesh(name) {
-      if (!name) return false;
-      return name.includes('Head') ||
-             name.includes('Skull') ||
-             name.includes('Jaw') ||
-             name.includes('Eyes') ||
-             name.includes('Helmet') ||
-             name.includes('Visor') ||
-             name.includes('BearHat') ||
-             name.endsWith('_Hat') ||
-             name.endsWith('_Hood') ||
-             name.includes('Mask');
-    }
+    const { mountHair, mountBeard, mountMask } = createAvatarMounter(getGLTF);
 
     async function applyModularParts(targetModel, config) {
       const targetRig = targetModel.getObjectByName('Rig_Medium') || targetModel.getObjectByName('Rig');
@@ -2190,11 +2227,63 @@
         }
       });
 
-      // 3. Montar Cabeza Modular (limpia, directamente del modelo de cada arquetipo)
+      // 3. Montar Cabeza Modular, Cabello y Cosmético de cara (barba o tapaboca)
       const headClass = config.headStyle || config.characterClass || 'Knight';
-      const headGltf = await getGLTF(headClass);
+      const beardType = config.beardStyle !== undefined ? config.beardStyle : (headClass === 'Barbarian' ? 'long' : (headClass === 'Ranger' ? 'short' : 'none'));
+      const hairType = config.hairStyle || 'default';
+
+      let effectiveHeadClass = headClass;
+      let shouldMountSeparateBeard = false;
+      // Tapaboca: vale para cualquier personaje; no cambia la cabeza base y no se
+      // duplica si la cabeza ya es Encapuchado (esa ya trae su máscara nativa).
+      const wantMask = (beardType === 'mask');
+      const isHoodedNative = (headClass === 'Rogue_Hooded');
+      let shouldMountMask = (wantMask && !isHoodedNative);
+
+      if (wantMask) {
+        effectiveHeadClass = headClass;
+        shouldMountSeparateBeard = false;
+      } else if (headClass === 'Barbarian') {
+        if (beardType === 'long') {
+          effectiveHeadClass = 'Barbarian';
+          // Separada también en nativa: así le llega el beardColor (horneada no se tiñe).
+          shouldMountSeparateBeard = true;
+        } else {
+          effectiveHeadClass = 'Knight';
+          shouldMountSeparateBeard = (beardType === 'short');
+        }
+      } else if (headClass === 'Ranger') {
+        if (beardType === 'short') {
+          effectiveHeadClass = 'Ranger';
+          shouldMountSeparateBeard = true;
+        } else {
+          effectiveHeadClass = 'Knight';
+          shouldMountSeparateBeard = (beardType === 'long');
+        }
+      } else {
+        effectiveHeadClass = headClass;
+        shouldMountSeparateBeard = (beardType === 'long' || beardType === 'short');
+      }
+
+      // Pelo default con tinte: se monta su propio pelo nativo para que reciba el
+      // color (horneado no se tiñe). Sin tinte, en calva o en no-humano, igual que antes.
+      const tiñePelo = (config.hairColor || '#ffffff').toLowerCase() !== '#ffffff';
+      const peloPropioTiñe = hairType === 'default' && tiñePelo &&
+        ['Knight', 'Mage', 'Ranger', 'Rogue'].includes(effectiveHeadClass);
+      const hairTypeEfectivo = peloPropioTiñe ? effectiveHeadClass.toLowerCase() : hairType;
+
+      // El flequillo y cejas propias se quitan con cualquier pelo foráneo que traiga su propio cabello/cejas:
+      // la frente la cubre la franja completa del donante con sus cejas + el estiraFrente.
+      const peinadosConPelo = ['mage', 'ranger', 'knight', 'rogue'];
+      const sinFlequillo = peinadosConPelo.includes(hairTypeEfectivo) &&
+        hairTypeEfectivo !== effectiveHeadClass.toLowerCase();
+      // Frente estirada en todo combo foráneo para alcanzar el casco (ver
+      // extractFaceGeometry: los ojos van por UV y no se mueven).
+      const estiraFrente = hairTypeEfectivo !== 'default';
+
+      const headGltf = await getGLTF(effectiveHeadClass);
       if (headGltf) {
-        if (headClass === 'Rogue_Hooded') {
+        if (effectiveHeadClass === 'Rogue_Hooded') {
           const origHead = headGltf.scene.getObjectByName('RogueHooded_Head');
           if (origHead) {
             const remappedHead = remapSkinnedMesh(origHead, targetSkin.skeleton);
@@ -2207,18 +2296,33 @@
             remappedMask.name = 'modular_head_mask';
             targetRig.add(remappedMask);
           }
-        } else if (headClass === 'Mannequin') {
+        } else if (effectiveHeadClass === 'Mannequin') {
           const origHead = headGltf.scene.getObjectByName('Mannequin_Medium_Head');
           if (origHead) {
             const remappedHead = remapSkinnedMesh(origHead, targetSkin.skeleton);
             remappedHead.name = 'modular_head';
+
+            // Cabeza del maniquí con ajuste proporcional (escala 0.87, +7% respecto a 0.80) con pivote en la base del cuello
+            const pos = remappedHead.geometry.attributes.position;
+            const pivotY = 1.2414;
+            const scale = 0.87;
+            for (let i = 0; i < pos.count; i++) {
+              pos.setX(i, pos.getX(i) * scale);
+              pos.setY(i, pivotY + (pos.getY(i) - pivotY) * scale);
+              pos.setZ(i, pos.getZ(i) * scale);
+            }
+            pos.needsUpdate = true;
+            remappedHead.geometry.computeVertexNormals();
+            remappedHead.geometry.computeBoundingBox();
+            remappedHead.geometry.computeBoundingSphere();
+
             targetRig.add(remappedHead);
           }
-        } else if (headClass.startsWith('Skeleton_')) {
-          let skullName = `${headClass}_Head`;
-          if (headClass === 'Skeleton_Mage') skullName = 'Skeleton_Mage_Skull';
+        } else if (effectiveHeadClass.startsWith('Skeleton_')) {
+          let skullName = `${effectiveHeadClass}_Head`;
+          if (effectiveHeadClass === 'Skeleton_Mage') skullName = 'Skeleton_Mage_Skull';
 
-          const headParts = [skullName, `${headClass}_Jaw`, `${headClass}_Eyes`];
+          const headParts = [skullName, `${effectiveHeadClass}_Jaw`, `${effectiveHeadClass}_Eyes`];
           headParts.forEach((partName, idx) => {
             const origPart = headGltf.scene.getObjectByName(partName);
             if (origPart) {
@@ -2230,9 +2334,9 @@
 
           // Accesorio de cabeza innato (Casco/Sombrero/Capucha de esqueleto)
           let innateHatName = null;
-          if (headClass === 'Skeleton_Warrior') innateHatName = 'Skeleton_Warrior_Helmet';
-          else if (headClass === 'Skeleton_Mage') innateHatName = 'Skeleton_Mage_Hat';
-          else if (headClass === 'Skeleton_Rogue') innateHatName = 'Skeleton_Rogue_Hood';
+          if (effectiveHeadClass === 'Skeleton_Warrior') innateHatName = 'Skeleton_Warrior_Helmet';
+          else if (effectiveHeadClass === 'Skeleton_Mage') innateHatName = 'Skeleton_Mage_Hat';
+          else if (effectiveHeadClass === 'Skeleton_Rogue') innateHatName = 'Skeleton_Rogue_Hood';
 
           if (innateHatName && headBone) {
             const origHat = headGltf.scene.getObjectByName(innateHatName);
@@ -2240,18 +2344,39 @@
               const clonedHat = origHat.clone();
               clonedHat.name = 'modular_head_hat';
               clonedHat.visible = (!config.headItem || config.headItem === 'none');
+              // Capucha pícaro esqueleto +15% (solo Rogue Hood, no casco/sombrero).
+              if (innateHatName === 'Skeleton_Rogue_Hood') clonedHat.scale.multiplyScalar(1.15);
               headBone.add(clonedHat);
             }
           }
         } else {
-          const origHead = headGltf.scene.getObjectByName(`${headClass}_Head`);
+          const origHead = headGltf.scene.getObjectByName(`${effectiveHeadClass}_Head`);
           if (origHead) {
             const headMesh = origHead.clone();
+            const isHumanHead = ['Knight', 'Barbarian', 'Mage', 'Ranger', 'Rogue'].includes(effectiveHeadClass);
+            if (isHumanHead && hairTypeEfectivo !== 'default') {
+              // Siempre separada (el mesh cubre el mentón); horneada no recibiría el color.
+              const keepBeard = false;
+              headMesh.geometry = extractFaceGeometry(origHead, effectiveHeadClass, keepBeard, sinFlequillo, estiraFrente);
+            }
             const remappedHead = remapSkinnedMesh(headMesh, targetSkin.skeleton);
             remappedHead.name = 'modular_head';
             targetRig.add(remappedHead);
           }
         }
+      }
+
+      // Montar cabello modular si corresponde
+      if (hairTypeEfectivo !== 'default') {
+        await mountHair(targetRig, targetSkin, hairTypeEfectivo, effectiveHeadClass, sinFlequillo, config.hairColor || '#ffffff');
+      }
+
+      // Montar cosmético de cara modular si corresponde (barba o tapaboca)
+      if (shouldMountSeparateBeard) {
+        await mountBeard(targetRig, targetSkin, beardType, config.beardColor || '#ffffff');
+      }
+      if (shouldMountMask) {
+        await mountMask(targetRig, targetSkin, config.beardColor || '#ffffff');
       }
 
       // 4. Montar Pantalón Modular
@@ -2379,7 +2504,6 @@
       }
 
       // 1. Visibilidad de mallas base glTF (casco y gorro de oso siempre van por getSharedHat escalados)
-      let foundBaseQuiver = false;
       model.traverse((child) => {
         if (child.isMesh && !child.name.startsWith('modular_')) {
           const name = child.name;
@@ -2387,9 +2511,6 @@
             child.visible = (config.backItem === 'cape');
           } else if (isHeadMesh(name)) {
             child.visible = false;
-          } else if (name.includes('Quiver')) {
-            child.visible = (config.backItem === 'quiver');
-            if (child.visible) foundBaseQuiver = true;
           }
         }
       });
@@ -2397,12 +2518,14 @@
       // Si se eligió casco (+10%) o gorro de oso (+15%), vincular versión escalada
       if (config.headItem === 'helmet' || config.headItem === 'bear_hat') {
         const requestedItem = config.headItem;
+        const isMannequinHead = (config.headStyle === 'Mannequin' || (!config.headStyle && config.characterClass === 'Mannequin'));
         getSharedHat(requestedItem, model).then((sharedHat) => {
           if (sharedHat && config.headItem === requestedItem) {
             const currentRig = model.getObjectByName('Rig_Medium') || model.getObjectByName('Rig');
             if (currentRig) {
               const old = currentRig.getObjectByName('custom_shared_hat');
               if (old) currentRig.remove(old);
+              if (isMannequinHead) sharedHat.scale.multiplyScalar(0.87);
               currentRig.add(sharedHat);
             }
           }
@@ -2419,9 +2542,6 @@
         if (config.backItem === 'backpack') {
           backObj = createBackpack(config.backpackColor || '#2563eb');
           backObj.position.set(0, 0.04, -0.28);
-        } else if (config.backItem === 'laptop_bag') {
-          backObj = createLaptopBag();
-          backObj.position.set(0, 0.02, -0.22);
         } else if (config.backItem === 'keyboard_back') {
           backObj = createKeyboardBack(createGamerKeyboard);
           backObj.position.set(0, 0.05, -0.26);
@@ -2429,17 +2549,32 @@
         } else if (config.backItem === 'giant_usb' || config.backItem === 'giant_keychain') {
           backObj = createGiantUSB();
           backObj.position.set(0, 0.05, -0.22);
-        } else if ((config.backItem === 'quiver' && !foundBaseQuiver) || config.backItem === 'Skeleton_Quiver.gltf') {
-          loadWeapon('Skeleton_Quiver.gltf').then(qObj => {
-            if (qObj && (config.backItem === 'quiver' || config.backItem === 'Skeleton_Quiver.gltf')) {
-              qObj.name = 'custom_back_item';
-              qObj.position.set(0, 0.05, -0.15);
-              qObj.rotation.set(0, 0, -Math.PI / 8);
+        } else if (typeof config.backItem === 'string' && config.backItem.endsWith('.gltf')) {
+          const reqBack = config.backItem;
+          loadWeapon(reqBack).then(bObj => {
+            if (bObj && config.backItem === reqBack) {
+              bObj.name = 'custom_back_item';
+              bObj.position.set(0, -0.08, -0.45);
+              bObj.rotation.set(0, Math.PI, 0);
               const curChest = model.getObjectByName('chest');
               if (curChest) {
                 const old = curChest.getObjectByName('custom_back_item');
                 if (old) curChest.remove(old);
-                curChest.add(qObj);
+                curChest.add(bObj);
+              }
+            }
+          });
+        } else if (config.backItem === 'guitar') {
+          // Los gltf vienen cruzados (guitar_A es azul, guitar_B es rosa): se invierte el mapeo.
+          const gVar = config.guitarColor === 'B' ? 'A' : 'B';
+          loadMixedGltf('guitar_' + gVar + '.gltf').then(gScene => {
+            if (gScene && config.backItem === 'guitar') {
+              const gObj = placeGuitar(gScene, gVar);
+              const curChest = model.getObjectByName('chest');
+              if (curChest) {
+                const old = curChest.getObjectByName('custom_back_item');
+                if (old) curChest.remove(old);
+                curChest.add(gObj);
               }
             }
           });
@@ -2469,7 +2604,9 @@
           activeRGBObjects.add(headObj);
         } else if (config.headItem === 'propeller_hat') {
           headObj = createPropellerHat();
-          headObj.position.set(0, 0, 0);
+          // +0.10 para compensar el aplasto vertical (pivota en el origen):
+          // la base del gorro queda a la misma altura, solo el objeto es más bajo.
+          headObj.position.set(0, 0.40, 0);
           activeRGBObjects.add(headObj);
         } else if (config.headItem === 'saiyan_scouter') {
           headObj = createSaiyanScouter();
@@ -2477,6 +2614,14 @@
         } else if (config.headItem === 'gamer_glasses') {
           headObj = createGamerGlasses();
           headObj.position.set(0, 0, 0);
+        } else if (config.headItem === 'star_orbit') {
+          headObj = createStarOrbit(config.starOrbitColor || 'yellow');
+          headObj.position.set(0, 0, 0);
+          activeRGBObjects.add(headObj);
+        } else if (config.headItem === 'flower_antennae') {
+          headObj = createFlowerAntennae();
+          headObj.position.set(0, 0, 0);
+          activeRGBObjects.add(headObj);
         } else if (['skel_helmet', 'skel_mage_hat', 'skel_hood'].includes(config.headItem)) {
           const req = config.headItem;
           const src = req === 'skel_helmet' ? 'Skeleton_Warrior' : (req === 'skel_mage_hat' ? 'Skeleton_Mage' : 'Skeleton_Rogue');
@@ -2490,6 +2635,10 @@
                   const old = curH.getObjectByName('custom_head_item');
                   if (old) curH.remove(old);
                   const cloned = h.clone();
+                  const isMannequinHead = (config.headStyle === 'Mannequin' || (!config.headStyle && config.characterClass === 'Mannequin'));
+                  if (isMannequinHead) cloned.scale.multiplyScalar(0.87);
+                  // Capucha pícaro esqueleto +15% como cosmético.
+                  if (req === 'skel_hood') cloned.scale.multiplyScalar(1.15);
                   cloned.name = 'custom_head_item';
                   curH.add(cloned);
                 }
@@ -2499,6 +2648,8 @@
         }
 
         if (headObj) {
+          const isMannequinHead = (config.headStyle === 'Mannequin' || (!config.headStyle && config.characterClass === 'Mannequin'));
+          if (isMannequinHead) headObj.scale.multiplyScalar(0.87);
           headObj.name = 'custom_head_item';
           headBone.add(headObj);
         }
@@ -2552,57 +2703,6 @@
         mainMat.color.setHex(c);
       };
 
-      return group;
-    }
-
-    function createLaptopBag() {
-      const group = new THREE.Group();
-      group.name = 'laptop_bag';
-
-      const bagMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.5, metalness: 0.2 });
-      const flapMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.4, metalness: 0.3 });
-      const strapMat = new THREE.MeshStandardMaterial({ color: 0x374151, roughness: 0.8 });
-      const buckleMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.2 });
-      const accentMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.5 });
-
-      // Main messenger bag body (positioned lower and tilted)
-      const bag = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.36, 0.12), bagMat);
-      bag.position.set(0.05, -0.10, -0.08);
-      bag.castShadow = true;
-      group.add(bag);
-
-      // Front flap cover
-      const flap = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.24, 0.13), flapMat);
-      flap.position.set(0.05, -0.04, -0.08);
-      group.add(flap);
-
-      // Neon tech accent stripe
-      const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.018, 0.135), accentMat);
-      stripe.position.set(0.05, -0.14, -0.08);
-      group.add(stripe);
-
-      // Dual metal buckles
-      for (const x of [-0.10, 0.20]) {
-        const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 0.14), buckleMat);
-        buckle.position.set(x, -0.15, -0.08);
-        group.add(buckle);
-      }
-
-      // Crossbody diagonal strap that passes over the right shoulder and loops around torso!
-      const strapCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(-0.16, -0.15, -0.08),
-        new THREE.Vector3(-0.25, 0.15, 0.10),
-        new THREE.Vector3(-0.10, 0.28, 0.22),
-        new THREE.Vector3(0.18, 0.42, 0.14),
-        new THREE.Vector3(0.24, 0.20, -0.10),
-        new THREE.Vector3(0.20, -0.05, -0.12),
-        new THREE.Vector3(0.12, -0.10, -0.08)
-      ], true);
-
-      const strapTube = new THREE.Mesh(new THREE.TubeGeometry(strapCurve, 24, 0.035, 6, true), strapMat);
-      group.add(strapTube);
-
-      group.rotation.z = -Math.PI / 7;
       return group;
     }
 
@@ -2791,46 +2891,7 @@
         group.add(segMesh);
       });
 
-      // 2. Visera anatómica curva bien metida dentro de la cúpula (sin bordes cortados ni planos triangulares)
-      const visorShape = new THREE.Shape();
-      // Comienza embutida en el interior del gorro (Z = 0.36)
-      visorShape.moveTo(0.26, 0.36);
-      // Curva lateral derecha hacia la esquina frontal
-      visorShape.bezierCurveTo(0.28, 0.48, 0.26, 0.58, 0.20, 0.64);
-      // Frente redondeado continuo
-      visorShape.bezierCurveTo(0.12, 0.69, -0.12, 0.69, -0.20, 0.64);
-      // Curva lateral izquierda
-      visorShape.bezierCurveTo(-0.26, 0.58, -0.28, 0.48, -0.26, 0.36);
-      // Cierre posterior interno oculto dentro de la esfera
-      visorShape.bezierCurveTo(-0.13, 0.39, 0.13, 0.39, 0.26, 0.36);
-
-      const extrudeSettings = {
-        depth: 0.02,
-        bevelEnabled: true,
-        bevelSegments: 2,
-        steps: 1,
-        bevelSize: 0.005,
-        bevelThickness: 0.005
-      };
-
-      const brimGeom = new THREE.ExtrudeGeometry(visorShape, extrudeSettings);
-      brimGeom.rotateX(Math.PI / 2); // +Y en 2D pasa a ser +Z (frente) en 3D
-
-      // Arqueo sutil lateral para dar curvatura realista de gorra deportiva
-      const pos = brimGeom.attributes.position;
-      for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i);
-        pos.setY(i, pos.getY(i) - 0.22 * x * x);
-      }
-      pos.needsUpdate = true;
-      brimGeom.computeVertexNormals();
-
-      const brim = new THREE.Mesh(brimGeom, blueMat);
-      brim.position.set(0, capY + 0.01, 0);
-      brim.rotation.x = 0.14;
-      group.add(brim);
-
-      // 3. Arandela base superior donde nace el eje
+      // 2. Arandela base superior donde nace el eje
       const baseGrommet = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.04, 16), metalMat);
       baseGrommet.position.set(0, capY + capRadius - 0.01, capZ);
       group.add(baseGrommet);
@@ -2885,6 +2946,145 @@
       group.userData.updateRGB = (time) => {
         propGroup.rotation.y = time * 24;
       };
+
+      // Gorro un 20% más chico y con 30% menos altura (aplasto vertical)
+      group.scale.set(0.8, 0.56, 0.8);
+
+      return group;
+    }
+
+    // Estrellitas KayKit orbitando la cabeza: 7 copias del gltf del color elegido.
+    const starOrbitCache = new Map();
+
+    function createStarOrbit(color = 'yellow') {
+      const group = new THREE.Group();
+      group.name = 'star_orbit_' + color;
+
+      // 7 soportes equidistantes: la órbita se anima en updateRGB aunque el gltf aún cargue.
+      const COUNT = 7;
+      const RADIUS = 0.55;
+      const HEIGHT = 1.05;
+      const holders = [];
+      for (let i = 0; i < COUNT; i++) {
+        const holder = new THREE.Group();
+        group.add(holder);
+        holders.push(holder);
+      }
+
+      group.userData.updateRGB = (time) => {
+        for (let i = 0; i < holders.length; i++) {
+          const a = time * 1.8 + (i / holders.length) * Math.PI * 2;
+          holders[i].position.set(
+            Math.cos(a) * RADIUS,
+            HEIGHT + Math.sin(time * 3 + i * 1.3) * 0.05,
+            Math.sin(a) * RADIUS
+          );
+          const star = holders[i].children[0];
+          if (star) star.rotation.y = time * 3 + i;
+        }
+      };
+
+      const place = (scene) => {
+        scene.traverse((c) => {
+          if (c.isMesh) c.castShadow = true;
+        });
+        holders.forEach((holder) => {
+          if (holder.children.length) return;
+          const clone = scene.clone(true);
+          clone.scale.setScalar(0.3);
+          holder.add(clone);
+        });
+      };
+
+      const file = 'star_' + color + '.gltf';
+      if (starOrbitCache.has(color)) {
+        place(starOrbitCache.get(color));
+      } else {
+        loader.load('Assets/Cosmetics/stars/' + file, (gltf) => {
+          starOrbitCache.set(color, gltf.scene);
+          place(gltf.scene);
+        }, undefined, (err) => {
+          console.warn('No se pudo cargar la estrella:', file, err);
+        });
+      }
+
+      return group;
+    }
+
+    // -------------------------------------------------------------
+    // MIXED BAG (KayKit): gltfs en Assets/Cosmetics/mixed/ con caché compartida.
+    // -------------------------------------------------------------
+    const mixedGltfCache = new Map();
+
+    function loadMixedGltf(fileName) {
+      if (mixedGltfCache.has(fileName)) return Promise.resolve(mixedGltfCache.get(fileName));
+      return new Promise((resolve) => {
+        loader.load('Assets/Cosmetics/mixed/' + fileName, (gltf) => {
+          gltf.scene.traverse((c) => {
+            if (c.isMesh) c.castShadow = true;
+          });
+          mixedGltfCache.set(fileName, gltf.scene);
+          resolve(gltf.scene);
+        }, undefined, (err) => {
+          console.warn('No se pudo cargar el cosmético:', fileName, err);
+          resolve(null);
+        });
+      });
+    }
+
+    // Guitarra en diagonal sobre la espalda, girada 180° en Y (frente afuera, mástil arriba).
+    function placeGuitar(scene, variant = 'A') {
+      const g = scene.clone(true);
+      g.name = 'guitar_' + variant;
+      g.scale.setScalar(1.0);
+      g.position.set(-0.40, 0.6, -0.32);
+      g.rotation.set(0, Math.PI, -Math.PI / 5);
+      return g;
+    }
+
+    // Dos flores como antenas inclinadas hacia afuera, con balanceo suave.
+    function createFlowerAntennae() {
+      const group = new THREE.Group();
+      group.name = 'flower_antennae';
+
+      const files = ['flax_flower_A.gltf', 'flax_flower_B.gltf'];
+      const spots = [
+        { x: -0.3, tilt: 0.35 },
+        { x: 0.3, tilt: -0.35 },
+      ];
+      group.userData.updateRGB = (time) => {
+        group.rotation.z = Math.sin(time * 1.6) * 0.04;
+      };
+
+      files.forEach((file, i) => {
+        loadMixedGltf(file).then((scene) => {
+          if (!scene || group.children.length >= files.length) return;
+          const f = scene.clone(true);
+          f.scale.setScalar(0.35);
+          f.position.set(spots[i].x, 0.86, 0.12);
+          f.rotation.z = spots[i].tilt;
+          group.add(f);
+        });
+      });
+
+      return group;
+    }
+
+    // Gallina terrestre en ESPACIO DE MUNDO (colgada de scene, no del playerGroup):
+    // así los giros del jugador no la arrastran. La referencia al jugador viaja en userData.
+    function createGroundChicken(playerRef, variant = 'A') {
+      const group = new THREE.Group();
+      group.name = 'chicken_' + variant;
+      group.userData.isGroundPet = true;
+      group.userData.playerRef = playerRef;
+
+      const file = variant === 'B' ? 'chicken_plushie_B.gltf' : 'chicken_plushie_A.gltf';
+      loadMixedGltf(file).then((scene3d) => {
+        if (!scene3d || group.children.length) return;
+        const c = scene3d.clone(true);
+        c.scale.setScalar(0.2);
+        group.add(c);
+      });
 
       return group;
     }
@@ -3356,70 +3556,149 @@
       const group = new THREE.Group();
       group.name = 'pet_owl';
 
-      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x8a5a2b, roughness: 0.85 });
+      const darkMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.8 });
       const chestMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.9 });
-      const eyeMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.8 });
+      const featherMat = new THREE.MeshStandardMaterial({ color: 0xd6a35c, roughness: 0.9 });
+      const eyeMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xd97706, emissiveIntensity: 0.9, roughness: 0.25 });
       const pupilMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
-      const beakMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 });
-      const wingMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.7 });
+      const beakMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.35 });
+      const wingMat = new THREE.MeshStandardMaterial({ color: 0x5b2d0e, roughness: 0.75, side: THREE.DoubleSide });
+      const wingTipMat = new THREE.MeshStandardMaterial({ color: 0x2f1503, roughness: 0.8, side: THREE.DoubleSide });
 
-      // Body egg
-      const body = new THREE.Mesh(new THREE.SphereGeometry(0.10, 16, 14), bodyMat);
-      body.scale.set(0.9, 1.1, 0.9);
+      // Cuerpo compacto + cola en abanico
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.09, 18, 14), bodyMat);
+      body.scale.set(0.92, 1.05, 0.9);
       group.add(body);
 
-      // Cream chest
-      const chest = new THREE.Mesh(new THREE.SphereGeometry(0.08, 14, 12), chestMat);
-      chest.position.set(0, -0.02, 0.04);
-      chest.scale.set(0.8, 0.9, 0.7);
+      const chest = new THREE.Mesh(new THREE.SphereGeometry(0.07, 14, 12), chestMat);
+      chest.position.set(0, -0.02, 0.045);
+      chest.scale.set(0.85, 0.95, 0.65);
       group.add(chest);
 
-      // Beak
-      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.05, 8), beakMat);
-      beak.rotation.x = Math.PI / 2;
-      beak.position.set(0, 0.02, 0.10);
-      group.add(beak);
-
-      // Eyes
-      for (const side of [-1, 1]) {
-        const eyeRing = new THREE.Mesh(new THREE.SphereGeometry(0.038, 12, 12), chestMat);
-        eyeRing.position.set(side * 0.045, 0.05, 0.07);
-        group.add(eyeRing);
-
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.026, 12, 12), eyeMat);
-        eye.position.set(side * 0.045, 0.05, 0.085);
-        group.add(eye);
-
-        const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 8), pupilMat);
-        pupil.position.set(side * 0.045, 0.05, 0.102);
-        group.add(pupil);
-
-        // Ear tufts
-        const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.06, 6), bodyMat);
-        tuft.position.set(side * 0.05, 0.13, 0);
-        tuft.rotation.z = side * -0.3;
-        group.add(tuft);
+      // Plumas del pecho: 3 vieiras que rompen la esfera lisa
+      for (let i = 0; i < 3; i++) {
+        const scallop = new THREE.Mesh(new THREE.SphereGeometry(0.028 - i * 0.004, 10, 8), i % 2 ? chestMat : featherMat);
+        scallop.position.set((i - 1) * 0.032, -0.045 - Math.abs(i - 1) * -0.008, 0.085);
+        scallop.scale.set(1, 0.8, 0.5);
+        group.add(scallop);
       }
 
-      // Left & Right Flapping Wings
-      const wingL = new THREE.Group();
-      wingL.position.set(-0.09, 0.03, 0);
-      const wingMeshL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.12), wingMat);
-      wingMeshL.position.set(-0.08, 0, 0);
-      wingL.add(wingMeshL);
-      group.add(wingL);
+      const tail = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.09, 8), darkMat);
+      tail.position.set(0, -0.09, -0.08);
+      tail.rotation.x = -Math.PI * 0.35;
+      tail.scale.set(1.4, 1, 0.45);
+      group.add(tail);
 
-      const wingR = new THREE.Group();
-      wingR.position.set(0.09, 0.03, 0);
-      const wingMeshR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.12), wingMat);
-      wingMeshR.position.set(0.08, 0, 0);
-      wingR.add(wingMeshR);
-      group.add(wingR);
+      // Patas retraídas en vuelo
+      for (const side of [-1, 1]) {
+        const foot = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 6), beakMat);
+        foot.position.set(side * 0.035, -0.095, 0.01);
+        foot.scale.set(1, 0.6, 1.3);
+        group.add(foot);
+      }
+
+      // Cabeza: grupo propio para curiosidad sin mover el cuerpo
+      const headG = new THREE.Group();
+      headG.position.set(0, 0.075, 0.01);
+      group.add(headG);
+
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.062, 16, 12), bodyMat);
+      headG.add(head);
+
+      const eyes = [];
+      for (const side of [-1, 1]) {
+        const disc = new THREE.Mesh(new THREE.CircleGeometry(0.032, 16), chestMat);
+        disc.position.set(side * 0.028, 0.008, 0.052);
+        headG.add(disc);
+
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.022, 12, 10), eyeMat);
+        eye.position.set(side * 0.028, 0.008, 0.058);
+        headG.add(eye);
+
+        const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 8), pupilMat);
+        pupil.position.set(side * 0.028, 0.008, 0.075);
+        headG.add(pupil);
+        eyes.push({ eye, pupil, side });
+
+        const glint = new THREE.Mesh(new THREE.SphereGeometry(0.004, 6, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        glint.position.set(side * 0.028 - 0.006, 0.015, 0.078);
+        headG.add(glint);
+
+        const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.055, 6), darkMat);
+        tuft.position.set(side * 0.048, 0.062, -0.005);
+        tuft.rotation.z = side * -0.35;
+        headG.add(tuft);
+      }
+
+      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.016, 0.038, 8), beakMat);
+      beak.rotation.x = Math.PI / 2 + 0.15;
+      beak.position.set(0, -0.012, 0.072);
+      headG.add(beak);
+
+      // Alas emplumadas: forma con festones en vez de caja
+      const makeWing = (side) => {
+        const pivot = new THREE.Group();
+        pivot.position.set(side * 0.075, 0.03, 0);
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 0.045);
+        shape.quadraticCurveTo(side * 0.13, 0.05, side * 0.19, 0.0);
+        shape.quadraticCurveTo(side * 0.20, -0.02, side * 0.175, -0.035);
+        shape.quadraticCurveTo(side * 0.185, -0.05, side * 0.155, -0.055);
+        shape.quadraticCurveTo(side * 0.16, -0.07, side * 0.13, -0.065);
+        shape.quadraticCurveTo(side * 0.07, -0.06, 0, -0.045);
+        shape.closePath();
+        const geo = new THREE.ShapeGeometry(shape, 6);
+        const mesh = new THREE.Mesh(geo, wingMat);
+        pivot.add(mesh);
+        const tipShape = new THREE.Shape();
+        tipShape.moveTo(side * 0.13, 0.01);
+        tipShape.lineTo(side * 0.19, 0.0);
+        tipShape.lineTo(side * 0.16, -0.055);
+        tipShape.lineTo(side * 0.11, -0.03);
+        tipShape.closePath();
+        const tip = new THREE.Mesh(new THREE.ShapeGeometry(tipShape), wingTipMat);
+        tip.position.z = 0.001;
+        pivot.add(tip);
+        group.add(pivot);
+        return pivot;
+      };
+
+      const wingL = makeWing(-1);
+      const wingR = makeWing(1);
 
       group.userData.updateAnim = (time, delta) => {
-        const flap = Math.sin(time * 9) * 0.55;
-        wingL.rotation.z = flap;
-        wingR.rotation.z = -flap;
+        // Ciclo aleteo-planeo: a veces planea para verse natural
+        const glide = 0.55 + 0.45 * Math.sin(time * 0.6);
+        const amp = 0.18 + 0.5 * Math.max(0, glide);
+        const flap = Math.sin(time * 10) * amp + Math.sin(time * 23) * 0.06;
+        wingL.rotation.z = 0.12 + flap;
+        wingR.rotation.z = -0.12 - flap;
+        wingL.rotation.y = Math.sin(time * 10) * 0.08;
+        wingR.rotation.y = -Math.sin(time * 10) * 0.08;
+        // Respiración + cabeceo suave
+        const breathe = 1 + Math.sin(time * 3.1) * 0.018;
+        body.scale.set(0.92, 1.05 * breathe, 0.9);
+        group.rotation.x = Math.sin(time * 2.1) * 0.05;
+        tail.rotation.x = -Math.PI * 0.35 + Math.sin(time * 10) * 0.08;
+        // Curiosidad: la cabeza mira a los lados cada pocos segundos
+        const ud = group.userData;
+        if (ud.nextLook === undefined || time > ud.nextLook) {
+          ud.lookTarget = (Math.random() - 0.5) * 0.9;
+          ud.nextLook = time + 2.5 + Math.random() * 4;
+        }
+        headG.rotation.y += ((ud.lookTarget || 0) - headG.rotation.y) * Math.min(1, delta * 4);
+        headG.rotation.z = Math.sin(time * 1.7) * 0.05;
+        // Parpadeo: aplasta los ojos 0.12s
+        if (ud.blinkUntil === undefined) ud.blinkUntil = time + 2 + Math.random() * 3;
+        if (time > ud.blinkUntil - 0.12 && time < ud.blinkUntil) {
+          for (const e of eyes) { e.eye.scale.y = 0.12; e.pupil.scale.y = 0.12; }
+        } else {
+          for (const e of eyes) { e.eye.scale.y = 1; e.pupil.scale.y = 1; }
+          if (time >= ud.blinkUntil) ud.blinkUntil = time + 2.5 + Math.random() * 3.5;
+        }
+        // Pupilas hacia el centro (miran al jugador al orbitar)
+        for (const e of eyes) e.pupil.position.x = e.side * 0.028 - 0.008;
       };
 
       return group;
@@ -3497,52 +3776,129 @@
       group.name = 'pet_ghost';
 
       const ghostMat = new THREE.MeshStandardMaterial({
-        color: 0xe0f2fe,
+        color: 0xeaf6ff,
         emissive: 0x38bdf8,
-        emissiveIntensity: 0.5,
+        emissiveIntensity: 0.45,
         transparent: true,
-        opacity: 0.85,
-        roughness: 0.2
+        opacity: 0.72,
+        roughness: 0.15,
+        metalness: 0,
+        depthWrite: false
       });
-      const faceMat = new THREE.MeshBasicMaterial({ color: 0x0369a1 });
+      const rimMat = new THREE.MeshBasicMaterial({
+        color: 0x7dd3fc, transparent: true, opacity: 0.28,
+        side: THREE.BackSide, depthWrite: false
+      });
+      const faceMat = new THREE.MeshBasicMaterial({ color: 0x0c4a6e });
+      const blushMat = new THREE.MeshBasicMaterial({ color: 0xf9a8d4, transparent: true, opacity: 0.55, depthWrite: false });
 
-      // Ghost head hemisphere
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), ghostMat);
+      // Cabeza + halo exterior para borde luminoso suave
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.09, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.55), ghostMat);
       group.add(head);
+      const halo = new THREE.Mesh(new THREE.SphereGeometry(0.098, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.6), rimMat);
+      halo.position.y = 0.002;
+      group.add(halo);
 
-      // Ghost skirt cylinder
-      const skirt = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.06, 0.14, 16, 1, true), ghostMat);
-      skirt.position.set(0, -0.07, 0);
+      // Falda con segmentos para ondular los vértices
+      const skirtGeo = new THREE.CylinderGeometry(0.09, 0.075, 0.17, 18, 4, true);
+      const skirt = new THREE.Mesh(skirtGeo, ghostMat);
+      skirt.position.set(0, -0.085, 0);
       group.add(skirt);
+      const skirtBase = skirtGeo.attributes.position.array.slice();
 
-      // Wavy tail
-      const tail = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.12, 12), ghostMat);
-      tail.rotation.x = Math.PI * 0.75;
-      tail.position.set(0, -0.15, -0.04);
+      // Borde inferior ondulado (picos de fantasma)
+      const hemGeo = new THREE.TorusGeometry(0.068, 0.012, 8, 18);
+      const hem = new THREE.Mesh(hemGeo, ghostMat);
+      hem.rotation.x = Math.PI / 2;
+      hem.position.y = -0.17;
+      group.add(hem);
+
+      // Cola-cinta ondulante en vez de cono rígido
+      const tailGeo = new THREE.PlaneGeometry(0.07, 0.16, 4, 6);
+      const tail = new THREE.Mesh(tailGeo, new THREE.MeshStandardMaterial({
+        color: 0xe0f2fe, emissive: 0x38bdf8, emissiveIntensity: 0.4,
+        transparent: true, opacity: 0.6, side: THREE.DoubleSide, depthWrite: false, roughness: 0.3
+      }));
+      tail.position.set(0, -0.16, -0.06);
+      tail.rotation.x = 0.5;
       group.add(tail);
+      const tailBase = tailGeo.attributes.position.array.slice();
 
-      // Eyes & arms
+      // Cara cartoon: ojos blancos + pupilas que miran al jugador
+      const pupils = [];
       for (const side of [-1, 1]) {
-        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 8), faceMat);
-        eye.position.set(side * 0.035, -0.01, 0.085);
-        group.add(eye);
+        const white = new THREE.Mesh(new THREE.SphereGeometry(0.024, 12, 10), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+        white.position.set(side * 0.034, -0.005, 0.078);
+        white.scale.set(1, 1.25, 0.6);
+        group.add(white);
 
-        const arm = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 8), ghostMat);
-        arm.position.set(side * 0.09, -0.05, 0.02);
-        group.add(arm);
+        const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 8), faceMat);
+        pupil.position.set(side * 0.034, -0.008, 0.09);
+        group.add(pupil);
+        pupils.push({ pupil, side });
+
+        const blush = new THREE.Mesh(new THREE.CircleGeometry(0.012, 10), blushMat);
+        blush.position.set(side * 0.058, -0.035, 0.062);
+        blush.rotation.y = side * 0.5;
+        group.add(blush);
+
+        // Bracitos flotantes con manos
+        const armG = new THREE.Group();
+        armG.position.set(side * 0.085, -0.05, 0.01);
+        const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.016, 0.035, 4, 8), ghostMat);
+        arm.rotation.z = side * 1.1;
+        armG.add(arm);
+        const hand = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), ghostMat);
+        hand.position.set(side * 0.035, -0.012, 0);
+        armG.add(hand);
+        group.add(armG);
+        if (!group.userData.arms) group.userData.arms = [];
+        group.userData.arms.push({ g: armG, side, phase: side * 1.3 });
       }
 
-      // Open mouth
-      const mouth = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.01, 8), faceMat);
-      mouth.rotation.x = Math.PI / 2;
-      mouth.position.set(0, -0.05, 0.085);
+      const mouth = new THREE.Mesh(new THREE.SphereGeometry(0.013, 10, 8), faceMat);
+      mouth.position.set(0, -0.048, 0.08);
+      mouth.scale.set(0.9, 1.2, 0.5);
       group.add(mouth);
 
       group.userData.updateAnim = (time, delta) => {
-        const glow = 0.4 + Math.sin(time * 4) * 0.25;
-        ghostMat.emissiveIntensity = glow;
-        tail.rotation.z = Math.sin(time * 5) * 0.25;
-        tail.rotation.x = Math.PI * 0.75 + Math.cos(time * 4) * 0.15;
+        const floatY = Math.sin(time * 2.2) * 0.5 + Math.sin(time * 5.1) * 0.12;
+        // Resplandor neón pulsante suave
+        ghostMat.emissiveIntensity = 0.42 + Math.sin(time * 3.2) * 0.14 + Math.sin(time * 7.7) * 0.04;
+        rimMat.opacity = 0.22 + Math.sin(time * 3.2) * 0.07;
+        // Squash & stretch flotante
+        group.scale.set(1 - floatY * 0.02, 1 + floatY * 0.035, 1 - floatY * 0.02);
+        group.rotation.z = Math.sin(time * 1.8) * 0.06;
+        group.rotation.x = Math.sin(time * 2.6) * 0.04;
+        // Falda ondulante: mueve el anillo inferior con seno por ángulo
+        const pos = skirtGeo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const bx = skirtBase[i * 3], by = skirtBase[i * 3 + 1], bz = skirtBase[i * 3 + 2];
+          const lower = THREE.MathUtils.clamp((-by) / 0.17, 0, 1);
+          const ang = Math.atan2(bz, bx);
+          const w = Math.sin(ang * 3 + time * 5) * 0.012 * lower + Math.cos(ang * 2 - time * 4) * 0.008 * lower;
+          pos.setXYZ(i, bx + Math.cos(ang) * w, by, bz + Math.sin(ang) * w);
+        }
+        pos.needsUpdate = true;
+        skirtGeo.computeVertexNormals();
+        hem.position.y = -0.17 + Math.sin(time * 5) * 0.006;
+        hem.scale.set(1 + Math.sin(time * 5) * 0.03, 1 + Math.cos(time * 5) * 0.03, 1);
+        // Cola serpenteante
+        const tp = tailGeo.attributes.position;
+        for (let i = 0; i < tp.count; i++) {
+          const bx = tailBase[i * 3], by = tailBase[i * 3 + 1];
+          const k = (0.08 - by) / 0.16;
+          tp.setX(i, bx + Math.sin(time * 6 + k * 4) * 0.02 * k);
+        }
+        tp.needsUpdate = true;
+        // Boca que se abre al subir y brazos nadando
+        mouth.scale.y = 1.1 + Math.max(0, Math.sin(time * 2.2)) * 0.7;
+        for (const a of group.userData.arms) {
+          a.g.position.y = -0.05 + Math.sin(time * 3 + a.phase) * 0.015;
+          a.g.rotation.z = a.side * (0.25 + Math.sin(time * 3 + a.phase) * 0.25);
+        }
+        // Pupilas miran al centro (al jugador)
+        for (const p of pupils) p.pupil.position.x = p.side * 0.034 - 0.007;
       };
 
       return group;
@@ -3551,32 +3907,23 @@
     let activePetObject = null;
     let petLoadToken = 0;
 
-    // Mascotas GLB elegibles en la personalización (Assets/Mascotas/): carga async
-    // con caché. Las voladoras orbitan (ver updateFlyingPet); las de tierra siguen
-    // al jugador caminando en un slot local del playerGroup (ver GROUND_PETS).
     const GLB_PETS = {
       dog: 'dog-pet.glb',
       dragonfly: 'Dragonfly-pet.glb',
       frog: 'Frog-pet.glb',
-      salamander: 'Salamander-pet.glb'
-    };
-    // Las procedurales vuelan todas; de las GLB solo libélula vuela. Perro, rana
-    // y salamandra caminan en el suelo.
-    const FLYING_PETS = new Set(['drone', 'owl', 'bat', 'ghost', 'dragonfly']);
-    // Escala y altura de pies por mascota de tierra (origen de cada GLB en su base).
-    const PET_TARGET_SIZE = {
-      dog: 0.5,
-      frog: 0.35,
-      salamander: 0.4,
-      dragonfly: 0.35
+      salamander: 'Salamander-pet.glb',
     };
     const GROUND_PET_TUNING = {
       dog: { feetY: 0 },
       frog: { feetY: 0 },
-      salamander: { feetY: 0 }
+      salamander: { feetY: 0 },
     };
-    // Normaliza cualquier mascota GLB al tamaño de las procedurales
-    // (dron: cuerpo Ø~0.2, ~0.36 con hélices) midiendo su Box3 real.
+    const PET_TARGET_SIZE = {
+      dog: 0.5,
+      frog: 0.35,
+      salamander: 0.4,
+      dragonfly: 0.35,
+    };
     function fitPetToSize(obj, petType) {
       const box = new THREE.Box3().setFromObject(obj);
       const size = new THREE.Vector3();
@@ -3584,12 +3931,6 @@
       const target = PET_TARGET_SIZE[petType] || 0.35;
       const s = target / Math.max(size.x || 1, size.y || 1, size.z || 1);
       obj.scale.multiplyScalar(s);
-      // Mascotas de tierra: base en y=0. Mascotas voladoras: no tocar Y (orbitan).
-      const isFlying = FLYING_PETS.has(petType);
-      if (!isFlying) {
-        const scaledBox = new THREE.Box3().setFromObject(obj);
-        obj.position.y -= scaledBox.min.y;
-      }
       return s;
     }
     const glbPetCache = new Map();
@@ -3607,7 +3948,10 @@
       else if (petType === 'owl') activePetObject = createFlyingOwl();
       else if (petType === 'bat') activePetObject = createFlyingBat();
       else if (petType === 'ghost') activePetObject = createFlyingGhost();
-      else if (GLB_PETS[petType]) {
+      else if (petType === 'chicken') {
+        activePetObject = createGroundChicken(playerGroup, config.chickenVariant || 'A');
+        scene.add(activePetObject);
+      } else if (GLB_PETS[petType]) {
         const file = GLB_PETS[petType];
         const groundTuning = GROUND_PET_TUNING[petType];
         const attach = (obj) => {
@@ -3619,8 +3963,6 @@
               c.receiveShadow = false;
             }
           });
-          // Comportamiento de movimiento (ver updateFlyingPet): 'ground' camina en
-          // un slot local del playerGroup; el resto orbita en el aire.
           obj.userData.behavior = groundTuning ? 'ground' : 'fly';
           obj.userData.feetY = groundTuning ? groundTuning.feetY : 0;
           activePetObject = obj;
@@ -3644,52 +3986,244 @@
         return;
       }
 
-      if (activePetObject && parentGroup) {
-        // Las procedurales (dron/búho/murciélago/fantasma) son todas voladoras.
-        if (!activePetObject.userData.behavior) activePetObject.userData.behavior = 'fly';
+      if (activePetObject && parentGroup && !activePetObject.userData.isGroundPet) {
         parentGroup.add(activePetObject);
       }
     }
 
-    function updateFlyingPet(time, delta) {
-      if (!activePetObject || !activePetObject.parent) return;
-      if (activePetObject.userData.behavior === 'ground') {
-        updateGroundPet(time, delta);
-        return;
+    // Mascota terrestre en ESPACIO DE MUNDO: pasea en un disco alrededor del jugador y
+    // solo lo sigue (dando saltitos) si se aleja más allá de la correa. Arranca a caminar
+    // 2s después de que el jugador empieza a moverse. Desacelera al llegar, evita paredes
+    // (usa el sector con más espacio) y picotea cuando está quieta.
+    function updateGroundPet(obj, time, delta) {
+      const ud = obj.userData;
+      const pr = ud.playerRef;
+      const dt = Math.min(delta, 0.1);
+      const ppx = pr ? pr.position.x : 0;
+      const ppz = pr ? pr.position.z : 0;
+      const yaw = pr ? pr.rotation.y : 0;
+      // Atrás del jugador según hacia dónde mira.
+      const anx = ppx - Math.sin(yaw) * 0.85;
+      const anz = ppz - Math.cos(yaw) * 0.85;
+      // Paredes solo donde hay sistema de colisiones (mundo, no preview).
+      const blocked = (x, z) =>
+        typeof checkBuildingCollision === 'function' && checkBuildingCollision(x, z, 0.15);
+      // Ancla validada: si cae dentro de un edificio, el punto libre más cercano al jugador.
+      let vax = anx;
+      let vaz = anz;
+      if (blocked(anx, anz)) {
+        let bestD = 1e9;
+        for (let k = 0; k < 12; k++) {
+          const a = (k / 12) * Math.PI * 2;
+          for (const r of [0.4, 0.8, 1.2]) {
+            const cx = ppx + Math.cos(a) * r;
+            const cz = ppz + Math.sin(a) * r;
+            if (!blocked(cx, cz)) {
+              const d = Math.hypot(cx - ppx, cz - ppz);
+              if (d < bestD) {
+                bestD = d;
+                vax = cx;
+                vaz = cz;
+              }
+            }
+          }
+        }
       }
-      const speed = 1.6;
-      const radius = 0.55;
-      const height = 0.82;
-      const angle = time * speed;
-      const x = Math.cos(angle) * radius;
-      const z = Math.sin(angle) * radius;
-      const y = height + Math.sin(time * 3.5) * 0.05;
-      activePetObject.position.set(x, y, z);
-      activePetObject.rotation.y = -angle + Math.PI / 2;
-      activePetObject.rotation.z = -0.15;
-      if (activePetObject.userData && activePetObject.userData.updateAnim) {
-        activePetObject.userData.updateAnim(time, delta);
+      if (ud.groundYaw === undefined) {
+        ud.groundYaw = Math.PI;
+        obj.rotation.y = Math.PI;
+        obj.position.set(vax + 0.3, 0, vaz + 0.15);
+        ud.groundHop = 0;
+        ud.thinkAt = 0;
+        ud.peckAt = time + 3 + Math.random() * 3;
+        ud.peckUntil = 0;
       }
+
+      // Anti-teletransporte: si quedó a más de 8, aparece al lado del jugador.
+      if (Math.hypot(obj.position.x - ppx, obj.position.z - ppz) > 8) {
+        obj.position.set(vax, 0, vaz);
+        ud.tx = undefined;
+      }
+
+      const LEASH = 1.6;
+      const WANDER_R = 0.9;
+      const PERSONAL = 0.35;
+      const distP = Math.hypot(obj.position.x - ppx, obj.position.z - ppz);
+
+      // Candado de arranque: la gallina empieza a caminar 2s después de que el
+      // jugador empieza a moverse, aunque siga en movimiento.
+      if (ud.lastPpx === undefined) {
+        ud.lastPpx = ppx;
+        ud.lastPpz = ppz;
+        ud.lastMoveAt = -10;
+        ud.lockStart = undefined;
+      }
+      const playerMoved = Math.hypot(ppx - ud.lastPpx, ppz - ud.lastPpz) > 0.005;
+      ud.lastPpx = ppx;
+      ud.lastPpz = ppz;
+      if (playerMoved) {
+        if (ud.lockStart === undefined) ud.lockStart = time;
+        ud.lastMoveAt = time;
+      } else if (time - ud.lastMoveAt > 1.0) {
+        ud.lockStart = undefined;
+      }
+      const mayWalk = ud.lockStart !== undefined && time - ud.lockStart >= 2;
+      const fresh = ud.lockStart === undefined && ud.lastMoveAt === -10;
+
+      // Pensar: muestrear puntos de paseo y quedarse con el primero libre.
+      const hasTarget = ud.tx !== undefined;
+      const arrived = hasTarget && Math.hypot(ud.tx - obj.position.x, ud.tz - obj.position.z) < 0.08;
+      if ((!hasTarget || arrived) && time >= ud.thinkAt) {
+        ud.tx = undefined;
+        for (let k = 0; k < 6; k++) {
+          const a = Math.random() * Math.PI * 2;
+          const r = PERSONAL + Math.random() * (WANDER_R - PERSONAL);
+          const cx = ppx + Math.cos(a) * r;
+          const cz = ppz + Math.sin(a) * r;
+          if (!blocked(cx, cz)) {
+            ud.tx = cx;
+            ud.tz = cz;
+            break;
+          }
+        }
+        ud.thinkAt = time + 2 + Math.random() * 2;
+      }
+
+      // Destino: el punto de paseo, o el ancla validada si se pasó de la correa.
+      let gx = ud.tx ?? vax;
+      let gz = ud.tz ?? vaz;
+      let maxSpeed = 0.5;
+      if (distP > LEASH) {
+        gx = vax;
+        gz = vaz;
+        maxSpeed = 4.5;
+      }
+
+      const dx = gx - obj.position.x;
+      const dz = gz - obj.position.z;
+      const dist = Math.hypot(dx, dz);
+      const wantWalk = dist > 0.08;
+      const hopping =
+        wantWalk && (fresh || mayWalk || (ud.wasHopping && ud.lockStart === undefined));
+      ud.wasHopping = hopping;
+      // Velocidad proporcional a la distancia: desacelera al llegar.
+      const speed = Math.min(maxSpeed, 0.15 + dist * (maxSpeed > 1 ? 2.5 : 1.5));
+      const hopAmp = 0.02 + 0.04 * Math.min(1, speed / 1.5);
+      let advanced = false;
+      if (hopping) {
+        const step = Math.min(dist, speed * dt);
+        const nx = dx / (dist || 1);
+        const nz = dz / (dist || 1);
+        const sx = obj.position.x + nx * step;
+        const sz = obj.position.z + nz * step;
+        // Solo frena al ENTRAR a una pared: si ya está adentro, la deja salir.
+        if (!blocked(obj.position.x, obj.position.z) && blocked(sx, sz)) {
+          // Pared en el camino: se detiene y repiensa.
+          ud.tx = undefined;
+          ud.thinkAt = time + 0.5;
+        } else {
+          obj.position.x = sx;
+          obj.position.z = sz;
+          advanced = true;
+          const targetYaw = Math.atan2(nx, nz);
+          let cur = ud.groundYaw;
+          let d = targetYaw - cur;
+          while (d > Math.PI) d -= Math.PI * 2;
+          while (d < -Math.PI) d += Math.PI * 2;
+          cur += d * (1 - Math.exp(-6 * dt));
+          ud.groundYaw = cur;
+          obj.rotation.y = cur;
+          ud.groundHop += step * 22;
+        }
+      }
+      obj.position.y = advanced ? Math.abs(Math.sin(ud.groundHop)) * hopAmp : Math.sin(time * 2) * 0.008;
+      obj.rotation.z = 0;
+
+      // Picoteo ocasional cuando está quieta.
+      if (!advanced && time >= ud.peckAt) {
+        ud.peckUntil = time + 0.6;
+        ud.peckAt = time + 4 + Math.random() * 3;
+      }
+      const pecking = !advanced && time < ud.peckUntil;
+      obj.rotation.x = pecking ? Math.sin(((time - (ud.peckUntil - 0.6)) / 0.6) * Math.PI) * 0.35 : 0;
     }
 
-    // Mascotas de tierra: siguen al jugador caminando en un slot local del
-    // playerGroup (atrás-derecha, en el suelo), así heredan gratis movimiento,
-    // teletransportes y el modo nave espacial. Lerp para que no teletransporte
-    // seco al cambiar de mascota o de zona.
-    function updateGroundPet(time) {
-      const pet = activePetObject;
-      const feetY = pet.userData.feetY || 0;
-      const targetX = 0.65;
-      const targetZ = -0.9;
-      const k = 0.12;
-      pet.position.x += (targetX - pet.position.x) * k;
-      pet.position.z += (targetZ - pet.position.z) * k;
-      pet.position.y = feetY + Math.abs(Math.sin(time * 6)) * 0.03;
-      pet.rotation.y += (0 - pet.rotation.y) * k;
-      pet.rotation.z = 0;
-      if (pet.userData && pet.userData.updateAnim) {
-        pet.userData.updateAnim(time, 0);
+    const FLY_PROFILES = {
+      owl: { speed: 1.05, radius: 0.68, height: 0.98, bob: 0.07, bobFreq: 2.4, wobble: 0.14, bank: 0.45 },
+      ghost: { speed: 0.8, radius: 0.52, height: 0.78, bob: 0.09, bobFreq: 2.2, wobble: 0.18, bank: 0.3, erratic: true },
+      bat: { speed: 1.5, radius: 0.6, height: 0.9, bob: 0.08, bobFreq: 3.4, wobble: 0.16, bank: 0.55 },
+      drone: { speed: 1.35, radius: 0.58, height: 0.86, bob: 0.035, bobFreq: 4.2, wobble: 0.05, bank: 0.35 },
+    };
+
+    function updateFlyingPet(time, delta) {
+      if (!activePetObject || !activePetObject.parent) return;
+      if (activePetObject.userData.isGroundPet) {
+        updateGroundPet(activePetObject, time, delta);
+        return;
       }
+      if (activePetObject.userData.behavior === 'ground') {
+        const pet = activePetObject;
+        const feetY = pet.userData.feetY || 0;
+        const k = 0.12;
+        pet.position.x += (0.65 - pet.position.x) * k;
+        pet.position.z += (-0.9 - pet.position.z) * k;
+        pet.position.y = feetY + Math.abs(Math.sin(time * 6)) * 0.03;
+        pet.rotation.y += (0 - pet.rotation.y) * k;
+        pet.rotation.z = 0;
+        if (pet.userData && pet.userData.updateAnim) {
+          pet.userData.updateAnim(time, 0);
+        }
+        return;
+      }
+      const dt = Math.min(Math.max(delta || 0.016, 0.001), 0.05);
+      const kind = (activePetObject.name || '').replace('pet_', '') || 'drone';
+      const p = FLY_PROFILES[kind] || FLY_PROFILES.drone;
+      const ud = activePetObject.userData;
+      let slow = 1;
+      try {
+        if (typeof window !== 'undefined' && window.matchMedia &&
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches) slow = 0.4;
+      } catch (e) { /* noop */ }
+      if (ud.orbitAngle === undefined) {
+        ud.orbitAngle = Math.atan2(activePetObject.position.z || 0.1, activePetObject.position.x || 0.5);
+        ud.prevX = activePetObject.position.x;
+        ud.prevZ = activePetObject.position.z;
+        ud.prevY = activePetObject.position.y;
+        ud.smoothYaw = 0;
+        ud.smoothRoll = 0;
+        ud.smoothPitch = 0;
+      }
+      // Velocidad con deriva orgánica (no mecedora perfecta)
+      const drift = 1 + Math.sin(time * 0.5) * 0.18 + Math.sin(time * 0.23 + 1.7) * 0.12;
+      ud.orbitAngle += dt * p.speed * drift * slow;
+      const angle = ud.orbitAngle;
+      // Radio vivo: Lissajous + errático extra para el fantasma
+      let r = p.radius + Math.sin(time * 0.7) * p.wobble * 0.5 + Math.sin(time * 1.3 + 0.8) * p.wobble * 0.3;
+      if (p.erratic) r += Math.sin(time * 2.1) * 0.05 + Math.sin(time * 3.7 + 2) * 0.03;
+      r = Math.max(0.45, r);
+      const x = Math.cos(angle) * r;
+      const z = Math.sin(angle) * r * 0.92;
+      const y = p.height + Math.sin(time * p.bobFreq) * p.bob + Math.sin(time * (p.bobFreq * 2.3) + 1) * p.bob * 0.25;
+      activePetObject.position.set(x, y, z);
+      // Velocidad real para orientar + bankear (pitch/roll naturales)
+      const vx = (x - (ud.prevX ?? x)) / dt;
+      const vz = (z - (ud.prevZ ?? z)) / dt;
+      const vy = (y - (ud.prevY ?? y)) / dt;
+      ud.prevX = x; ud.prevZ = z; ud.prevY = y;
+      const targetYaw = Math.atan2(vx, vz);
+      let dy = targetYaw - (ud.smoothYaw || targetYaw);
+      while (dy > Math.PI) dy -= Math.PI * 2;
+      while (dy < -Math.PI) dy += Math.PI * 2;
+      const k = 1 - Math.exp(-6 * dt);
+      ud.smoothYaw = (ud.smoothYaw ?? targetYaw) + dy * k;
+      // Bank por giro + pitch por subida/bajada, suavizados
+      const turnRate = THREE.MathUtils.clamp(dy / Math.max(dt, 0.001), -4, 4);
+      const targetRoll = THREE.MathUtils.clamp(-turnRate * 0.18 * p.bank * 2.2, -0.5, 0.5) - 0.08;
+      const targetPitch = THREE.MathUtils.clamp(-vy * 0.35, -0.3, 0.3);
+      ud.smoothRoll += (targetRoll - (ud.smoothRoll || 0)) * k;
+      ud.smoothPitch += (targetPitch - (ud.smoothPitch || 0)) * k;
+      activePetObject.rotation.set(ud.smoothPitch, ud.smoothYaw, ud.smoothRoll, 'YXZ');
+      if (ud.updateAnim) ud.updateAnim(time, dt);
     }
 
     function loadWeapon(fileName) {
@@ -3731,6 +4265,15 @@
         poke.position.set(0, 0.10, -0.12);
         poke.scale.set(1.25, 1.25, 1.25);
         return Promise.resolve(poke);
+      }
+      if (fileName === 'puzzlecube_complete.gltf') {
+        return loadMixedGltf(fileName).then((scene) => {
+          if (!scene) return null;
+          const r = scene.clone(true);
+          r.scale.setScalar(0.6);
+          r.position.set(0, 0.08, -0.05);
+          return r;
+        });
       }
       if (weaponCache.has(fileName)) {
         return Promise.resolve(weaponCache.get(fileName).clone(true));
@@ -4153,9 +4696,20 @@
         const cls = e.target.value;
         characterConfig.characterClass = cls;
         characterConfig.headStyle = cls;
+        characterConfig.hairStyle = 'default';
         characterConfig.topStyle = cls;
         characterConfig.pantsStyle = cls;
         characterConfig.shoesStyle = cls;
+        // El tapaboca se conserva al cambiar de arquetipo (vale para cualquiera).
+        if (characterConfig.beardStyle !== 'mask') {
+          if (cls === 'Barbarian') {
+            characterConfig.beardStyle = 'long';
+          } else if (cls === 'Ranger') {
+            characterConfig.beardStyle = 'short';
+          } else {
+            characterConfig.beardStyle = 'none';
+          }
+        }
         saveCharacterConfig();
         syncUIToConfig();
         loadCharacterModel(characterConfig);
@@ -4166,7 +4720,14 @@
     const selectHeadStyle = document.getElementById('select-head-style');
     if (selectHeadStyle) {
       selectHeadStyle.addEventListener('change', (e) => {
-        characterConfig.headStyle = e.target.value;
+        const val = e.target.value;
+        characterConfig.headStyle = val;
+        characterConfig.hairStyle = 'default';
+        if (val === 'Barbarian') {
+          characterConfig.beardStyle = 'long';
+        } else if (val === 'Ranger') {
+          characterConfig.beardStyle = 'short';
+        }
         saveCharacterConfig();
         syncUIToConfig();
         if (playerModel) {
@@ -4177,6 +4738,75 @@
       });
     }
 
+    // 2.1 Cabello
+    const selectHairStyle = document.getElementById('select-hair-style');
+    if (selectHairStyle) {
+      selectHairStyle.addEventListener('change', (e) => {
+        characterConfig.hairStyle = e.target.value;
+        saveCharacterConfig();
+        syncUIToConfig();
+        if (playerModel) {
+          applyModularParts(playerModel, characterConfig).then(() => {
+            applyCosmetics(playerModel, characterConfig);
+          });
+        }
+      });
+    }
+
+    // 2.2 Barba
+    const selectBeardStyle = document.getElementById('select-beard-style');
+    if (selectBeardStyle) {
+      selectBeardStyle.addEventListener('change', (e) => {
+        characterConfig.beardStyle = e.target.value;
+        saveCharacterConfig();
+        syncUIToConfig();
+        if (playerModel) {
+          applyModularParts(playerModel, characterConfig).then(() => {
+            applyCosmetics(playerModel, characterConfig);
+          });
+        }
+      });
+    }
+
+    const recargarPelo = () => {
+      saveCharacterConfig();
+      syncUIToConfig();
+      if (playerModel) {
+        applyModularParts(playerModel, characterConfig).then(() => {
+          applyCosmetics(playerModel, characterConfig);
+        });
+      }
+    };
+
+    document.querySelectorAll('#picker-hair-row .color-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        characterConfig.hairColor = sw.getAttribute('data-color');
+        recargarPelo();
+      });
+    });
+
+    const inputHairColor = document.getElementById('input-hair-color');
+    if (inputHairColor) {
+      inputHairColor.addEventListener('input', (e) => {
+        characterConfig.hairColor = e.target.value;
+        recargarPelo();
+      });
+    }
+
+    document.querySelectorAll('#picker-beard-row .color-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        characterConfig.beardColor = sw.getAttribute('data-color');
+        recargarPelo();
+      });
+    });
+
+    const inputBeardColor = document.getElementById('input-beard-color');
+    if (inputBeardColor) {
+      inputBeardColor.addEventListener('input', (e) => {
+        characterConfig.beardColor = e.target.value;
+        recargarPelo();
+      });
+    }
 
     // 3. Parte Superior (Torso)
     const selectTop = document.getElementById('select-top');
@@ -4277,6 +4907,15 @@
       });
     }
 
+    document.querySelectorAll('#picker-guitar-row .color-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        characterConfig.guitarColor = sw.getAttribute('data-guitar');
+        saveCharacterConfig();
+        syncUIToConfig();
+        if (playerModel) applyCosmetics(playerModel, characterConfig);
+      });
+    });
+
     // 7. Cosmético de Cabeza
     const selectHeadItem = document.getElementById('select-head-item');
     if (selectHeadItem) {
@@ -4288,7 +4927,16 @@
       });
     }
 
-    // 8. Mascota (voladora u de tierra — el comportamiento va en userData.behavior)
+    document.querySelectorAll('#picker-star-row .color-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        characterConfig.starOrbitColor = sw.getAttribute('data-star');
+        saveCharacterConfig();
+        syncUIToConfig();
+        if (playerModel) applyCosmetics(playerModel, characterConfig);
+      });
+    });
+
+    // 8. Mascota Voladora
     const selectPet = document.getElementById('select-pet');
     if (selectPet) {
       selectPet.addEventListener('change', (e) => {
@@ -4298,6 +4946,15 @@
         applyPet(playerGroup, characterConfig);
       });
     }
+
+    document.querySelectorAll('#picker-chicken-row .color-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        characterConfig.chickenVariant = sw.getAttribute('data-chicken');
+        saveCharacterConfig();
+        syncUIToConfig();
+        applyPet(playerGroup, characterConfig);
+      });
+    });
 
     // 9. Manos con auto-intercambio inteligente si se elige el mismo artículo
     const selectRHand = document.getElementById('select-rhand');
@@ -4509,12 +5166,23 @@
           none: 'Ninguno 🚫',
           cape: 'Capa 🧣',
           backpack: 'Mochila Urbana 🎒',
-          laptop_bag: 'Bolso Notebook 💼',
           keyboard_back: 'Teclado Gamer en Espalda ⌨️',
           giant_usb: 'USB Gigante 💾',
           giant_keychain: 'USB Gigante 💾',
-          quiver: 'Carcaj 🏹',
-          'Skeleton_Quiver.gltf': 'Carcaj Esquelético 🏹'
+          guitar: 'Guitarra 🎸',
+          'shield_badge.gltf': 'Escudo Emblema 🛡️',
+          'shield_badge_color.gltf': 'Escudo Emblema Color 🛡️',
+          'shield_round.gltf': 'Escudo Redondo 🛡️',
+          'shield_round_barbarian.gltf': 'Escudo Bárbaro 🛡️',
+          'shield_round_color.gltf': 'Escudo Redondo Color 🛡️',
+          'shield_spikes.gltf': 'Escudo con Púas 🛡️',
+          'shield_spikes_color.gltf': 'Escudo Púas Color 🛡️',
+          'shield_square.gltf': 'Escudo Cuadrado 🛡️',
+          'shield_square_color.gltf': 'Escudo Cuadrado Color 🛡️',
+          'Skeleton_Shield_Large_A.gltf': 'Escudo Grande A 🛡️',
+          'Skeleton_Shield_Large_B.gltf': 'Escudo Grande B 🛡️',
+          'Skeleton_Shield_Small_A.gltf': 'Escudo Pequeño A 🛡️',
+          'Skeleton_Shield_Small_B.gltf': 'Escudo Pequeño B 🛡️'
         };
         const headNamesMap = {
           none: 'Ninguno 🚫',
@@ -4526,7 +5194,9 @@
           helmet: 'Casco 🪖',
           skel_helmet: 'Casco Esqueleto Guerrero 🪖',
           skel_mage_hat: 'Sombrero Esqueleto Mago 🧙',
-          skel_hood: 'Capucha Esqueleto Pícaro 🥷'
+          skel_hood: 'Capucha Esqueleto Pícaro 🥷',
+          star_orbit: 'Estrellitas ⭐',
+          flower_antennae: 'Flores Antena 🌸'
         };
         const itemNamesMap = {
           none: 'Ninguna 🚫',
@@ -4548,30 +5218,42 @@
           'bow_withString.gltf': 'Arco 🏹',
           'crossbow_1handed.gltf': 'Ballesta 🎯',
           'mug_full.gltf': 'Jarra Llena 🍺',
-          'shield_badge.gltf': 'Escudo Insignia 🛡️',
-          'shield_round.gltf': 'Escudo Redondo 🛡️',
-          'shield_spikes.gltf': 'Escudo Púas 🛡️',
-          'shield_square.gltf': 'Escudo Cuadrado 🛡️',
           'Skeleton_Blade.gltf': 'Espada Esquelética 🗡️',
           'Skeleton_Axe.gltf': 'Hacha Esquelética 🪓',
           'Skeleton_Staff.gltf': 'Báculo Esquelético 🪄',
           'Skeleton_Crossbow.gltf': 'Ballesta Esquelética 🎯',
-          'Skeleton_Shield_Large_A.gltf': 'Escudo Grande A 🛡️',
-          'Skeleton_Shield_Large_B.gltf': 'Escudo Grande B 🛡️',
-          'Skeleton_Shield_Small_A.gltf': 'Escudo Pequeño A 🛡️',
-          'Skeleton_Shield_Small_B.gltf': 'Escudo Pequeño B 🛡️',
           'smokebomb.gltf': 'Bomba Humo 💨',
-          'mug_empty.gltf': 'Jarra Vacía 🍺'
+          'mug_empty.gltf': 'Jarra Vacía 🍺',
+          'puzzlecube_complete.gltf': 'Cubo Rubik 🧩'
         };
         const petNamesMap = {
           none: 'Ninguna 🚫',
           drone: 'Mini Dron 🛸',
           owl: 'Búho Sabio 🦉',
           bat: 'Murciélago Nocturno 🦇',
-          ghost: 'Espíritu Fantasma 👻'
+          ghost: 'Espíritu Fantasma 👻',
+          chicken: 'Gallina 🐔'
+        };
+
+        const hairNamesMap = {
+          default: 'Original 👤',
+          mage: 'Mago (Largo / Blanco) 🧙',
+          ranger: 'Arquero (Ondulado / Castaño) 🏹',
+          knight: 'Caballero (Corto) 🛡️',
+          rogue: 'Pícaro (Despeinado) 🗡️',
+          none: 'Ninguno (Bárbaro / Rapado) 🚫'
+        };
+
+        const beardNamesMap = {
+          none: 'Ninguno 🚫',
+          long: 'Barba larga (Bárbaro) 🧔',
+          short: 'Barba corta (Arquero) 🧔',
+          mask: 'Tapaboca (Encapuchado) 🥷'
         };
 
         setTxt('card-val-class', classNamesMap[characterConfig.characterClass] || characterConfig.characterClass);
+        setTxt('card-val-hair', hairNamesMap[characterConfig.hairStyle] || 'Original 👤');
+        setTxt('card-val-beard', beardNamesMap[characterConfig.beardStyle] || 'Ninguna 🚫');
         setTxt('card-val-cape', characterConfig.showCape ? 'Equipada 🧣' : 'No ❌');
         setTxt('card-val-headwear', headNamesMap[characterConfig.headItem] || characterConfig.headItem);
         setTxt('card-val-mask', backNamesMap[characterConfig.backItem] || characterConfig.backItem);
