@@ -5,12 +5,19 @@ export type WorldTheme = 'desert' | 'jungle' | 'castle' | 'snow' | 'nether' | 's
 
 // Bioma (elegido por el profesor) -> tema del mapa 2D. `Nether` queda afuera a propósito:
 // todavía no tiene arte/tema 2D propio (ver core/data/biomas.ts).
-export const BIOMA_A_WORLD_THEME: Partial<Record<Bioma, WorldTheme>> = {
+export const BIOMA_A_WORLD_THEME: Record<string, WorldTheme> = {
   Desierto: 'desert',
+  desierto: 'desert',
   Bosque: 'jungle',
+  pradera: 'jungle',
   Arenisca: 'castle',
+  arenisca: 'castle',
   Nieve: 'snow',
+  nieve: 'snow',
+  Nether: 'nether',
+  lava: 'nether',
   Espacio: 'space',
+  espacio: 'space',
 };
 
 export interface QuestionData {

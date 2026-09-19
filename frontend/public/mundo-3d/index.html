@@ -5488,6 +5488,18 @@
     // guardado todavía (roadmaps creados antes de este campo).
     const BIOMA_FALLBACK_CICLO = ['Desierto', 'Bosque', 'Arenisca', 'Nieve'];
 
+    function normalizeBiomeKey(raw) {
+      if (!raw) return 'Bosque';
+      const str = String(raw).toLowerCase().trim();
+      if (str === 'pradera' || str === 'bosque' || str === 'selva') return 'Bosque';
+      if (str === 'desierto' || str === 'desert') return 'Desierto';
+      if (str === 'nieve' || str === 'snow') return 'Nieve';
+      if (str === 'lava' || str === 'nether') return 'Nether';
+      if (str === 'arenisca' || str === 'castle') return 'Arenisca';
+      if (str === 'espacio' || str === 'space') return 'Espacio';
+      return raw;
+    }
+
     // Fuente de verdad real: Angular (mundo-3d.ts) manda las unidades del curso —
     // con su id real — apenas el iframe termina de cargar. Reemplaza lo que haya
     // armado `loadUnitsFromStorage()` al boot.
@@ -5501,7 +5513,8 @@
 
       units.length = 0;
       data.unidades.forEach((u) => {
-        const biomeKey = u.bioma || BIOMA_FALLBACK_CICLO[(u.orden - 1) % BIOMA_FALLBACK_CICLO.length];
+        const rawBiome = u.bioma || BIOMA_FALLBACK_CICLO[(u.orden - 1) % BIOMA_FALLBACK_CICLO.length];
+        const biomeKey = normalizeBiomeKey(rawBiome);
         stageUnit(u.nombre, biomeKey, getDefaultBiomeDescription(biomeKey), u.id, !!u.resuelta, Array.isArray(u.actividades) ? u.actividades : []);
       });
       saveUnitsToStorage();

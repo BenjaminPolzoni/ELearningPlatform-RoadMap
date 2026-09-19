@@ -9,12 +9,22 @@ export const routes: Routes = [
   {
     path: 'profesor',
     canActivate: [sesionGuard],
-    loadComponent: () => import('./features/profesor/editor').then((m) => m.Editor),
+    loadComponent: () => import('./features/profesor/home/home.component').then((m) => m.HomeComponent),
+  },
+  {
+    path: 'profesor/build/:id',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/profesor/builder/builder.component').then((m) => m.BuilderComponent),
+  },
+  {
+    path: 'profesor/map/:id',
+    canActivate: [sesionGuard],
+    loadComponent: () => import('./features/profesor/map/map.component').then((m) => m.MapComponent),
   },
   {
     path: 'profesor/unidad/:id',
     canActivate: [sesionGuard],
-    loadComponent: () => import('./features/profesor/unidad-editor').then((m) => m.UnidadEditor),
+    loadComponent: () => import('./features/profesor/builder/builder.component').then((m) => m.BuilderComponent),
   },
   {
     // Mundo 3D (mundo-3d.ts embebe la herramienta de exploración): cada casa es una
