@@ -180,8 +180,10 @@ export class Archipielago3dService {
   private wildlifeMixers: THREE.AnimationMixer[] = [];
   private gltfLoader = new GLTFLoader();
 
-  // Barquito Papercraft y Estado de Atraque
+  // Barco 3D navegable y Estado de Atraque
   private boatGroup!: THREE.Group;
+  private boatModel: THREE.Object3D | null = null;
+  private boatPlaceholder: THREE.Group | null = null;
   private boatHeading = 0; // radianes
   private boatSpeed = 0;
   private boatPos = new THREE.Vector3(0, 0, 0);
@@ -239,6 +241,8 @@ export class Archipielago3dService {
     this.autoPilotTarget = null;
     this.autoPilotPath = [];
     this.mouseTarget = null;
+    this.boatModel = null;
+    this.boatPlaceholder = null;
     this.boatSpeed = 0;
     this.isSailing = false;
     this.onDockCallback = null;
@@ -296,8 +300,8 @@ export class Archipielago3dService {
     // 8. Ruta náutica del tesoro punteada
     this.setupTreasureRoutes();
 
-    // 9. Barquito de papel / madera con velas origami
-    this.setupPaperBoat();
+    // 9. Barco 3D navegable (ship-large.glb)
+    this.setupBoat();
 
     // 10. Fauna marina y aérea (Gaviotas, Delfines y Ballena con chorro de agua)
     this.setupWildlife();
@@ -1616,10 +1620,22 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Barquito de Papel / Madera con Velas Origami
+  // Barco 3D (ship-large.glb) y Navegación
   // -------------------------------------------------------------
-  private setupPaperBoat(): void {
+  private setupBoat(): void {
     this.boatGroup = new THREE.Group();
+    this.scene.add(this.boatGroup);
+
+    // Placeholder procedural mientras se completa la carga del modelo 3D GLB
+    this.boatPlaceholder = this.createBoatPlaceholder();
+    this.boatGroup.add(this.boatPlaceholder);
+
+    // Cargar modelo 3D ship-large.glb (frontend/public/mundo-3d/Assets/Vehiculos/ship-large.glb)
+    this.loadShipModel();
+  }
+
+  private createBoatPlaceholder(): THREE.Group {
+    const holder = new THREE.Group();
 
     // Casco facetado de madera noble
     const hullGeom = new THREE.BufferGeometry();
@@ -1655,9 +1671,9 @@ export class Archipielago3dService {
     });
     const hull = new THREE.Mesh(hullGeom, hullMat);
     hull.castShadow = true;
-    this.boatGroup.add(hull);
+    holder.add(hull);
 
-    // Cubierta interior de madera noble (evita que el barco se vea hueco o inundado)
+    // Cubierta interior de madera noble
     const deckGeom = new THREE.BufferGeometry();
     const deckVertices = new Float32Array([
       0, 0.44, 2.0,
@@ -1680,7 +1696,7 @@ export class Archipielago3dService {
     });
     const boatDeck = new THREE.Mesh(deckGeom, deckMat);
     boatDeck.receiveShadow = true;
-    this.boatGroup.add(boatDeck);
+    holder.add(boatDeck);
 
     // Mástil
     const mastGeom = new THREE.CylinderGeometry(0.08, 0.11, 4.4, 6);
@@ -1688,9 +1704,9 @@ export class Archipielago3dService {
     const mast = new THREE.Mesh(mastGeom, mastMat);
     mast.position.set(0, 2.1, 0.15);
     mast.castShadow = true;
-    this.boatGroup.add(mast);
+    holder.add(mast);
 
-    // Vela principal triangular de papel blanco doblado
+    // Vela principal
     const sailMainGeom = new THREE.BufferGeometry();
     const sailVertices = new Float32Array([
       0, 4.2, 0.15,
@@ -1711,7 +1727,7 @@ export class Archipielago3dService {
     });
     const sailMain = new THREE.Mesh(sailMainGeom, sailMat);
     sailMain.castShadow = true;
-    this.boatGroup.add(sailMain);
+    holder.add(sailMain);
 
     // Foque / Vela de proa
     const jibGeom = new THREE.BufferGeometry();
@@ -1727,18 +1743,99 @@ export class Archipielago3dService {
     jibGeom.computeVertexNormals();
     const jib = new THREE.Mesh(jibGeom, sailMat);
     jib.castShadow = true;
-    this.boatGroup.add(jib);
+    holder.add(jib);
 
-    // Gallardete rojo
+    // Gallardete
     const pennant = new THREE.Mesh(
       new THREE.ConeGeometry(0.18, 0.75, 3),
       new THREE.MeshStandardMaterial({ color: 0xdc2626, flatShading: true }),
     );
     pennant.rotateZ(-Math.PI / 2);
     pennant.position.set(0.38, 4.3, 0.15);
-    this.boatGroup.add(pennant);
+    holder.add(pennant);
 
-    this.scene.add(this.boatGroup);
+    return holder;
+  }
+
+  private async loadShipModel(): Promise<void> {
+    try {
+      // Cargar la textura colormap específica de la flota pirata (Kenney pirate kit)
+      const textureLoader = new THREE.TextureLoader();
+      const colormapTex = await new Promise<THREE.Texture | null>((resolve) => {
+        textureLoader.load(
+          '/mundo-3d/Assets/Vehiculos/Textures/colormap.png',
+          (tex) => {
+            tex.colorSpace = THREE.SRGBColorSpace;
+            tex.flipY = false;
+            resolve(tex);
+          },
+          undefined,
+          () => resolve(null),
+        );
+      });
+
+      const gltf = await this.loadGltfSafe(
+        '/mundo-3d/Assets/Vehiculos/ship-large.glb',
+        'mundo-3d/Assets/Vehiculos/ship-large.glb',
+      );
+      if (!this.running || !this.scene) return;
+
+      const shipScene = gltf.scene;
+      if (!shipScene) return;
+
+      // Escalar y posicionar para alinear la línea de flotación con el océano
+      shipScene.scale.setScalar(0.28);
+      shipScene.position.set(0, -0.32, 0);
+
+      shipScene.traverse((child: THREE.Object3D) => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.frustumCulled = false;
+
+          if (mesh.material) {
+            const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            mats.forEach((m) => {
+              if (m instanceof THREE.MeshStandardMaterial) {
+                if (colormapTex) {
+                  m.map = colormapTex;
+                } else if (m.map) {
+                  m.map.colorSpace = THREE.SRGBColorSpace;
+                  m.map.flipY = false;
+                }
+                m.side = THREE.DoubleSide;
+                m.roughness = 0.85;
+                m.metalness = 0.05;
+                m.needsUpdate = true;
+              }
+            });
+          }
+        }
+      });
+
+      // Retirar y liberar el placeholder procedural
+      if (this.boatPlaceholder) {
+        this.boatGroup.remove(this.boatPlaceholder);
+        this.boatPlaceholder.traverse((c) => {
+          if ((c as THREE.Mesh).isMesh) {
+            (c as THREE.Mesh).geometry?.dispose();
+            const mat = (c as THREE.Mesh).material;
+            if (Array.isArray(mat)) {
+              mat.forEach((m) => m.dispose());
+            } else {
+              mat?.dispose();
+            }
+          }
+        });
+        this.boatPlaceholder = null;
+      }
+
+      this.boatModel = shipScene;
+      this.boatGroup.add(shipScene);
+    } catch (err) {
+      console.warn('[Archipielago3D] No se pudo cargar ship-large.glb, manteniendo barco procedural:', err);
+    }
   }
 
   // -------------------------------------------------------------
@@ -1990,9 +2087,9 @@ export class Archipielago3dService {
 
         const waveH = this.getWaveHeight(this.boatPos.x, this.boatPos.z, t);
         streak.position.set(
-          this.boatPos.x - Math.sin(heading) * 1.1 + side * Math.cos(heading) * 0.45,
+          this.boatPos.x - Math.sin(heading) * 1.5 + side * Math.cos(heading) * 0.55,
           0.29 + waveH,
-          this.boatPos.z - Math.cos(heading) * 1.1 - side * Math.sin(heading) * 0.45,
+          this.boatPos.z - Math.cos(heading) * 1.5 - side * Math.sin(heading) * 0.55,
         );
 
         this.wakeGroup.add(streak);
@@ -2022,7 +2119,7 @@ export class Archipielago3dService {
   // Resolución de Colisiones Físicas del Barquito con las Islas
   // -------------------------------------------------------------
   private resolveBoatCollisions(): void {
-    const boatRadius = 1.15;
+    const boatRadius = 1.25;
     for (const col of this.islandColliders) {
       const dx = this.boatPos.x - col.x;
       const dz = this.boatPos.z - col.z;
@@ -2737,6 +2834,22 @@ export class Archipielago3dService {
     this.islandColliders = [];
     this.oceanOrigPositions = null;
     this.oceanBaseColors = null;
+    if (this.boatGroup) {
+      this.boatGroup.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry?.dispose();
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((m) => m.dispose());
+          } else {
+            obj.material?.dispose();
+          }
+        }
+      });
+      this.boatGroup.clear();
+      this.scene?.remove(this.boatGroup);
+    }
+    this.boatModel = null;
+    this.boatPlaceholder = null;
 
     if (this.renderer) {
       this.renderer.dispose();

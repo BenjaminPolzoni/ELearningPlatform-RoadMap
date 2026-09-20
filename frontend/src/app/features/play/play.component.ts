@@ -41,10 +41,12 @@ interface ShopItem {
   desc: string;
 }
 
+import { DungeonShopModalComponent } from './dungeon-shop-modal';
+
 @Component({
   selector: 'app-play',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, DungeonShopModalComponent],
   providers: [World3dService],
   template: `
     @if (missing()) {
@@ -148,27 +150,27 @@ interface ShopItem {
               <button (click)="openChallenge(t, true)" class="mt-2 btn btn-sm btn-secondary w-full ui-font text-[8px]">Repetir 🔁</button>
             }
           </aside>
-        } @else if (nearMarket()) {
-          <aside class="absolute right-2 top-16 w-72 rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-white shadow-2xl chaflan" aria-live="polite">
-            <p class="text-3xl">🏪</p>
-            <h2 class="mt-1 font-bold text-primary title-font">Mercado <span class="text-xs font-normal opacity-60">(demo)</span></h2>
-            <p class="mt-1 text-xs font-mono text-warning">🪙 {{ coins() }} monedas</p>
-            @for (item of shop; track item.id) {
-              <div class="mt-2 flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 p-2 text-left text-sm">
-                <span class="text-2xl">{{ item.emoji }}</span>
-                <div class="flex-1 min-w-0">
-                  <p class="font-bold text-xs truncate">{{ item.nombre }}</p>
-                  <p class="text-[10px] text-gray-400 truncate">{{ item.desc }}</p>
-                </div>
-                @if (owned().includes(item.id)) {
-                  <span class="text-sm font-medium text-success">✅</span>
-                } @else {
-                  <button (click)="buy(item.id)" [disabled]="coins() < item.precio"
-                    class="btn btn-xs btn-primary ui-font text-[7px] disabled:opacity-40">🪙 {{ item.precio }}</button>
-                }
+        } @else if (nearMarket() && !inShop()) {
+          <aside class="absolute left-1/2 bottom-20 -translate-x-1/2 z-30 flex items-center gap-3.5 rounded-2xl bg-[#1C1E2B]/95 border-2 border-amber-400/80 backdrop-blur-md px-5 py-3.5 text-white shadow-2xl chaflan pointer-events-auto transition-all animate-bounce" aria-live="polite">
+            <span class="text-3xl filter drop-shadow">🏪</span>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="font-bold text-amber-300 title-font text-xs sm:text-sm tracking-wide">Mercado del Calabozo</h2>
+                <span class="badge badge-warning badge-xs font-mono text-[8px] font-bold">ABIERTO</span>
               </div>
-            }
+              <p class="text-[10px] text-gray-300 mt-0.5">Pulsa <kbd class="kbd kbd-xs bg-amber-500/20 text-amber-300 border-amber-400/50 font-mono font-bold">E</kbd> o pulsa para entrar al bazar 3D</p>
+            </div>
+            <button (click)="openShop()" class="btn btn-sm bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-extrabold border-none ui-font text-[10px] shadow-lg ml-2 px-3.5 py-1">
+              Entrar 🚪
+            </button>
           </aside>
+        }
+
+        @if (inShop()) {
+          <app-dungeon-shop-modal
+            [(coins)]="coins"
+            [(owned)]="owned"
+            (cerrar)="closeShop()" />
         }
 
         @if (toast()) {
@@ -210,6 +212,7 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
   near = signal<AnexoMarker | null>(null);
   nearTower = signal<ModuloPlaced | null>(null);
   nearMarket = signal<ModuloPlaced | null>(null);
+  inShop = signal(false);
   coins = signal(100);
   owned = signal<string[]>([]);
   shop: ShopItem[] = [
@@ -394,6 +397,15 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
       this.alternarVista();
     } else if (e.key === 'x' || e.key === 'X') {
       this.alternarEfectos();
+    } else if (
+      (e.key === 'e' || e.key === 'E' || e.key === 'Enter') &&
+      this.nearMarket() &&
+      !this.inShop() &&
+      !this.reading() &&
+      !this.challenge()
+    ) {
+      e.preventDefault();
+      this.openShop();
     }
   }
 
@@ -535,5 +547,16 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
     this.owned.set([...this.owned(), id]);
     this.audio.playCoin();
     this.showToast(`🛒 ¡${item.nombre} comprado! (demo)`);
+  }
+
+  openShop(): void {
+    this.audio.playClick();
+    this.world3d.startReading();
+    this.inShop.set(true);
+  }
+
+  closeShop(): void {
+    this.inShop.set(false);
+    this.world3d.finishReading();
   }
 }
