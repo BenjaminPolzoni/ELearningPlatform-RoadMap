@@ -16,6 +16,73 @@ import {
   type WorldLayout,
 } from '../world-gen';
 
+interface VolcanoState {
+  x: number;
+  y: number;
+  z: number;
+  r: number;
+  nextEruption: number;
+  isErupting: boolean;
+  burstTimer: number;
+  burstDuration: number;
+  light: THREE.PointLight;
+  uniforms: {
+    uTime: { value: number };
+    uEruptionIntensity: { value: number };
+  };
+}
+
+interface LavaBomb {
+  mesh: THREE.Mesh;
+  active: boolean;
+  vx: number;
+  vy: number;
+  vz: number;
+  rotVx: number;
+  rotVy: number;
+  rotVz: number;
+  life: number;
+  maxLife: number;
+  baseScale: number;
+}
+
+interface JumpingFish {
+  mesh: THREE.Group;
+  active: boolean;
+  startX: number;
+  startZ: number;
+  targetX: number;
+  targetZ: number;
+  t: number;
+  duration: number;
+  peakHeight: number;
+  waterY: number;
+}
+
+interface WaterCoastSpot {
+  wx: number;
+  wz: number;
+  nx: number;
+  nz: number;
+  tx: number;
+  tz: number;
+}
+
+interface WaterRipple {
+  mesh: THREE.Mesh;
+  active: boolean;
+  t: number;
+  maxT: number;
+  maxScale: number;
+}
+
+interface FlockBirdMember {
+  group: THREE.Group;
+  wingLeft: THREE.Object3D;
+  wingRight: THREE.Object3D;
+  flapOffset: number;
+}
+
 const G = '/world/Hexagon/Assets/gltf';
 const TILE_GRASS = `${G}/tiles/base/hex_grass.gltf`;
 const TILE_WATER = `${G}/tiles/base/hex_water.gltf`;
@@ -108,6 +175,23 @@ export class World3dService {
   private emberVel: Float32Array | null = null;
   private magmaMats: THREE.MeshStandardMaterial[] = [];
   private volcanoSmoke: { s: THREE.Sprite; seed: number; bx: number; by: number; bz: number }[] = [];
+  private volcanos: VolcanoState[] = [];
+  private lavaBombs: LavaBomb[] = [];
+  private bombGeo: THREE.BufferGeometry | null = null;
+  private bombMat: THREE.Material | null = null;
+  private eruptionSparks: THREE.Points | null = null;
+  private sparkVel: Float32Array | null = null;
+  private sparkLife: Float32Array | null = null;
+  private praderaFish: JumpingFish[] = [];
+  private praderaRipples: WaterRipple[] = [];
+  private praderaBirds: FlockBirdMember[] = [];
+  private birdFlockRoot: THREE.Group | null = null;
+  private flockAngle = 0;
+  private flockCenter = { x: 0, z: 0 };
+  private rippleGeo: THREE.BufferGeometry | null = null;
+  private rippleMat: THREE.Material | null = null;
+  private nextFishJump = 0;
+  private waterCoastData: WaterCoastSpot[] = [];
   private effectsOn = true;
   private bioma: Biome = 'pradera';
   private clickCleanups: (() => void)[] = [];
@@ -248,6 +332,85 @@ export class World3dService {
     });
   }
 
+  /** Material dinámico para volcanes: corriente animada de lava en las grietas + ceniza en roca. */
+  private applyVolcanoMaterial(
+    g: THREE.Group,
+    uniforms: { uTime: { value: number }; uEruptionIntensity: { value: number } },
+  ): void {
+    g.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      const mat = ((mesh.material as THREE.MeshStandardMaterial).clone() as THREE.MeshStandardMaterial & {
+        onBeforeCompile: (s: { fragmentShader: string; vertexShader: string; uniforms: Record<string, { value: unknown }> }) => void;
+      });
+      mat.onBeforeCompile = (s) => {
+        s.uniforms['uTime'] = uniforms.uTime;
+        s.uniforms['uEruptionIntensity'] = uniforms.uEruptionIntensity;
+
+        s.vertexShader = s.vertexShader.replace(
+          '#include <common>',
+          `#include <common>
+          varying vec3 vVolcanoNormal;
+          varying vec3 vVolcanoLocalPos;`,
+        );
+        s.vertexShader = s.vertexShader.replace(
+          '#include <defaultnormal_vertex>',
+          `#include <defaultnormal_vertex>
+          vVolcanoNormal = normalize(transformedNormal);
+          vVolcanoLocalPos = position;`,
+        );
+        s.fragmentShader = s.fragmentShader.replace(
+          '#include <common>',
+          `#include <common>
+          uniform float uTime;
+          uniform float uEruptionIntensity;
+          varying vec3 vVolcanoNormal;
+          varying vec3 vVolcanoLocalPos;`,
+        );
+        s.fragmentShader = s.fragmentShader.replace(
+          '#include <color_fragment>',
+          `#include <color_fragment>
+          {
+            // Detección de la corriente de lava por saturación cálida frente al gris de la roca
+            bool isLava = (diffuseColor.r - diffuseColor.b > 0.28) && (diffuseColor.r > 0.42);
+            if (isLava) {
+              // Corriente descendente continua hacia la base
+              float flowPhase = vVolcanoLocalPos.y * 6.2 + uTime * 3.4 + sin(vVolcanoLocalPos.x * 8.0) * 1.2;
+              float wave = sin(flowPhase) * 0.5 + 0.5;
+              float waveSharp = pow(wave, 2.5);
+
+              vec3 deepMagma = vec3(0.75, 0.10, 0.02);
+              vec3 brightOrange = vec3(1.0, 0.42, 0.04);
+              vec3 hotYellow = vec3(1.0, 0.92, 0.35);
+
+              vec3 lavaC = mix(deepMagma, brightOrange, wave);
+              lavaC = mix(lavaC, hotYellow, waveSharp * 0.9);
+
+              float intensity = uEruptionIntensity;
+              diffuseColor.rgb = lavaC * (1.1 + wave * 0.5) * intensity;
+            } else {
+              // Ceniza oscura en las caras rocosas superiores
+              float ash = smoothstep(0.45, 0.70, normalize(vVolcanoNormal).y);
+              diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.26, 0.24, 0.23), ash * 0.75);
+            }
+          }`,
+        );
+        s.fragmentShader = s.fragmentShader.replace(
+          '#include <emissivemap_fragment>',
+          `#include <emissivemap_fragment>
+          {
+            bool isLava = (diffuseColor.r - diffuseColor.b > 0.28) && (diffuseColor.r > 0.42);
+            if (isLava) {
+              totalEmissiveRadiance += diffuseColor.rgb * (0.8 + 0.5 * uEruptionIntensity);
+            }
+          }`,
+        );
+      };
+      mat.needsUpdate = true;
+      mesh.material = mat;
+    });
+  }
+
   /** Vegetación procedural (modelos `proc:` — sin assets). */
   private buildProcedural(model: string): THREE.Group {
     const g = new THREE.Group();
@@ -356,13 +519,28 @@ export class World3dService {
     ch.setTarget(p.x, p.z);
   }
 
-  /** Efectos del bioma (nevada / rodadoras / humo y brasas): visibles o no. */
+  /** Efectos del bioma (nevada / rodadoras / humo, volcanes, fauna y brasas): visibles o no. */
   setEffectsEnabled(on: boolean): void {
     this.effectsOn = on;
     if (this.snow) this.snow.visible = on;
     if (this.embers) this.embers.visible = on;
+    if (this.eruptionSparks) this.eruptionSparks.visible = on;
     for (const tw of this.tumbleweeds) tw.visible = on;
     for (const p of this.volcanoSmoke) p.s.visible = on;
+    for (const v of this.volcanos) v.light.visible = on;
+    for (const b of this.lavaBombs) {
+      if (!on) b.mesh.visible = false;
+      else if (b.active) b.mesh.visible = true;
+    }
+    for (const f of this.praderaFish) {
+      if (!on) f.mesh.visible = false;
+      else if (f.active) f.mesh.visible = true;
+    }
+    if (this.birdFlockRoot) this.birdFlockRoot.visible = on;
+    for (const r of this.praderaRipples) {
+      if (!on) r.mesh.visible = false;
+      else if (r.active) r.mesh.visible = true;
+    }
   }
 
   /** Aplica atmósfera del bioma sin pisar el fondo (la imagen de tienda se conserva). */
@@ -547,7 +725,13 @@ export class World3dService {
       tick();
     }
 
-    const volcanoTops: { x: number; y: number; z: number; r: number }[] = [];
+    const volcanoTops: {
+      x: number;
+      y: number;
+      z: number;
+      r: number;
+      uniforms: { uTime: { value: number }; uEruptionIntensity: { value: number } };
+    }[] = [];
     for (const p of layout.ridge) {
       const [x, z] = this.ax(p.q, p.r, p.ox, p.oz);
       const m = await this.assets.load(p.model);
@@ -555,12 +739,27 @@ export class World3dService {
       m.rotation.y = p.rotY;
       if (p.s) m.scale.setScalar(p.s);
       if (snow) this.snowcap(m);
-      if (lava) this.snowcap(m, 0x4a4440); // ceniza en vez de nieve
-      this.scene.add(m);
-      if (lava && (layout.volcanes ?? []).some((v) => v.q === p.q && v.r === p.r)) {
-        const topY = new THREE.Box3().setFromObject(m).max.y;
-        volcanoTops.push({ x, y: Math.max(0.5, topY * 0.92), z, r: 0.35 * (p.s ?? 2) });
+      if (lava) {
+        const isVolcano = (layout.volcanes ?? []).some((v) => v.q === p.q && v.r === p.r);
+        if (isVolcano) {
+          const uniforms = {
+            uTime: { value: Math.random() * 10 },
+            uEruptionIntensity: { value: 1.0 },
+          };
+          this.applyVolcanoMaterial(m, uniforms);
+          const topY = new THREE.Box3().setFromObject(m).max.y;
+          volcanoTops.push({
+            x,
+            y: Math.max(0.5, topY * 0.92),
+            z,
+            r: 0.35 * (p.s ?? 2),
+            uniforms,
+          });
+        } else {
+          this.snowcap(m, 0x4a4440); // ceniza en vez de nieve en rocas estándar
+        }
       }
+      this.scene.add(m);
       tick();
     }
 
@@ -712,28 +911,16 @@ export class World3dService {
       this.startSnowfall((layout.boundR ?? 14) * this.sx);
     }
 
-    // Volcanes (solo lava): cráter incandescente + columna de humo + brasas
+    // Volcanes (solo lava): cráter incandescente + columna de humo + brasas + erupciones
     if (lava) {
       const smokeTex = this.fogTexture();
-      for (const v of volcanoTops) {
-        for (let i = 0; i < 12; i++) {
-          const s = new THREE.Sprite(
-            new THREE.SpriteMaterial({
-              map: smokeTex,
-              color: i < 4 ? 0x3a3a3a : 0x5a5a5a,
-              transparent: true,
-              opacity: 0.65 - i * 0.02,
-              depthWrite: false,
-            }),
-          );
-const sc = 1.8 + (i % 4) * 0.9;
-           s.scale.set(sc, sc * 0.9, 1);
-           s.position.set(v.x + (Math.random() - 0.5) * 0.3, v.y, v.z + (Math.random() - 0.5) * 0.3);
-          this.scene.add(s);
-          this.volcanoSmoke.push({ s, seed: i * 1.3 + v.x, bx: v.x, by: v.y, bz: v.z });
-        }
-      }
+      this.initVolcanoSystem(volcanoTops, smokeTex);
       this.startEmbers((layout.boundR ?? 14) * this.sx);
+    }
+
+    // Fauna de Pradera: pececitos saltando en el agua y bandada de aves
+    if (this.bioma === 'pradera') {
+      this.initPraderaWildlife(layout);
     }
 
     // Neblina de guerra esponjosa, volumétrica y orgánica (confinada estrictamente a la calzada jugable)
@@ -895,9 +1082,9 @@ const sc = 1.8 + (i % 4) * 0.9;
     this.applyBiome();
   }
 
-  /** Conmuta cámara primera/tercera persona (oculta el cuerpo en primera). */
+  /** Conmuta cámara primera/tercera persona / libre (oculta el cuerpo en primera). */
   alternarVista(): Vista {
-    const vista = this.camController?.alternarVista() ?? 'tercera';
+    const vista = this.camController?.alternarVista() ?? 'libre';
     this.charController?.setVistaPrimera(vista === 'primera');
     return vista;
   }
@@ -1064,15 +1251,23 @@ const sc = 1.8 + (i % 4) * 0.9;
       for (const m of this.magmaMats) m.emissiveIntensity = 1 + Math.sin(t * 2.2) * 0.3;
       if (this.effectsOn) {
         for (const p of this.volcanoSmoke) {
-          const k = ((t * 0.25 + p.seed) % 1 + 1) % 1; // 0→1 ciclo de subida
+          const nearV = this.volcanos.find((v) => Math.hypot(v.x - p.bx, v.z - p.bz) < 1.2);
+          const eruptBoost = nearV?.isErupting ? 1.4 : 1.0;
+          const k = ((t * (0.25 * eruptBoost) + p.seed) % 1 + 1) % 1; // 0→1 ciclo de subida
           p.s.position.set(
             p.bx + Math.sin(t * 0.8 + p.seed * 5) * (0.5 + k * 1.5),
-            p.by + k * 6,
+            p.by + k * (6 * eruptBoost),
             p.bz + Math.cos(t * 0.6 + p.seed * 5) * (0.5 + k * 1.5),
           );
-          const sc = 1.5 + k * 3;
+          const sc = (1.5 + k * 3) * (nearV?.isErupting ? 1.25 : 1.0);
           p.s.scale.set(sc, sc * 0.8, 1);
-          (p.s.material as THREE.SpriteMaterial).opacity = 0.55 * (1 - k);
+          (p.s.material as THREE.SpriteMaterial).opacity = (nearV?.isErupting ? 0.7 : 0.55) * (1 - k);
+        }
+        if (this.volcanos.length) {
+          this.updateVolcanoEruptions(t, dt);
+        }
+        if (this.praderaFish.length || this.praderaBirds.length) {
+          this.updatePraderaWildlife(t, dt);
         }
         if (this.embers && this.emberVel) {
           const attr = this.embers.geometry.getAttribute('position') as THREE.BufferAttribute;
@@ -1377,6 +1572,853 @@ const sc = 1.8 + (i % 4) * 0.9;
     this.emberVel = null;
   }
 
+  private sparkTexture(): THREE.Texture {
+    const c = document.createElement('canvas');
+    c.width = 64;
+    c.height = 64;
+    const ctx = c.getContext('2d') as CanvasRenderingContext2D;
+    const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 30);
+    g.addColorStop(0, 'rgba(255, 255, 220, 1)');
+    g.addColorStop(0.35, 'rgba(255, 170, 30, 0.9)');
+    g.addColorStop(0.7, 'rgba(255, 60, 10, 0.4)');
+    g.addColorStop(1, 'rgba(255, 40, 0, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(32, 32, 30, 0, Math.PI * 2);
+    ctx.fill();
+    return new THREE.CanvasTexture(c);
+  }
+
+  /** Inicializa el sistema de volcanes: luces, humo, proyectiles piroclásticos y chispas. */
+  private initVolcanoSystem(
+    volcanoTops: {
+      x: number;
+      y: number;
+      z: number;
+      r: number;
+      uniforms: { uTime: { value: number }; uEruptionIntensity: { value: number } };
+    }[],
+    smokeTex: THREE.Texture,
+  ): void {
+    // 1. Columnas de humo y luces puntuales en cada cráter
+    for (const v of volcanoTops) {
+      for (let i = 0; i < 12; i++) {
+        const s = new THREE.Sprite(
+          new THREE.SpriteMaterial({
+            map: smokeTex,
+            color: i < 4 ? 0x3a3a3a : 0x5a5a5a,
+            transparent: true,
+            opacity: 0.65 - i * 0.02,
+            depthWrite: false,
+          }),
+        );
+        const sc = 1.8 + (i % 4) * 0.9;
+        s.scale.set(sc, sc * 0.9, 1);
+        s.position.set(v.x + (Math.random() - 0.5) * 0.3, v.y, v.z + (Math.random() - 0.5) * 0.3);
+        this.scene.add(s);
+        this.volcanoSmoke.push({ s, seed: i * 1.3 + v.x, bx: v.x, by: v.y, bz: v.z });
+      }
+
+      const light = new THREE.PointLight(0xff4400, 0.6, 9.0, 1.8);
+      light.position.set(v.x, v.y + 0.25, v.z);
+      this.scene.add(light);
+
+      this.volcanos.push({
+        x: v.x,
+        y: v.y,
+        z: v.z,
+        r: v.r,
+        nextEruption: 2.0 + Math.random() * 2.5,
+        isErupting: false,
+        burstTimer: 0,
+        burstDuration: 1.8,
+        light,
+        uniforms: v.uniforms,
+      });
+    }
+
+    // 2. Pool de bombas de lava (fragmentos de roca low-poly balísticos)
+    const BOMB_COUNT = 24;
+    this.bombGeo = new THREE.DodecahedronGeometry(0.13, 0);
+    this.bombMat = new THREE.MeshStandardMaterial({
+      color: 0x1f0e08,
+      emissive: 0xff3b00,
+      emissiveIntensity: 2.4,
+      roughness: 0.7,
+      metalness: 0.1,
+      flatShading: true,
+    });
+
+    for (let i = 0; i < BOMB_COUNT; i++) {
+      const mesh = new THREE.Mesh(this.bombGeo, this.bombMat);
+      mesh.visible = false;
+      this.scene.add(mesh);
+      this.lavaBombs.push({
+        mesh,
+        active: false,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+        rotVx: 0,
+        rotVy: 0,
+        rotVz: 0,
+        life: 0,
+        maxLife: 2,
+        baseScale: 1,
+      });
+    }
+
+    // 3. Sistema de chispas incandescentes de erupción
+    const SPARK_COUNT = 50;
+    const sparkPos = new Float32Array(SPARK_COUNT * 3);
+    this.sparkVel = new Float32Array(SPARK_COUNT * 3);
+    this.sparkLife = new Float32Array(SPARK_COUNT * 2);
+
+    for (let i = 0; i < SPARK_COUNT; i++) {
+      sparkPos[i * 3 + 1] = -999;
+      this.sparkLife[i * 2] = 1;
+      this.sparkLife[i * 2 + 1] = 1;
+    }
+
+    const sparkGeo = new THREE.BufferGeometry();
+    sparkGeo.setAttribute('position', new THREE.BufferAttribute(sparkPos, 3));
+    const sparkMat = new THREE.PointsMaterial({
+      map: this.sparkTexture(),
+      size: 0.42,
+      transparent: true,
+      opacity: 0.95,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+    });
+
+    this.eruptionSparks = new THREE.Points(sparkGeo, sparkMat);
+    this.eruptionSparks.frustumCulled = false;
+    this.eruptionSparks.visible = false;
+    this.scene.add(this.eruptionSparks);
+  }
+
+  /** Actualiza el ciclo de erupciones volcánicas, proyectiles balísticos y chispas. */
+  private updateVolcanoEruptions(t: number, dt: number): void {
+    const now = performance.now() / 1000;
+
+    for (let vi = 0; vi < this.volcanos.length; vi++) {
+      const v = this.volcanos[vi];
+      v.uniforms.uTime.value = t;
+
+      if (!this.effectsOn) {
+        v.light.visible = false;
+        v.uniforms.uEruptionIntensity.value = 1.0;
+        continue;
+      }
+      v.light.visible = true;
+
+      // Disparar erupción periódica
+      if (!v.isErupting && now >= v.nextEruption) {
+        v.isErupting = true;
+        v.burstTimer = 0;
+        v.burstDuration = 1.6 + Math.random() * 0.5;
+        this.triggerEruptionBurst(v);
+      }
+
+      // Procesar erupción en curso
+      if (v.isErupting) {
+        v.burstTimer += dt;
+        const progress = Math.min(1, v.burstTimer / v.burstDuration);
+        const flare = Math.sin(progress * Math.PI);
+
+        // Destello de iluminación en el cráter
+        v.light.intensity = 0.6 + flare * 3.4;
+        v.light.color.setHex(flare > 0.4 ? 0xff7711 : 0xff4400);
+
+        // Pulso de brillo en el río de magma del shader
+        v.uniforms.uEruptionIntensity.value = 1.0 + flare * 1.5;
+
+        // Salva secundaria a un tercio de la duración
+        if (progress > 0.28 && progress < 0.35 && v.burstTimer - dt <= 0.28 * v.burstDuration) {
+          this.launchLavaBombs(v, 2 + Math.floor(Math.random() * 3));
+        }
+
+        if (progress >= 1) {
+          v.isErupting = false;
+          v.light.intensity = 0.6;
+          v.light.color.setHex(0xff4400);
+          v.uniforms.uEruptionIntensity.value = 1.0;
+          v.nextEruption = now + 4.0 + Math.random() * 2.5; // Pausa acordada de 4 a 6.5s
+        }
+      } else {
+        v.light.intensity = 0.5 + Math.sin(t * 2.2 + v.x) * 0.15;
+        v.uniforms.uEruptionIntensity.value = 1.0;
+      }
+    }
+
+    // Actualizar movimiento de las bombas de lava
+    for (const b of this.lavaBombs) {
+      if (!b.active) continue;
+      b.life += dt;
+      if (b.life >= b.maxLife || !this.effectsOn) {
+        b.active = false;
+        b.mesh.visible = false;
+        continue;
+      }
+
+      // Parábola balística con gravedad
+      b.vy -= 9.8 * dt;
+      b.mesh.position.x += b.vx * dt;
+      b.mesh.position.y += b.vy * dt;
+      b.mesh.position.z += b.vz * dt;
+
+      // Volteo 3D
+      b.mesh.rotation.x += b.rotVx * dt;
+      b.mesh.rotation.y += b.rotVy * dt;
+      b.mesh.rotation.z += b.rotVz * dt;
+
+      // Desvanecimiento suave al tocar el lago de lava
+      if (b.mesh.position.y < 0.1) {
+        const depth = (0.1 - b.mesh.position.y) / 0.3;
+        const shrink = Math.max(0, 1 - depth);
+        b.mesh.scale.setScalar(b.baseScale * shrink);
+        if (b.mesh.position.y <= -0.2 || shrink <= 0.05) {
+          b.active = false;
+          b.mesh.visible = false;
+        }
+      }
+    }
+
+    // Actualizar chispas volcánicas
+    if (this.eruptionSparks && this.sparkVel && this.sparkLife) {
+      const posAttr = this.eruptionSparks.geometry.getAttribute('position') as THREE.BufferAttribute;
+      const posArr = posAttr.array as Float32Array;
+      let hasAlive = false;
+
+      for (let i = 0; i < this.sparkLife.length / 2; i++) {
+        const lifeIdx = i * 2;
+        let life = this.sparkLife[lifeIdx];
+        const maxLife = this.sparkLife[lifeIdx + 1];
+        if (life >= maxLife) continue;
+
+        life += dt;
+        this.sparkLife[lifeIdx] = life;
+        if (life >= maxLife) {
+          posArr[i * 3 + 1] = -999;
+          continue;
+        }
+        hasAlive = true;
+
+        const pIdx = i * 3;
+        this.sparkVel[pIdx + 1] -= 7.5 * dt;
+        posArr[pIdx] += this.sparkVel[pIdx] * dt;
+        posArr[pIdx + 1] += this.sparkVel[pIdx + 1] * dt;
+        posArr[pIdx + 2] += this.sparkVel[pIdx + 2] * dt;
+      }
+
+      this.eruptionSparks.visible = this.effectsOn && hasAlive;
+      posAttr.needsUpdate = true;
+    }
+  }
+
+  private triggerEruptionBurst(v: VolcanoState): void {
+    if (!this.effectsOn) return;
+    this.launchLavaBombs(v, 4 + Math.floor(Math.random() * 3));
+    this.launchSparks(v, 18 + Math.floor(Math.random() * 10));
+  }
+
+  private launchLavaBombs(v: VolcanoState, count: number): void {
+    let launched = 0;
+    for (const b of this.lavaBombs) {
+      if (b.active) continue;
+      b.active = true;
+      b.mesh.visible = this.effectsOn;
+      b.life = 0;
+      b.maxLife = 1.8 + Math.random() * 0.7;
+
+      const spawnR = v.r * 0.45 * Math.random();
+      const spawnA = Math.random() * Math.PI * 2;
+      b.mesh.position.set(v.x + Math.cos(spawnA) * spawnR, v.y + 0.12, v.z + Math.sin(spawnA) * spawnR);
+
+      const angle = Math.random() * Math.PI * 2;
+      const hSpeed = 0.9 + Math.random() * 1.5;
+      b.vx = Math.cos(angle) * hSpeed;
+      b.vy = 4.8 + Math.random() * 2.6;
+      b.vz = Math.sin(angle) * hSpeed;
+
+      b.rotVx = (Math.random() - 0.5) * 12;
+      b.rotVy = (Math.random() - 0.5) * 12;
+      b.rotVz = (Math.random() - 0.5) * 12;
+      b.baseScale = 0.7 + Math.random() * 0.7;
+      b.mesh.scale.setScalar(b.baseScale);
+
+      launched++;
+      if (launched >= count) break;
+    }
+  }
+
+  private launchSparks(v: VolcanoState, count: number): void {
+    if (!this.eruptionSparks || !this.sparkVel || !this.sparkLife) return;
+    const posAttr = this.eruptionSparks.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const posArr = posAttr.array as Float32Array;
+
+    let launched = 0;
+    const totalSparks = this.sparkLife.length / 2;
+    for (let i = 0; i < totalSparks; i++) {
+      const lifeIdx = i * 2;
+      if (this.sparkLife[lifeIdx] < this.sparkLife[lifeIdx + 1]) continue;
+
+      const pIdx = i * 3;
+      posArr[pIdx] = v.x + (Math.random() - 0.5) * 0.3;
+      posArr[pIdx + 1] = v.y + 0.15;
+      posArr[pIdx + 2] = v.z + (Math.random() - 0.5) * 0.3;
+
+      const angle = Math.random() * Math.PI * 2;
+      const spd = 1.2 + Math.random() * 2.2;
+      this.sparkVel[pIdx] = Math.cos(angle) * spd;
+      this.sparkVel[pIdx + 1] = 5.5 + Math.random() * 3.8;
+      this.sparkVel[pIdx + 2] = Math.sin(angle) * spd;
+
+      this.sparkLife[lifeIdx] = 0;
+      this.sparkLife[lifeIdx + 1] = 1.2 + Math.random() * 0.8;
+
+      launched++;
+      if (launched >= count) break;
+    }
+    posAttr.needsUpdate = true;
+    this.eruptionSparks.visible = true;
+  }
+
+  /** Construye un pececito estilizado con cuerpo ahusado, ojos laterales, vientre claro y cola ahorquillada en V. */
+  private buildProceduralFish(bodyHex: number, accentHex: number): THREE.Group {
+    const g = new THREE.Group();
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: bodyHex,
+      roughness: 0.2,
+      metalness: 0.22,
+      flatShading: true,
+    });
+    const bellyMat = new THREE.MeshStandardMaterial({
+      color: 0xfffbeb,
+      roughness: 0.35,
+      metalness: 0.05,
+      flatShading: true,
+    });
+    const finMat = new THREE.MeshStandardMaterial({
+      color: accentHex,
+      roughness: 0.35,
+      transparent: true,
+      opacity: 0.9,
+      side: THREE.DoubleSide,
+      flatShading: true,
+    });
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const pupilMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
+
+    // 1. Cuerpo principal alargado y aerodinámico
+    const bodyGeo = new THREE.SphereGeometry(0.12, 10, 8);
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.scale.set(0.42, 0.72, 1.45);
+    g.add(body);
+
+    // 2. Vientre claro inferior (dos tonos de color clásicos de pez)
+    const bellyGeo = new THREE.SphereGeometry(0.1, 8, 6);
+    const belly = new THREE.Mesh(bellyGeo, bellyMat);
+    belly.position.set(0, -0.025, 0.02);
+    belly.scale.set(0.38, 0.45, 1.25);
+    g.add(belly);
+
+    // 3. Ojos laterales expresivos (esclerótica blanca + pupila negra)
+    const eyeGeo = new THREE.SphereGeometry(0.022, 6, 5);
+    const pupilGeo = new THREE.SphereGeometry(0.012, 5, 4);
+
+    const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+    eyeL.position.set(-0.046, 0.025, 0.1);
+    g.add(eyeL);
+    const pupilL = new THREE.Mesh(pupilGeo, pupilMat);
+    pupilL.position.set(-0.052, 0.025, 0.108);
+    g.add(pupilL);
+
+    const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
+    eyeR.position.set(0.046, 0.025, 0.1);
+    g.add(eyeR);
+    const pupilR = new THREE.Mesh(pupilGeo, pupilMat);
+    pupilR.position.set(0.052, 0.025, 0.108);
+    g.add(pupilR);
+
+    // 4. Cola ahorquillada en V (aleta caudal bipartita clásica)
+    const tailUpper = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.14, 4), finMat);
+    tailUpper.position.set(0, 0.045, -0.22);
+    tailUpper.rotation.x = -Math.PI / 4;
+    tailUpper.scale.set(0.25, 1.0, 1.0);
+    g.add(tailUpper);
+
+    const tailLower = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.14, 4), finMat);
+    tailLower.position.set(0, -0.045, -0.22);
+    tailLower.rotation.x = Math.PI / 4 + Math.PI;
+    tailLower.scale.set(0.25, 1.0, 1.0);
+    g.add(tailLower);
+
+    // 5. Aleta dorsal arqueada
+    const dorsal = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.11, 4), finMat);
+    dorsal.position.set(0, 0.085, -0.02);
+    dorsal.rotation.x = -0.4;
+    dorsal.scale.set(0.2, 1.0, 1.0);
+    g.add(dorsal);
+
+    // 6. Aletas pectorales laterales
+    const pecGeo = new THREE.PlaneGeometry(0.05, 0.08);
+    const pecL = new THREE.Mesh(pecGeo, finMat);
+    pecL.position.set(-0.055, -0.02, 0.03);
+    pecL.rotation.y = -0.5;
+    pecL.rotation.z = 0.4;
+    g.add(pecL);
+
+    const pecR = new THREE.Mesh(pecGeo, finMat);
+    pecR.position.set(0.055, -0.02, 0.03);
+    pecR.rotation.y = 0.5;
+    pecR.rotation.z = -0.4;
+    g.add(pecR);
+
+    // Escala equilibrada y estilizada: visible y proporcionada
+    g.scale.setScalar(0.72);
+    return g;
+  }
+
+  /** Construye un ave silvestre compacta low-poly con alas articuladas para aleteo y planeo. */
+  private buildProceduralBird(bodyHex: number, wingHex: number): {
+    group: THREE.Group;
+    wingL: THREE.Object3D;
+    wingR: THREE.Object3D;
+  } {
+    const g = new THREE.Group();
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: bodyHex,
+      roughness: 0.5,
+      flatShading: true,
+    });
+    const wingMat = new THREE.MeshStandardMaterial({
+      color: wingHex,
+      roughness: 0.5,
+      side: THREE.DoubleSide,
+      flatShading: true,
+    });
+    const beakMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      roughness: 0.4,
+      flatShading: true,
+    });
+
+    // Cuerpo
+    const body = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.28, 5), bodyMat);
+    body.rotation.x = Math.PI / 2;
+    body.scale.set(0.8, 1.0, 0.75);
+    g.add(body);
+
+    // Cabeza
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 5), bodyMat);
+    head.position.set(0, 0.035, 0.16);
+    g.add(head);
+
+    // Pico
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.065, 4), beakMat);
+    beak.rotation.x = Math.PI / 2;
+    beak.position.set(0, 0.025, 0.235);
+    g.add(beak);
+
+    // Ala izquierda articulada
+    const wingL = new THREE.Group();
+    wingL.position.set(-0.05, 0.02, 0.03);
+    const wingLMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.13), wingMat);
+    wingLMesh.position.set(-0.16, 0, 0);
+    wingLMesh.rotation.x = Math.PI / 2;
+    wingL.add(wingLMesh);
+    g.add(wingL);
+
+    // Ala derecha articulada
+    const wingR = new THREE.Group();
+    wingR.position.set(0.05, 0.02, 0.03);
+    const wingRMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.13), wingMat);
+    wingRMesh.position.set(0.16, 0, 0);
+    wingRMesh.rotation.x = Math.PI / 2;
+    wingR.add(wingRMesh);
+    g.add(wingR);
+
+    // Cola estilizada
+    const tail = new THREE.Mesh(new THREE.PlaneGeometry(0.11, 0.15), wingMat);
+    tail.position.set(0, 0.02, -0.2);
+    tail.rotation.x = Math.PI / 2;
+    g.add(tail);
+
+    // Escala pequeña (~33% del tamaño anterior)
+    g.scale.setScalar(0.45);
+    return { group: g, wingL, wingR };
+  }
+
+  /** Textura circular translúcida para los aros concéntricos de salpicadura en el agua. */
+  private rippleTexture(): THREE.Texture {
+    const c = document.createElement('canvas');
+    c.width = 128;
+    c.height = 128;
+    const ctx = c.getContext('2d') as CanvasRenderingContext2D;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.arc(64, 64, 48, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(200, 235, 255, 0.5)';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(64, 64, 28, 0, Math.PI * 2);
+    ctx.stroke();
+    return new THREE.CanvasTexture(c);
+  }
+
+  /** Inicializa la fauna del bioma Pradera: pececitos costeros en agua azul y bandada en formación V. */
+  private initPraderaWildlife(layout: WorldLayout): void {
+    // 1. Variedad multicolor de pececitos (pool de 10 peces)
+    const FISH_COLORS = [
+      { body: 0xf59e0b, fin: 0xfef08a }, // Dorado / Goldfish
+      { body: 0xea580c, fin: 0xffedd5 }, // Carpa Koi naranja
+      { body: 0x06b6d4, fin: 0xa5f3fc }, // Pez turquesa
+      { body: 0xef4444, fin: 0xfecaca }, // Pez coral rojizo
+      { body: 0x3b82f6, fin: 0xbfdbfe }, // Azul lago
+      { body: 0x8b5cf6, fin: 0xede9fe }, // Violeta amatista
+      { body: 0x10b981, fin: 0xa7f3d0 }, // Verde esmeralda
+      { body: 0xf97316, fin: 0xfef08a }, // Mandarina brillante
+      { body: 0x0284c7, fin: 0xbae6fd }, // Azul cielo
+      { body: 0xec4899, fin: 0xfbcfe8 }, // Rosa coral
+    ];
+
+    for (const col of FISH_COLORS) {
+      const mesh = this.buildProceduralFish(col.body, col.fin);
+      mesh.visible = false;
+      this.scene.add(mesh);
+      this.praderaFish.push({
+        mesh,
+        active: false,
+        startX: 0,
+        startZ: 0,
+        targetX: 0,
+        targetZ: 0,
+        t: 0,
+        duration: 1.1,
+        peakHeight: 0.55,
+        waterY: -0.15,
+      });
+    }
+
+    // 2. Pool ampliado de aros de ondas concéntricas en el agua
+    this.rippleGeo = new THREE.PlaneGeometry(1, 1);
+    this.rippleMat = new THREE.MeshBasicMaterial({
+      map: this.rippleTexture(),
+      transparent: true,
+      opacity: 0.8,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+
+    for (let i = 0; i < 24; i++) {
+      const mesh = new THREE.Mesh(this.rippleGeo, (this.rippleMat as THREE.Material).clone());
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.visible = false;
+      this.scene.add(mesh);
+      this.praderaRipples.push({
+        mesh,
+        active: false,
+        t: 0,
+        maxT: 1.2,
+        maxScale: 1.6,
+      });
+    }
+
+    // 3. Precalcula las coordenadas de costa con vectores normales hacia mar abierto
+    // Filtro estricto: descarta casillas que coincidan con tierra/caminos/edificios,
+    // casillas próximas al trazado de caminos (< 3.2u) y bolsillos cerrados de tierra.
+    const landKeys = new Set<string>();
+    const landPts: [number, number][] = [];
+
+    for (const t of layout.tiles) {
+      landKeys.add(`${t.q},${t.r}`);
+      landPts.push(this.ax(t.q, t.r));
+    }
+    for (const r of layout.roads) {
+      landKeys.add(`${r.q},${r.r}`);
+      landPts.push(this.ax(r.q, r.r));
+    }
+    for (const i of layout.islets) {
+      landKeys.add(`${i.q},${i.r}`);
+      landPts.push(this.ax(i.q, i.r));
+    }
+    if (layout.castle) {
+      landKeys.add(`${layout.castle.q},${layout.castle.r}`);
+      landPts.push(this.ax(layout.castle.q, layout.castle.r));
+    }
+    for (const m of layout.modulos) {
+      landKeys.add(`${m.q},${m.r}`);
+      landPts.push(this.ax(m.q, m.r));
+    }
+    for (const a of layout.anexos) {
+      landKeys.add(`${a.q},${a.r}`);
+      landPts.push(this.ax(a.q, a.r));
+    }
+    for (const h of layout.hqs) {
+      landKeys.add(`${h.q},${h.r}`);
+      landPts.push(this.ax(h.q, h.r));
+    }
+
+    const roadPts: [number, number][] = [];
+    for (const r of layout.roads) {
+      roadPts.push(this.ax(r.q, r.r));
+    }
+
+    const NB_DIRS: ReadonlyArray<readonly [number, number]> = [
+      [1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1],
+    ];
+
+    this.waterCoastData = [];
+    for (const w of layout.waters) {
+      // 1. Excluir si la coordenada coincide con cualquier baldosa de tierra, camino o edificio
+      if (landKeys.has(`${w.q},${w.r}`)) continue;
+
+      const [wx, wz] = this.ax(w.q, w.r);
+
+      // 2. Distancia al camino más cercano: debe estar a más de 3.2u (lejos de la calzada jugable)
+      let minDistToRoadSq = Infinity;
+      for (const [rx, rz] of roadPts) {
+        const dSq = (wx - rx) * (wx - rx) + (wz - rz) * (wz - rz);
+        if (dSq < minDistToRoadSq) minDistToRoadSq = dSq;
+      }
+      if (minDistToRoadSq < 3.2 * 3.2) continue;
+
+      // 3. Solo agua costera abierta: descartar huecos interiores con más de 2 vecinos de tierra
+      let landNeighbors = 0;
+      for (const [dq, dr] of NB_DIRS) {
+        if (landKeys.has(`${w.q + dq},${w.r + dr}`)) landNeighbors++;
+      }
+      if (landNeighbors > 2) continue;
+
+      let minDistSq = Infinity;
+      let closestLx = wx;
+      let closestLz = wz;
+      for (const [lx, lz] of landPts) {
+        const dSq = (wx - lx) * (wx - lx) + (wz - lz) * (wz - lz);
+        if (dSq < minDistSq) {
+          minDistSq = dSq;
+          closestLx = lx;
+          closestLz = lz;
+        }
+      }
+      const distToLand = Math.sqrt(minDistSq);
+      // Debe estar separado del centro de la tierra adyacente (mínimo 1.7u)
+      if (distToLand < 1.7) continue;
+
+      const dx = wx - closestLx;
+      const dz = wz - closestLz;
+      const len = Math.hypot(dx, dz);
+      const nx = len > 0.001 ? dx / len : 1;
+      const nz = len > 0.001 ? dz / len : 0;
+      const tx = -nz;
+      const tz = nx;
+      this.waterCoastData.push({ wx, wz, nx, nz, tx, tz });
+    }
+
+    // 4. Bandada de aves en formación V ("la típica formación en V")
+    const BIRD_PALETTES = [
+      { body: 0x1e3a8a, wing: 0x2563eb }, // Líder: Azul marino real
+      { body: 0x0284c7, wing: 0x38bdf8 }, // Ala izq 1: Celeste cielo
+      { body: 0x991b1b, wing: 0xef4444 }, // Ala izq 2: Bermellón
+      { body: 0x0f766e, wing: 0x14b8a6 }, // Ala der 1: Esmeralda
+      { body: 0x78350f, wing: 0xb45309 }, // Ala der 2: Ámbar silvestre
+    ];
+
+    const FLOCK_SLOTS = [
+      { x: 0, y: 0, z: 0, flap: 0 },             // Punta de la V (líder)
+      { x: -0.65, y: 0.02, z: -0.75, flap: 0.2 }, // Ala izquierda 1
+      { x: -1.3, y: -0.01, z: -1.5, flap: 0.4 },   // Ala izquierda 2
+      { x: 0.65, y: -0.02, z: -0.75, flap: 0.2 },  // Ala derecha 1
+      { x: 1.3, y: 0.01, z: -1.5, flap: 0.4 },    // Ala derecha 2
+    ];
+
+    let avgX = 0;
+    let avgZ = 0;
+    const pts = layout.roads.length ? layout.roads : layout.tiles;
+    for (const p of pts) {
+      const [x, z] = this.ax(p.q, p.r);
+      avgX += x;
+      avgZ += z;
+    }
+    this.flockCenter = {
+      x: pts.length ? avgX / pts.length : 0,
+      z: pts.length ? avgZ / pts.length : 0,
+    };
+    this.flockAngle = 0;
+
+    this.birdFlockRoot = new THREE.Group();
+    this.birdFlockRoot.position.set(this.flockCenter.x + 22, 7.2, this.flockCenter.z);
+    this.scene.add(this.birdFlockRoot);
+
+    for (let i = 0; i < BIRD_PALETTES.length; i++) {
+      const pal = BIRD_PALETTES[i];
+      const slot = FLOCK_SLOTS[i];
+      const bird = this.buildProceduralBird(pal.body, pal.wing);
+      bird.group.position.set(slot.x, slot.y, slot.z);
+      this.birdFlockRoot.add(bird.group);
+
+      this.praderaBirds.push({
+        group: bird.group,
+        wingLeft: bird.wingL,
+        wingRight: bird.wingR,
+        flapOffset: slot.flap,
+      });
+    }
+
+    this.nextFishJump = 0.8;
+  }
+
+  /** Lanza un aro concéntrico de agua expandiéndose y desvaneciéndose. */
+  private spawnWaterRipple(x: number, z: number): void {
+    if (!this.effectsOn) return;
+    const r = this.praderaRipples.find((item) => !item.active);
+    if (!r) return;
+    r.active = true;
+    r.t = 0;
+    r.mesh.position.set(x, -0.14, z);
+    r.mesh.scale.setScalar(0.25);
+    (r.mesh.material as THREE.MeshBasicMaterial).opacity = 0.85;
+    r.mesh.visible = true;
+  }
+
+  /** Activa un salto parabólico de pez estrictamente en agua azul marina, lejos de caminos y tierra. */
+  private triggerFishJump(fish: JumpingFish): void {
+    if (!this.waterCoastData.length || !this.effectsOn) return;
+
+    // Priorizar casillas de agua en el campo de visión del personaje (entre 6u y 26u de distancia)
+    let spot = this.waterCoastData[Math.floor(Math.random() * this.waterCoastData.length)];
+    const charPos = this.charController?.char?.position;
+    if (charPos && Math.random() < 0.78) {
+      const nearSpots = this.waterCoastData.filter((s) => {
+        const dSq = (s.wx - charPos.x) * (s.wx - charPos.x) + (s.wz - charPos.z) * (s.wz - charPos.z);
+        return dSq >= 6 * 6 && dSq <= 26 * 26;
+      });
+      if (nearSpots.length) {
+        spot = nearSpots[Math.floor(Math.random() * nearSpots.length)];
+      }
+    }
+
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const halfSpan = 0.25 + Math.random() * 0.1;
+    const outBias = 0.35 + Math.random() * 0.15; // Claramente desplazado hacia el mar exterior
+
+    // Desplaza el centro del salto hacia mar abierto, alejándose de toda tierra y camino
+    const cx = spot.wx + spot.nx * outBias;
+    const cz = spot.wz + spot.nz * outBias;
+
+    fish.startX = cx - spot.tx * halfSpan * dir;
+    fish.startZ = cz - spot.tz * halfSpan * dir;
+    fish.targetX = cx + spot.tx * halfSpan * dir;
+    fish.targetZ = cz + spot.tz * halfSpan * dir;
+    fish.t = 0;
+    fish.duration = 1.05 + Math.random() * 0.25;
+    fish.peakHeight = 0.52 + Math.random() * 0.16; // Arco visible y elegante sobre el nivel del agua
+    fish.active = true;
+    fish.mesh.position.set(fish.startX, fish.waterY, fish.startZ);
+    fish.mesh.visible = true;
+
+    // Onda en el agua al emerger
+    this.spawnWaterRipple(fish.startX, fish.startZ);
+  }
+
+  /** Actualiza la animación de los pececitos saltarines y la bandada en V en Pradera. */
+  private updatePraderaWildlife(t: number, dt: number): void {
+    // 1. Peces saltarines (ritmo continuo y activo: un salto cada 0.35s a 0.80s)
+    if (this.effectsOn && this.waterCoastData.length) {
+      this.nextFishJump -= dt;
+      if (this.nextFishJump <= 0) {
+        const inactiveFish = this.praderaFish.find((f) => !f.active);
+        if (inactiveFish) {
+          this.triggerFishJump(inactiveFish);
+        }
+        this.nextFishJump = 0.35 + Math.random() * 0.45;
+      }
+    }
+
+    for (const f of this.praderaFish) {
+      if (!f.active) continue;
+      f.t += dt;
+      const p = Math.min(1, f.t / f.duration);
+
+      const curX = f.startX + (f.targetX - f.startX) * p;
+      const curZ = f.startZ + (f.targetZ - f.startZ) * p;
+      const arc = Math.sin(p * Math.PI);
+      const curY = f.waterY + arc * f.peakHeight;
+
+      f.mesh.position.set(curX, curY, curZ);
+
+      // Orientación siguiendo la tangente del salto balístico (la cabeza lidera el salto)
+      const dx = f.targetX - f.startX;
+      const dz = f.targetZ - f.startZ;
+      const dy = Math.cos(p * Math.PI) * Math.PI * f.peakHeight;
+      f.mesh.lookAt(curX + dx, curY + dy, curZ + dz);
+
+      // Coletazo lateral y arqueo dinámico en el aire
+      f.mesh.rotateY(Math.sin(p * 20) * 0.18);
+
+      if (p >= 1) {
+        f.active = false;
+        f.mesh.visible = false;
+        // Onda en el agua al zambullirse
+        this.spawnWaterRipple(f.targetX, f.targetZ);
+      }
+    }
+
+    // 2. Ondas de agua
+    for (const r of this.praderaRipples) {
+      if (!r.active) continue;
+      r.t += dt;
+      const progress = r.t / r.maxT;
+      if (progress >= 1 || !this.effectsOn) {
+        r.active = false;
+        r.mesh.visible = false;
+      } else {
+        const sc = 0.25 + progress * r.maxScale;
+        r.mesh.scale.setScalar(sc);
+        (r.mesh.material as THREE.MeshBasicMaterial).opacity = 0.85 * (1 - progress);
+      }
+    }
+
+    // 3. Bandada de aves en formación en V sobrevolando el mapa
+    if (this.birdFlockRoot) {
+      this.flockAngle += 0.16 * dt; // Vuelo pausado y majestuoso
+
+      const rx = 22.0;
+      const rz = 14.0;
+      const bx = this.flockCenter.x + Math.cos(this.flockAngle) * rx;
+      const bz = this.flockCenter.z + Math.sin(this.flockAngle) * rz;
+      const by = 7.2 + Math.sin(this.flockAngle * 2.0) * 0.35;
+      this.birdFlockRoot.position.set(bx, by, bz);
+
+      // Orientación en dirección de avance del vuelo
+      const fwdX = -Math.sin(this.flockAngle) * rx;
+      const fwdZ = Math.cos(this.flockAngle) * rz;
+      this.birdFlockRoot.rotation.y = Math.atan2(fwdX, fwdZ);
+      // Alabeo suave en las curvas
+      this.birdFlockRoot.rotation.z = -Math.sin(this.flockAngle) * 0.12;
+
+      // Ciclo de aleteo coordinado (1.6s) y planeo majestuoso (2.4s)
+      const flapCycle = t % 4.0;
+      const isFlapping = flapCycle < 1.6;
+
+      for (const b of this.praderaBirds) {
+        if (isFlapping) {
+          const wingAng = Math.sin(t * 14 + b.flapOffset) * 0.42;
+          b.wingLeft.rotation.z = wingAng;
+          b.wingRight.rotation.z = -wingAng;
+        } else {
+          b.wingLeft.rotation.z = 0.05;
+          b.wingRight.rotation.z = -0.05;
+        }
+      }
+    }
+  }
+
   destroy(): void {
     this.isDestroyed = true;
     cancelAnimationFrame(this.raf);
@@ -1403,6 +2445,57 @@ const sc = 1.8 + (i % 4) * 0.9;
         sprite.material.dispose();
       }
     });
+
+    // Disponer sistema de volcanes
+    for (const v of this.volcanos) {
+      this.scene.remove(v.light);
+      v.light.dispose();
+    }
+    this.volcanos = [];
+    for (const b of this.lavaBombs) {
+      this.scene.remove(b.mesh);
+    }
+    this.lavaBombs = [];
+    this.bombGeo?.dispose();
+    this.bombGeo = null;
+    if (this.bombMat) {
+      if (Array.isArray(this.bombMat)) this.bombMat.forEach((m) => m.dispose());
+      else this.bombMat.dispose();
+      this.bombMat = null;
+    }
+    if (this.eruptionSparks) {
+      this.scene.remove(this.eruptionSparks);
+      this.eruptionSparks.geometry.dispose();
+      const sMat = this.eruptionSparks.material as THREE.PointsMaterial;
+      sMat.map?.dispose();
+      sMat.dispose();
+      this.eruptionSparks = null;
+      this.sparkVel = null;
+      this.sparkLife = null;
+    }
+
+    // Disponer fauna de pradera
+    for (const f of this.praderaFish) {
+      this.scene.remove(f.mesh);
+    }
+    this.praderaFish = [];
+    if (this.birdFlockRoot) {
+      this.scene.remove(this.birdFlockRoot);
+      this.birdFlockRoot = null;
+    }
+    this.praderaBirds = [];
+    for (const r of this.praderaRipples) {
+      this.scene.remove(r.mesh);
+    }
+    this.praderaRipples = [];
+    this.rippleGeo?.dispose();
+    this.rippleGeo = null;
+    if (this.rippleMat) {
+      if (Array.isArray(this.rippleMat)) this.rippleMat.forEach((m) => m.dispose());
+      else this.rippleMat.dispose();
+      this.rippleMat = null;
+    }
+    this.waterCoastData = [];
 
     this.scene.clear();
     this.tabletopBg?.dispose();

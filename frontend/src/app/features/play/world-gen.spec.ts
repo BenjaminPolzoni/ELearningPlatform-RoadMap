@@ -136,6 +136,21 @@ describe('world-gen v2 (mundo por unidad)', () => {
     expect(startRoads.some((r) => r.q === w.spawn.q && r.r === w.spawn.r)).toBe(true);
   });
 
+  it('el agua no se superpone con caminos, hierba ni edificios', () => {
+    const w = genUnidadWorld(unidad(), 'a1');
+    const roadKeys = new Set(w.roads.map((r) => `${r.q},${r.r}`));
+    const grassKeys = new Set(w.tiles.map((t) => `${t.q},${t.r}`));
+    const isletKeys = new Set(w.islets.map((i) => `${i.q},${i.r}`));
+
+    expect(w.waters.length).toBeGreaterThan(0);
+    for (const water of w.waters) {
+      const k = `${water.q},${water.r}`;
+      expect(roadKeys.has(k)).toBe(false);
+      expect(grassKeys.has(k)).toBe(false);
+      expect(isletKeys.has(k)).toBe(false);
+    }
+  });
+
   it('respeta colores y es determinista', () => {
     expect(genUnidadWorld(unidad({ color: '#ef4444' }), 'a1').castle.model).toContain('/red/');
     expect(colorFor(undefined)).toBe('blue');

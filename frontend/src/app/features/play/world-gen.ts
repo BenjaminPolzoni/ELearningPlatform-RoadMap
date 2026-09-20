@@ -373,12 +373,17 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
     islets.push({ q, r });
   };
 
-  // Agua: anillo + conexiones
+  // Agua: anillo + conexiones (excluye estrictamente cualquier tierra, camino o edificación)
+  const isLand = (q: number, r: number): boolean => {
+    const k = key(q, r);
+    return tiles.has(k) || roadKeySet.has(k) || taken.has(k) || isletSeen.has(k);
+  };
+
   const waters: TileRef[] = [];
   const wseen = new Set<string>();
   const wput = (q: number, r: number): void => {
     const k = key(q, r);
-    if (!tiles.has(k) && !isletSeen.has(k) && !wseen.has(k) && waters.length <= 260) {
+    if (!isLand(q, r) && !wseen.has(k) && waters.length <= 260) {
       wseen.add(k);
       waters.push({ q, r });
     }
@@ -455,7 +460,7 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
       const own = new Set<string>();
       const shore = (t: TileRef): number =>
         Math.min(...pool.map((e) => dist(t.q - e.q, t.r - e.r)));
-      const isGrass = (t: TileRef): boolean => tiles.has(key(t.q, t.r)) || isletSeen.has(key(t.q, t.r));
+      const isGrass = (t: TileRef): boolean => isLand(t.q, t.r);
       for (let s = 0; s < 32; s++) {
         if (isGrass(p)) break;
         const nbs = NB.map(([dq, dr]) => ({ q: p.q + dq, r: p.r + dr }));
@@ -724,9 +729,18 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
     if (reserved.has(key(decor[i].q, decor[i].r))) decor.splice(i, 1);
   }
 
+  // Limpieza final de aguas para asegurar que ninguna casilla de agua coincida con tierra, caminos, islotes o edificios
+  const finalLand = new Set<string>([
+    ...tiles.keys(),
+    ...roadKeySet,
+    ...isletSeen,
+    ...taken,
+  ]);
+  const finalWaters = waters.filter((w) => !finalLand.has(key(w.q, w.r)));
+
   return {
     tiles: [...tiles.values()],
-    waters,
+    waters: finalWaters,
     roads,
     castle: {
       q: endQ,

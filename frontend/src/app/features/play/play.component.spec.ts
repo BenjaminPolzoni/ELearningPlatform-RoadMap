@@ -141,4 +141,66 @@ describe('PlayComponent', () => {
     expect(regresos.some((a) => a.textContent?.includes('Mis clases'))).toBe(true);
     expect(html.textContent).not.toContain('Ciudad 3D');
   });
+
+  it('conmuta los efectos visuales al hacer clic en el botón FX', async () => {
+    const mockWorld3d = {
+      init: vi.fn().mockResolvedValue(undefined),
+      applyTheme: vi.fn(),
+      setEffectsEnabled: vi.fn(),
+      destroy: vi.fn(),
+      dispose: vi.fn(),
+      alternarVista: vi.fn().mockReturnValue('primera'),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [PlayComponent],
+      providers: [
+        provideRouter([]),
+        { provide: RoadmapDataPort, useClass: InMemoryRoadmapAdapter },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: {
+                get: (key: string) => (key === 'id' ? CURSO_SEED_ID : key === 'unidadId' ? 'u1-fundamentos' : null),
+              },
+            },
+          },
+        },
+      ],
+    })
+      .overrideComponent(PlayComponent, {
+        set: {
+          providers: [{ provide: World3dService, useValue: mockWorld3d }],
+        },
+      })
+      .compileComponents();
+
+    const fixture = TestBed.createComponent(PlayComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance;
+    expect(comp.theme.effects()).toBe(true);
+
+    const html = fixture.nativeElement as HTMLElement;
+    const fxBtn = [...html.querySelectorAll('button')].find((b) => b.textContent?.includes('FX:'));
+    expect(fxBtn).toBeTruthy();
+    expect(fxBtn?.textContent).toContain('FX: ON');
+
+    fxBtn?.click();
+    fixture.detectChanges();
+
+    expect(comp.theme.effects()).toBe(false);
+    expect(fxBtn?.textContent).toContain('FX: OFF');
+    expect(mockWorld3d.setEffectsEnabled).toHaveBeenCalledWith(false);
+
+    // Volver a activar
+    fxBtn?.click();
+    fixture.detectChanges();
+
+    expect(comp.theme.effects()).toBe(true);
+    expect(fxBtn?.textContent).toContain('FX: ON');
+    expect(mockWorld3d.setEffectsEnabled).toHaveBeenCalledWith(true);
+  });
 });
+

@@ -15,10 +15,9 @@ function personaje(): THREE.Group {
 }
 
 describe('CameraController (vistas)', () => {
-  it('libre: orbital detrás y arriba como la tercera anterior', () => {
+  it('libre: orbital detrás y arriba como la tercera anterior (por defecto)', () => {
     const c = ctrl();
-    c.alternarVista(); // primera
-    c.alternarVista(); // libre
+    expect(c.vista).toBe('libre');
     c.yaw = 0;
     c.dist = 10;
     c.height = 6;
@@ -28,6 +27,7 @@ describe('CameraController (vistas)', () => {
 
   it('primera: ojos en la cabeza mirando hacia la vista', () => {
     const c = ctrl();
+    c.alternarVista(); // pasa a tercera
     expect(c.alternarVista()).toBe('primera');
     c.yaw = 0;
     c.update(1, personaje());
@@ -40,6 +40,7 @@ describe('CameraController (vistas)', () => {
 
   it('tercera es como la libre pero cerca, detrás y sin responder a yaw/dist', () => {
     const c = ctrl();
+    expect(c.alternarVista()).toBe('tercera');
     // yaw/dist/height solo los usa la libre: en tercera no mueven la salida.
     c.yaw = 1.2;
     c.dist = 16;
@@ -56,6 +57,7 @@ describe('CameraController (vistas)', () => {
 
   it('tercera sigue el giro con retardo (sin latigazo)', () => {
     const c = ctrl();
+    c.alternarVista(); // pasa a tercera
     const pj = personaje();
     pj.rotation.y = Math.PI / 2;
     c.update(1, pj); // primer frame: engancha
@@ -69,11 +71,12 @@ describe('CameraController (vistas)', () => {
     expect(final[2]).toBeCloseTo(4 - 5.5, 2);
   });
 
-  it('alternarVista cicla Tercera → Primera → Libre → Tercera', () => {
+  it('alternarVista cicla Libre → Tercera → Primera → Libre', () => {
     const c = ctrl();
+    expect(c.vista).toBe('libre');
+    expect(c.alternarVista()).toBe('tercera');
     expect(c.alternarVista()).toBe('primera');
     expect(c.alternarVista()).toBe('libre');
-    expect(c.alternarVista()).toBe('tercera');
   });
 });
 

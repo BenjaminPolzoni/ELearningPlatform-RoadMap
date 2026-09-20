@@ -24,7 +24,7 @@ export class CameraController {
   public dist = 10;
   public height = 6;
   public mode: CameraMode = 'follow';
-  public vista: Vista = 'tercera';
+  public vista: Vista = 'libre';
   /** Altura de los ojos sobre los pies (la fija el mundo según la escala real). */
   public alturaOjos = 1.2;
 
@@ -106,9 +106,9 @@ export class CameraController {
     });
   }
 
-  /** Conmuta en orden Tercera → Primera → Libre; devuelve la vista activa. */
+  /** Conmuta en orden Libre → Tercera → Primera; devuelve la vista activa. */
   alternarVista(): Vista {
-    this.vista = this.vista === 'tercera' ? 'primera' : this.vista === 'primera' ? 'libre' : 'tercera';
+    this.vista = this.vista === 'libre' ? 'tercera' : this.vista === 'tercera' ? 'primera' : 'libre';
     return this.vista;
   }
 

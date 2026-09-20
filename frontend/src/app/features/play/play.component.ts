@@ -74,6 +74,12 @@ interface ShopItem {
             title="Cambiar cámara (V): Tercera → Primera → Libre">
             🎥 {{ vista() === 'tercera' ? '3ª' : vista() === 'primera' ? '1ª' : 'Libre' }}
           </button>
+          <button (click)="alternarEfectos()" class="btn btn-xs btn-outline ui-font text-[8px]"
+            [class.btn-success]="theme.effects()"
+            [class.btn-warning]="!theme.effects()"
+            [title]="theme.effects() ? 'Desactivar efectos visuales (clima, volcanes, fauna) [X]' : 'Activar efectos visuales (clima, volcanes, fauna) [X]'">
+            ✨ {{ theme.effects() ? 'FX: ON' : 'FX: OFF' }}
+          </button>
         </div>
         <p class="absolute bottom-2 left-2 rounded bg-black/50 px-2 py-1 text-xs text-white/80 ui-font text-[8px]">{{ ayuda() }} · arrastrar cámara · rueda zoom</p>
 
@@ -222,13 +228,13 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
   passedIds = signal<string[]>([]);
   /** Clase del personaje creado en la ciudad (insignia informativa, sin selector). */
   avatarNombre = signal('');
-  /** Vista de cámara: tercera (detrás), primera (ojos) o libre (orbital). */
-  vista = signal<Vista>('tercera');
+  /** Vista de cámara: libre (orbital), tercera (detrás) o primera (ojos). */
+  vista = signal<Vista>('libre');
   /** Ayuda de movimiento según la vista (en 3ª A/D giran, no strafean). */
   ayuda = computed(() =>
     this.vista() === 'tercera'
-      ? 'W/S avanzar · A/D girar · Shift correr · V cámara · entra en las 🏠'
-      : 'WASD/flechas moverse · Shift correr · V cámara · entra en las 🏠',
+      ? 'W/S avanzar · A/D girar · Shift correr · V cámara · X efectos · entra en las 🏠'
+      : 'WASD/flechas moverse · Shift correr · V cámara · X efectos · entra en las 🏠',
   );
   bioma = signal<Biome>('pradera');
   biomaEmoji = computed(() =>
@@ -373,11 +379,21 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
     this.vista.set(this.world3d.alternarVista());
   }
 
+  /** Conmuta efectos visuales (clima, volcanes, fauna) y actualiza el motor 3D. */
+  protected alternarEfectos(): void {
+    const next = this.theme.toggleEffects();
+    this.world3d.setEffectsEnabled(next);
+    this.showToast(next ? '✨ Efectos activados' : '⏸️ Efectos desactivados');
+  }
+
   @HostListener('document:keydown', ['$event'])
   protected onTeclaVista(e: KeyboardEvent): void {
     const tag = (e.target as HTMLElement | null)?.tagName;
-    if ((e.key === 'v' || e.key === 'V') && tag !== 'INPUT' && tag !== 'SELECT' && tag !== 'TEXTAREA') {
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+    if (e.key === 'v' || e.key === 'V') {
       this.alternarVista();
+    } else if (e.key === 'x' || e.key === 'X') {
+      this.alternarEfectos();
     }
   }
 
