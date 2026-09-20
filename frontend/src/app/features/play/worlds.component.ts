@@ -10,7 +10,9 @@ import {
   viewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { StoreService } from '../../core/educa/store.service';
+import { SyncChannelService } from '../../core/educa/sync-channel.service';
 import type { Biome, Unidad } from '../../core/educa/models';
 import { UiBadge } from '../profesor/shared/educa-ui';
 import { VisitService } from '../../core/educa/visit.service';
@@ -257,6 +259,13 @@ const MODO_STORAGE_KEY = 'educa_islas_modo';
         @if (panel()) {
           <app-avatar-panel (cerrar)="panel.set(false)" />
         }
+
+        <!-- Toast de Notificación en Tiempo Real -->
+        @if (toast()) {
+          <div class="fixed top-16 left-1/2 -translate-x-1/2 z-50 rounded-xl bg-primary/95 text-primary-content px-4 py-2 text-xs font-bold shadow-2xl backdrop-blur border border-white/20 flex items-center gap-2 animate-bounce">
+            <span>{{ toast() }}</span>
+          </div>
+        }
       </div>
     } @else {
       <div class="p-6 text-white"><p>No encontrada.</p><a routerLink="/" class="underline text-primary">Volver</a></div>
@@ -283,12 +292,17 @@ export class WorldsComponent implements AfterViewInit, OnDestroy {
   private readonly visits = inject(VisitService);
   private readonly router = inject(Router);
   protected readonly archipielago3d = inject(Archipielago3dService);
+  private readonly syncChannel = inject(SyncChannelService);
 
   private readonly cv3d = viewChild<ElementRef<HTMLCanvasElement>>('cv3d');
 
+  protected readonly cursoId: string;
   protected readonly panel = signal(false);
   protected readonly modo = signal<'3d' | '2.5d'>(this.detectarModoInicial());
   protected readonly atracando = signal(false);
+  protected readonly toast = signal<string | null>(null);
+  private toastTimer: any = null;
+  private syncSub?: Subscription;
 
   protected readonly elegidaId = signal<string | null>(null);
   protected readonly elegida = computed(() =>
@@ -332,8 +346,16 @@ export class WorldsComponent implements AfterViewInit, OnDestroy {
 
   constructor() {
     const id = inject(ActivatedRoute).snapshot.paramMap.get('id') ?? '';
+    this.cursoId = id;
     this.store.open(id);
     this.elegidaId.set(this.store.current()?.unidades[0]?.id ?? null);
+
+    // Escuchar actualizaciones de unidades emitidas por el profesor en tiempo real
+    this.syncSub = this.syncChannel.events$.subscribe((msg) => {
+      if (msg.type === 'course_updated' && msg.courseId === this.cursoId) {
+        this.recargarCursoEnCaliente();
+      }
+    });
   }
 
   ngAfterViewInit(): void {
@@ -343,7 +365,41 @@ export class WorldsComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.syncSub?.unsubscribe();
+    if (this.toastTimer) clearTimeout(this.toastTimer);
     this.archipielago3d.destroy();
+  }
+
+  private recargarCursoEnCaliente(): void {
+    this.store.open(this.cursoId);
+    const a = this.store.current();
+    const unidadesActuales = a?.unidades ?? [];
+
+    if (this.modo() === '3d') {
+      const u3d: ArchipielagoUnidad[] = unidadesActuales.map((u) => ({
+        id: u.id,
+        titulo: u.titulo,
+        bioma: u.bioma,
+        anexos: this.anexosDe(u.id),
+        visitadas: this.visitadasDe(u.id),
+        completa: this.completa(u.id),
+      }));
+      this.archipielago3d.updateUnidades(u3d);
+    }
+
+    if (!unidadesActuales.some((u) => u.id === this.elegidaId())) {
+      this.elegidaId.set(unidadesActuales[0]?.id ?? null);
+    }
+
+    this.mostrarToast('🗺️ Archipiélago actualizado');
+  }
+
+  private mostrarToast(msg: string): void {
+    this.toast.set(msg);
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.toastTimer = setTimeout(() => {
+      this.toast.set(null);
+    }, 3200);
   }
 
   private detectarModoInicial(): '3d' | '2.5d' {

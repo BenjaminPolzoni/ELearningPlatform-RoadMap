@@ -7,6 +7,7 @@ import { CURSO_SEED_ID } from '../../mocks/seed';
 import { RoadmapDataPort } from '../../core/data/roadmap-data.port';
 import { InMemoryRoadmapAdapter } from '../../core/data/in-memory-roadmap.adapter';
 import { Archipielago3dService } from './engine/archipielago-3d.service';
+import { SyncChannelService } from '../../core/educa/sync-channel.service';
 
 describe('WorldsComponent (mapa de islas)', () => {
   const mock3d = {
@@ -15,6 +16,7 @@ describe('WorldsComponent (mapa de islas)', () => {
     zarparYAtracar: vi.fn(),
     estaAtracadoEn: vi.fn().mockReturnValue(true),
     getEstaNavegando: vi.fn().mockReturnValue(false),
+    updateUnidades: vi.fn(),
     resize: vi.fn(),
     destroy: vi.fn(),
   };
@@ -109,5 +111,16 @@ describe('WorldsComponent (mapa de islas)', () => {
     expect(tooltip.textContent).toContain(unidadSeed!.titulo);
     expect(tooltip.textContent).toContain('torres');
     expect(tooltip.textContent).toContain('Clic para navegar y atracar');
+  });
+
+  it('actualiza las unidades en caliente al recibir evento course_updated', async () => {
+    const fixture = await crear('3d');
+    const syncChannel = TestBed.inject(SyncChannelService);
+    syncChannel.broadcast({ type: 'course_updated', courseId: CURSO_SEED_ID });
+    fixture.detectChanges();
+
+    expect(mock3d.updateUnidades).toHaveBeenCalled();
+    const toast = fixture.nativeElement.querySelector('.animate-bounce');
+    expect(toast?.textContent).toContain('Archipiélago actualizado');
   });
 });

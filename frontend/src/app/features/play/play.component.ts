@@ -10,8 +10,10 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { StoreService } from '../../core/educa/store.service';
+import { SyncChannelService } from '../../core/educa/sync-channel.service';
 import { VisitService } from '../../core/educa/visit.service';
 import { ThemeService } from '../../core/theme.service';
 import { CURSO_SEED_ID } from '../../mocks/seed';
@@ -197,6 +199,8 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
   private store = inject(StoreService);
   private visits = inject(VisitService);
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private syncChannel = inject(SyncChannelService);
   private world3d = inject(World3dService);
   private audio = inject(AudioService);
   private avatarModular = inject(AvatarModularService);
@@ -204,6 +208,7 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
   private cv = viewChild.required<ElementRef<HTMLCanvasElement>>('cv');
 
   aid = signal('');
+  activeUnitId = signal('');
   title = signal('');
   missing = signal(false);
   loading = signal(true);
@@ -251,6 +256,7 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
   private prevUnlocked = -1;
   private toastTimer = 0;
   private celebrated = false;
+  private syncSub?: Subscription;
 
   constructor() {
     effect(() => {
@@ -259,6 +265,19 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
     });
     effect(() => {
       this.world3d.setEffectsEnabled(this.theme.effects());
+    });
+
+    // Escuchar eventos en tiempo real (eliminación o edición de la unidad)
+    this.syncSub = this.syncChannel.events$.subscribe((msg) => {
+      if (msg.type === 'unit_deleted') {
+        if (msg.courseId === this.aid() && msg.unitId === this.activeUnitId()) {
+          this.manejarUnidadEliminada();
+        }
+      } else if (msg.type === 'course_updated') {
+        if (msg.courseId === this.aid()) {
+          this.manejarCursoActualizado();
+        }
+      }
     });
   }
 
@@ -319,6 +338,7 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
       this.missing.set(true);
       return;
     }
+    this.activeUnitId.set(u.id);
     this.title.set(u.titulo);
     this.layout = genUnidadWorld(u, id);
     this.bioma.set(this.layout.bioma ?? 'pradera');
@@ -366,11 +386,6 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
         this.error.set(e instanceof Error ? e.message : 'No se pudo cargar el mundo');
         this.loading.set(false);
       });
-  }
-
-  ngOnDestroy(): void {
-    window.clearTimeout(this.toastTimer);
-    this.world3d.destroy();
   }
 
   reload(): void {
@@ -558,5 +573,31 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
   closeShop(): void {
     this.inShop.set(false);
     this.world3d.finishReading();
+  }
+
+  private manejarUnidadEliminada(): void {
+    this.showToast('⚠️ Esta unidad fue eliminada por el profesor');
+    setTimeout(() => {
+      this.router.navigate(['/play', this.aid()]);
+    }, 1400);
+  }
+
+  private manejarCursoActualizado(): void {
+    this.store.open(this.aid());
+    const u = this.store.current()?.unidades.find((x) => x.id === this.activeUnitId());
+    if (!u) {
+      this.manejarUnidadEliminada();
+      return;
+    }
+    if (this.title() !== u.titulo) {
+      this.title.set(u.titulo);
+      this.showToast(`📝 Unidad actualizada: ${u.titulo}`);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.syncSub?.unsubscribe();
+    if (this.toastTimer) clearTimeout(this.toastTimer);
+    this.world3d.destroy();
   }
 }

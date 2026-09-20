@@ -3,6 +3,7 @@ import type { Anexo, Asignatura, Modulo, TipoAnexo, Unidad as EducaUnidad } from
 import { educaBiomeToMundo3d } from './models';
 import { StorageService } from './storage.service';
 import { RoadmapStore } from '../data/roadmap.store';
+import { SyncChannelService } from './sync-channel.service';
 import { CURSO_SEED_ID } from '../../mocks/seed';
 import type { Actividad, Conexion, Roadmap, Unidad as PlatformUnidad } from '../data/roadmap.models';
 import type { Bioma } from '../data/biomas';
@@ -26,6 +27,7 @@ const ROADMAP_LS_KEY = 'roadmap-mock-v2';
 export class StoreService {
   private storage = inject(StorageService);
   private roadmapStore = inject(RoadmapStore);
+  private syncChannel = inject(SyncChannelService);
 
   readonly current = signal<Asignatura | null>(null);
   readonly counts = computed(() => {
@@ -70,6 +72,11 @@ export class StoreService {
   delete(id: string): void {
     this.storage.remove(id);
     if (this.current()?.id === id) this.current.set(null);
+    this.syncChannel.broadcast({
+      type: 'course_updated',
+      courseId: id,
+      timestamp: Date.now(),
+    });
   }
 
   rename(nombre: string, descripcion: string): void {
@@ -103,6 +110,15 @@ export class StoreService {
   }
 
   removeUnidad(id: string): void {
+    const a = this.current();
+    if (a) {
+      this.syncChannel.broadcast({
+        type: 'unit_deleted',
+        courseId: a.id,
+        unitId: id,
+        timestamp: Date.now(),
+      });
+    }
     this.update((a) => ({ ...a, unidades: a.unidades.filter((u) => u.id !== id) }));
   }
 
@@ -227,6 +243,15 @@ export class StoreService {
     this.current.set(next);
     this.storage.save(next);
     this.syncToRoadmap(next);
+    this.syncChannel.broadcast({
+      type: 'course_updated',
+      courseId: next.id,
+      timestamp: Date.now(),
+    });
+    this.syncChannel.broadcast({
+      type: 'roadmap_updated',
+      timestamp: Date.now(),
+    });
   }
 
   /**

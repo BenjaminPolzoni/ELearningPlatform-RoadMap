@@ -4,6 +4,7 @@ import { RoadmapDataPort } from './roadmap-data.port';
 import { NuevaActividad, NuevaUnidad, Progreso, Roadmap, Unidad } from './roadmap.models';
 import { CURSO_SEED_ID } from '../../mocks/seed';
 import { SaveFeedbackService } from '../services/save-feedback.service';
+import { SyncChannelService } from '../educa/sync-channel.service';
 
 /**
  * Estado del grafo compartido entre el editor (PROFESOR) y el mapa (ALUMNO): al agregar
@@ -18,6 +19,7 @@ import { SaveFeedbackService } from '../services/save-feedback.service';
 export class RoadmapStore {
   private readonly port = inject(RoadmapDataPort);
   private readonly feedback = inject(SaveFeedbackService);
+  private readonly syncChannel = inject(SyncChannelService, { optional: true });
 
   private readonly _roadmap = signal<Roadmap | null>(null);
   readonly roadmap = this._roadmap.asReadonly();
@@ -27,6 +29,11 @@ export class RoadmapStore {
 
   constructor() {
     this.recargar();
+    this.syncChannel?.events$.subscribe((msg) => {
+      if (msg.type === 'roadmap_updated') {
+        this.recargar();
+      }
+    });
   }
 
   sumarProgreso(xpGanado: number, nodoId?: string, vidas?: number,

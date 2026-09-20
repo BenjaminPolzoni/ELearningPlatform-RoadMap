@@ -166,6 +166,7 @@ export class Archipielago3dService {
   // Islas (Mini-archipiélagos de hexágonos)
   private islands: Island3dNode[] = [];
   private islandGroups: THREE.Group[] = [];
+  private routesGroup!: THREE.Group;
   private currentHoveredId: string | null = null;
 
   // Colisionadores físicos de islas (evitan que el barco atraviese tierra)
@@ -298,6 +299,8 @@ export class Archipielago3dService {
     this.updateOceanBaseCoastalColors();
 
     // 8. Ruta náutica del tesoro punteada
+    this.routesGroup = new THREE.Group();
+    this.scene.add(this.routesGroup);
     this.setupTreasureRoutes();
 
     // 9. Barco 3D navegable (ship-large.glb)
@@ -338,6 +341,86 @@ export class Archipielago3dService {
 
   getEstaNavegando(): boolean {
     return this.isSailing;
+  }
+
+  /**
+   * Actualiza dinámicamente en caliente las islas y rutas del archipiélago
+   * sin destruir el barco, el agua, la mesa, la fauna o la cámara.
+   */
+  updateUnidades(nuevasUnidades: ArchipielagoUnidad[]): void {
+    if (!this.running || !this.scene) return;
+
+    // 1. Limpiar grupos de islas existentes y liberar recursos GPU
+    for (const group of this.islandGroups) {
+      group.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          const mesh = obj as THREE.Mesh;
+          mesh.geometry?.dispose();
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach((m) => m.dispose());
+          } else if (mesh.material) {
+            mesh.material.dispose();
+          }
+        }
+      });
+      this.scene.remove(group);
+    }
+
+    this.islandGroups = [];
+    this.islands = [];
+    this.islandColliders = [];
+    this.windmills = [];
+    this.volcanoLights = [];
+    this.volcanoHolders = [];
+
+    // 2. Limpiar rutas del tesoro anteriores
+    if (this.routesGroup) {
+      while (this.routesGroup.children.length > 0) {
+        const obj = this.routesGroup.children[0] as THREE.Line;
+        obj.geometry?.dispose();
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach((m) => m.dispose());
+        } else if (obj.material) {
+          obj.material.dispose();
+        }
+        this.routesGroup.remove(obj);
+      }
+    }
+
+    // 3. Reconstruir las mini-islas con la nueva lista de unidades
+    this.buildHexClusterIslands(nuevasUnidades);
+
+    // 4. Actualizar gradiente costero cristalino de la cuenca marina
+    this.updateOceanBaseCoastalColors();
+
+    // 5. Reconstruir rutas náuticas entre islas
+    this.setupTreasureRoutes();
+
+    // 6. Si el barco estaba atracado en una isla que aún existe, mantenerlo ahí;
+    // si fue eliminada mientras estaba atracado, transferirlo suavemente a la primera disponible.
+    if (this.currentDockedId) {
+      const dockedIsland = this.islands.find((isl) => isl.id === this.currentDockedId);
+      if (dockedIsland) {
+        if (!this.isSailing) {
+          this.boatPos.set(dockedIsland.dockX, 0.44, dockedIsland.dockZ);
+          this.boatGroup?.position.copy(this.boatPos);
+          this.boatHeading = dockedIsland.dockHeading;
+          if (this.boatGroup) this.boatGroup.rotation.y = this.boatHeading;
+        }
+      } else {
+        const fallback = this.islands[0];
+        if (fallback) {
+          this.currentDockedId = fallback.id;
+          this.boatPos.set(fallback.dockX, 0.44, fallback.dockZ);
+          this.boatGroup?.position.copy(this.boatPos);
+          this.boatHeading = fallback.dockHeading;
+          if (this.boatGroup) this.boatGroup.rotation.y = this.boatHeading;
+          this.callbacks?.onSelect?.(fallback.id);
+        } else {
+          this.currentDockedId = null;
+        }
+      }
+    }
   }
 
   // -------------------------------------------------------------
@@ -1615,7 +1698,7 @@ export class Archipielago3dService {
       });
       const routeLine = new THREE.Line(routeGeom, routeMat);
       routeLine.computeLineDistances();
-      this.scene.add(routeLine);
+      this.routesGroup.add(routeLine);
     }
   }
 

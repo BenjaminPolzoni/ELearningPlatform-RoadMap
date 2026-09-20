@@ -41,6 +41,7 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
   private readonly alumnos: Alumno[] = alumnosSeed();
 
   getRoadmap(cursoCohorteId: string): Observable<Roadmap> {
+    this.roadmap = this.cargar();
     if (cursoCohorteId !== this.roadmap.cursoCohorteId) {
       return throwError(() => new Error(`No hay roadmap mock para ${cursoCohorteId}`));
     }
