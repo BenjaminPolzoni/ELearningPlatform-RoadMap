@@ -2,51 +2,51 @@ import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 /**
- * Material teórico del curso (nodo Templo del mundo 3D).
+ * Theory material of the course (Temple node of the 3D world).
  *
- * Mock estático Fase 1: el templo 3D manda `openMateriales` por postMessage y esta
- * ruta muestra secciones de ejemplo con materiales de muestra. Cuando los otros
- * grupos expongan su servicio de contenidos, este componente pasa a leer de ahí
- * (ver deuda técnica) — la ruta y el contrato `openMateriales` ya quedan fijos.
+ * Static mock Phase 1: the 3D temple sends `openMateriales` via postMessage and this
+ * route shows sample sections with sample materials. When the other groups
+ * expose their content service, this component will read from there
+ * (see technical debt) — the route and the `openMateriales` contract are already fixed.
  */
-interface SeccionMaterial {
-  titulo: string;
-  icono: string;
-  descripcion: string;
-  materiales: { nombre: string; tipo: 'PDF' | 'Video' | 'PPT'; detalle: string }[];
+interface SectionMaterial {
+  title: string;
+  icon: string;
+  description: string;
+  materials: { name: string; type: 'PDF' | 'Video' | 'PPT'; detail: string }[];
 }
 
-const SECCIONES_EJEMPLO: SeccionMaterial[] = [
+const EXAMPLE_SECTIONS: SectionMaterial[] = [
   {
-    titulo: 'Fundamentos',
-    icono: '📘',
-    descripcion: 'Conceptos base para arrancar cada unidad.',
-    materiales: [
-      { nombre: 'Introducción a la materia (ejemplo)', tipo: 'PDF', detalle: '12 páginas · lectura inicial' },
-      { nombre: 'Video: cómo usar la plataforma (ejemplo)', tipo: 'Video', detalle: '8 min · recorrido guiado' },
+    title: 'Fundamentos',
+    icon: '📘',
+    description: 'Conceptos base para arrancar cada unidad.',
+    materials: [
+      { name: 'Introducción a la materia (ejemplo)', type: 'PDF', detail: '12 páginas · lectura inicial' },
+      { name: 'Video: cómo usar la plataforma (ejemplo)', type: 'Video', detail: '8 min · recorrido guiado' },
     ],
   },
   {
-    titulo: 'Profundización',
-    icono: '📗',
-    descripcion: 'Teoría ampliada con ejemplos resueltos.',
-    materiales: [
-      { nombre: 'Guía de ejercicios resueltos (ejemplo)', tipo: 'PDF', detalle: '20 páginas · con soluciones' },
-      { nombre: 'Presentación de la unidad (ejemplo)', tipo: 'PPT', detalle: '32 diapositivas' },
+    title: 'Profundización',
+    icon: '📗',
+    description: 'Teoría ampliada con ejemplos resueltos.',
+    materials: [
+      { name: 'Guía de ejercicios resueltos (ejemplo)', type: 'PDF', detail: '20 páginas · con soluciones' },
+      { name: 'Presentación de la unidad (ejemplo)', type: 'PPT', detail: '32 diapositivas' },
     ],
   },
   {
-    titulo: 'Repaso para el Boss',
-    icono: '📕',
-    descripcion: 'Resumen final antes del desafío de cierre.',
-    materiales: [
-      { nombre: 'Resumen ejecutivo (ejemplo)', tipo: 'PDF', detalle: '4 páginas · machete permitido' },
+    title: 'Repaso para el Boss',
+    icon: '📕',
+    description: 'Resumen final antes del desafío de cierre.',
+    materials: [
+      { name: 'Resumen ejecutivo (ejemplo)', type: 'PDF', detail: '4 páginas · machete permitido' },
     ],
   },
 ];
 
 @Component({
-  selector: 'app-materiales',
+  selector: 'app-materials',
   standalone: true,
   imports: [RouterLink],
   template: `
@@ -56,17 +56,17 @@ const SECCIONES_EJEMPLO: SeccionMaterial[] = [
         <a routerLink="/alumno" class="btn-volver">← Volver al roadmap</a>
       </nav>
       <main class="materiales-body">
-        @for (s of secciones; track s.titulo) {
+        @for (s of sections; track s.title) {
           <section class="seccion">
-            <h2>{{ s.icono }} {{ s.titulo }}</h2>
-            <p class="seccion-desc">{{ s.descripcion }}</p>
+            <h2>{{ s.icon }} {{ s.title }}</h2>
+            <p class="seccion-desc">{{ s.description }}</p>
             <ul>
-              @for (m of s.materiales; track m.nombre) {
+              @for (m of s.materials; track m.name) {
                 <li>
-                  <span class="badge">{{ m.tipo }}</span>
+                  <span class="badge">{{ m.type }}</span>
                   <div>
-                    <strong>{{ m.nombre }}</strong>
-                    <small>{{ m.detalle }}</small>
+                    <strong>{{ m.name }}</strong>
+                    <small>{{ m.detail }}</small>
                   </div>
                 </li>
               }
@@ -170,6 +170,6 @@ const SECCIONES_EJEMPLO: SeccionMaterial[] = [
     }
   `,
 })
-export class Materiales {
-  protected readonly secciones = SECCIONES_EJEMPLO;
+export class Materials {
+  protected readonly sections = EXAMPLE_SECTIONS;
 }

@@ -1,28 +1,28 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { InsigniasDataPort } from '../../core/data/insignias-data.port';
-import { InsigniaCatalogo } from '../../core/data/insignias.models';
-import { CURSO_SEED_ID } from '../../mocks/seed';
+import { BadgesDataPort } from '../../core/data/badges-data.port';
+import { BadgeCatalog } from '../../core/data/badges.models';
+import { COURSE_SEED_ID } from '../../mocks/seed';
 import { PixelIcon } from '../pixel-icon';
-import { BADGE_ICONS } from '../../features/insignias/badge-icons';
-import { GENERIC_ICONS } from '../../features/insignias/generic-icons';
+import { BADGE_ICONS } from '../../features/badges/badge-icons';
+import { GENERIC_ICONS } from '../../features/badges/generic-icons';
 
 export type InventoryMode = 'insignias' | 'equipamiento';
 
 export interface InvItem {
   icon?: string;
-  nombre: string;
+  name: string;
   desc: string;
-  obtenida: boolean;
-  codigo?: string;
+  obtained: boolean;
+  code?: string;
 }
 
-const EQUIPAMIENTO: InvItem[] = [
-  { icon: '⚔️', nombre: 'Espada de código', desc: 'Acelera tu tecleo de desafíos.', obtenida: true },
-  { icon: '🛡️', nombre: 'Escudo de datos', desc: 'Protege un reintento por desafío.', obtenida: true },
-  { icon: '👟', nombre: 'Zapato ++', desc: 'Navegás el roadmap más rápido.', obtenida: false },
-  { icon: '🧥', nombre: 'Capa anti-bugs', desc: 'Evita trampas en los retos.', obtenida: false },
-  { icon: '🔮', nombre: 'Amuleto debug', desc: 'Muestra pistas en ejercicios difíciles.', obtenida: false },
+const EQUIPMENT: InvItem[] = [
+  { icon: '⚔️', name: 'Espada de código', desc: 'Acelera tu tecleo de desafíos.', obtained: true },
+  { icon: '🛡️', name: 'Escudo de datos', desc: 'Protege un reintento por desafío.', obtained: true },
+  { icon: '👟', name: 'Zapato ++', desc: 'Navegás el roadmap más rápido.', obtained: false },
+  { icon: '🧥', name: 'Capa anti-bugs', desc: 'Evita trampas en los retos.', obtained: false },
+  { icon: '🔮', name: 'Amuleto debug', desc: 'Muestra pistas en ejercicios difíciles.', obtained: false },
 ];
 
 @Component({
@@ -64,32 +64,32 @@ const EQUIPAMIENTO: InvItem[] = [
 
         <ul class="mt-4 flex flex-col gap-2.5 max-h-[60vh] overflow-y-auto pr-1">
           @if (mode() === 'insignias') {
-            @for (item of insigniasList(); track item.insigniaId) {
+            @for (item of badgesList(); track item.badgeId) {
               <li
                 class="card bg-base-300 p-3 flex flex-row items-center gap-3.5 border border-neutral/40 rounded-xl"
-                [class.opacity-60]="!item.obtenida"
+                [class.opacity-60]="!item.obtained"
               >
                 <div class="flex-shrink-0 grid place-items-center w-12 h-12 bg-base-100/70 rounded-lg border border-neutral/50 p-1">
-                  <app-pixel-icon [grid]="icono(item).grid" [colors]="icono(item).colors" [size]="40" />
+                  <app-pixel-icon [grid]="icon(item).grid" [colors]="icon(item).colors" [size]="40" />
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="font-black text-sm flex items-center justify-between gap-1">
-                    <span class="truncate text-base-content">{{ item.nombre }}</span>
+                    <span class="truncate text-base-content">{{ item.name }}</span>
                     <span
                       class="badge badge-xs flex-shrink-0"
                       [class]="
-                        item.obtenida
+                        item.obtained
                           ? 'badge-warning text-[#0D0B1E] font-black'
                           : 'badge-ghost text-base-content/50 border-neutral/40'
                       "
                     >
-                      {{ item.obtenida ? 'OBTENIDA' : 'BLOQUEADA' }}
+                      {{ item.obtained ? 'OBTENIDA' : 'BLOQUEADA' }}
                     </span>
                   </div>
-                  <div class="text-xs text-base-content/70 mt-1 leading-snug">{{ item.descripcion }}</div>
+                  <div class="text-xs text-base-content/70 mt-1 leading-snug">{{ item.description }}</div>
                   <div class="flex items-center gap-2 mt-1">
-                    <span class="badge badge-outline badge-xs ui-font text-[8px]">{{ item.tipo === 'POR_NODO' ? 'por nodo' : 'transversal' }}</span>
-                    @if (item.origen === 'PROFESOR') {
+                    <span class="badge badge-outline badge-xs ui-font text-[8px]">{{ item.type === 'POR_NODO' ? 'por nodo' : 'transversal' }}</span>
+                    @if (item.origin === 'PROFESOR') {
                       <span class="badge badge-accent badge-xs ui-font text-[8px]">profesor</span>
                     }
                   </div>
@@ -99,24 +99,24 @@ const EQUIPAMIENTO: InvItem[] = [
               <li class="text-center py-6 opacity-60 text-sm">Cargando catálogo de insignias...</li>
             }
           } @else {
-            @for (item of equipamiento; track item.nombre) {
+            @for (item of equipment; track item.name) {
               <li
                 class="card bg-base-300 p-3 flex flex-row items-center gap-3 border border-neutral/40 rounded-xl"
-                [class.opacity-50]="!item.obtenida"
+                [class.opacity-50]="!item.obtained"
               >
                 <span class="text-3xl flex-shrink-0">{{ item.icon }}</span>
                 <div class="flex-1 min-w-0">
                   <div class="font-black text-sm flex items-center justify-between gap-1">
-                    <span class="truncate">{{ item.nombre }}</span>
+                    <span class="truncate">{{ item.name }}</span>
                     <span
                       class="badge badge-xs flex-shrink-0"
                       [class]="
-                        item.obtenida
+                        item.obtained
                           ? 'badge-primary text-[#0D0B1E] font-black'
                           : 'badge-ghost text-base-content/50 border-neutral/40'
                       "
                     >
-                      {{ item.obtenida ? 'OBTENIDA' : 'BLOQUEADA' }}
+                      {{ item.obtained ? 'OBTENIDA' : 'BLOQUEADA' }}
                     </span>
                   </div>
                   <div class="text-xs text-base-content/60 mt-0.5">{{ item.desc }}</div>
@@ -128,7 +128,7 @@ const EQUIPAMIENTO: InvItem[] = [
 
         <div class="modal-action mt-4 flex justify-between items-center border-t border-neutral/30 pt-3">
           <span class="text-[10px] ui-font text-base-content/50">
-            {{ mode() === 'insignias' ? insigniasList().length + ' insignias disponibles' : equipamiento.length + ' ítems' }}
+            {{ mode() === 'insignias' ? badgesList().length + ' insignias disponibles' : equipment.length + ' ítems' }}
           </span>
           <button class="btn btn-ghost btn-sm border border-neutral/40 hover:bg-neutral/40" (click)="close.emit()">
             Cerrar
@@ -142,26 +142,26 @@ export class InventoryModal {
   readonly mode = input<InventoryMode>('insignias');
   readonly close = output<void>();
 
-  private readonly data = inject(InsigniasDataPort);
+  private readonly data = inject(BadgesDataPort);
 
-  private readonly catalogo = toSignal(this.data.getCatalogo(CURSO_SEED_ID), {
-    initialValue: [] as InsigniaCatalogo[],
+  private readonly catalog = toSignal(this.data.getCatalog(COURSE_SEED_ID), {
+    initialValue: [] as BadgeCatalog[],
   });
-  private readonly ganadas = toSignal(this.data.getGanadasPorAlumno('alu-01'), {
+  private readonly earned = toSignal(this.data.getEarnedByStudent('alu-01'), {
     initialValue: [],
   });
 
-  protected readonly equipamiento = EQUIPAMIENTO;
+  protected readonly equipment = EQUIPMENT;
 
-  protected readonly insigniasList = computed(() => {
-    const ganadasIds = new Set(this.ganadas().map((g) => g.insigniaId));
-    return this.catalogo().map((i) => ({
+  protected readonly badgesList = computed(() => {
+    const earnedIds = new Set(this.earned().map((g) => g.badgeId));
+    return this.catalog().map((i) => ({
       ...i,
-      obtenida: ganadasIds.has(i.insigniaId),
+      obtained: earnedIds.has(i.badgeId),
     }));
   });
 
-  protected icono(i: InsigniaCatalogo) {
-    return BADGE_ICONS[i.codigo] ?? GENERIC_ICONS[i.codigo] ?? BADGE_ICONS['badge_seccion_perfecta'];
+  protected icon(i: BadgeCatalog) {
+    return BADGE_ICONS[i.code] ?? GENERIC_ICONS[i.code] ?? BADGE_ICONS['badge_seccion_perfecta'];
   }
 }

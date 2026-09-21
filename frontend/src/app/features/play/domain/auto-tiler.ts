@@ -13,20 +13,20 @@ export interface RoadTileInfo {
 }
 
 /**
- * Motor de auto-tiling: selecciona la pieza modular de KayKit y su rotación
- * evaluando los índices angulares conectados [0..5] en la retícula hexagonal.
+ * Auto-tiling engine: selects the KayKit modular piece and its rotation
+ * by evaluating the connected angular indices [0..5] on the hexagonal grid.
  */
 export function getRoadModelAndRot(connectedIndices: number[]): RoadTileInfo {
   const sorted = [...connectedIndices].sort((a, b) => a - b);
   const n = sorted.length;
 
-  // 1 conexión: Remate / Cul-de-sac (hex_road_M)
+  // 1 connection: End cap / Cul-de-sac (hex_road_M)
   if (n <= 1) {
     const r = n === 1 ? (sorted[0] + 3) % 6 : 0;
     return { model: ROAD_END, rotY: (r * Math.PI) / 3 };
   }
 
-  // 2 conexiones: Recta (A), Curva 120° (B) o Curva 60° (C)
+  // 2 connections: Straight (A), 120° Curve (B) or 60° Curve (C)
   if (n === 2) {
     const diff = (sorted[1] - sorted[0] + 6) % 6;
     if (diff === 3) {
@@ -52,7 +52,7 @@ export function getRoadModelAndRot(connectedIndices: number[]): RoadTileInfo {
     }
   }
 
-  // 3 conexiones: Bifurcaciones en Y (D) y en T (E, F)
+  // 3 connections: Y forks (D) and T forks (E, F)
   if (n === 3) {
     for (let r = 0; r < 6; r++) {
       const e = [(1 + r) % 6, (3 + r) % 6, (5 + r) % 6].sort((a, b) => a - b);

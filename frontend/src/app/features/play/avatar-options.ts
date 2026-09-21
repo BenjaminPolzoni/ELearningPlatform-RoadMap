@@ -1,14 +1,14 @@
 /**
- * Opciones del panel Mi personaje: mismos valores y etiquetas que el editor de la
- * ciudad (`public/mundo-3d/index.html` selects) para paridad total.
+ * Options of the My character panel: same values and labels as the city editor
+ * (`public/mundo-3d/index.html` selects) for full parity.
  */
 
-export interface OpcionAvatar {
+export interface AvatarOption {
   value: string;
   label: string;
 }
 
-const CLASES: OpcionAvatar[] = [
+const CHARACTER_CLASSES: AvatarOption[] = [
   { value: 'Knight', label: 'Caballero' },
   { value: 'Barbarian', label: 'Bárbaro' },
   { value: 'Mage', label: 'Mago' },
@@ -21,29 +21,29 @@ const CLASES: OpcionAvatar[] = [
   { value: 'Mannequin', label: 'Maniquí' },
 ];
 
-export const OPCIONES_ARQUETIPO: OpcionAvatar[] = CLASES.map((c, i) => ({
+export const ARCHETYPE_OPTIONS: AvatarOption[] = CHARACTER_CLASSES.map((c, i) => ({
   ...c,
   label: `Arquetipo ${'ABCDEFGHIJ'[i]} (${c.label})`,
 }));
 
-export const OPCIONES_CABEZA: OpcionAvatar[] = CLASES.map((c, i) => ({
+export const HEAD_OPTIONS: AvatarOption[] = CHARACTER_CLASSES.map((c, i) => ({
   ...c,
   label: `Cabeza ${'ABCDEFGHIJ'[i]} (${c.label})`,
 }));
 
-const CON_CAPUCHA: OpcionAvatar = { value: 'Rogue_Hooded', label: 'Torso Encapuchado' };
+const WITH_HOOD: AvatarOption = { value: 'Rogue_Hooded', label: 'Torso Encapuchado' };
 
-export const OPCIONES_TORSO: OpcionAvatar[] = [
-  ...CLASES.map((c, i) => ({ ...c, label: `Parte Superior ${'ABCDEFGHIJK'[i]} (${c.label})` })),
-  CON_CAPUCHA,
+export const TORSO_OPTIONS: AvatarOption[] = [
+  ...CHARACTER_CLASSES.map((c, i) => ({ ...c, label: `Parte Superior ${'ABCDEFGHIJK'[i]} (${c.label})` })),
+  WITH_HOOD,
 ];
 
-export const OPCIONES_PANTALON: OpcionAvatar[] = [
-  ...CLASES.map((c, i) => ({ ...c, label: `Pantalón ${'ABCDEFGHIJK'[i]} (${c.label})` })),
+export const PANTS_OPTIONS: AvatarOption[] = [
+  ...CHARACTER_CLASSES.map((c, i) => ({ ...c, label: `Pantalón ${'ABCDEFGHIJK'[i]} (${c.label})` })),
   { value: 'Rogue_Hooded', label: 'Pantalón Encapuchado' },
 ];
 
-export const OPCIONES_PELO: OpcionAvatar[] = [
+export const HAIR_OPTIONS: AvatarOption[] = [
   { value: 'default', label: '👤 Original / Por Defecto' },
   { value: 'mage', label: '🧙 Mago (Largo)' },
   { value: 'ranger', label: '🏹 Arquero (Ondulado)' },
@@ -52,19 +52,19 @@ export const OPCIONES_PELO: OpcionAvatar[] = [
   { value: 'none', label: '🚫 Ninguno (Rapado)' },
 ];
 
-export const OPCIONES_BARBA: OpcionAvatar[] = [
+export const BEARD_OPTIONS: AvatarOption[] = [
   { value: 'none', label: '🚫 Ninguno' },
   { value: 'long', label: '🧔 Barba larga' },
   { value: 'short', label: '🧔 Barba corta' },
   { value: 'mask', label: '🥷 Tapaboca' },
 ];
 
-export const OPCIONES_ZAPATOS: OpcionAvatar[] = [
-  ...CLASES.map((c, i) => ({ ...c, label: `Zapatos ${'ABCDEFGHIJK'[i]} (${c.label})` })),
+export const SHOES_OPTIONS: AvatarOption[] = [
+  ...CHARACTER_CLASSES.map((c, i) => ({ ...c, label: `Zapatos ${'ABCDEFGHIJK'[i]} (${c.label})` })),
   { value: 'sneakers', label: 'Zapatillas Urbanas' },
 ];
 
-export const OPCIONES_ESPALDA: OpcionAvatar[] = [
+export const BACK_OPTIONS: AvatarOption[] = [
   { value: 'none', label: '🚫 Ninguno' },
   { value: 'cape', label: '🧣 Capa' },
   { value: 'backpack', label: '🎒 Mochila' },
@@ -86,7 +86,7 @@ export const OPCIONES_ESPALDA: OpcionAvatar[] = [
   { value: 'Skeleton_Shield_Small_B.gltf', label: '🛡️ Escudo Pequeño B' },
 ];
 
-export const OPCIONES_CABEZA_ITEM: OpcionAvatar[] = [
+export const HEAD_ITEM_OPTIONS: AvatarOption[] = [
   { value: 'none', label: '🚫 Ninguno' },
   { value: 'headphones', label: '🎧 Auriculares Gamer' },
   { value: 'propeller_hat', label: '🚁 Gorro Cóptero' },
@@ -101,7 +101,7 @@ export const OPCIONES_CABEZA_ITEM: OpcionAvatar[] = [
   { value: 'flower_antennae', label: '🌸 Flores Antena' },
 ];
 
-export const OPCIONES_MASCOTA: OpcionAvatar[] = [
+export const PET_OPTIONS: AvatarOption[] = [
   { value: 'none', label: '🚫 Ninguna' },
   { value: 'drone', label: '🛸 Dron' },
   { value: 'owl', label: '🦉 Búho' },
@@ -114,7 +114,7 @@ export const OPCIONES_MASCOTA: OpcionAvatar[] = [
   { value: 'salamander', label: '🦎 Salamandra' },
 ];
 
-const MANO_BASE: OpcionAvatar[] = [
+const HAND_BASE: AvatarOption[] = [
   { value: 'none', label: '🚫 Ninguna' },
   { value: 'mouse_gamer', label: '🖱️ Mouse Gamer' },
   { value: 'rubber_duck', label: '🦆 Patito de Hule' },
@@ -124,7 +124,7 @@ const MANO_BASE: OpcionAvatar[] = [
   { value: 'keyboard_gamer', label: '⌨️ Teclado Gamer' },
 ];
 
-const MANO_ARMAS: OpcionAvatar[] = [
+const HAND_WEAPONS: AvatarOption[] = [
   { value: 'sword_1handed.gltf', label: '🗡️ Espada 1M' },
   { value: 'sword_2handed.gltf', label: '⚔️ Espada 2M' },
   { value: 'axe_1handed.gltf', label: '🪓 Hacha 1M' },
@@ -144,42 +144,42 @@ const MANO_ARMAS: OpcionAvatar[] = [
   { value: 'puzzlecube_complete.gltf', label: '🧩 Cubo Rubik' },
 ];
 
-export const OPCIONES_MANO_DER: OpcionAvatar[] = [...MANO_BASE, ...MANO_ARMAS];
-export const OPCIONES_MANO_IZQ: OpcionAvatar[] = [...MANO_BASE, ...MANO_ARMAS];
+export const HAND_RIGHT_OPTIONS: AvatarOption[] = [...HAND_BASE, ...HAND_WEAPONS];
+export const HAND_LEFT_OPTIONS: AvatarOption[] = [...HAND_BASE, ...HAND_WEAPONS];
 
-export interface MuestraColor {
+export interface ColorSwatch {
   hex: string;
-  nombre: string;
+  name: string;
 }
 
-export const COLORES_PELO: MuestraColor[] = [
-  { hex: '#ffffff', nombre: 'Original' },
-  { hex: '#1E1726', nombre: 'Negro' },
-  { hex: '#6B4226', nombre: 'Castaño' },
-  { hex: '#E6C27A', nombre: 'Rubio' },
-  { hex: '#C2502A', nombre: 'Pelirrojo' },
-  { hex: '#CFCAD6', nombre: 'Canoso' },
+export const HAIR_COLORS: ColorSwatch[] = [
+  { hex: '#ffffff', name: 'Original' },
+  { hex: '#1E1726', name: 'Negro' },
+  { hex: '#6B4226', name: 'Castaño' },
+  { hex: '#E6C27A', name: 'Rubio' },
+  { hex: '#C2502A', name: 'Pelirrojo' },
+  { hex: '#CFCAD6', name: 'Canoso' },
 ];
 
-export const COLORES_ZAPATOS: MuestraColor[] = [
-  { hex: '#ffffff', nombre: 'Blanco' },
-  { hex: '#18181b', nombre: 'Negro' },
-  { hex: '#dc2626', nombre: 'Rojo' },
-  { hex: '#2563eb', nombre: 'Azul' },
-  { hex: '#16a34a', nombre: 'Verde' },
-  { hex: '#eab308', nombre: 'Amarillo' },
+export const SHOES_COLORS: ColorSwatch[] = [
+  { hex: '#ffffff', name: 'Blanco' },
+  { hex: '#18181b', name: 'Negro' },
+  { hex: '#dc2626', name: 'Rojo' },
+  { hex: '#2563eb', name: 'Azul' },
+  { hex: '#16a34a', name: 'Verde' },
+  { hex: '#eab308', name: 'Amarillo' },
 ];
 
-export const COLORES_MOCHILA: MuestraColor[] = [
-  { hex: '#2563eb', nombre: 'Azul' },
-  { hex: '#dc2626', nombre: 'Rojo' },
-  { hex: '#1f2937', nombre: 'Negro' },
-  { hex: '#16a34a', nombre: 'Verde' },
-  { hex: '#7c3aed', nombre: 'Púrpura' },
-  { hex: '#ea580c', nombre: 'Naranja' },
+export const BACKPACK_COLORS: ColorSwatch[] = [
+  { hex: '#2563eb', name: 'Azul' },
+  { hex: '#dc2626', name: 'Rojo' },
+  { hex: '#1f2937', name: 'Negro' },
+  { hex: '#16a34a', name: 'Verde' },
+  { hex: '#7c3aed', name: 'Púrpura' },
+  { hex: '#ea580c', name: 'Naranja' },
 ];
 
-export const COLORES_ESTRELLA: OpcionAvatar[] = [
+export const STAR_COLORS: AvatarOption[] = [
   { value: 'yellow', label: 'Amarilla' },
   { value: 'blue', label: 'Azul' },
   { value: 'green', label: 'Verde' },

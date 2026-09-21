@@ -1,21 +1,21 @@
-import { sanearAvatar } from '../core/avatar/avatar.models';
+import { sanitizeAvatar } from '../core/avatar/avatar.models';
 import { avatarConfigMock } from './ranking.seed';
-import { alumnosSeed } from './seed';
+import { studentsSeed } from './seed';
 
 describe('avatarConfigMock', () => {
-  it('es determinístico: la misma semilla da siempre el mismo avatar', () => {
+  it('is deterministic: the same seed always gives the same avatar', () => {
     expect(avatarConfigMock('alu-05')).toEqual(avatarConfigMock('alu-05'));
   });
 
-  it('da una config válida y completa para cada alumno del seed', () => {
-    for (const a of alumnosSeed()) {
+  it('gives a valid and complete config for every student in the seed', () => {
+    for (const a of studentsSeed()) {
       const c = avatarConfigMock(a.id);
-      expect(sanearAvatar(c)).toEqual(c);
+      expect(sanitizeAvatar(c)).toEqual(c);
     }
   });
 
-  it('no hay dos alumnos del seed con exactamente el mismo look', () => {
-    const looks = alumnosSeed().map((a) => JSON.stringify(avatarConfigMock(a.id)));
+  it('no two students in the seed have exactly the same look', () => {
+    const looks = studentsSeed().map((a) => JSON.stringify(avatarConfigMock(a.id)));
     expect(new Set(looks).size).toBe(looks.length);
   });
 });

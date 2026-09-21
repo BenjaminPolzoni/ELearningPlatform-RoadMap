@@ -2,38 +2,38 @@ import * as THREE from 'three';
 
 export type CameraMode = 'follow' | 'reading' | 'returning';
 
-/** Vista de la cámara: tercera (desde atrás), primera (en la cabeza) o libre (orbital). */
-export type Vista = 'tercera' | 'primera' | 'libre';
+/** Camera view: third (from behind), first (on the head) or free (orbital). */
+export type View = 'tercera' | 'primera' | 'libre';
 
 /**
- * Yaw base del movimiento: en tercera se mueve relativo al frente del personaje
- * (el +π invierte la convención del yaw de cámara, que mira hacia el personaje);
- * en el resto, relativo a la cámara como siempre.
+ * Base movement yaw: in third it moves relative to the character's front
+ * (the +π inverts the camera yaw convention, which looks toward the character);
+ * in the rest, relative to the camera as always.
  */
-export function yawMovimiento(vista: Vista, camYaw: number, facingYaw: number): number {
-  return vista === 'tercera' ? facingYaw + Math.PI : camYaw;
+export function yawMovement(view: View, camYaw: number, facingYaw: number): number {
+  return view === 'tercera' ? facingYaw + Math.PI : camYaw;
 }
 
-// Encuadre cercano y fijo de la tercera (la libre usa yaw/dist/height del usuario).
-const TERCERA_DIST = 5.5;
-const TERCERA_ALTURA = 3.2;
+// Close, fixed framing of the third (free uses the user's yaw/dist/height).
+const THIRD_PERSON_DIST = 5.5;
+const THIRD_PERSON_HEIGHT = 3.2;
 
 export class CameraController {
   public camera: THREE.PerspectiveCamera;
-  public yaw = -Math.PI / 2; // mirar al este por defecto
+  public yaw = -Math.PI / 2; // look east by default
   public dist = 10;
   public height = 6;
   public mode: CameraMode = 'follow';
-  public vista: Vista = 'libre';
-  /** Altura de los ojos sobre los pies (la fija el mundo según la escala real). */
-  public alturaOjos = 1.2;
+  public view: View = 'libre';
+  /** Eye height above the feet (set by the world according to the real scale). */
+  public eyeHeight = 1.2;
 
   private returnT = 0;
   private fromPos = new THREE.Vector3();
   private savedCam = { yaw: -Math.PI / 2, dist: 10, height: 6 };
   private disposers: (() => void)[] = [];
-  /** Facing suavizado para la tercera: la cámara va detrás sin latigazo. */
-  private suaveYaw: number | null = null;
+  /** Smoothed facing for third: the camera stays behind without whiplash. */
+  private smoothYaw: number | null = null;
   private tmp = new THREE.Vector3();
 
   constructor(aspect: number) {
@@ -45,7 +45,7 @@ export class CameraController {
     let lx = 0;
     let ly = 0;
 
-    // Cámara con botón izquierdo (o táctil): el derecho mueve al personaje
+    // Camera with left button (or touch): the right one moves the character
     const pd = (e: PointerEvent): void => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       drag = true;
@@ -55,11 +55,11 @@ export class CameraController {
     };
 
     const pm = (e: PointerEvent): void => {
-      // Tercera es fija al hombro: no se mueve. Primera gira la vista (yaw);
-      // libre además sube/baja la altura.
-      if (!drag || this.mode !== 'follow' || this.vista === 'tercera') return;
+      // Third is fixed at the shoulder: it does not move. First rotates the view (yaw);
+      // free also raises/lowers the height.
+      if (!drag || this.mode !== 'follow' || this.view === 'tercera') return;
       this.yaw -= (e.clientX - lx) * 0.005;
-      if (this.vista === 'libre') {
+      if (this.view === 'libre') {
         this.height = Math.min(12, Math.max(2, this.height + (e.clientY - ly) * 0.02));
       }
       lx = e.clientX;
@@ -71,7 +71,7 @@ export class CameraController {
     };
 
     const wh = (e: WheelEvent): void => {
-      if (this.mode !== 'follow' || this.vista !== 'libre') return;
+      if (this.mode !== 'follow' || this.view !== 'libre') return;
       e.preventDefault();
       this.dist = Math.min(16, Math.max(4, this.dist + (e.deltaY > 0 ? 1 : -1)));
     };
@@ -84,7 +84,7 @@ export class CameraController {
       onResize?.(w, h);
     };
 
-    // Sin menú del navegador: el botón derecho mueve al personaje
+    // No browser menu: the right button moves the character
     const cm = (e: MouseEvent): void => {
       e.preventDefault();
     };
@@ -106,10 +106,10 @@ export class CameraController {
     });
   }
 
-  /** Conmuta en orden Libre → Tercera → Primera; devuelve la vista activa. */
-  alternarVista(): Vista {
-    this.vista = this.vista === 'libre' ? 'tercera' : this.vista === 'tercera' ? 'primera' : 'libre';
-    return this.vista;
+  /** Toggles in order Free → Third → First; returns the active view. */
+  toggleView(): View {
+    this.view = this.view === 'libre' ? 'tercera' : this.view === 'tercera' ? 'primera' : 'libre';
+    return this.view;
   }
 
   startReading(): void {    this.savedCam = { yaw: this.yaw, dist: this.dist, height: this.height };
@@ -141,7 +141,7 @@ export class CameraController {
     } else if (this.mode === 'returning') {
       this.returnT = Math.min(1, this.returnT + dt / 0.9);
       const k = this.returnT * this.returnT * (3 - 2 * this.returnT); // smoothstep
-      this.posicionVista(this.tmp, char, dt);
+      this.positionView(this.tmp, char, dt);
       cam.position.set(
         this.fromPos.x + (this.tmp.x - this.fromPos.x) * k,
         this.fromPos.y + (this.tmp.y - this.fromPos.y) * k,
@@ -149,45 +149,45 @@ export class CameraController {
       );
       cam.lookAt(charPos.x, charPos.y + 1, charPos.z);
       if (this.returnT >= 1) this.mode = 'follow';
-    } else if (this.vista === 'primera') {
-      // Primera persona: ojos en la cabeza mirando a la vista (moverse es
-      // relativo a la cámara). El cuerpo se oculta desde el
-      // CharacterController; la mascota queda visible.
+    } else if (this.view === 'primera') {
+      // First person: eyes on the head looking at the view (moving is
+      // relative to the camera). The body is hidden from the
+      // CharacterController; the pet stays visible.
       const fx = -Math.sin(this.yaw);
       const fz = -Math.cos(this.yaw);
       const ox = charPos.x + fx * 0.5;
-      const oy = charPos.y + this.alturaOjos;
+      const oy = charPos.y + this.eyeHeight;
       const oz = charPos.z + fz * 0.5;
       cam.position.set(ox, oy, oz);
       cam.lookAt(ox + fx * 10, oy, oz + fz * 10);
     } else {
-      // Tercera y libre comparten seguimiento (posición + mirada al personaje):
-      // la diferencia vive en posicionVista (cerca y fija vs orbital del usuario).
-      this.posicionVista(this.tmp, char, dt);
+      // Third and free share tracking (position + gaze at the character):
+      // the difference lives in positionView (close and fixed vs the user's orbital).
+      this.positionView(this.tmp, char, dt);
       cam.position.copy(this.tmp);
       cam.lookAt(charPos.x, charPos.y + 1, charPos.z);
     }
   }
 
   /**
-   * Posición de seguimiento (tercera y libre miran al personaje +1).
-   * Tercera: igual que la libre pero cerca y detrás de tu facing con retardo,
-   * sin responder a arrastre ni zoom. Libre: orbital del usuario.
+   * Tracking position (third and free look at the character +1).
+   * Third: same as free but close and behind your facing with delay,
+   * not responding to drag or zoom. Free: user's orbital.
    */
-  private posicionVista(out: THREE.Vector3, char: THREE.Object3D, dt: number): THREE.Vector3 {
+  private positionView(out: THREE.Vector3, char: THREE.Object3D, dt: number): THREE.Vector3 {
     const charPos = char.position;
-    if (this.vista === 'tercera') {
+    if (this.view === 'tercera') {
       const ry = char.rotation.y;
-      if (this.suaveYaw === null) this.suaveYaw = ry;
-      let d = ry - this.suaveYaw;
+      if (this.smoothYaw === null) this.smoothYaw = ry;
+      let d = ry - this.smoothYaw;
       while (d > Math.PI) d -= Math.PI * 2;
       while (d < -Math.PI) d += Math.PI * 2;
-      this.suaveYaw += d * (1 - Math.exp(-3 * dt));
-      // Negado: la cámara va DETRÁS (la libre va al ángulo del usuario).
+      this.smoothYaw += d * (1 - Math.exp(-3 * dt));
+      // Negated: the camera goes BEHIND (free goes at the user's angle).
       return out.set(
-        charPos.x - Math.sin(this.suaveYaw) * TERCERA_DIST,
-        charPos.y + TERCERA_ALTURA,
-        charPos.z - Math.cos(this.suaveYaw) * TERCERA_DIST,
+        charPos.x - Math.sin(this.smoothYaw) * THIRD_PERSON_DIST,
+        charPos.y + THIRD_PERSON_HEIGHT,
+        charPos.z - Math.cos(this.smoothYaw) * THIRD_PERSON_DIST,
       );
     }
     return out.set(

@@ -1,14 +1,14 @@
 /**
- * Config del personaje 3D modular (el creado en la ciudad `mundo-3d/index.html`).
+ * Config of the modular 3D character (the one created in the city `mundo-3d/index.html`).
  *
- * Misma forma que `modular_character_config` en localStorage: la ciudad es quien
- * escribe, el mundo hexagonal solo lee y refleja. El saneado replica las
- * migraciones de `index.html#loadSavedCharacterConfig` + `avatar-preview.html#leerConfig`.
+ * Same shape as `modular_character_config` in localStorage: the city is the one that
+ * writes, the hexagonal world only reads and reflects. The sanitizing replicates the
+ * migrations of `index.html#loadSavedCharacterConfig` + `avatar-preview.html#leerConfig`.
  */
 
 export const MODULAR_CONFIG_KEY = 'modular_character_config';
 
-export const CLASES_VALIDAS = [
+export const VALID_CHARACTER_CLASSES = [
   'Knight',
   'Barbarian',
   'Mage',
@@ -21,7 +21,7 @@ export const CLASES_VALIDAS = [
   'Mannequin',
 ] as const;
 
-export type ClasePersonaje = (typeof CLASES_VALIDAS)[number];
+export type CharacterClass = (typeof VALID_CHARACTER_CLASSES)[number];
 
 export interface AvatarModularConfig {
   characterClass: string;
@@ -48,7 +48,7 @@ export interface AvatarModularConfig {
   showHat?: boolean;
 }
 
-export type AvatarModularGuardado = Partial<Record<keyof AvatarModularConfig, unknown>>;
+export type AvatarSavedModular = Partial<Record<keyof AvatarModularConfig, unknown>>;
 
 const DEFAULTS: AvatarModularConfig = {
   characterClass: 'Knight',
@@ -73,28 +73,28 @@ const DEFAULTS: AvatarModularConfig = {
   leftHandItem: 'mate_argentino',
 };
 
-const texto = (v: unknown, fb: string): string =>
+const text = (v: unknown, fb: string): string =>
   typeof v === 'string' && v.length > 0 ? v : fb;
 
-/** Sanea una config cruda (cualquier versión del editor) a valores usables. */
-export function sanearConfigModular(crudo: AvatarModularGuardado | null | undefined): AvatarModularConfig {
+/** Sanitizes a raw config (any editor version) into usable values. */
+export function sanitizeConfigModular(raw: AvatarSavedModular | null | undefined): AvatarModularConfig {
   const c: AvatarModularConfig = { ...DEFAULTS };
-  if (crudo && typeof crudo === 'object') {
+  if (raw && typeof raw === 'object') {
     for (const k of Object.keys(DEFAULTS) as (keyof AvatarModularConfig)[]) {
-      const v = crudo[k];
+      const v = raw[k];
       if (v !== undefined && v !== null) (c[k] as unknown) = v;
     }
-    if (crudo['showHelmet'] !== undefined) c.showHelmet = crudo['showHelmet'] === true;
-    if (crudo['showHat'] !== undefined) c.showHat = crudo['showHat'] === true;
+    if (raw['showHelmet'] !== undefined) c.showHelmet = raw['showHelmet'] === true;
+    if (raw['showHat'] !== undefined) c.showHat = raw['showHat'] === true;
   }
 
-  // Migración cabeza Encapuchado retirada → Rogue (se conserva el torso si era full-hooded).
+  // Migration of the removed Hooded head → Rogue (the torso is kept if it was full-hooded).
   if (c.characterClass === 'Rogue_Hooded') {
-    if (!crudo?.['topStyle']) c.topStyle = 'Rogue_Hooded';
+    if (!raw?.['topStyle']) c.topStyle = 'Rogue_Hooded';
     c.characterClass = 'Rogue';
   }
   if (c.headStyle === 'Rogue_Hooded') c.headStyle = 'Rogue';
-  if (!CLASES_VALIDAS.includes(c.characterClass as ClasePersonaje)) c.characterClass = 'Knight';
+  if (!VALID_CHARACTER_CLASSES.includes(c.characterClass as CharacterClass)) c.characterClass = 'Knight';
   if (!c.headStyle) c.headStyle = c.characterClass;
   if (!c.hairStyle) c.hairStyle = 'default';
   if (!c.beardStyle) {
@@ -109,7 +109,7 @@ export function sanearConfigModular(crudo: AvatarModularGuardado | null | undefi
 
   if (c.showCape === undefined) c.showCape = c.backItem === 'cape';
   if (!c.backItem) c.backItem = c.showCape ? 'cape' : 'backpack';
-  // Los carcajs ahora son insignia de espalda.
+  // Quivers are now a back badge.
   if (c.backItem === 'quiver' || c.backItem === 'Skeleton_Quiver.gltf') c.backItem = 'shield_badge.gltf';
   if (!c.backpackColor) c.backpackColor = '#2563eb';
   if (c.guitarColor !== 'A' && c.guitarColor !== 'B') c.guitarColor = 'A';
@@ -117,11 +117,11 @@ export function sanearConfigModular(crudo: AvatarModularGuardado | null | undefi
   if (!c.headItem) {
     c.headItem = c.showHelmet === true ? 'helmet' : c.showHat === true ? 'bear_hat' : 'headphones';
   }
-  // Migración: 4 ids de órbita (uno por color) → un id + starOrbitColor.
-  const legado = String(c.headItem).match(/^star_orbit_(yellow|blue|green|red)$/);
-  if (legado) {
+  // Migration: 4 orbit ids (one per color) → one id + starOrbitColor.
+  const legacy = String(c.headItem).match(/^star_orbit_(yellow|blue|green|red)$/);
+  if (legacy) {
     c.headItem = 'star_orbit';
-    c.starOrbitColor = legado[1];
+    c.starOrbitColor = legacy[1];
   }
   if (!['yellow', 'blue', 'green', 'red'].includes(c.starOrbitColor)) c.starOrbitColor = 'yellow';
   if (c.headItem === 'mining_helmet') c.headItem = 'none';
@@ -129,26 +129,26 @@ export function sanearConfigModular(crudo: AvatarModularGuardado | null | undefi
   if (!c.pet) c.pet = 'drone';
   if (c.rightHandItem === undefined) c.rightHandItem = 'mouse_gamer';
   if (c.leftHandItem === undefined) c.leftHandItem = 'mate_argentino';
-  // Los escudos ahora son solo de espalda: si estaban en mano, se sueltan.
-  for (const campo of ['rightHandItem', 'leftHandItem'] as const) {
-    if (/shield/i.test(c[campo])) c[campo] = 'none';
+  // Shields are now back-only: if they were in hand, they are dropped.
+  for (const field of ['rightHandItem', 'leftHandItem'] as const) {
+    if (/shield/i.test(c[field])) c[field] = 'none';
   }
   if (c.rightHandItem.includes('spellbook')) c.rightHandItem = 'keyboard_gamer';
   if (c.leftHandItem.includes('spellbook')) c.leftHandItem = 'keyboard_gamer';
 
-  c.characterClass = texto(c.characterClass, 'Knight');
+  c.characterClass = text(c.characterClass, 'Knight');
   return c;
 }
 
-/** Lee la config guardada por la ciudad; `null` si el alumno aún no creó su personaje. */
-export function leerConfigModular(): AvatarModularConfig | null {
+/** Reads the config saved by the city; `null` if the student has not created their character yet. */
+export function readConfigModular(): AvatarModularConfig | null {
   try {
-    const crudo = localStorage.getItem(MODULAR_CONFIG_KEY);
-    if (!crudo) return null;
-    const parsed = JSON.parse(crudo) as AvatarModularGuardado;
+    const raw = localStorage.getItem(MODULAR_CONFIG_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as AvatarSavedModular;
     if (!parsed || typeof parsed !== 'object') return null;
-    return sanearConfigModular(parsed);
+    return sanitizeConfigModular(parsed);
   } catch {
-    return sanearConfigModular(null);
+    return sanitizeConfigModular(null);
   }
 }

@@ -1,11 +1,11 @@
-import { EstadoNodo } from '../../core/data/roadmap.models';
-import { Bioma } from '../../core/data/biomas';
+import { NodeStatus } from '../../core/data/roadmap.models';
+import { Biome } from '../../core/data/biomes';
 
 export type WorldTheme = 'desert' | 'jungle' | 'castle' | 'snow' | 'nether' | 'space';
 
-// Bioma (elegido por el profesor) -> tema del mapa 2D. `Nether` queda afuera a propósito:
-// todavía no tiene arte/tema 2D propio (ver core/data/biomas.ts).
-export const BIOMA_A_WORLD_THEME: Record<string, WorldTheme> = {
+// Biome (chosen by the teacher) -> 2D map theme. `Nether` is left out on purpose:
+// it does not have its own 2D art/theme yet (see core/data/biomes.ts).
+export const BIOME_TO_WORLD_THEME: Record<string, WorldTheme> = {
   Desierto: 'desert',
   desierto: 'desert',
   Bosque: 'jungle',
@@ -16,20 +16,20 @@ export const BIOMA_A_WORLD_THEME: Record<string, WorldTheme> = {
   nieve: 'snow',
   Nether: 'nether',
   lava: 'nether',
-  Espacio: 'space',
-  espacio: 'space',
+  Space: 'space',
+  space: 'space',
 };
 
 export interface QuestionData {
-  pregunta: string;
-  opciones: string[];
-  correcta: number;
-  explicacion: string;
+  question: string;
+  options: string[];
+  correct: number;
+  explanation: string;
 }
 
 export interface VerticalChallenge {
   id: number;
-  actividadId?: string;
+  activityId?: string;
   title: string;
   type: string;
   difficulty: string;
@@ -38,16 +38,16 @@ export interface VerticalChallenge {
   description: string;
   optional?: boolean;
   recovery?: boolean;
-  // Solo para nodos 'teoria': link externo al material y su tipo (ver recurso-embed.util.ts).
-  recursoUrl?: string;
-  recursoTipo?: 'pdf' | 'video' | 'ppt';
+  // Only for 'teoria' nodes: external link to the material and its type (see resource-embed.util.ts).
+  resourceUrl?: string;
+  resourceType?: 'pdf' | 'video' | 'ppt';
   x: number; // percentage 0-100
   y: number; // percentage 0-100
   branchFrom?: [number, number];
-  /** Id del stop principal (`stops[branchStopId]`) desde el que arranca la bifurcación hacia este nodo opcional. */
+  /** Id of the main stop (`stops[branchStopId]`) from which the fork toward this optional node starts. */
   branchStopId?: number;
-  estado?: EstadoNodo;
-  completado?: boolean;
+  status?: NodeStatus;
+  completed?: boolean;
 }
 
 export interface WorldAppearanceConfig {
@@ -100,8 +100,8 @@ export const WORLD_APPEARANCE: Record<WorldTheme, WorldAppearanceConfig> = {
     support: 'Caldero de magma',
     lanes: [36, 64, 58, 40, 32, 48, 68, 62, 44, 34, 54, 60],
   },
-  // Espacio: fondo oscuro reutilizando el tile más oscuro disponible (no hay tile
-  // estrellado propio todavía — ver deuda técnica); la meta es la estación orbital.
+  // Space: dark background reusing the darkest available tile (there is no
+  // starry tile of its own yet — see technical debt); the goal is the orbital station.
   space: {
     tile: '/nether_animado.gif',
     goal: 'estacion',
@@ -127,11 +127,11 @@ export const challengeSpacing = (id: number) =>
 const clampX = (x: number) => Math.max(16, Math.min(84, x));
 
 /**
- * Vértices de un camino en escuadra de un solo quiebre entre dos puntos en % del mundo: un
- * tramo vertical y uno horizontal, siempre en ángulo recto — nunca una curva ni varios
- * quiebres cortos seguidos, para que cada tramo entre nodos se lea como una corrida larga
- * (estilo mapa de Super Mario Bros. 3), no una escalera de pasos chicos. Mismo criterio que
- * `camino()` en el mapa general de islas.
+ * Vertices of a square-cornered path with a single bend between two points in % of the world: a
+ * vertical stretch and a horizontal one, always at a right angle — never a curve nor several
+ * short bends in a row, so that each stretch between nodes reads as one long run
+ * (Super Mario Bros. 3 map style), not a staircase of small steps. Same criterion as
+ * `path()` in the general island map.
  */
 function pixelStairCorners(from: [number, number], to: [number, number]): [number, number][] {
   const [x0] = from;
@@ -140,10 +140,10 @@ function pixelStairCorners(from: [number, number], to: [number, number]): [numbe
 }
 
 /**
- * Tramo de camino en escuadra (solo ángulos rectos, sin curvas) entre dos puntos en % del
- * mundo — ver `pixelStairCorners()`. Se muestrea en `steps` puntos repartidos por distancia
- * real (no por parámetro) para que `roads[id][17]` (punto de bifurcación de ramales) siga
- * cayendo a mitad de tramo.
+ * Square-cornered path stretch (right angles only, no curves) between two points in % of the
+ * world — see `pixelStairCorners()`. It is sampled at `steps` points spread by real
+ * distance (not by parameter) so that `roads[id][17]` (branch fork point)
+ * keeps falling at mid-stretch.
  */
 export function orthogonalRoute(
   from: [number, number],
@@ -209,29 +209,29 @@ export function generateVerticalWorld(
   const groundY = (id: number) => worldHeight - 150 - ascent[id];
 
   // Stops: start at index 0 (bottom center) + main nodes.
-  // Agrupados en tramos de 2-3 nodos por carril: dentro de un tramo comparten exactamente
-  // la misma x (recorrido recto, sin ningún quiebre cerca de los nodos), y el carril solo
-  // cambia —de un lado al otro— al pasar al siguiente tramo. Así el camino resultante es un
-  // zigzag de pocos quiebres grandes y espaciados (estilo Super Mario Bros. 3), en vez de un
-  // escalón por cada nodo.
+  // Grouped in stretches of 2-3 nodes per lane: within a stretch they share exactly
+  // the same x (straight run, no bend near the nodes), and the lane only
+  // changes —from one side to the other— when moving to the next stretch. This way the resulting path is a
+  // zigzag of few large, spaced-out bends (Super Mario Bros. 3 style), instead of a
+  // step for every node.
   const stops: [number, number][] = [[50, (groundY(0) / worldHeight) * 100]];
   const lanes = appearance.lanes;
-  let tramo = 0;
-  let restantesEnTramo = 0;
-  let carrilActual = 50;
+  let segment = 0;
+  let remainingInSegment = 0;
+  let currentLane = 50;
 
   for (let id = 1; id <= mainCount; id++) {
-    if (restantesEnTramo <= 0) {
-      restantesEnTramo = 2 + (variation(tramo, 53) % 2); // tramos de 2 o 3 nodos
-      const lane = lanes[tramo % lanes.length];
-      carrilActual = clampX(tramo % 2 ? 100 - lane : lane);
-      tramo++;
+    if (remainingInSegment <= 0) {
+      remainingInSegment = 2 + (variation(segment, 53) % 2); // stretches of 2 or 3 nodes
+      const lane = lanes[segment % lanes.length];
+      currentLane = clampX(segment % 2 ? 100 - lane : lane);
+      segment++;
     }
-    restantesEnTramo--;
-    stops.push([id === mainCount ? 50 : carrilActual, (groundY(id) / worldHeight) * 100]);
+    remainingInSegment--;
+    stops.push([id === mainCount ? 50 : currentLane, (groundY(id) / worldHeight) * 100]);
   }
 
-  // Calcula caminos en escuadra (ángulo recto), no curvas — ver orthogonalRoute().
+  // Computes square-cornered paths (right angle), not curves — see orthogonalRoute().
   const roads: [number, number][][] = [
     [],
     ...stops.slice(1).map((to, i) => orthogonalRoute(stops[i], to, WORLD_WIDTH, worldHeight)),
@@ -298,30 +298,30 @@ export const templeGoalArt = `<img src="/templo.svg" class="w-full h-full object
 export const castleGoalArt = `<img src="/castillo.svg" class="w-full h-full object-contain pixelated" />`;
 export const fortressGoalArt = `<img src="/fortress.svg" class="w-full h-full object-contain pixelated" />`;
 export const lodgeGoalArt = `<svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
-  <!-- Sombra en nieve -->
+  <!-- Shadow on snow -->
   <rect x="0" y="15" width="16" height="1" fill="#334155" opacity="0.3"/>
-  <!-- Cúpula de hielo escalonada -->
+  <!-- Stepped ice dome -->
   <rect x="2" y="11" width="12" height="4" fill="#CBD5E1"/>
   <rect x="3" y="8" width="10" height="3" fill="#E2E8F0"/>
   <rect x="5" y="5" width="6" height="3" fill="#F1F5F9"/>
   <rect x="6" y="4" width="4" height="1" fill="#FFFFFF"/>
-  <!-- Líneas de corte de bloques de hielo -->
+  <!-- Ice block cut lines -->
   <rect x="2" y="11" width="12" height="1" fill="#94A3B8"/>
   <rect x="3" y="8" width="10" height="1" fill="#94A3B8"/>
   <rect x="5" y="5" width="6" height="1" fill="#94A3B8"/>
   <rect x="5" y="12" width="1" height="3" fill="#94A3B8"/>
   <rect x="10" y="12" width="1" height="3" fill="#94A3B8"/>
   <rect x="7" y="9" width="1" height="2" fill="#94A3B8"/>
-  <!-- Entrada túnel -->
+  <!-- Tunnel entrance -->
   <rect x="6" y="11" width="4" height="4" fill="#94A3B8"/>
   <rect x="7" y="12" width="2" height="3" fill="#1E293B"/>
-  <!-- Chimenea humeante -->
+  <!-- Smoking chimney -->
   <rect x="10" y="2" width="2" height="3" fill="#475569"/>
   <rect x="11" y="0" width="2" height="1" fill="#F8FAFC"/>
   <rect x="10" y="1" width="1" height="1" fill="#E2E8F0"/>
 </svg>`;
 
-// Sprite retro de conector/aro de camino 16x16 (estilo SMB3)
+// Retro 16x16 path connector/ring sprite (SMB3 style)
 export const roadJointSvg = (theme: WorldTheme = 'desert') => {
   const border =
     theme === 'jungle'
@@ -373,43 +373,43 @@ export const roadJointSvg = (theme: WorldTheme = 'desert') => {
               : '#D97706';
 
   return `<svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
-    <!-- Anillo exterior -->
+    <!-- Outer ring -->
     <rect x="2" y="1" width="12" height="14" fill="${border}"/>
     <rect x="1" y="2" width="14" height="12" fill="${border}"/>
-    <!-- Relleno del camino -->
+    <!-- Path fill -->
     <rect x="3" y="2" width="10" height="12" fill="${fill}"/>
     <rect x="2" y="3" width="12" height="10" fill="${fill}"/>
-    <!-- Brillo superior izquierdo -->
+    <!-- Top-left highlight -->
     <rect x="4" y="3" width="8" height="2" fill="${highlight}"/>
     <rect x="3" y="4" width="2" height="8" fill="${highlight}"/>
-    <!-- Núcleo central -->
+    <!-- Central core -->
     <rect x="6" y="6" width="4" height="4" fill="${core}"/>
     <rect x="7" y="7" width="2" height="2" fill="#FFFFFF"/>
   </svg>`;
 };
 
-// Sprite pixel art 16x16 para poste de START
+// 16x16 pixel art sprite for the START post
 export const startSignSvg = `<svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
-  <!-- Postes de madera -->
+  <!-- Wooden posts -->
   <rect x="3" y="10" width="2" height="6" fill="#78350F"/>
   <rect x="11" y="10" width="2" height="6" fill="#78350F"/>
-  <!-- Placa base -->
+  <!-- Base plate -->
   <rect x="1" y="3" width="14" height="8" fill="#18181B"/>
   <rect x="2" y="4" width="12" height="6" fill="#DC2626"/>
   <rect x="3" y="5" width="10" height="4" fill="#FFFFFF"/>
-  <!-- Letras S T A R T en pixel art -->
+  <!-- S T A R T letters in pixel art -->
   <rect x="4" y="6" width="1" height="2" fill="#18181B"/>
   <rect x="6" y="6" width="1" height="2" fill="#18181B"/>
   <rect x="8" y="6" width="1" height="2" fill="#18181B"/>
   <rect x="10" y="6" width="1" height="2" fill="#18181B"/>
 </svg>`;
 
-// Aliases para compatibilidad hacia atrás
+// Aliases for backward compatibility
 export const castleArt = castleGoalArt;
 export const templeArt = templeGoalArt;
 export const fortressArt = fortressGoalArt;
 export const lodgeArt = lodgeGoalArt;
-// Meta del tema `space`: planeta anillado 16x16 (el 3D usa los GLB de Espacio/Nodos).
+// Goal of the `space` theme: 16x16 ringed planet (the 3D uses the Space/Nodos GLBs).
 export const spaceGoalArt = `<svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">
   <rect x="0" y="15" width="16" height="1" fill="#0B1026" opacity="0.5"/>
   <rect x="6" y="7" width="1" height="1" fill="#FFFFFF"/>
@@ -451,28 +451,28 @@ const shadowSvg =
 function blockSvg(status: 'completed' | 'available' | 'locked', final = false): string {
   const used = status === 'completed';
   return `<g class="object-shell" shape-rendering="crispEdges">
-    <!-- Sombra base solida -->
+    <!-- Solid base shadow -->
     <rect x="14" y="68" width="44" height="6" fill="#42250F"/>
-    <!-- Bloque pixelado 40x40 -->
+    <!-- Pixelated 40x40 block -->
     <rect x="16" y="24" width="40" height="44" fill="#2D1704"/>
-    <!-- Bisel exterior -->
+    <!-- Outer bevel -->
     <rect x="18" y="26" width="36" height="40" fill="${used ? '#8D6E40' : status === 'locked' ? '#B37D28' : '#F59E0B'}"/>
-    <!-- Highlight superior e izquierdo -->
+    <!-- Top and left highlight -->
     <rect x="18" y="26" width="36" height="4" fill="${used ? '#B59868' : status === 'locked' ? '#D99B38' : '#FDE68A'}"/>
     <rect x="18" y="26" width="4" height="40" fill="${used ? '#B59868' : status === 'locked' ? '#D99B38' : '#FDE68A'}"/>
-    <!-- Sombra inferior y derecha -->
+    <!-- Bottom and right shadow -->
     <rect x="18" y="62" width="36" height="4" fill="${used ? '#624B25' : status === 'locked' ? '#8C5615' : '#D97706'}"/>
     <rect x="50" y="26" width="4" height="40" fill="${used ? '#624B25' : status === 'locked' ? '#8C5615' : '#D97706'}"/>
-    <!-- Centro del bloque -->
+    <!-- Block center -->
     <rect x="22" y="30" width="28" height="32" fill="${used ? '#7D5F33' : status === 'locked' ? '#9E6A1E' : '#FBBF24'}"/>
-    <!-- Tornillos/remaches en 4 esquinas -->
+    <!-- Screws/rivets at the 4 corners -->
     <rect x="20" y="28" width="3" height="3" fill="#382008"/>
     <rect x="49" y="28" width="3" height="3" fill="#382008"/>
     <rect x="20" y="61" width="3" height="3" fill="#382008"/>
     <rect x="49" y="61" width="3" height="3" fill="#382008"/>
     <rect x="20" y="28" width="1" height="1" fill="#FFFBEB"/>
     <rect x="49" y="28" width="1" height="1" fill="#FFFBEB"/>
-    <!-- Simbolo central -->
+    <!-- Central symbol -->
     ${used ? pixelCheckSvg(22, 34) : status === 'locked' ? pixelLockSvg(24, 34) : pixelQuestionSvg(24, 34)}
   </g>`;
 }
@@ -484,35 +484,35 @@ function barrelSvg(
 ): string {
   const used = status === 'completed';
   return `<g class="object-shell" shape-rendering="crispEdges">
-    <!-- Sombra base -->
+    <!-- Base shadow -->
     <rect x="14" y="68" width="44" height="6" fill="#1C2E14"/>
-    <!-- Contorno barril pixelado -->
+    <!-- Pixelated barrel outline -->
     <rect x="20" y="22" width="32" height="46" fill="#201103"/>
     <rect x="16" y="26" width="40" height="38" fill="#201103"/>
     <rect x="14" y="32" width="44" height="26" fill="#201103"/>
-    <!-- Duelas de madera (cuerpo) -->
+    <!-- Wooden planks (body) -->
     <rect x="16" y="28" width="40" height="34" fill="${recovery ? '#4D7C0F' : '#92400E'}"/>
     <rect x="22" y="24" width="28" height="42" fill="${recovery ? '#4D7C0F' : '#92400E'}"/>
-    <!-- Vetas de luz y volumen -->
+    <!-- Light streaks and volume -->
     <rect x="18" y="30" width="6" height="30" fill="${recovery ? '#65A30D' : '#B45309'}"/>
     <rect x="28" y="26" width="16" height="38" fill="${recovery ? '#84CC16' : '#D97706'}"/>
     <rect x="48" y="30" width="6" height="30" fill="${recovery ? '#365314' : '#78350F'}"/>
-    <!-- Separadores oscuros de duelas -->
+    <!-- Dark plank separators -->
     <rect x="26" y="24" width="2" height="42" fill="#201103"/>
     <rect x="44" y="24" width="2" height="42" fill="#201103"/>
-    <!-- Flejes/aros metalicos de hierro -->
+    <!-- Metallic iron straps/rings -->
     <rect x="18" y="32" width="36" height="6" fill="#475569"/>
     <rect x="18" y="32" width="36" height="2" fill="#94A3B8"/>
     <rect x="18" y="52" width="36" height="6" fill="#475569"/>
     <rect x="18" y="52" width="36" height="2" fill="#94A3B8"/>
-    <!-- Remaches de los aros -->
+    <!-- Ring rivets -->
     <rect x="22" y="34" width="2" height="2" fill="#F8FAFC"/>
     <rect x="35" y="34" width="2" height="2" fill="#F8FAFC"/>
     <rect x="48" y="34" width="2" height="2" fill="#F8FAFC"/>
     <rect x="22" y="54" width="2" height="2" fill="#F8FAFC"/>
     <rect x="35" y="54" width="2" height="2" fill="#F8FAFC"/>
     <rect x="48" y="54" width="2" height="2" fill="#F8FAFC"/>
-    <!-- Simbolo -->
+    <!-- Symbol -->
     ${recovery ? pixelHeartSvg(26, 38) : used ? pixelCheckSvg(22, 38) : status === 'locked' ? pixelLockSvg(26, 38) : pixelStarSvg(26, 38)}
   </g>`;
 }
@@ -520,12 +520,12 @@ function barrelSvg(
 function portalSvg(status: 'completed' | 'available' | 'locked', final = false): string {
   const used = status === 'completed';
   return `<g class="object-shell" shape-rendering="crispEdges">
-    <!-- Sombra base -->
+    <!-- Base shadow -->
     <rect x="12" y="68" width="48" height="6" fill="#0C0A14"/>
-    <!-- Estructura de piedra oscura -->
+    <!-- Dark stone structure -->
     <rect x="14" y="20" width="44" height="48" fill="#181324"/>
     <rect x="16" y="16" width="40" height="52" fill="#2E2442"/>
-    <!-- Columnas laterales de sillares -->
+    <!-- Side columns of ashlar blocks -->
     <rect x="16" y="18" width="10" height="50" fill="#42345E"/>
     <rect x="46" y="18" width="10" height="50" fill="#42345E"/>
     <rect x="16" y="28" width="10" height="2" fill="#181324"/>
@@ -534,18 +534,18 @@ function portalSvg(status: 'completed' | 'available' | 'locked', final = false):
     <rect x="46" y="28" width="10" height="2" fill="#181324"/>
     <rect x="46" y="42" width="10" height="2" fill="#181324"/>
     <rect x="46" y="56" width="10" height="2" fill="#181324"/>
-    <!-- Arco ojival superior -->
+    <!-- Upper pointed arch -->
     <rect x="22" y="12" width="28" height="6" fill="#58457D"/>
     <rect x="26" y="8" width="20" height="5" fill="#58457D"/>
     <rect x="32" y="4" width="8" height="5" fill="#7C5DAE"/>
-    <!-- Interior del portal arcano -->
+    <!-- Arcane portal interior -->
     <rect x="26" y="22" width="20" height="46" fill="#120A1F"/>
     <rect x="28" y="24" width="16" height="42" fill="${used ? '#065F46' : status === 'locked' ? '#3B0764' : '#831843'}"/>
-    <!-- Resplandor central -->
+    <!-- Central glow -->
     <rect x="30" y="28" width="12" height="34" fill="${used ? '#10B981' : status === 'locked' ? '#7E22CE' : '#F43F5E'}"/>
     <rect x="33" y="32" width="6" height="26" fill="${used ? '#A7F3D0' : status === 'locked' ? '#C084FC' : '#FDA4AF'}"/>
     <rect x="35" y="36" width="2" height="18" fill="#FFFFFF"/>
-    <!-- Simbolo -->
+    <!-- Symbol -->
     ${used ? pixelCheckSvg(24, 38) : status === 'locked' ? pixelLockSvg(26, 38) : ''}
   </g>`;
 }
@@ -553,20 +553,20 @@ function portalSvg(status: 'completed' | 'available' | 'locked', final = false):
 function iceSvg(status: 'completed' | 'available' | 'locked', final = false): string {
   const used = status === 'completed';
   return `<g class="object-shell" shape-rendering="crispEdges">
-    <!-- Sombra base -->
+    <!-- Base shadow -->
     <rect x="14" y="68" width="44" height="6" fill="#1E293B"/>
-    <!-- Bloque de hielo facetado -->
+    <!-- Faceted ice block -->
     <rect x="16" y="24" width="40" height="44" fill="#0C4A6E"/>
     <rect x="18" y="26" width="36" height="40" fill="${used ? '#64748B' : '#0284C7'}"/>
-    <!-- Caras y reflejos cristalinos -->
+    <!-- Crystalline faces and reflections -->
     <rect x="18" y="26" width="36" height="6" fill="${used ? '#94A3B8' : '#7DD3FC'}"/>
     <rect x="18" y="26" width="6" height="40" fill="${used ? '#94A3B8' : '#7DD3FC'}"/>
     <rect x="24" y="32" width="24" height="28" fill="${used ? '#CBD5E1' : '#E0F2FE'}"/>
-    <!-- Brillos blancos -->
+    <!-- White highlights -->
     <rect x="20" y="28" width="4" height="4" fill="#FFFFFF"/>
     <rect x="26" y="34" width="8" height="3" fill="#FFFFFF"/>
     <rect x="42" y="44" width="4" height="8" fill="${used ? '#475569' : '#0369A1'}"/>
-    <!-- Simbolo -->
+    <!-- Symbol -->
     ${used ? pixelCheckSvg(22, 36) : status === 'locked' ? pixelLockSvg(24, 36) : pixelSnowflakeSvg(26, 36)}
   </g>`;
 }
@@ -574,66 +574,66 @@ function iceSvg(status: 'completed' | 'available' | 'locked', final = false): st
 function netherSvg(status: 'completed' | 'available' | 'locked', final = false): string {
   const used = status === 'completed';
   return `<g class="object-shell" shape-rendering="crispEdges">
-    <!-- Sombra base -->
+    <!-- Base shadow -->
     <rect x="14" y="68" width="44" height="6" fill="#140406"/>
-    <!-- Bloque de basalto/obsidiana del Nether -->
+    <!-- Nether basalt/obsidian block -->
     <rect x="16" y="24" width="40" height="44" fill="#1D1E26"/>
     <rect x="18" y="26" width="36" height="40" fill="${used ? '#353745' : status === 'locked' ? '#210F14' : '#5A0E16'}"/>
-    <!-- Grietas de lava incandescente -->
+    <!-- Glowing lava cracks -->
     <rect x="18" y="26" width="36" height="4" fill="#F25500"/>
     <rect x="18" y="26" width="4" height="40" fill="#F25500"/>
     <rect x="24" y="32" width="24" height="28" fill="${used ? '#210F14' : '#3A1B24'}"/>
-    <!-- Núcleo de magma -->
+    <!-- Magma core -->
     <rect x="28" y="36" width="16" height="20" fill="${used ? '#475569' : '#F25500'}"/>
     <rect x="32" y="40" width="8" height="12" fill="${used ? '#64748B' : '#FEF08A'}"/>
-    <!-- Simbolo -->
+    <!-- Symbol -->
     ${used ? pixelCheckSvg(22, 36) : status === 'locked' ? pixelLockSvg(24, 36) : pixelFlameSvg(26, 36)}
   </g>`;
 }
 
 function bonusSvg(theme: WorldTheme): string {
   return `<g class="object-shell bonus-object" shape-rendering="crispEdges">
-    <!-- Cofre del tesoro pixel art -->
+    <!-- Pixel art treasure chest -->
     <rect x="14" y="66" width="44" height="6" fill="#2E1B0E"/>
-    <!-- Base del cofre -->
+    <!-- Chest base -->
     <rect x="16" y="40" width="40" height="26" fill="#6B3914"/>
     <rect x="18" y="42" width="36" height="22" fill="#9A5523"/>
-    <!-- Tapa curvada pixelada -->
+    <!-- Pixelated curved lid -->
     <rect x="18" y="24" width="36" height="16" fill="#6B3914"/>
     <rect x="20" y="22" width="32" height="18" fill="#9A5523"/>
-    <!-- Refuerzos y ribetes dorados -->
+    <!-- Golden reinforcements and trim -->
     <rect x="16" y="40" width="6" height="26" fill="#F59E0B"/>
     <rect x="50" y="40" width="6" height="26" fill="#F59E0B"/>
     <rect x="16" y="24" width="6" height="16" fill="#F59E0B"/>
     <rect x="50" y="24" width="6" height="16" fill="#F59E0B"/>
     <rect x="16" y="38" width="40" height="4" fill="#F59E0B"/>
     <rect x="18" y="24" width="36" height="3" fill="#FDE68A"/>
-    <!-- Cerradura dorada -->
+    <!-- Golden lock -->
     <rect x="32" y="36" width="8" height="8" fill="#D97706"/>
     <rect x="34" y="38" width="4" height="4" fill="#FEF08A"/>
     <rect x="35" y="40" width="2" height="2" fill="#78350F"/>
-    <!-- Estrella flotante brillante -->
+    <!-- Bright floating star -->
     ${pixelStarSvg(26, 2)}
   </g>`;
 }
 
 function recoverySvg(theme: WorldTheme, status: 'completed' | 'available' | 'locked'): string {
   if (theme === 'desert') {
-    // Tuberia verde pixel art (Warp Pipe)
+    // Pixel art green pipe (Warp Pipe)
     return `<g class="object-shell" shape-rendering="crispEdges">
       <rect x="14" y="68" width="44" height="6" fill="#14361B"/>
-      <!-- Cuerpo del tubo -->
+      <!-- Tube body -->
       <rect x="20" y="38" width="32" height="30" fill="#15803D"/>
       <rect x="24" y="38" width="6" height="30" fill="#4ADE80"/>
       <rect x="44" y="38" width="6" height="30" fill="#166534"/>
-      <!-- Borde superior del tubo -->
+      <!-- Tube top edge -->
       <rect x="16" y="26" width="40" height="14" fill="#15803D"/>
       <rect x="18" y="28" width="36" height="10" fill="#22C55E"/>
       <rect x="20" y="28" width="6" height="10" fill="#86EFAC"/>
       <rect x="46" y="28" width="6" height="10" fill="#166534"/>
       <rect x="16" y="26" width="40" height="2" fill="#86EFAC"/>
       <rect x="16" y="38" width="40" height="2" fill="#14361B"/>
-      <!-- Corazon flotante -->
+      <!-- Floating heart -->
       ${pixelHeartSvg(27, 2)}
     </g>`;
   }
@@ -641,56 +641,56 @@ function recoverySvg(theme: WorldTheme, status: 'completed' | 'available' | 'loc
   if (theme === 'jungle') return barrelSvg(status, false, true);
 
   if (theme === 'castle') {
-    // Caldero / fuente de alquimia pixel art
+    // Pixel art alchemy cauldron / fountain
     return `<g class="object-shell" shape-rendering="crispEdges">
       <rect x="14" y="68" width="44" height="6" fill="#130E24"/>
-      <!-- Base de piedra del caldero -->
+      <!-- Stone base of the cauldron -->
       <rect x="20" y="44" width="32" height="24" fill="#2E2442"/>
       <rect x="16" y="32" width="40" height="16" fill="#3D325C"/>
       <rect x="14" y="30" width="44" height="6" fill="#4E4075"/>
       <rect x="18" y="32" width="36" height="4" fill="#705A9E"/>
-      <!-- Pocion magica burbujeante violeta/fucsia -->
+      <!-- Bubbling violet/fuchsia magic potion -->
       <rect x="22" y="34" width="28" height="6" fill="#8B5CF6"/>
       <rect x="26" y="32" width="8" height="4" fill="#C084FC"/>
       <rect x="38" y="33" width="6" height="3" fill="#F43F5E"/>
-      <!-- Corazon flotante -->
+      <!-- Floating heart -->
       ${pixelHeartSvg(27, 2)}
     </g>`;
   }
 
   if (theme === 'nether') {
-    // Caldero de magma hirviente
+    // Boiling magma cauldron
     return `<g class="object-shell" shape-rendering="crispEdges">
       <rect x="14" y="68" width="44" height="6" fill="#140406"/>
-      <!-- Base de piedra volcánica -->
+      <!-- Volcanic stone base -->
       <rect x="20" y="44" width="32" height="24" fill="#210F14"/>
       <rect x="16" y="32" width="40" height="16" fill="#3A1B24"/>
       <rect x="14" y="30" width="44" height="6" fill="#522431"/>
       <rect x="18" y="32" width="36" height="4" fill="#5A0E16"/>
-      <!-- Lava hirviente -->
+      <!-- Boiling lava -->
       <rect x="22" y="34" width="28" height="6" fill="#F25500"/>
       <rect x="26" y="32" width="8" height="4" fill="#FBBF24"/>
       <rect x="38" y="33" width="6" height="3" fill="#FEF08A"/>
-      <!-- Corazón flotante -->
+      <!-- Floating heart -->
       ${pixelHeartSvg(27, 2)}
     </g>`;
   }
 
-  // Snow: Fogata de campamento con leños pixel art
+  // Snow: Campfire with pixel art logs
   return `<g class="object-shell" shape-rendering="crispEdges">
     <rect x="14" y="68" width="44" height="6" fill="#1E293B"/>
-    <!-- Piedras en circulo -->
+    <!-- Stones in a circle -->
     <rect x="16" y="58" width="40" height="10" fill="#475569"/>
     <rect x="18" y="56" width="36" height="4" fill="#64748B"/>
-    <!-- Troncos cruzados -->
+    <!-- Crossed logs -->
     <rect x="20" y="50" width="32" height="6" fill="#78350F"/>
     <rect x="24" y="44" width="24" height="6" fill="#92400E"/>
-    <!-- Fuego pixelado -->
+    <!-- Pixelated fire -->
     <rect x="28" y="24" width="16" height="24" fill="#EF4444"/>
     <rect x="30" y="20" width="12" height="20" fill="#F97316"/>
     <rect x="32" y="16" width="8" height="16" fill="#FBBF24"/>
     <rect x="34" y="12" width="4" height="10" fill="#FEF08A"/>
-    <!-- Corazon flotante -->
+    <!-- Floating heart -->
     ${pixelHeartSvg(27, 2)}
   </g>`;
 }
@@ -749,55 +749,55 @@ export function nodeVerb(
 const houseSvg = `<g shape-rendering="crispEdges">
   <rect x="-24" y="10" width="48" height="26" fill="#5A3A22"/>
   <rect x="-20" y="14" width="40" height="22" fill="#E8D5B5"/>
-  <!-- Techo de hongo pixelado -->
+  <!-- Pixelated mushroom roof -->
   <rect x="-28" y="-12" width="56" height="6" fill="#E11D48"/>
   <rect x="-24" y="-18" width="48" height="6" fill="#E11D48"/>
   <rect x="-18" y="-24" width="36" height="6" fill="#E11D48"/>
   <rect x="-10" y="-28" width="20" height="4" fill="#E11D48"/>
-  <!-- Manchas blancas pixeladas en el hongo -->
+  <!-- Pixelated white spots on the mushroom -->
   <rect x="-16" y="-18" width="8" height="5" fill="#FFFFFF"/>
   <rect x="8" y="-16" width="8" height="5" fill="#FFFFFF"/>
   <rect x="-4" y="-24" width="8" height="4" fill="#FFFFFF"/>
-  <!-- Puerta y ventana pixelada -->
+  <!-- Pixelated door and window -->
   <rect x="-6" y="22" width="12" height="14" fill="#6D4327"/>
   <rect x="-4" y="24" width="8" height="12" fill="#3D2413"/>
   <rect x="-16" y="18" width="6" height="6" fill="#60A5FA"/>
   <rect x="10" y="18" width="6" height="6" fill="#60A5FA"/>
 </g>`;
 
-// Piramide de arenisca escalonada en pixel art (estilo SMB3 Mundo 2)
+// Stepped sandstone pyramid in pixel art (SMB3 World 2 style)
 const pyramidSvg = `<g shape-rendering="crispEdges">
-  <!-- Sombra base en desierto -->
+  <!-- Base shadow in desert -->
   <rect x="-38" y="28" width="76" height="5" fill="#8C5C28" opacity="0.4"/>
-  <!-- Nivel 1 (base 72px) -->
+  <!-- Level 1 (base 72px) -->
   <rect x="-36" y="22" width="42" height="6" fill="#F5D061"/>
   <rect x="6" y="22" width="30" height="6" fill="#B8860B"/>
   <rect x="-36" y="27" width="72" height="1" fill="#784E18"/>
-  <!-- Nivel 2 (58px) -->
+  <!-- Level 2 (58px) -->
   <rect x="-29" y="16" width="35" height="6" fill="#F9DE7B"/>
   <rect x="6" y="16" width="23" height="6" fill="#C69214"/>
   <rect x="-29" y="21" width="58" height="1" fill="#784E18"/>
-  <!-- Nivel 3 (44px) -->
+  <!-- Level 3 (44px) -->
   <rect x="-22" y="10" width="28" height="6" fill="#FDE68A"/>
   <rect x="6" y="10" width="16" height="6" fill="#D49E1D"/>
   <rect x="-22" y="15" width="44" height="1" fill="#784E18"/>
-  <!-- Nivel 4 (30px) -->
+  <!-- Level 4 (30px) -->
   <rect x="-15" y="4" width="21" height="6" fill="#FEF08A"/>
   <rect x="6" y="4" width="9" height="6" fill="#E2AB26"/>
   <rect x="-15" y="9" width="30" height="1" fill="#784E18"/>
-  <!-- Cuspid dorada -->
+  <!-- Golden spire -->
   <rect x="-8" y="-2" width="14" height="6" fill="#FFFBEB"/>
   <rect x="6" y="-2" width="2" height="6" fill="#F59E0B"/>
   <rect x="-2" y="-6" width="4" height="4" fill="#FDE047"/>
-  <!-- Puerta oscura -->
+  <!-- Dark door -->
   <rect x="-4" y="18" width="8" height="10" fill="#3D2406"/>
   <rect x="-2" y="16" width="4" height="2" fill="#3D2406"/>
 </g>`;
 
-// Palmera pixel art
+// Pixel art palm tree
 const palmSvg = `<g shape-rendering="crispEdges">
   <rect x="-14" y="26" width="28" height="4" fill="#784E18" opacity="0.35"/>
-  <!-- Tronco segmentado -->
+  <!-- Segmented trunk -->
   <rect x="-4" y="20" width="8" height="8" fill="#6D4327"/>
   <rect x="-3" y="12" width="6" height="8" fill="#8B5A2B"/>
   <rect x="-1" y="4" width="6" height="8" fill="#A06830"/>
@@ -806,7 +806,7 @@ const palmSvg = `<g shape-rendering="crispEdges">
   <rect x="-3" y="12" width="6" height="1" fill="#452711"/>
   <rect x="-1" y="4" width="6" height="1" fill="#452711"/>
   <rect x="1" y="-4" width="6" height="1" fill="#452711"/>
-  <!-- Frondas verdes -->
+  <!-- Green fronds -->
   <rect x="-20" y="-8" width="14" height="4" fill="#15803D"/>
   <rect x="-24" y="-5" width="8" height="4" fill="#166534"/>
   <rect x="8" y="-8" width="16" height="4" fill="#15803D"/>
@@ -817,27 +817,27 @@ const palmSvg = `<g shape-rendering="crispEdges">
   <rect x="-10" y="-14" width="22" height="6" fill="#16A34A"/>
 </g>`;
 
-// Cactus saguaro pixel art
+// Pixel art saguaro cactus
 const cactusSvg = `<g shape-rendering="crispEdges">
   <rect x="-10" y="26" width="20" height="3" fill="#784E18" opacity="0.3"/>
-  <!-- Tallo central -->
+  <!-- Central stem -->
   <rect x="-4" y="-16" width="8" height="44" fill="#15803D"/>
   <rect x="-3" y="-15" width="3" height="42" fill="#4ADE80"/>
   <rect x="1" y="-15" width="2" height="42" fill="#166534"/>
-  <!-- Brazo izquierdo -->
+  <!-- Left arm -->
   <rect x="-14" y="-4" width="10" height="6" fill="#15803D"/>
   <rect x="-14" y="-12" width="6" height="12" fill="#15803D"/>
   <rect x="-13" y="-11" width="2" height="10" fill="#4ADE80"/>
-  <!-- Brazo derecho -->
+  <!-- Right arm -->
   <rect x="4" y="4" width="10" height="6" fill="#15803D"/>
   <rect x="8" y="-4" width="6" height="12" fill="#15803D"/>
   <rect x="9" y="-3" width="2" height="10" fill="#4ADE80"/>
-  <!-- Flor rosada -->
+  <!-- Pink flower -->
   <rect x="-2" y="-20" width="4" height="4" fill="#F43F5E"/>
   <rect x="-1" y="-19" width="2" height="2" fill="#FFE4E6"/>
 </g>`;
 
-// Rocas facetadas pixel art
+// Pixel art faceted rocks
 const rocksSvg = `<g shape-rendering="crispEdges">
   <rect x="-20" y="16" width="40" height="4" fill="#603B1A" opacity="0.4"/>
   <rect x="-18" y="2" width="22" height="16" fill="#784E18"/>
@@ -848,20 +848,20 @@ const rocksSvg = `<g shape-rendering="crispEdges">
   <rect x="6" y="6" width="6" height="4" fill="#D97706"/>
 </g>`;
 
-// Nube pixelada
+// Pixelated cloud
 const cloudSvg = `<g shape-rendering="crispEdges">
   <rect x="-36" y="-6" width="72" height="16" fill="#FFFFFF"/>
   <rect x="-28" y="-14" width="56" height="8" fill="#FFFFFF"/>
   <rect x="-16" y="-20" width="32" height="6" fill="#FFFFFF"/>
-  <!-- Sombra nube -->
+  <!-- Cloud shadow -->
   <rect x="-36" y="8" width="72" height="4" fill="#E2E8F0"/>
   <rect x="-28" y="2" width="56" height="6" fill="#F1F5F9"/>
-  <!-- Ojos kawaii retro -->
+  <!-- Retro kawaii eyes -->
   <rect x="-8" y="-2" width="3" height="4" fill="#1E293B"/>
   <rect x="6" y="-2" width="3" height="4" fill="#1E293B"/>
 </g>`;
 
-// Totem pixel art selva
+// Pixel art jungle totem
 const totemSvg = `<g shape-rendering="crispEdges">
   <rect x="-16" y="28" width="32" height="4" fill="#142612" opacity="0.4"/>
   <rect x="-14" y="-24" width="28" height="54" fill="#365314"/>
@@ -875,37 +875,37 @@ const totemSvg = `<g shape-rendering="crispEdges">
   <rect x="-6" y="8" width="12" height="4" fill="#DC2626"/>
 </g>`;
 
-// Antorcha de pared / pedestal castillo pixel art
+// Wall torch / castle pedestal pixel art
 const torchSvg = `<g shape-rendering="crispEdges">
   <rect x="-10" y="26" width="20" height="4" fill="#0F0B18" opacity="0.4"/>
   <rect x="-6" y="2" width="12" height="26" fill="#334155"/>
   <rect x="-4" y="4" width="8" height="22" fill="#64748B"/>
   <rect x="-8" y="-4" width="16" height="8" fill="#475569"/>
   <rect x="-6" y="-2" width="12" height="4" fill="#94A3B8"/>
-  <!-- Fuego pixelado -->
+  <!-- Pixelated fire -->
   <rect x="-6" y="-20" width="12" height="16" fill="#EF4444"/>
   <rect x="-4" y="-24" width="8" height="16" fill="#F97316"/>
   <rect x="-2" y="-28" width="4" height="14" fill="#FDE047"/>
   <rect x="-1" y="-30" width="2" height="6" fill="#FFFFFF"/>
 </g>`;
 
-// Muneco de nieve pixel art
+// Pixel art snowman
 const snowmanSvg = `<g shape-rendering="crispEdges">
   <rect x="-16" y="26" width="32" height="4" fill="#334155" opacity="0.3"/>
-  <!-- Bola inferior -->
+  <!-- Bottom ball -->
   <rect x="-14" y="6" width="28" height="22" fill="#E2E8F0"/>
   <rect x="-12" y="4" width="24" height="26" fill="#FFFFFF"/>
-  <!-- Bola superior -->
+  <!-- Top ball -->
   <rect x="-10" y="-12" width="20" height="18" fill="#E2E8F0"/>
   <rect x="-8" y="-14" width="16" height="20" fill="#FFFFFF"/>
-  <!-- Ojos y botones de carbon -->
+  <!-- Coal eyes and buttons -->
   <rect x="-5" y="-8" width="2" height="2" fill="#0F172A"/>
   <rect x="3" y="-8" width="2" height="2" fill="#0F172A"/>
   <rect x="-1" y="10" width="2" height="2" fill="#0F172A"/>
   <rect x="-1" y="16" width="2" height="2" fill="#0F172A"/>
-  <!-- Nariz de zanahoria -->
+  <!-- Carrot nose -->
   <rect x="-1" y="-4" width="6" height="2" fill="#EA580C"/>
-  <!-- Sombrero de copa -->
+  <!-- Top hat -->
   <rect x="-12" y="-16" width="24" height="3" fill="#1E293B"/>
   <rect x="-6" y="-26" width="12" height="10" fill="#1E293B"/>
   <rect x="-6" y="-18" width="12" height="2" fill="#DC2626"/>
@@ -926,7 +926,7 @@ export function renderWorldScenery(world: GeneratedWorld): string {
       items.push(`<g class="mushroom-house" transform="translate(${hx} ${hy - 133})">${houseSvg}</g>`);
     }
 
-    // Decoraciones desierto: Pirámides, Palmeras, Cactus, Rocas y Nubes
+    // Desert decorations: Pyramids, Palm trees, Cacti, Rocks and Clouds
     for (let id = 1; id <= mainCount; id++) {
       if (!roads[id] || !roads[id][16]) continue;
       const [x, y] = px(roads[id][16]);
@@ -935,14 +935,14 @@ export function renderWorldScenery(world: GeneratedWorld): string {
       const farX = worldWidth * (leftSide ? 0.12 : 0.88);
 
       if (id === 1 || id === 4 || id === 7) {
-        // Piramide
+        // Pyramid
         items.push(`<g transform="translate(${decorX} ${y - 10})">${pyramidSvg}</g>`);
       } else if (id === 2 || id === 5) {
-        // Palmera + Cactus
+        // Palm tree + Cactus
         items.push(`<g transform="translate(${decorX} ${y})">${palmSvg}</g>`);
         items.push(`<g transform="translate(${farX} ${y + 20})">${cactusSvg}</g>`);
       } else {
-        // Rocas + Cactus
+        // Rocks + Cactus
         items.push(`<g transform="translate(${decorX} ${y})">${rocksSvg}</g>`);
         items.push(`<g transform="translate(${farX} ${y - 15})">${cactusSvg}</g>`);
       }
@@ -970,56 +970,56 @@ export function defaultQuestions(theme: WorldTheme): Record<number, QuestionData
   if (theme === 'jungle') {
     return {
       1: {
-        pregunta: '¿Qué estructura permite repetir instrucciones varias veces?',
-        opciones: ['Un bucle (loop)', 'Un comentario', 'Un tipo de dato booleano'],
-        correcta: 0,
-        explicacion: 'Un bucle ejecuta un bloque de instrucciones de manera repetida bajo una condición.',
+        question: '¿Qué estructura permite repetir instrucciones varias veces?',
+        options: ['Un bucle (loop)', 'Un comentario', 'Un tipo de dato booleano'],
+        correct: 0,
+        explanation: 'Un bucle ejecuta un bloque de instrucciones de manera repetida bajo una condición.',
       },
       2: {
-        pregunta: 'Saltas 3 veces y ganas 2 bananas en cada salto. ¿Cuántas consigues?',
-        opciones: ['3 bananas', '5 bananas', '6 bananas'],
-        correcta: 2,
-        explicacion: '3 repeticiones × 2 bananas = 6 bananas acumuladas.',
+        question: 'Saltas 3 veces y ganas 2 bananas en cada salto. ¿Cuántas consigues?',
+        options: ['3 bananas', '5 bananas', '6 bananas'],
+        correct: 2,
+        explanation: '3 repeticiones × 2 bananas = 6 bananas acumuladas.',
       },
       3: {
-        pregunta: 'Un contador empieza en 0 y aumenta 1 en cada una de 4 vueltas. ¿Cuánto vale al final?',
-        opciones: ['0', '4', '5'],
-        correcta: 1,
-        explicacion: 'Tras cuatro incrementos unitarios consecutivos, el contador finaliza en 4.',
+        question: 'Un contador empieza en 0 y aumenta 1 en cada una de 4 vueltas. ¿Cuánto vale al final?',
+        options: ['0', '4', '5'],
+        correct: 1,
+        explanation: 'Tras cuatro incrementos unitarios consecutivos, el contador finaliza en 4.',
       },
       4: {
-        pregunta: 'El puente tiene 5 tablas. ¿Qué límite de pasos evita sobrepasarlo?',
-        opciones: ['5', '6', '10'],
-        correcta: 0,
-        explicacion: 'Limitar la repetición exactamente a 5 pasos evita salir de los límites.',
+        question: 'El puente tiene 5 tablas. ¿Qué límite de pasos evita sobrepasarlo?',
+        options: ['5', '6', '10'],
+        correct: 0,
+        explanation: 'Limitar la repetición exactamente a 5 pasos evita salir de los límites.',
       },
       5: {
-        pregunta: '¿Cuándo continúa ejecutándose un bucle while?',
-        opciones: [
+        question: '¿Cuándo continúa ejecutándose un bucle while?',
+        options: [
           'Mientras su condición lógica sea verdadera',
           'Siempre, aunque la condición sea falsa',
           'Solo cuando la lista está vacía',
         ],
-        correcta: 0,
-        explicacion: 'while evalúa su condición al inicio de cada iteración y sigue mientras sea verdadera.',
+        correct: 0,
+        explanation: 'while evalúa su condición al inicio de cada iteración y sigue mientras sea verdadera.',
       },
       6: {
-        pregunta: '¿Qué estructura guarda una colección de elementos ordenados?',
-        opciones: ['Una lista o arreglo', 'Una constante numérica', 'Un operador relacional'],
-        correcta: 0,
-        explicacion: 'Un arreglo o lista almacena múltiples elementos de forma secuencial.',
+        question: '¿Qué estructura guarda una colección de elementos ordenados?',
+        options: ['Una lista o arreglo', 'Una constante numérica', 'Un operador relacional'],
+        correct: 0,
+        explanation: 'Un arreglo o lista almacena múltiples elementos de forma secuencial.',
       },
       7: {
-        pregunta: 'La lista tiene 3 provisiones y añades 1 más con append. ¿Cuántas tiene ahora?',
-        opciones: ['2', '3', '4'],
-        correcta: 2,
-        explicacion: 'Al agregar un nuevo elemento, la longitud de la lista se incrementa en 1.',
+        question: 'La lista tiene 3 provisiones y añades 1 más con append. ¿Cuántas tiene ahora?',
+        options: ['2', '3', '4'],
+        correct: 2,
+        explanation: 'Al agregar un nuevo elemento, la longitud de la lista se incrementa en 1.',
       },
       8: {
-        pregunta: 'En un arreglo con índice base 0, ¿cuál es la posición del segundo elemento?',
-        opciones: ['0', '1', '2'],
-        correcta: 1,
-        explicacion: 'Los índices en base cero asignan 0 al primer elemento y 1 al segundo.',
+        question: 'En un arreglo con índice base 0, ¿cuál es la posición del segundo elemento?',
+        options: ['0', '1', '2'],
+        correct: 1,
+        explanation: 'Los índices en base cero asignan 0 al primer elemento y 1 al segundo.',
       },
     };
   }
@@ -1027,48 +1027,48 @@ export function defaultQuestions(theme: WorldTheme): Record<number, QuestionData
   if (theme === 'castle') {
     return {
       1: {
-        pregunta: '¿Qué principio ayuda a mantener un programa modular y comprensible?',
-        opciones: [
+        question: '¿Qué principio ayuda a mantener un programa modular y comprensible?',
+        options: [
           'Agrupar datos y comportamientos relacionados en clases u objetos',
           'Escribir todo en una única función gigante',
           'Evitar poner nombres descriptivos a las variables',
         ],
-        correcta: 0,
-        explicacion: 'La encapsulación y modularidad facilitan el mantenimiento y la lectura del código.',
+        correct: 0,
+        explanation: 'La encapsulación y modularidad facilitan el mantenimiento y la lectura del código.',
       },
       2: {
-        pregunta: 'Un objeto Jugador tiene nombre y vidas. ¿Qué representan estos datos?',
-        opciones: ['Propiedades o atributos', 'Bucles infinitos', 'Comentarios'],
-        correcta: 0,
-        explicacion: 'Los atributos o propiedades almacenan el estado interno de un objeto.',
+        question: 'Un objeto Jugador tiene nombre y vidas. ¿Qué representan estos datos?',
+        options: ['Propiedades o atributos', 'Bucles infinitos', 'Comentarios'],
+        correct: 0,
+        explanation: 'Los atributos o propiedades almacenan el estado interno de un objeto.',
       },
       3: {
-        pregunta: '¿Qué es un método dentro de un objeto?',
-        opciones: [
+        question: '¿Qué es un método dentro de un objeto?',
+        options: [
           'Una función asociada al comportamiento del objeto',
           'Un tipo de imagen en pixel art',
           'Una variable global inmutable',
         ],
-        correcta: 0,
-        explicacion: 'Un método define una acción o comportamiento que el objeto puede realizar.',
+        correct: 0,
+        explanation: 'Un método define una acción o comportamiento que el objeto puede realizar.',
       },
       4: {
-        pregunta: 'Si una función calcula mal un total sin lanzar excepciones, ¿qué error ocurre?',
-        opciones: ['Error lógico', 'Error de compilación de sintaxis', 'Ninguno'],
-        correcta: 0,
-        explicacion: 'Un error de lógica produce un resultado incorrecto aun cuando la sintaxis sea válida.',
+        question: 'Si una función calcula mal un total sin lanzar excepciones, ¿qué error ocurre?',
+        options: ['Error lógico', 'Error de compilación de sintaxis', 'Ninguno'],
+        correct: 0,
+        explanation: 'Un error de lógica produce un resultado incorrecto aun cuando la sintaxis sea válida.',
       },
       5: {
-        pregunta: 'Una prueba unitaria espera 5 pero la función devuelve 4. ¿Qué indica?',
-        opciones: ['Fallo en la aserción', 'Éxito rotundo', 'Que el test debe ser eliminado'],
-        correcta: 0,
-        explicacion: 'El test falla porque el valor devuelto no coincide con el resultado esperado.',
+        question: 'Una prueba unitaria espera 5 pero la función devuelve 4. ¿Qué indica?',
+        options: ['Fallo en la aserción', 'Éxito rotundo', 'Que el test debe ser eliminado'],
+        correct: 0,
+        explanation: 'El test falla porque el valor devuelto no coincide con el resultado esperado.',
       },
       6: {
-        pregunta: '¿Qué caso límite es fundamental probar en una función de promedio?',
-        opciones: ['Una lista vacía', 'Un número par', 'El nombre del archivo fuente'],
-        correcta: 0,
-        explicacion: 'Una lista vacía puede causar una división por cero si no se valida.',
+        question: '¿Qué caso límite es fundamental probar en una función de promedio?',
+        options: ['Una lista vacía', 'Un número par', 'El nombre del archivo fuente'],
+        correct: 0,
+        explanation: 'Una lista vacía puede causar una división por cero si no se valida.',
       },
     };
   }
@@ -1076,56 +1076,56 @@ export function defaultQuestions(theme: WorldTheme): Record<number, QuestionData
   if (theme === 'snow') {
     return {
       1: {
-        pregunta: '¿Qué define a una estructura de datos?',
-        opciones: [
+        question: '¿Qué define a una estructura de datos?',
+        options: [
           'La forma en que se organizan y se acceden los datos',
           'El color de la pantalla',
           'La velocidad del teclado',
         ],
-        correcta: 0,
-        explicacion: 'Cada estructura propone un orden de guardado y de acceso distinto.',
+        correct: 0,
+        explanation: 'Cada estructura propone un orden de guardado y de acceso distinto.',
       },
       2: {
-        pregunta: 'En una pila, ¿qué elemento sale primero?',
-        opciones: ['El último que entró', 'El primero que entró', 'El más grande'],
-        correcta: 0,
-        explicacion: 'Una pila es LIFO: el último en entrar es el primero en salir.',
+        question: 'En una pila, ¿qué elemento sale primero?',
+        options: ['El último que entró', 'El primero que entró', 'El más grande'],
+        correct: 0,
+        explanation: 'Una pila es LIFO: el último en entrar es el primero en salir.',
       },
       3: {
-        pregunta: 'Apilas 3, 7 y 9. ¿Qué valor obtienes al retirar uno?',
-        opciones: ['3', '7', '9'],
-        correcta: 2,
-        explicacion: 'El tope de la pila es 9, el último apilado.',
+        question: 'Apilas 3, 7 y 9. ¿Qué valor obtienes al retirar uno?',
+        options: ['3', '7', '9'],
+        correct: 2,
+        explanation: 'El tope de la pila es 9, el último apilado.',
       },
       4: {
-        pregunta: 'En una cola, ¿quién es atendido primero?',
-        opciones: ['El primero que llegó', 'El último que llegó', 'Cualquiera'],
-        correcta: 0,
-        explicacion: 'Una cola es FIFO: el primero en entrar es el primero en salir.',
+        question: 'En una cola, ¿quién es atendido primero?',
+        options: ['El primero que llegó', 'El último que llegó', 'Cualquiera'],
+        correct: 0,
+        explanation: 'Una cola es FIFO: el primero en entrar es el primero en salir.',
       },
       5: {
-        pregunta: 'La cola tiene [Ana, Beto, Cris] y atiendes un turno. ¿Quién queda al frente?',
-        opciones: ['Ana', 'Beto', 'Cris'],
-        correcta: 1,
-        explicacion: 'Sale Ana, la primera que llegó, y Beto pasa al frente.',
+        question: 'La cola tiene [Ana, Beto, Cris] y atiendes un turno. ¿Quién queda al frente?',
+        options: ['Ana', 'Beto', 'Cris'],
+        correct: 1,
+        explanation: 'Sale Ana, la primera que llegó, y Beto pasa al frente.',
       },
       6: {
-        pregunta: 'En un árbol, ¿cómo se llama el nodo sin hijos?',
-        opciones: ['Hoja', 'Raíz', 'Cola'],
-        correcta: 0,
-        explicacion: 'Las hojas son los nodos finales, sin descendientes.',
+        question: 'En un árbol, ¿cómo se llama el nodo sin hijos?',
+        options: ['Hoja', 'Raíz', 'Cola'],
+        correct: 0,
+        explanation: 'Las hojas son los nodos finales, sin descendientes.',
       },
       7: {
-        pregunta: 'La pila de témpanos guarda 2, 4, 8, 16. ¿Qué témpano sigue?',
-        opciones: ['18', '24', '32'],
-        correcta: 2,
-        explicacion: 'Cada valor duplica al anterior: después de 16 viene 32.',
+        question: 'La pila de témpanos guarda 2, 4, 8, 16. ¿Qué témpano sigue?',
+        options: ['18', '24', '32'],
+        correct: 2,
+        explanation: 'Cada valor duplica al anterior: después de 16 viene 32.',
       },
       8: {
-        pregunta: '¿Qué estructura conviene para deshacer el último paso dado?',
-        opciones: ['Una pila', 'Una cola', 'Un árbol'],
-        correcta: 0,
-        explicacion: 'La pila devuelve siempre la acción más reciente.',
+        question: '¿Qué estructura conviene para deshacer el último paso dado?',
+        options: ['Una pila', 'Una cola', 'Un árbol'],
+        correct: 0,
+        explanation: 'La pila devuelve siempre la acción más reciente.',
       },
     };
   }
@@ -1133,56 +1133,56 @@ export function defaultQuestions(theme: WorldTheme): Record<number, QuestionData
   if (theme === 'nether') {
     return {
       1: {
-        pregunta: '¿Qué es un proceso o hilo de ejecución en computación?',
-        opciones: [
+        question: '¿Qué es un proceso o hilo de ejecución en computación?',
+        options: [
           'Una secuencia de instrucciones que el procesador puede ejecutar concurrentemente',
           'Un cable físico de la placa madre',
           'Un archivo de texto estático sin compilar',
         ],
-        correcta: 0,
-        explicacion: 'Un hilo representa la unidad más pequeña de procesamiento planificable por un sistema operativo.',
+        correct: 0,
+        explanation: 'Un hilo representa la unidad más pequeña de procesamiento planificable por un sistema operativo.',
       },
       2: {
-        pregunta: '¿Qué condición ocurre cuando dos hilos intentan modificar el mismo dato simultáneamente?',
-        opciones: ['Condición de carrera (Race Condition)', 'Optimización cuántica', 'Bucle infinito'],
-        correcta: 0,
-        explicacion: 'La condición de carrera produce resultados impredecibles al acceder concurrentemente a recursos compartidos sin sincronización.',
+        question: '¿Qué condición ocurre cuando dos hilos intentan modificar el mismo dato simultáneamente?',
+        options: ['Condición de carrera (Race Condition)', 'Optimización cuántica', 'Bucle infinito'],
+        correct: 0,
+        explanation: 'La condición de carrera produce resultados impredecibles al acceder concurrentemente a recursos compartidos sin sincronización.',
       },
       3: {
-        pregunta: '¿Para qué sirve un candado (Mutex o Lock) en programación concurrente?',
-        opciones: [
+        question: '¿Para qué sirve un candado (Mutex o Lock) en programación concurrente?',
+        options: [
           'Garantizar exclusión mutua para que solo un hilo acceda a la sección crítica',
           'Aumentar la velocidad del ventilador del CPU',
           'Cerrar la ventana del navegador',
         ],
-        correcta: 0,
-        explicacion: 'Un Mutex asegura que dos o más hilos no ejecuten al mismo tiempo un bloque de código crítico.',
+        correct: 0,
+        explanation: 'Un Mutex asegura que dos o más hilos no ejecuten al mismo tiempo un bloque de código crítico.',
       },
       4: {
-        pregunta: '¿Qué protocolo de transporte garantiza entrega ordenada y confiable de paquetes en una red?',
-        opciones: ['TCP', 'UDP', 'DNS'],
-        correcta: 0,
-        explicacion: 'TCP incluye control de flujo, retransmisión de paquetes perdidos y verificación de entrega.',
+        question: '¿Qué protocolo de transporte garantiza entrega ordenada y confiable de paquetes en una red?',
+        options: ['TCP', 'UDP', 'DNS'],
+        correct: 0,
+        explanation: 'TCP incluye control de flujo, retransmisión de paquetes perdidos y verificación de entrega.',
       },
       5: {
-        pregunta: '¿Cuándo es preferible utilizar UDP en lugar de TCP?',
-        opciones: [
+        question: '¿Cuándo es preferible utilizar UDP en lugar de TCP?',
+        options: [
           'En streaming y videojuegos en tiempo real donde la baja latencia prima sobre reintentos',
           'Para transferencias bancarias de dinero',
           'Para enviar correos electrónicos críticos',
         ],
-        correcta: 0,
-        explicacion: 'UDP no retransmite paquetes ni agrega sobrecarga de confirmaciones, reduciendo la latencia.',
+        correct: 0,
+        explanation: 'UDP no retransmite paquetes ni agrega sobrecarga de confirmaciones, reduciendo la latencia.',
       },
       6: {
-        pregunta: '¿Qué es una dirección IP en una red de computadoras?',
-        opciones: [
+        question: '¿Qué es una dirección IP en una red de computadoras?',
+        options: [
           'Un identificador numérico único asignado a cada dispositivo en la red',
           'La contraseña del usuario administrador',
           'El número de serie de la tarjeta gráfica',
         ],
-        correcta: 0,
-        explicacion: 'La dirección IP permite localizar e intercomunicar nodos conectados bajo el protocolo de Internet.',
+        correct: 0,
+        explanation: 'La dirección IP permite localizar e intercomunicar nodos conectados bajo el protocolo de Internet.',
       },
     };
   }
@@ -1190,72 +1190,72 @@ export function defaultQuestions(theme: WorldTheme): Record<number, QuestionData
   // Default: Desert
   return {
     1: {
-      pregunta: '¿Qué es un programa informático?',
-      opciones: [
+      question: '¿Qué es un programa informático?',
+      options: [
         'Un conjunto ordenado de instrucciones que una computadora puede ejecutar',
         'Solo un dibujo estático en la pantalla',
         'Un componente de hardware externo',
       ],
-      correcta: 0,
-      explicacion: 'Un programa es una secuencia lógica de pasos que la computadora interpreta y procesa.',
+      correct: 0,
+      explanation: 'Un programa es una secuencia lógica de pasos que la computadora interpreta y procesa.',
     },
     2: {
-      pregunta: 'Para resolver un problema complejo de programación, conviene…',
-      opciones: [
+      question: 'Para resolver un problema complejo de programación, conviene…',
+      options: [
         'Dividirlo en subproblemas más pequeños y manejables',
         'Escribir código sin planificar',
         'Ignorar las pruebas y validaciones',
       ],
-      correcta: 0,
-      explicacion: 'La descomposición es una de las habilidades fundamentales del pensamiento computacional.',
+      correct: 0,
+      explanation: 'La descomposición es una de las habilidades fundamentales del pensamiento computacional.',
     },
     3: {
-      pregunta: '¿Qué caracteriza a un algoritmo?',
-      opciones: [
+      question: '¿Qué caracteriza a un algoritmo?',
+      options: [
         'Pasos precisos y finitos para resolver un problema',
         'Instrucciones elegidas al azar',
         'Una única operación matemática simple',
       ],
-      correcta: 0,
-      explicacion: 'Un algoritmo es una secuencia finita de pasos bien definidos orientados a un fin.',
+      correct: 0,
+      explanation: 'Un algoritmo es una secuencia finita de pasos bien definidos orientados a un fin.',
     },
     4: {
-      pregunta: '¿Para qué sirve una variable en un lenguaje de programación?',
-      opciones: [
+      question: '¿Para qué sirve una variable en un lenguaje de programación?',
+      options: [
         'Para almacenar y referenciar un dato en memoria mediante un identificador',
         'Para colorear los botones de la interfaz',
         'Para reiniciar la máquina automáticamente',
       ],
-      correcta: 0,
-      explicacion: 'Las variables permiten guardar información que puede ser leída o modificada luego.',
+      correct: 0,
+      explanation: 'Las variables permiten guardar información que puede ser leída o modificada luego.',
     },
     5: {
-      pregunta: '¿Cuál de los siguientes es un valor de tipo booleano?',
-      opciones: ['true (verdadero)', '"desierto"', '42'],
-      correcta: 0,
-      explicacion: 'El tipo booleano solo puede tener dos estados lógicos: true o false.',
+      question: '¿Cuál de los siguientes es un valor de tipo booleano?',
+      options: ['true (verdadero)', '"desierto"', '42'],
+      correct: 0,
+      explanation: 'El tipo booleano solo puede tener dos estados lógicos: true o false.',
     },
     6: {
-      pregunta: 'Si monedas = 3 y obtienes 4 más, ¿qué expresión calcula el total?',
-      opciones: ['3 + 4', '3 > 4', '3 == 4'],
-      correcta: 0,
-      explicacion: 'El operador de suma aritmética + calcula el acumulado total: 7.',
+      question: 'Si monedas = 3 y obtienes 4 más, ¿qué expresión calcula el total?',
+      options: ['3 + 4', '3 > 4', '3 == 4'],
+      correct: 0,
+      explanation: 'El operador de suma aritmética + calcula el acumulado total: 7.',
     },
     7: {
-      pregunta: '¿Cuál es el resultado de la expresión condicional 10 >= 5?',
-      opciones: ['true (verdadero)', 'false (falso)', 'null'],
-      correcta: 0,
-      explicacion: '10 es mayor o igual que 5, por lo que la comparación relacional es verdadera.',
+      question: '¿Cuál es el resultado de la expresión condicional 10 >= 5?',
+      options: ['true (verdadero)', 'false (falso)', 'null'],
+      correct: 0,
+      explanation: '10 es mayor o igual que 5, por lo que la comparación relacional es verdadera.',
     },
     8: {
-      pregunta: 'El cofre se abre si monedas >= 10. Tienes 12 monedas. ¿Qué ocurre?',
-      opciones: [
+      question: 'El cofre se abre si monedas >= 10. Tienes 12 monedas. ¿Qué ocurre?',
+      options: [
         'La condición se cumple y el cofre se desbloquea',
         'El cofre permanece cerrado',
         'Se pierden todas las monedas',
       ],
-      correcta: 0,
-      explicacion: '12 es mayor que 10, de modo que la rama condicional se evalúa como verdadera.',
+      correct: 0,
+      explanation: '12 es mayor que 10, de modo que la rama condicional se evalúa como verdadera.',
     },
   };
 }

@@ -26,14 +26,14 @@ export class SyncChannelService {
   }
 
   /**
-   * Stream observable de todos los mensajes de sincronización recibidos desde otras pestañas.
+   * Observable stream of all synchronization messages received from other tabs.
    */
   get events$(): Observable<SyncMessage> {
     return this.messages$.asObservable();
   }
 
   /**
-   * Emite un mensaje de sincronización a todas las pestañas abiertas y a suscriptores locales.
+   * Emits a synchronization message to all open tabs and to local subscribers.
    */
   broadcast(msg: SyncMessageInput): void {
     const fullMsg: SyncMessage = {
@@ -41,10 +41,10 @@ export class SyncChannelService {
       timestamp: msg.timestamp ?? Date.now(),
     } as SyncMessage;
 
-    // 1. Emitir localmente para componentes en la misma pestaña o suites de test
+    // 1. Emit locally for components in the same tab or test suites
     this.messages$.next(fullMsg);
 
-    // 2. Emitir por BroadcastChannel (estándar moderno de alta velocidad entre pestañas)
+    // 2. Emit through BroadcastChannel (modern high-speed standard between tabs)
     if (this.channel) {
       try {
         this.channel.postMessage(fullMsg);
@@ -53,7 +53,7 @@ export class SyncChannelService {
       }
     }
 
-    // 3. Emitir también por localStorage (StorageEvent) como fallback seguro
+    // 3. Also emit through localStorage (StorageEvent) as a safe fallback
     try {
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(STORAGE_SYNC_KEY, JSON.stringify(fullMsg));
@@ -64,7 +64,7 @@ export class SyncChannelService {
   }
 
   /**
-   * Cierra los listeners y canales abiertos.
+   * Closes the listeners and open channels.
    */
   destroy(): void {
     if (this.channel) {

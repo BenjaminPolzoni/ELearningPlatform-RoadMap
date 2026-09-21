@@ -1,73 +1,73 @@
 import { Component, computed, input, output } from '@angular/core';
-import { FilaRanking, FilaRankingAnon, VistaRankingAlumno } from '../../core/data/ranking.models';
-import { enRiesgoRegularidad, esCandidatoPromocion } from '../../domain/ranking/ranking.reglas';
+import { RankingRow, RankingAnonRow, StudentRankingView } from '../../core/data/ranking.models';
+import { inRiskRegularity, isCandidatePromotion } from '../../domain/ranking/ranking.rules';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 
-type FilaLista = FilaRanking | FilaRankingAnon;
+type ListRow = RankingRow | RankingAnonRow;
 
-function esIdentificada(f: FilaLista): f is FilaRanking {
-  return 'nombre' in f;
+function isIdentified(f: ListRow): f is RankingRow {
+  return 'name' in f;
 }
 
 /**
- * Estado académico de la fila propia — lo único que el banner muestra. Solo hay banner
- * para PROMOCIÓN (RF-RNK-05) y RIESGO (RF-RNK-06); cualquier otra situación (incluido
- * estar en P90/P10 sin cumplir las condiciones) se considera "alumno regular" y no lleva
+ * Academic status of the own row — the only thing the banner shows. There is only a banner
+ * for PROMOCIÓN (RF-RNK-05) and RIESGO (RF-RNK-06); any other situation (including
+ * being in P90/P10 without meeting the conditions) is considered a "regular student" and has no
  * banner.
  */
-type EstadoZona = 'promocion' | 'riesgo' | 'fuera' | 'inactivo';
-type Tono = 'ok' | 'risk' | 'info';
+type ZoneStatus = 'promocion' | 'riesgo' | 'fuera' | 'inactivo';
+type Tone = 'ok' | 'risk' | 'info';
 
-const COPY: Record<EstadoZona, { tag: string; sub: string; tono: Tono }> = {
+const COPY: Record<ZoneStatus, { tag: string; sub: string; tone: Tone }> = {
   promocion: {
     tag: 'ESTÁS EN ZONA DE PROMOCIÓN',
     sub: 'P90 · 0 vidas perdidas en el curso · 100 % de obligatorios (RF-RNK-05)',
-    tono: 'ok',
+    tone: 'ok',
   },
   riesgo: {
     tag: 'ESTÁS EN ZONA DE RIESGO',
     sub: 'P10 · obligatorios sin cerrar — tu regularidad está en juego (RF-RNK-06)',
-    tono: 'risk',
+    tone: 'risk',
   },
   fuera: {
     tag: 'SIN PUESTO',
     sub: 'No figurás en esta cohorte todavía',
-    tono: 'info',
+    tone: 'info',
   },
   inactivo: {
     tag: 'PERCENTILES INACTIVOS',
     sub: 'La cohorte aún no llega a 10 inscriptos (RF-RNK-09)',
-    tono: 'info',
+    tone: 'info',
   },
 };
 
 /**
- * Vista del ALUMNO (RF-RNK-03). Pantalla unificada: NO hay podio. Una sola lista con
- * scroll, toda anonimizada salvo la fila propia, donde el estado académico es el
- * protagonista:
- *  - PROMOCIÓN (verde) → fila en P90 que además tiene 0 vidas perdidas históricas y el
- *    100 % de los obligatorios aprobados (RF-RNK-05). Si está en P90 sin cumplir ambas,
- *    se muestra como alumno regular.
- *  - RIESGO (rojo) → fila en P10 que no superó todos los obligatorios (RF-RNK-06).
- * No decide privacidad: renderiza lo que el adapter ya recortó.
+ * ALUMNO view (RF-RNK-03). Unified screen: there is NO podium. A single scrollable
+ * list, all anonymized except the own row, where the academic status is the
+ * protagonist:
+ *  - PROMOCIÓN (green) → row in P90 that also has 0 historical lost lives and
+ *    100 % of the mandatory items passed (RF-RNK-05). If it is in P90 without meeting both,
+ *    it is shown as a regular student.
+ *  - RIESGO (red) → row in P10 that did not pass all the mandatory items (RF-RNK-06).
+ * It does not decide privacy: it renders what the adapter already trimmed.
  */
 @Component({
-  selector: 'app-ranking-tabla-alumno',
+  selector: 'app-ranking-table-student',
   imports: [AvatarSprite],
   template: `
-    <!-- ══ TU ESTADO ══ solo aparece si estás en PROMOCIÓN o en RIESGO ══ -->
-    @if (vista().yo; as yo) {
+    <!-- ══ YOUR STATUS ══ only appears if you are in PROMOCIÓN or in RIESGO ══ -->
+    @if (view().yo; as yo) {
       @if (copy(); as c) {
-        <button type="button" class="rk-estado rk-estado--{{ c.tono }}" (click)="seleccionar.emit(yo)">
+        <button type="button" class="rk-estado rk-estado--{{ c.tone }}" (click)="select.emit(yo)">
           <span class="rk-estado__pos">
-            <span class="rk-estado__pos-num tabular">{{ pad(yo.posicion) }}</span>
-            <span class="rk-estado__pos-tot">/ {{ vista().totalInscriptos }}</span>
+            <span class="rk-estado__pos-num tabular">{{ pad(yo.position) }}</span>
+            <span class="rk-estado__pos-tot">/ {{ view().totalEnrolled }}</span>
           </span>
           <span class="rk-estado__body">
             <span class="rk-estado__tag">{{ c.tag }}</span>
             <span class="rk-estado__sub">{{ c.sub }}</span>
           </span>
-          <span class="rk-estado__pctil">P{{ yo.percentil }}</span>
+          <span class="rk-estado__pctil">P{{ yo.percentile }}</span>
         </button>
       }
     } @else if (copy(); as c) {
@@ -79,14 +79,14 @@ const COPY: Record<EstadoZona, { tag: string; sub: string; tono: Tono }> = {
       </div>
     }
 
-    <!-- ══ Encabezado + cohorte completa (anónima salvo tu fila) ══ -->
+    <!-- ══ Header + full cohort (anonymous except your row) ══ -->
     <div class="rk-head">
       <span style="text-align:center">POS</span><span>Estudiante</span>
       <span style="text-align:center">Pctil</span><span style="text-align:center">Nivel</span>
       <span style="text-align:right">XP</span>
     </div>
 
-    @if (!vista().cortes) {
+    @if (!view().cutoffs) {
       <div class="rk-divider">
         <span class="rk-divider__bar"></span>
         <span class="rk-divider__label">PERCENTILES INACTIVOS (RF-RNK-09)</span>
@@ -94,16 +94,16 @@ const COPY: Record<EstadoZona, { tag: string; sub: string; tono: Tono }> = {
       </div>
     }
 
-    @for (f of filas(); track f.posicion) {
-      <!-- Cierra la zona de promoción: va entre la última fila P90 y la primera regular. -->
-      @if (corteP90() === f.posicion) {
+    @for (f of rows(); track f.position) {
+      <!-- Closes the promotion zone: goes between the last P90 row and the first regular one. -->
+      @if (p90Cutoff() === f.position) {
         <div class="rk-divider rk-divider--up">
           <span class="rk-divider__bar"></span>
           <span class="rk-divider__label">ZONA DE PROMOCIÓN · P90</span>
           <span class="rk-divider__bar"></span>
         </div>
       }
-      @if (primerP10() === f.posicion) {
+      @if (firstP10() === f.position) {
         <div class="rk-divider rk-divider--down">
           <span class="rk-divider__bar"></span>
           <span class="rk-divider__label">ZONA DE RIESGO · P10</span>
@@ -112,94 +112,94 @@ const COPY: Record<EstadoZona, { tag: string; sub: string; tono: Tono }> = {
       }
       <div
         class="rk-row"
-        [id]="esYo(f) ? 'rk-yo-row' : null"
-        [class.rk-row--promo]="promociona(f)"
-        [class.rk-row--riesgo]="enRiesgo(f)"
-        [class.rk-row--me]="esYo(f)"
-        (click)="seleccionar.emit(f)"
+        [id]="isMe(f) ? 'rk-yo-row' : null"
+        [class.rk-row--promo]="qualifiesForPromotion(f)"
+        [class.rk-row--riesgo]="inRisk(f)"
+        [class.rk-row--me]="isMe(f)"
+        (click)="select.emit(f)"
       >
-        <span class="rk-row__pos tabular">{{ f.posicion }}</span>
+        <span class="rk-row__pos tabular">{{ f.position }}</span>
         <span style="display:flex;align-items:center;gap:0.5rem;min-width:0">
-          <ui-avatar-sprite class="rk-row__avatar" [config]="f.avatar" [alto]="52" />
+          <ui-avatar-sprite class="rk-row__avatar" [config]="f.avatar" [height]="52" />
           <span style="min-width:0">
-            <span class="rk-row__name" style="display:block">{{ etiqueta(f) }}</span>
-            @if (promociona(f)) {
+            <span class="rk-row__name" style="display:block">{{ label(f) }}</span>
+            @if (qualifiesForPromotion(f)) {
               <span class="rk-tag rk-tag--promo">PROMOCIÓN</span>
-            } @else if (enRiesgo(f)) {
+            } @else if (inRisk(f)) {
               <span class="rk-tag rk-tag--riesgo">RIESGO</span>
             }
-            @if (esYo(f)) {
+            @if (isMe(f)) {
               <span class="ui-font" style="font-size:0.7rem;opacity:0.7;display:block"
-                >Legajo {{ legajo(f) }}</span
+                >Legajo {{ fileNumber(f) }}</span
               >
             }
           </span>
         </span>
-        <span class="rk-row__cell">P{{ f.percentil }}</span>
-        <span class="rk-row__cell rk-row__lv">Lv {{ f.nivelNodo }}</span>
+        <span class="rk-row__cell">P{{ f.percentile }}</span>
+        <span class="rk-row__cell rk-row__lv">Lv {{ f.nodeLevel }}</span>
         <span class="rk-row__xp tabular">{{ f.xpTotal }}</span>
       </div>
     }
   `,
 })
-export class RankingTablaAlumno {
-  readonly vista = input.required<VistaRankingAlumno>();
-  readonly seleccionar = output<FilaRanking | FilaRankingAnon>();
+export class StudentRankingTable {
+  readonly view = input.required<StudentRankingView>();
+  readonly select = output<RankingRow | RankingAnonRow>();
 
-  /** Estado de la fila propia — `null` = alumno regular, sin banner. */
-  protected readonly estado = computed<EstadoZona | null>(() => {
-    const v = this.vista();
+  /** Status of the own row — `null` = regular student, no banner. */
+  protected readonly status = computed<ZoneStatus | null>(() => {
+    const v = this.view();
     const yo = v.yo;
     if (!yo) return 'fuera';
-    if (!v.cortes) return 'inactivo';
-    if (esCandidatoPromocion(yo)) return 'promocion';
-    if (enRiesgoRegularidad(yo)) return 'riesgo';
+    if (!v.cutoffs) return 'inactivo';
+    if (isCandidatePromotion(yo)) return 'promocion';
+    if (inRiskRegularity(yo)) return 'riesgo';
     return null;
   });
   protected readonly copy = computed(() => {
-    const e = this.estado();
+    const e = this.status();
     return e ? COPY[e] : null;
   });
 
-  /** Cohorte completa con scroll — sin recortar (ya no hay podio que absorba el top). */
-  protected readonly filas = computed<FilaLista[]>(() => this.vista().lista);
+  /** Full cohort with scroll — untrimmed (there is no longer a podium absorbing the top). */
+  protected readonly rows = computed<ListRow[]>(() => this.view().list);
 
   /**
-   * Posición de la primera fila FUERA de P90 — ahí se dibuja el divisor que cierra la
-   * zona de promoción (queda entre los promocionados y los regulares). -1 si los
-   * percentiles no están activos.
+   * Position of the first row OUTSIDE P90 — that is where the divider that closes the
+   * promotion zone is drawn (it sits between the promoted and the regular ones). -1 if the
+   * percentiles are not active.
    */
-  protected readonly corteP90 = computed(() =>
-    this.vista().cortes
-      ? (this.vista().lista.find((f) => f.zona !== 'p90')?.posicion ?? -1)
+  protected readonly p90Cutoff = computed(() =>
+    this.view().cutoffs
+      ? (this.view().list.find((f) => f.zone !== 'p90')?.position ?? -1)
       : -1,
   );
 
-  /** Posición de la primera fila en zona P10, para el divisor de riesgo. */
-  protected readonly primerP10 = computed(
-    () => this.vista().lista.find((f) => f.zona === 'p10')?.posicion ?? -1,
+  /** Position of the first row in the P10 zone, for the risk divider. */
+  protected readonly firstP10 = computed(
+    () => this.view().list.find((f) => f.zone === 'p10')?.position ?? -1,
   );
 
-  /** RF-RNK-05: P90 + 0 vidas perdidas históricas + 100 % de obligatorios. */
-  protected promociona(f: FilaLista): boolean {
-    return esCandidatoPromocion(f);
+  /** RF-RNK-05: P90 + 0 historical lost lives + 100 % of mandatory items. */
+  protected qualifiesForPromotion(f: ListRow): boolean {
+    return isCandidatePromotion(f);
   }
 
-  /** RF-RNK-06: P10 + obligatorios sin cerrar. */
-  protected enRiesgo(f: FilaLista): boolean {
-    return enRiesgoRegularidad(f);
+  /** RF-RNK-06: P10 + unfinished mandatory items. */
+  protected inRisk(f: ListRow): boolean {
+    return inRiskRegularity(f);
   }
 
-  protected esYo(f: FilaLista): boolean {
-    return esIdentificada(f);
+  protected isMe(f: ListRow): boolean {
+    return isIdentified(f);
   }
 
-  protected etiqueta(f: FilaLista): string {
-    return esIdentificada(f) ? `${f.nombre} ${f.apellido} · vos` : f.seudonimo;
+  protected label(f: ListRow): string {
+    return isIdentified(f) ? `${f.name} ${f.lastName} · vos` : f.pseudonym;
   }
 
-  protected legajo(f: FilaLista): string {
-    return esIdentificada(f) ? f.legajo : '';
+  protected fileNumber(f: ListRow): string {
+    return isIdentified(f) ? f.fileNumber : '';
   }
 
   protected pad(n: number): string {

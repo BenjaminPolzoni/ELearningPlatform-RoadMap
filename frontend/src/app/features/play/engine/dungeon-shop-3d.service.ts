@@ -25,7 +25,7 @@ export class DungeonShop3dService {
 
   private gltfLoader = new GLTFLoader();
 
-  // Contenedores principales
+  // Main containers
   private dioramaGroup!: THREE.Group;
   private roomGroup!: THREE.Group;
   private propsGroup!: THREE.Group;
@@ -33,16 +33,16 @@ export class DungeonShop3dService {
   private playerGroup!: THREE.Group;
   private itemsDisplayGroup!: THREE.Group;
 
-  // Luces de antorcha con parpadeo suave
+  // Torch lights with soft flicker
   private torchLights: { light: THREE.PointLight; baseIntensity: number; phase: number }[] = [];
 
-  // Vendedor
+  // Seller
   private vendorMesh: THREE.Object3D | null = null;
   private vendorMixer: THREE.AnimationMixer | null = null;
   private vendorIdleAction: THREE.AnimationAction | null = null;
   private vendorInteractAction: THREE.AnimationAction | null = null;
 
-  // Jugador y movimiento WASD
+  // Player and WASD movement
   private playerMesh: THREE.Object3D | null = null;
   private playerMixer: THREE.AnimationMixer | null = null;
   private playerWalkAction: THREE.AnimationAction | null = null;
@@ -55,17 +55,17 @@ export class DungeonShop3dService {
   private keysPressed = new Set<string>();
   private lastNearCounter = false;
 
-  // Parallax del ratón
+  // Mouse parallax
   private mouseX = 0;
   private mouseY = 0;
   private baseCamPos = new THREE.Vector3(0, 10.6, 14.8);
   private targetCamPos = new THREE.Vector3(0, 10.6, 14.8);
   private camLookTarget = new THREE.Vector3(0, 1.35, -0.6);
 
-  // Reloj Three.js para delta-time constante
+  // Three.js clock for constant delta-time
   private clock = new THREE.Clock();
 
-  // Materiales compartidos limpios
+  // Clean shared materials
   private stoneWallMat!: THREE.MeshStandardMaterial;
   private stoneFloorMat!: THREE.MeshStandardMaterial;
   private stoneCapMat!: THREE.MeshStandardMaterial;
@@ -94,18 +94,18 @@ export class DungeonShop3dService {
     this.customAvatarBuild = null;
     this.groundPet = null;
 
-    // 1. Escena con fondo púrpura/índigo profundo
+    // 1. Scene with a deep purple/indigo background
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x130a21);
     this.scene.fog = new THREE.FogExp2(0x130a21, 0.009);
 
-    // 2. Cámara Isométrica Diorama
+    // 2. Isometric Diorama Camera
     const aspect = canvas.clientWidth / (canvas.clientHeight || 1);
     this.camera = new THREE.PerspectiveCamera(32, aspect, 0.5, 100);
     this.camera.position.copy(this.baseCamPos);
     this.camera.lookAt(this.camLookTarget);
 
-    // 3. Renderer con logarithmicDepthBuffer para precisión de profundidad
+    // 3. Renderer with logarithmicDepthBuffer for depth precision
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
@@ -121,13 +121,13 @@ export class DungeonShop3dService {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    // 4. Materiales estilizados flat-shaded
+    // 4. Stylized flat-shaded materials
     this.initMaterials();
 
-    // 5. Iluminación acogedora de calabozo / bazar medieval
+    // 5. Cozy dungeon / medieval bazaar lighting
     this.setupLighting();
 
-    // 6. Grupos de la escena
+    // 6. Scene groups
     this.dioramaGroup = new THREE.Group();
     this.roomGroup = new THREE.Group();
     this.propsGroup = new THREE.Group();
@@ -142,22 +142,22 @@ export class DungeonShop3dService {
     this.dioramaGroup.add(this.itemsDisplayGroup);
     this.scene.add(this.dioramaGroup);
 
-    // 7. Construcción de la sala diorama (suelo completo con hexágonos sin solapar madera)
+    // 7. Construction of the diorama room (full floor with hexagons without overlapping wood)
     this.buildRoomStructure();
 
-    // 8. Mobiliario: Mostrador movido a la derecha fuera del piso de madera
+    // 8. Furniture: Counter moved to the right outside the wooden floor
     this.buildMerchantCounterAndGoods();
 
-    // 9. Cargar decoraciones (puerta a escala, escudo con espadas AL FRENTE sobre la puerta)
+    // 9. Load decorations (scaled door, shield with swords IN FRONT above the door)
     await this.loadDecorations();
 
-    // 10. Cargar al mercader con tamaño +20% (2.80m)
+    // 10. Load the merchant at +20% size (2.80m)
     await this.loadVendor();
 
-    // 11. Cargar al personaje del jugador con tamaño +20% (2.80m)
+    // 11. Load the player's character at +20% size (2.80m)
     await this.loadPlayer(avatarSpec);
 
-    // 12. Listeners de teclado y ratón
+    // 12. Keyboard and mouse listeners
     this.setupEvents();
 
     this.running = true;
@@ -166,7 +166,7 @@ export class DungeonShop3dService {
   }
 
   // -------------------------------------------------------------
-  // Inicialización de Materiales Limpios
+  // Initialization of Clean Materials
   // -------------------------------------------------------------
   private initMaterials(): void {
     this.stoneWallMat = new THREE.MeshStandardMaterial({
@@ -227,7 +227,7 @@ export class DungeonShop3dService {
   }
 
   // -------------------------------------------------------------
-  // Iluminación Cálida de Calabozo
+  // Warm Dungeon Lighting
   // -------------------------------------------------------------
   private setupLighting(): void {
     const ambient = new THREE.AmbientLight(0xffeedd, 0.78);
@@ -251,11 +251,11 @@ export class DungeonShop3dService {
     fillLight.position.set(-8.0, 6.0, -2.0);
     this.scene.add(fillLight);
 
-    // Antorchas en pared trasera
+    // Torches on the back wall
     this.addTorchLight(-3.5, 3.6, -3.85, 0xff9933, 2.6);
     this.addTorchLight(3.5, 3.6, -3.85, 0xffaa44, 2.8);
 
-    // Luz focal sobre el mostrador
+    // Spotlight over the counter
     const counterSpot = new THREE.PointLight(0xffe2b8, 2.2, 8.0, 1.6);
     counterSpot.position.set(3.5, 3.3, -0.6);
     counterSpot.castShadow = true;
@@ -278,20 +278,20 @@ export class DungeonShop3dService {
   }
 
   // -------------------------------------------------------------
-  // Arquitectura Diorama (Malla de piedras completa y tablas hasta el final)
+  // Diorama Architecture (Complete stone mesh and planks up to the end)
   // -------------------------------------------------------------
   private buildRoomStructure(): void {
-    // 1. Polígono del diorama con chaflán frontal correcto (en 2D, Y negativo mapea a Z positivo con rotateX(-90deg))
+    // 1. Diorama polygon with the correct front chamfer (in 2D, negative Y maps to positive Z with rotateX(-90deg))
     const roomShape = new THREE.Shape();
-    roomShape.moveTo(-6.4, 4.3);  // Esquina trasera izquierda (z = -4.3)
-    roomShape.lineTo(-6.4, -2.0); // Pared lateral izquierda (z = +2.0)
-    roomShape.lineTo(-4.2, -4.4); // Chaflán frontal izquierdo (z = +4.4)
-    roomShape.lineTo(4.2, -4.4);  // Borde frontal central (z = +4.4)
-    roomShape.lineTo(6.4, -2.0);  // Chaflán frontal derecho (z = +2.0)
-    roomShape.lineTo(6.4, 4.3);   // Pared lateral derecha (z = -4.3)
+    roomShape.moveTo(-6.4, 4.3);  // Back left corner (z = -4.3)
+    roomShape.lineTo(-6.4, -2.0); // Left side wall (z = +2.0)
+    roomShape.lineTo(-4.2, -4.4); // Front left chamfer (z = +4.4)
+    roomShape.lineTo(4.2, -4.4);  // Central front edge (z = +4.4)
+    roomShape.lineTo(6.4, -2.0);  // Front right chamfer (z = +2.0)
+    roomShape.lineTo(6.4, 4.3);   // Right side wall (z = -4.3)
     roomShape.closePath();
 
-    // 2. Pedestal inferior del diorama
+    // 2. Lower pedestal of the diorama
     const extrudeSettings: THREE.ExtrudeGeometryOptions = {
       depth: 0.5,
       bevelEnabled: true,
@@ -307,7 +307,7 @@ export class DungeonShop3dService {
     dioramaBaseMesh.receiveShadow = true;
     this.roomGroup.add(dioramaBaseMesh);
 
-    // 3. Suelo de piedra usando EL MISMO polígono
+    // 3. Stone floor using THE SAME polygon
     const floorGeom = new THREE.ExtrudeGeometry(roomShape, {
       depth: 0.08,
       bevelEnabled: false,
@@ -318,7 +318,7 @@ export class DungeonShop3dService {
     floorMesh.receiveShadow = true;
     this.roomGroup.add(floorMesh);
 
-    // 4. Malla completa, tupida y simétrica de baldosas hexagonales (SIN pisar jamás la madera)
+    // 4. Complete, dense and symmetric mesh of hexagonal tiles (NEVER stepping on the wood)
     const flagstoneMat1 = new THREE.MeshStandardMaterial({
       color: 0x9fa5b4,
       roughness: 0.78,
@@ -338,26 +338,26 @@ export class DungeonShop3dService {
     const stonePolyGeom = new THREE.CylinderGeometry(stoneRadius * 0.92, stoneRadius, tileH, 6);
 
     const isInsideRightSector = (px: number, pz: number): boolean => {
-      // Fuera de la pasarela central de madera (borde derecho en x = +1.39m + clearance)
+      // Outside the central wooden walkway (right edge at x = +1.39m + clearance)
       if (px < 1.45 + stoneRadius) return false;
-      // Dentro de la pared derecha
+      // Inside the right wall
       if (px > 6.25 - stoneRadius) return false;
-      // Límites Z
+      // Z limits
       if (pz < -4.15 + stoneRadius) return false;
       if (pz > 4.35 - stoneRadius) return false;
-      // Chaflán frontal derecho
+      // Front right chamfer
       if (px > 4.0 && pz > 1.8 && pz + 1.09 * px > 8.95) return false;
       return true;
     };
 
-    // Generar red hexagonal entrelazada simétrica en ambos lados (cubre todos los sectores)
+    // Generate a symmetric interlocking hexagonal network on both sides (covers all sectors)
     for (let z = -3.85; z <= 3.86; z += 0.77) {
       const rowIdx = Math.round((z + 3.85) / 0.77);
       const rowOffset = (rowIdx % 2 === 0) ? 0 : 0.45;
       for (let x = 1.98; x <= 5.8; x += 0.90) {
         const px = x + rowOffset;
         if (isInsideRightSector(px, z)) {
-          // Lado derecho
+          // Right side
           const matR = (Math.sin(px * 2.8 + z * 3.4) > 0) ? flagstoneMat1 : flagstoneMat2;
           const sMeshR = new THREE.Mesh(stonePolyGeom, matR);
           sMeshR.position.set(px, tileY, z);
@@ -366,7 +366,7 @@ export class DungeonShop3dService {
           sMeshR.receiveShadow = true;
           this.roomGroup.add(sMeshR);
 
-          // Lado izquierdo simétrico (-px)
+          // Symmetric left side (-px)
           const matL = (Math.cos(px * 2.8 - z * 3.4) > 0) ? flagstoneMat1 : flagstoneMat2;
           const sMeshL = new THREE.Mesh(stonePolyGeom, matL);
           sMeshL.position.set(-px, tileY, z);
@@ -378,13 +378,13 @@ export class DungeonShop3dService {
       }
     }
 
-    // 5. Pasarela central de madera QUE LLEGA HASTA EL FINAL EXACTO (z: 4.4)
+    // 5. Central wooden walkway THAT REACHES THE EXACT END (z: 4.4)
     const walkwayWidth = 2.5;
     const plankH = 0.08;
     const zStart = -4.2;
     const zEnd = 4.4;
     const totalWalkwayLen = zEnd - zStart;
-    const plankCount = Math.round(totalWalkwayLen / 0.38); // 23 tablas uniformes
+    const plankCount = Math.round(totalWalkwayLen / 0.38); // 23 uniform boards
     const plankStep = totalWalkwayLen / plankCount;
     const plankD = plankStep * 0.92;
 
@@ -398,7 +398,7 @@ export class DungeonShop3dService {
       this.roomGroup.add(pMesh);
     }
 
-    // Bordes laterales de madera para la pasarela que llegan exactamente de zStart a zEnd
+    // Wooden side edges for the walkway that reach exactly from zStart to zEnd
     const borderGeom = new THREE.BoxGeometry(0.14, 0.12, totalWalkwayLen);
     const borderL = new THREE.Mesh(borderGeom, this.woodBeamMat);
     borderL.position.set(-walkwayWidth / 2 - 0.07, 0.06, (zStart + zEnd) / 2);
@@ -410,7 +410,7 @@ export class DungeonShop3dService {
     borderR.castShadow = true;
     this.roomGroup.add(borderR);
 
-    // 6. Pared Trasera
+    // 6. Back Wall
     const wallH = 5.4;
     const wallThick = 0.55;
     const wallZ = -4.2;
@@ -422,7 +422,7 @@ export class DungeonShop3dService {
     backWall.receiveShadow = true;
     this.roomGroup.add(backWall);
 
-    // 7. Paredes Laterales
+    // 7. Side Walls
     const sideWallLen = 6.4;
     const sideWallGeom = new THREE.BoxGeometry(wallThick, wallH, sideWallLen);
 
@@ -438,7 +438,7 @@ export class DungeonShop3dService {
     rightWall.receiveShadow = true;
     this.roomGroup.add(rightWall);
 
-    // 8. Moldura superior de piedra y almenas
+    // 8. Stone top molding and battlements
     const capBackGeom = new THREE.BoxGeometry(13.2, 0.42, 0.85);
     const capBack = new THREE.Mesh(capBackGeom, this.stoneCapMat);
     capBack.position.set(0, wallH + 0.2, wallZ);
@@ -462,12 +462,12 @@ export class DungeonShop3dService {
       this.roomGroup.add(mMesh);
     }
 
-    // 9. Entramado de vigas
+    // 9. Beam framework
     this.buildTimberFraming(wallH, wallZ, wallThick);
   }
 
   // -------------------------------------------------------------
-  // Entramado de Vigas de Madera
+  // Wooden Beam Framework
   // -------------------------------------------------------------
   private buildTimberFraming(wallH: number, wallZ: number, wallThick: number): void {
     const postThick = 0.26;
@@ -495,18 +495,18 @@ export class DungeonShop3dService {
   }
 
   // -------------------------------------------------------------
-  // Mostrador del Mercader (En x = 3.5, totalmente fuera de la madera)
+  // Merchant's Counter (At x = 3.5, completely outside the wood)
   // -------------------------------------------------------------
   private buildMerchantCounterAndGoods(): void {
     const counterGroup = new THREE.Group();
-    // Centrado en x = 3.5 (borde izquierdo en x = 2.0, pasarela termina en x = 1.39)
+    // Centered at x = 3.5 (left edge at x = 2.0, walkway ends at x = 1.39)
     counterGroup.position.set(3.5, 0, -0.6);
 
     const counterW = 3.0;
-    const counterH = 1.25; // Altura ergonómica para personajes de 3.36m
+    const counterH = 1.25; // Ergonomic height for 3.36m characters
     const counterD = 1.2;
 
-    // 1. Cuerpo principal del mostrador
+    // 1. Main body of the counter
     const baseGeom = new THREE.BoxGeometry(counterW, counterH, counterD);
     const base = new THREE.Mesh(baseGeom, this.woodCounterMat);
     base.position.y = counterH / 2;
@@ -514,7 +514,7 @@ export class DungeonShop3dService {
     base.receiveShadow = true;
     counterGroup.add(base);
 
-    // Moldura superior del mostrador
+    // Top molding of the counter
     const topGeom = new THREE.BoxGeometry(counterW + 0.24, 0.12, counterD + 0.24);
     const top = new THREE.Mesh(topGeom, this.woodBeamMat);
     top.position.y = counterH + 0.06;
@@ -522,7 +522,7 @@ export class DungeonShop3dService {
     top.receiveShadow = true;
     counterGroup.add(top);
 
-    // Listones decorativos frontales
+    // Decorative front slats
     const slatMat = new THREE.MeshStandardMaterial({
       color: 0x623f26,
       roughness: 0.8,
@@ -536,14 +536,14 @@ export class DungeonShop3dService {
       counterGroup.add(slat);
     }
 
-    // 2. Objetos brillantes sobre el mostrador
+    // 2. Shiny objects on the counter
     const itemsY = counterH + 0.12;
 
     this.createPotionBottle(counterGroup, -1.0, itemsY, 0.2, 0xff2a55, 0.45);
     this.createPotionBottle(counterGroup, -0.65, itemsY, 0.32, 0x00e6aa, 0.5);
     this.createPotionBottle(counterGroup, -0.3, itemsY, 0.16, 0xbb44ff, 0.55);
 
-    // Libro de Hechizos Abierto
+    // Open Spellbook
     const bookGroup = new THREE.Group();
     bookGroup.position.set(0.35, itemsY, 0.18);
     bookGroup.rotation.y = -0.15;
@@ -570,7 +570,7 @@ export class DungeonShop3dService {
 
     counterGroup.add(bookGroup);
 
-    // Tomo Místico Azul con gema brillante
+    // Blue Mystic Tome with a shining gem
     const tomeGroup = new THREE.Group();
     tomeGroup.position.set(1.05, itemsY, 0.14);
     tomeGroup.rotation.y = 0.25;
@@ -654,44 +654,44 @@ export class DungeonShop3dService {
   }
 
   // -------------------------------------------------------------
-  // Decoraciones: Puerta, Escudo con espadas AL FRENTE (subido en pared)
+  // Decorations: Door, Shield with swords IN FRONT (raised on the wall)
   // -------------------------------------------------------------
   private async loadDecorations(): Promise<void> {
     const wallZ = -4.2;
     const wallThick = 0.55;
 
-    // 1. Antorchas en pared trasera
+    // 1. Torches on the back wall
     for (const tx of [-3.5, 3.5]) {
       this.createWallTorch(tx, 3.6, wallZ + wallThick / 2 + 0.08);
     }
 
-    // 2. Estandartes Rojos y Dorados
+    // 2. Red and Gold Banners
     this.createBanner(-3.5, 2.9, wallZ + wallThick / 2 + 0.04);
     this.createBanner(3.8, 2.9, wallZ + wallThick / 2 + 0.04);
 
-    // 3. Puerta de madera proporcional a personajes de 3.36m (altura 3.65m)
+    // 3. Wooden door proportional to 3.36m characters (height 3.65m)
     this.buildCharacterScaledDoor(0, 0, wallZ + wallThick / 2);
 
-    // 4. Escudo Heráldico con Espadas Cruzadas AL FRENTE subido sobre la puerta a y = 4.35
+    // 4. Heraldic Shield with Crossed Swords IN FRONT raised above the door at y = 4.35
     await this.loadHeraldicWallEmblem(0, 4.35, wallZ + wallThick / 2 + 0.06);
 
-    // 5. Ventanas en paredes laterales
+    // 5. Windows on the side walls
     this.createSideWindow(-5.9, 2.6, -0.6, Math.PI / 2);
     this.createSideWindow(5.9, 2.6, -0.6, -Math.PI / 2);
 
-    // 6. Cajas decorativas a la izquierda
+    // 6. Decorative crates on the left
     this.createLeftProps();
   }
 
   // -------------------------------------------------------------
-  // Puerta de Madera a Escala Exacta de los Personajes (3.65m)
+  // Wooden Door at the Exact Scale of the Characters (3.65m)
   // -------------------------------------------------------------
   private buildCharacterScaledDoor(x: number, y: number, z: number): void {
     const doorGroup = new THREE.Group();
     doorGroup.position.set(x, y, z);
 
     const doorW = 2.0;
-    const doorH = 3.65; // Proporcional para personajes de 3.36m
+    const doorH = 3.65; // Proportional for 3.36m characters
 
     const doorWoodMat = new THREE.MeshStandardMaterial({
       color: 0x6e4528,
@@ -712,7 +712,7 @@ export class DungeonShop3dService {
       flatShading: true,
     });
 
-    // Marco exterior de piedra labrada
+    // Outer frame of carved stone
     const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(0.22, doorH, 0.22), stoneArchMat);
     frameLeft.position.set(-doorW / 2 - 0.11, doorH / 2, 0.04);
     frameLeft.castShadow = true;
@@ -728,13 +728,13 @@ export class DungeonShop3dService {
     frameTop.castShadow = true;
     doorGroup.add(frameTop);
 
-    // Hoja de madera de la puerta
+    // Wooden leaf of the door
     const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(doorW, doorH, 0.09), doorWoodMat);
     doorPanel.position.set(0, doorH / 2, 0.02);
     doorPanel.castShadow = true;
     doorGroup.add(doorPanel);
 
-    // Duelas verticales (ranuras de tablones)
+    // Vertical planks (board grooves)
     for (const sx of [-0.42, 0, 0.42]) {
       const groove = new THREE.Mesh(
         new THREE.BoxGeometry(0.035, doorH, 0.1),
@@ -744,14 +744,14 @@ export class DungeonShop3dService {
       doorGroup.add(groove);
     }
 
-    // Herrajes de hierro horizontales
+    // Horizontal iron fittings
     for (const hy of [0.65, 2.35]) {
       const hinge = new THREE.Mesh(new THREE.BoxGeometry(doorW - 0.1, 0.09, 0.11), ironMat);
       hinge.position.set(0, hy, 0.03);
       doorGroup.add(hinge);
     }
 
-    // Picaporte / Argolla de hierro
+    // Iron latch / Ring
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.03, 8, 16), ironMat);
     ring.position.set(0.45, 1.45, 0.09);
     doorGroup.add(ring);
@@ -760,7 +760,7 @@ export class DungeonShop3dService {
   }
 
   // -------------------------------------------------------------
-  // Escudo Heráldico con Espadas AL FRENTE (subido a y = 4.1)
+  // Heraldic Shield with Swords IN FRONT (raised to y = 4.1)
   // -------------------------------------------------------------
   private async loadHeraldicWallEmblem(x: number, y: number, z: number): Promise<void> {
     try {
@@ -772,7 +772,7 @@ export class DungeonShop3dService {
       const emblemGroup = new THREE.Group();
       emblemGroup.position.set(x, y, z);
 
-      // 1. Escudo heráldico al fondo
+      // 1. Heraldic shield in the background
       const shield = SkeletonUtils.clone(shieldGltf.scene) as THREE.Group;
       shield.scale.setScalar(1.35);
       shield.position.set(0, 0, 0);
@@ -782,10 +782,10 @@ export class DungeonShop3dService {
       });
       emblemGroup.add(shield);
 
-      // 2. Espadas cruzadas AL FRENTE del escudo (+Z hacia la cámara)
+      // 2. Crossed swords IN FRONT of the shield (+Z toward the camera)
       const sw1 = SkeletonUtils.clone(swordGltf.scene) as THREE.Group;
       sw1.scale.setScalar(1.05);
-      sw1.position.set(0, 0, 0.15); // Visiblemente por delante del escudo
+      sw1.position.set(0, 0, 0.15); // Visibly in front of the shield
       sw1.rotation.z = Math.PI / 4;
       sw1.rotation.y = 0;
       sw1.traverse((c) => {
@@ -795,7 +795,7 @@ export class DungeonShop3dService {
 
       const sw2 = SkeletonUtils.clone(swordGltf.scene) as THREE.Group;
       sw2.scale.setScalar(1.05);
-      sw2.position.set(0, 0, 0.17); // Visiblemente por delante del escudo
+      sw2.position.set(0, 0, 0.17); // Visibly in front of the shield
       sw2.rotation.z = -Math.PI / 4;
       sw2.rotation.y = 0;
       sw2.traverse((c) => {
@@ -805,7 +805,7 @@ export class DungeonShop3dService {
 
       this.propsGroup.add(emblemGroup);
     } catch (e) {
-      console.warn('[DungeonShop] Error cargando escudo heráldico y espadas:', e);
+      console.warn('[DungeonShop] Error loading heraldic shield and swords:', e);
     }
   }
 
@@ -930,7 +930,7 @@ export class DungeonShop3dService {
   }
 
   // -------------------------------------------------------------
-  // Vendedor / Mercader (Tamaño aumentado otro 20% -> 3.36m)
+  // Seller / Merchant (Size increased another 20% -> 3.36m)
   // -------------------------------------------------------------
   private async loadVendor(): Promise<void> {
     try {
@@ -941,13 +941,13 @@ export class DungeonShop3dService {
 
       const vendor = vendorGltf.scene;
 
-      // Normalizar la altura del vendedor a 3.36m (+20% respecto a antes)
+      // Normalize the seller's height to 3.36m (+20% compared to before)
       const vendorBbox = new THREE.Box3().setFromObject(vendor);
       const vendorH = vendorBbox.getSize(new THREE.Vector3()).y || 1.8;
       const targetH = 3.36;
       vendor.scale.setScalar(targetH / vendorH);
 
-      // Posicionado cómodamente detrás del mostrador desplazado a x: 3.5
+      // Comfortably positioned behind the counter moved to x: 3.5
       vendor.position.set(3.5, 0, -1.65);
       vendor.rotation.y = -0.22;
       this.ensureModelLighting(vendor);
@@ -971,12 +971,12 @@ export class DungeonShop3dService {
 
       this.vendorGroup.add(vendor);
     } catch (err) {
-      console.warn('[DungeonShop] Falló la carga del modelo del vendedor:', err);
+      console.warn('[DungeonShop] Failed to load the seller model:', err);
     }
   }
 
   // -------------------------------------------------------------
-  // Avatar del Jugador (Misma estatura del vendedor: 3.36m)
+  // Player Avatar (Same height as the seller: 3.36m)
   // -------------------------------------------------------------
   private async loadPlayer(avatarSpec?: Avatar | AvatarBuild): Promise<void> {
     try {
@@ -1000,7 +1000,7 @@ export class DungeonShop3dService {
         playerObj = gltf.scene;
       }
 
-      // Normalizar la altura del jugador a 3.36m (misma proporción exacta que el vendedor)
+      // Normalize the player's height to 3.36m (exact same proportion as the seller)
       const bbox = new THREE.Box3().setFromObject(playerObj);
       const size = bbox.getSize(new THREE.Vector3());
       const h = size.y || 1.8;
@@ -1033,7 +1033,7 @@ export class DungeonShop3dService {
 
       this.playerGroup.add(playerObj);
     } catch (err) {
-      console.warn('[DungeonShop] Falló la carga del avatar del jugador:', err);
+      console.warn('[DungeonShop] Failed to load the player avatar:', err);
     }
   }
 
@@ -1058,7 +1058,7 @@ export class DungeonShop3dService {
   }
 
   // -------------------------------------------------------------
-  // Animación del Vendedor al interactuar o comprar
+  // Seller Animation when interacting or buying
   // -------------------------------------------------------------
   triggerVendorReaction(): void {
     if (this.vendorInteractAction && this.vendorMixer) {
@@ -1071,7 +1071,7 @@ export class DungeonShop3dService {
   }
 
   // -------------------------------------------------------------
-  // Configuración de Eventos (Teclado WASD y Parallax de Ratón)
+  // Event Configuration (WASD Keyboard and Mouse Parallax)
   // -------------------------------------------------------------
   private setupEvents(): void {
     window.addEventListener('keydown', this.onKeyDown);
@@ -1085,7 +1085,7 @@ export class DungeonShop3dService {
     if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(k)) {
       this.keysPressed.add(k);
     }
-    // Espacio o E para hablar con el mercader si está cerca
+    // Space or E to talk to the merchant if nearby
     if ((k === 'e' || k === ' ') && this.lastNearCounter) {
       e.preventDefault();
       this.triggerVendorReaction();
@@ -1121,7 +1121,7 @@ export class DungeonShop3dService {
   };
 
   // -------------------------------------------------------------
-  // Loop de Renderizado
+  // Render Loop
   // -------------------------------------------------------------
   private loop = (): void => {
     if (!this.running) return;
@@ -1130,10 +1130,10 @@ export class DungeonShop3dService {
     const dt = Math.min(this.clock.getDelta(), 0.1);
     const time = this.clock.getElapsedTime();
 
-    // 1. Actualizar movimiento del jugador con WASD
+    // 1. Update player movement with WASD
     this.updatePlayerMovement(dt, time);
 
-    // 2. Actualizar mixers de animación y avatar modular
+    // 2. Update animation mixers and modular avatar
     this.vendorMixer?.update(dt);
     this.playerMixer?.update(dt);
 
@@ -1148,13 +1148,13 @@ export class DungeonShop3dService {
       }
     }
 
-    // 3. Parpadeo suave de antorchas
+    // 3. Soft flickering of torches
     for (const t of this.torchLights) {
       const flicker = Math.sin(time * 7.5 + t.phase) * 0.12 + Math.cos(time * 12.0 + t.phase * 2) * 0.08;
       t.light.intensity = THREE.MathUtils.clamp(t.baseIntensity + flicker, 0.5, 4.0);
     }
 
-    // 4. Parallax sutil de la cámara con el ratón
+    // 4. Subtle camera parallax with the mouse
     const parallaxX = this.mouseX * 0.65;
     const parallaxY = -this.mouseY * 0.35;
     this.targetCamPos.set(this.baseCamPos.x + parallaxX, this.baseCamPos.y + parallaxY, this.baseCamPos.z);
@@ -1166,7 +1166,7 @@ export class DungeonShop3dService {
   };
 
   // -------------------------------------------------------------
-  // Lógica de Movimiento del Jugador y Colisiones
+  // Player Movement Logic and Collisions
   // -------------------------------------------------------------
   private updatePlayerMovement(dt: number, time: number): void {
     if (!this.playerMesh) return;
@@ -1190,18 +1190,18 @@ export class DungeonShop3dService {
       let nextX = this.playerPos.x + dirX * speed * dt;
       let nextZ = this.playerPos.z + dirZ * speed * dt;
 
-      // Límites de la sala diorama
+      // Limits of the diorama room
       nextX = THREE.MathUtils.clamp(nextX, -4.9, 4.9);
       nextZ = THREE.MathUtils.clamp(nextZ, -2.4, 3.7);
 
-      // Colisión con el mostrador (en x: [1.8, 5.2], z: [-2.1, 0.25])
+      // Collision with the counter (at x: [1.8, 5.2], z: [-2.1, 0.25])
       if (nextX >= 1.8 && nextX <= 5.2 && nextZ >= -2.1 && nextZ <= 0.25) {
         if (this.playerPos.x < 1.8) nextX = 1.78;
         else if (this.playerPos.z > 0.25) nextZ = 0.27;
         else if (this.playerPos.z < -2.1) nextZ = -2.12;
       }
 
-      // Colisión con cajas del sector izquierdo
+      // Collision with crates of the left sector
       if (nextX <= -2.6 && nextX >= -5.2 && nextZ >= -0.6 && nextZ <= 1.8) {
         if (this.playerPos.x > -2.6) nextX = -2.58;
         else if (this.playerPos.z > 1.8) nextZ = 1.82;
@@ -1233,7 +1233,7 @@ export class DungeonShop3dService {
       }
     }
 
-    // Detección de proximidad al mostrador del mercader (en x: 3.5, z: -0.6)
+    // Proximity detection to the merchant's counter (at x: 3.5, z: -0.6)
     const distToCounter = Math.hypot(this.playerPos.x - 3.5, this.playerPos.z - (-0.6));
     const isNear = distToCounter < 3.0;
 
@@ -1246,7 +1246,7 @@ export class DungeonShop3dService {
   }
 
   // -------------------------------------------------------------
-  // Redimensionamiento del Viewport
+  // Viewport Resizing
   // -------------------------------------------------------------
   resize(width: number, height: number): void {
     if (!this.renderer || !this.camera) return;
@@ -1256,7 +1256,7 @@ export class DungeonShop3dService {
   }
 
   // -------------------------------------------------------------
-  // Destrucción limpia
+  // Clean Destruction
   // -------------------------------------------------------------
   destroy(): void {
     this.running = false;

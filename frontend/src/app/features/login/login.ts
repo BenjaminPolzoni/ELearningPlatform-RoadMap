@@ -1,17 +1,17 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { AuthMockService, Rol } from '../../core/auth/auth-mock.service';
+import { AuthMockService, Role } from '../../core/auth/auth-mock.service';
 
 interface RoleOption {
-  rol: Rol;
+  role: Role;
   label: string;
   icon: string;
   desc: string;
   btnClass: string;
 }
 
-/** Login mock con selector de rol (Fase 0). Sin credenciales: se elige y se entra. */
+/** Mock login with a role selector (Phase 0). No credentials: you pick one and enter. */
 @Component({
   selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,11 +34,11 @@ interface RoleOption {
           <p class="text-sm opacity-80 -mt-2">Seleccioná qué vista querés abrir</p>
 
           <div class="flex w-full flex-col gap-3.5 mt-2">
-            @for (opt of opciones; track opt.rol) {
+            @for (opt of options; track opt.role) {
               <button
                 class="btn h-auto py-3 px-4 flex items-center justify-between border-2 transition-all hover:scale-[1.02]"
                 [class]="opt.btnClass"
-                (click)="entrar(opt.rol)"
+                (click)="enter(opt.role)"
               >
                 <div class="flex items-center gap-3 text-left">
                   <span class="text-3xl">{{ opt.icon }}</span>
@@ -61,27 +61,27 @@ export class Login {
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
 
-  // ?v= evita que el navegador sirva una versión vieja cacheada del archivo estático.
+  // ?v= prevents the browser from serving an old cached version of the static file.
   protected readonly avatarPreviewUrl: SafeResourceUrl =
     this.sanitizer.bypassSecurityTrustResourceUrl('mundo-3d/avatar-preview.html?v=18');
 
-  protected readonly opciones: RoleOption[] = [
+  protected readonly options: RoleOption[] = [
     {
-      rol: 'ALUMNO',
+      role: 'ALUMNO',
       label: 'VISTA ALUMNO',
       icon: '🎓',
       desc: 'Mundo 3D explorable, biomas por unidad y mapa de desafíos',
       btnClass: 'btn-outline btn-primary hover:bg-primary/20',
     },
     {
-      rol: 'PROFESOR',
+      role: 'PROFESOR',
       label: 'VISTA PROFESOR',
       icon: '👨‍🏫',
       desc: 'Editor de unidades, contenidos y catálogo de insignias',
       btnClass: 'btn-outline btn-secondary hover:bg-secondary/20',
     },
     {
-      rol: 'ADMIN',
+      role: 'ADMIN',
       label: 'VISTA ADMIN',
       icon: '⚙️',
       desc: 'Gestión institucional y auditoría del sistema',
@@ -89,11 +89,11 @@ export class Login {
     },
   ];
 
-  protected entrar(rol: Rol): void {
-    this.auth.entrarComo(rol);
-    if (rol === 'ALUMNO') {
+  protected enter(role: Role): void {
+    this.auth.enterAs(role);
+    if (role === 'ALUMNO') {
       this.router.navigate(['/alumno']);
-    } else if (rol === 'PROFESOR') {
+    } else if (role === 'PROFESOR') {
       this.router.navigate(['/profesor']);
     } else {
       this.router.navigate(['/']);

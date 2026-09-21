@@ -1,75 +1,75 @@
-// Reglas de negocio del ranking (02-modelo-de-datos.md §7 "Reglas del ranking").
-// Funciones puras, sin Angular ni rxjs: se testean con Vitest directo. Las consume el
-// `InMemoryRankingAdapter` hoy y las reusará el `HttpRankingAdapter` / backend en Fase 3.
+// Business rules of the ranking (02-modelo-de-datos.md §7 "Reglas del ranking").
+// Pure functions, without Angular or rxjs: tested directly with Vitest. Consumed by the
+// `InMemoryRankingAdapter` today and reused by the `HttpRankingAdapter` / backend in Phase 3.
 
-import { FilaRanking, Zona } from '../../core/data/ranking.models';
+import { RankingRow, Zone } from '../../core/data/ranking.models';
 
-/** RF-RNK-09: los percentiles P90/P10 solo se activan con 10 o más inscriptos. */
-const MIN_INSCRIPTOS_PERCENTILES = 10;
+/** RF-RNK-09: the P90/P10 percentiles are only activated with 10 or more enrolled. */
+const MIN_ENROLLED_PERCENTILES = 10;
 
-export function cortesActivos(totalInscriptos: number): boolean {
-  return totalInscriptos >= MIN_INSCRIPTOS_PERCENTILES;
+export function activeCutoffs(totalEnrolled: number): boolean {
+  return totalEnrolled >= MIN_ENROLLED_PERCENTILES;
 }
 
 /**
- * Ordena la cohorte y reasigna `posicion` (1..n).
- * Orden: XP total desc y, ante empate, la cascada de desempate RF-RNK-11:
- *   1° más insignias · 2° menos vidas perdidas históricas · 3° más ejercicios completados.
- * Devuelve un array nuevo; no muta la entrada.
+ * Sorts the cohort and reassigns `position` (1..n).
+ * Order: total XP desc and, on a tie, the RF-RNK-11 tiebreak cascade:
+ *   1° more badges · 2° fewer historical lost lives · 3° more completed exercises.
+ * Returns a new array; does not mutate the input.
  */
-export function ordenarCohorte<T extends FilaRanking>(filas: readonly T[]): T[] {
-  return [...filas]
+export function sortCohort<T extends RankingRow>(rows: readonly T[]): T[] {
+  return [...rows]
     .sort(
       (a, b) =>
         b.xpTotal - a.xpTotal ||
-        b.insignias - a.insignias ||
-        a.vidasPerdidasHistorico - b.vidasPerdidasHistorico ||
-        b.ejerciciosCompletados - a.ejerciciosCompletados,
+        b.badges - a.badges ||
+        a.lostLives - b.lostLives ||
+        b.completedExercises - a.completedExercises,
     )
-    .map((fila, i) => ({ ...fila, posicion: i + 1 }));
+    .map((row, i) => ({ ...row, position: i + 1 }));
 }
 
-/** Percentil real de una posición (P100 = 1°, decrece hacia el último). */
-export function percentilDe(posicion: number, totalInscriptos: number): number {
-  if (totalInscriptos <= 0) return 0;
-  return Math.round(((totalInscriptos - posicion + 1) / totalInscriptos) * 100);
+/** Real percentile of a position (P100 = 1st, decreasing towards the last). */
+export function percentileOf(position: number, totalEnrolled: number): number {
+  if (totalEnrolled <= 0) return 0;
+  return Math.round(((totalEnrolled - position + 1) / totalEnrolled) * 100);
 }
 
 /**
- * Zona de una posición: P90 = decil superior, P10 = decil inferior.
- * `ninguna` siempre que la cohorte no llegue al mínimo de inscriptos (RF-RNK-09).
+ * Zone of a position: P90 = top decile, P10 = bottom decile.
+ * `ninguna` whenever the cohort does not reach the minimum number of enrolled (RF-RNK-09).
  */
-export function zonaDe(posicion: number, totalInscriptos: number): Zona {
-  if (!cortesActivos(totalInscriptos)) return 'ninguna';
-  const decil = Math.max(1, Math.floor(totalInscriptos * 0.1));
-  if (posicion <= decil) return 'p90';
-  if (posicion > totalInscriptos - decil) return 'p10';
+export function zoneOf(position: number, totalEnrolled: number): Zone {
+  if (!activeCutoffs(totalEnrolled)) return 'ninguna';
+  const decile = Math.max(1, Math.floor(totalEnrolled * 0.1));
+  if (position <= decile) return 'p90';
+  if (position > totalEnrolled - decile) return 'p10';
   return 'ninguna';
 }
 
-// Ambas reglas se evalúan también sobre filas ANÓNIMAS del alumno (`FilaRankingAnon`),
-// que conservan `zona`, `vidasPerdidasHistorico` y `obligatoriosAprobadosPct`. Por eso el
-// parámetro es el subconjunto de campos que la regla necesita, no `FilaRanking` entero.
-type DatosPromocion = Pick<
-  FilaRanking,
-  'zona' | 'vidasPerdidasHistorico' | 'obligatoriosAprobadosPct'
+// Both rules are also evaluated over the student's ANONYMOUS rows (`RankingAnonRow`),
+// which keep `zone`, `lostLives` and `mandatoryPassedPct`. That is why the
+// parameter is the subset of fields the rule needs, not the whole `RankingRow`.
+type PromotionData = Pick<
+  RankingRow,
+  'zone' | 'lostLives' | 'mandatoryPassedPct'
 >;
-type DatosRiesgo = Pick<FilaRanking, 'zona' | 'obligatoriosAprobadosPct'>;
+type RiskData = Pick<RankingRow, 'zone' | 'mandatoryPassedPct'>;
 
 /**
- * Candidato a promoción (RF-RNK-05): P90 **y** nunca perdió una vida **y** 100 % de
- * obligatorios aprobados.
+ * Promotion candidate (RF-RNK-05): P90 **and** never lost a life **and** 100 % of
+ * mandatory items passed.
  */
-export function esCandidatoPromocion(fila: DatosPromocion): boolean {
+export function isCandidatePromotion(row: PromotionData): boolean {
   return (
-    fila.zona === 'p90' && fila.vidasPerdidasHistorico === 0 && fila.obligatoriosAprobadosPct >= 100
+    row.zone === 'p90' && row.lostLives === 0 && row.mandatoryPassedPct >= 100
   );
 }
 
 /**
- * Riesgo de regularidad (RF-RNK-06): P10 **y** no superó todos los ejercicios
- * (se aproxima con obligatorios aprobados < 100 %).
+ * Regularity risk (RF-RNK-06): P10 **and** did not pass all the exercises
+ * (approximated with mandatory passed < 100 %).
  */
-export function enRiesgoRegularidad(fila: DatosRiesgo): boolean {
-  return fila.zona === 'p10' && fila.obligatoriosAprobadosPct < 100;
+export function inRiskRegularity(row: RiskData): boolean {
+  return row.zone === 'p10' && row.mandatoryPassedPct < 100;
 }

@@ -1,21 +1,21 @@
 /* ============================================================================
-   Design system — tema global recoloreado a la paleta arcade (cian/violeta/
-   rosa/dorado, Fotos_y_conceptos/InterfazDeColores.png) por pedido explícito,
-   en vez de la de marca de 05-design-system.md §1 (rosa fuego/violeta) — se
-   aparta a propósito de lo documentado por el equipo. Mismos 4 colores que ya
-   usa el mapa del alumno y el panel de ranking (--rk-*), ahora también en los
-   tokens de daisyUI para que login/editor de profesor/insignias/avatar-editor
-   sean consistentes con el resto.
-   Tipografías de la lámina: Chelsea Market (títulos) + Comfortaa (texto).
-   Press Start 2P se conserva SOLO para HUD/pixel-art del mapa (05 §3).
-   VT323 entra con el ranking (E8): números de gabinete CRT, ver --font-console.
+   Design system — global theme recolored to the arcade palette (cyan/violet/
+   pink/gold, Fotos_y_conceptos/InterfazDeColores.png) by explicit request,
+   instead of the brand one from 05-design-system.md §1 (fire pink/violet) — it
+   deliberately departs from what the team documented. Same 4 colors already
+   used by the student's map and the ranking panel (--rk-*), now also in the
+   daisyUI tokens so that login/teacher editor/badges/avatar-editor
+   are consistent with the rest.
+   Typefaces from the sheet: Chelsea Market (titles) + Comfortaa (text).
+   Press Start 2P is kept ONLY for the HUD/pixel-art of the map (05 §3).
+   VT323 comes in with the ranking (E8): CRT cabinet numbers, see --font-console.
    ========================================================================= */
 @import url("https://fonts.googleapis.com/css2?family=Chelsea+Market&family=Comfortaa:wght@400;600;700&family=Press+Start+2P&family=VT323&display=swap");
 
 @import "tailwindcss";
 @plugin "daisyui";
 
-/* ---------- PALETA ESTANDARIZADA OSCURA (default) ---------- */
+/* ---------- STANDARDIZED DARK PALETTE (default) ---------- */
 @plugin "daisyui/theme" {
   name: "arcade-dark";
   default: true;
@@ -52,7 +52,7 @@
   --depth: 1;
 }
 
-/* ---------- PALETA ESTANDARIZADA CLARA ---------- */
+/* ---------- STANDARDIZED LIGHT PALETTE ---------- */
 @plugin "daisyui/theme" {
   name: "arcade-light";
   default: false;
@@ -90,7 +90,7 @@
 }
 
 @theme {
-  /* --- swatches de paleta para arte del mapa --- */
+  /* --- palette swatches for the map art --- */
   --color-brand-void: #0D091B;
   --color-brand-night: #16102B;
   --color-brand-deep: #241A42;
@@ -98,7 +98,7 @@
   --color-brand-glow: #8B5CF6;
   --color-brand-pink: #F43F5E;
 
-  /* --- estado del nodo --- */
+  /* --- node state --- */
   --color-node-locked: #2E2548;
   --color-node-open: #8B5CF6;
   --color-node-done: #4C3B78;
@@ -107,9 +107,9 @@
   --font-title: "Chelsea Market", system-ui, sans-serif;
   --font-body: "Comfortaa", system-ui, sans-serif;
   --font-pixel: "Press Start 2P", ui-monospace, monospace;
-  /* alias histórico: el HUD arcade sigue siendo pixel */
+  /* historical alias: the arcade HUD is still pixel */
   --font-ui: "Press Start 2P", ui-monospace, monospace;
-  /* Consola CRT del ranking (E8) — números grandes del gabinete. */
+  /* Ranking CRT console (E8) — large cabinet numbers. */
   --font-console: "VT323", ui-monospace, "Courier New", monospace;
 }
 
@@ -131,14 +131,14 @@ html {
   font-family: var(--font-console);
 }
 
-/* XP, posiciones y contadores: tabular para que no bailen al actualizarse (05 §3) */
+/* XP, positions and counters: tabular so they do not dance when updating (05 §3) */
 .tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- primitivas de arte compartidas por mapa y tablero ---------- */
+/* ---------- art primitives shared by map and board ---------- */
 
-/* Fondo de escena: viñeta violeta sobre negro violáceo. */
+/* Scene background: violet vignette over violet-tinged black. */
 .escena-neon {
   background:
     radial-gradient(120% 80% at 50% 0%, #35146b 0%, transparent 60%),
@@ -146,7 +146,7 @@ html {
     var(--color-brand-void);
 }
 
-/* Halo neón reutilizable — se aplica sobre SVG (filter) o cajas (box-shadow). */
+/* Reusable neon halo — applied over SVG (filter) or boxes (box-shadow). */
 .glow-pink {
   filter: drop-shadow(0 0 6px #ff2758) drop-shadow(0 0 18px #ff275899);
 }
@@ -154,12 +154,12 @@ html {
   filter: drop-shadow(0 0 6px #8b3df5) drop-shadow(0 0 18px #8b3df599);
 }
 
-/* Bordes chaflanados: el look de marca es angular, nunca redondeado (05 §2). */
+/* Chamfered borders: the brand look is angular, never rounded (05 §2). */
 .chaflan {
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
 
-/* Sprites y tablero: nada de suavizado, es pixel-art. */
+/* Sprites and board: no smoothing at all, it is pixel-art. */
 .pixelado {
   image-rendering: pixelated;
   shape-rendering: crispEdges;
@@ -199,13 +199,13 @@ html {
   animation: fluir 1.2s linear infinite;
 }
 
-/* Salto visual del avatar al clickear una unidad desbloqueada: un paso por
-   cada unidad intermedia (ver saltarA() en mapa.ts), lento a propósito. */
+/* Avatar visual jump when clicking an unlocked section: one step for
+   each intermediate section (see jumpTo() in map.ts), slow on purpose. */
 .avatar-jump {
   transition: x 0.35s ease-in-out, y 0.35s ease-in-out;
 }
 
-/* RF-NFR-05 / 05 §7: sin animación cuando el sistema la desaconseja. */
+/* RF-NFR-05 / 05 §7: no animation when the system discourages it. */
 @media (prefers-reduced-motion: reduce) {
   .anim-flotar,
   .anim-latir,
@@ -218,14 +218,14 @@ html {
 
 
 /* ============================================================
-   RANKING · tema arcade (E8). Clases con prefijo `rk-` — no
-   pisan nada del resto de la app. Rellenos sólidos con tokens
-   del tema (arcade-dark / arcade-light); los brillos neón usan
-   rgba fijos de la paleta arcade (cian/magenta/violeta/oro/verde).
-   No se usa color-mix(): con los tokens oklch de daisyUI 5 la
-   declaración quedaba inválida y el panel salía transparente.
-   Tokens propios `--rk-*` con switch por [data-theme] — no
-   dependemos de cómo daisyUI cascadea sus variables.
+   RANKING — arcade theme (E8). Classes with the `rk-` prefix — they
+   do not override anything from the rest of the app. Solid fills with theme
+   tokens (arcade-dark / arcade-light); the neon glows use fixed
+   rgba values from the arcade palette (cyan/magenta/violet/gold/green).
+   color-mix() is not used: with daisyUI 5's oklch tokens the
+   declaration ended up invalid and the panel came out transparent.
+   Own `--rk-*` tokens with a [data-theme] switch — we do not
+   depend on how daisyUI cascades its variables.
    ============================================================ */
 
 :root,
@@ -238,7 +238,7 @@ html {
   --rk-magenta: #f43f5e;
   --rk-yellow: #f59e0b;
   --rk-green: #10b981;
-  /* Estado académico del ranking (RF-RNK-05/06) — verde promoción / rojo riesgo. */
+  /* Academic status of the ranking (RF-RNK-05/06) — green promotion / red risk. */
   --rk-promo: #10b981;
   --rk-risk: #f43f5e;
 }
@@ -255,7 +255,7 @@ html {
   --rk-risk: #e11d48;
 }
 
-/* — util de brillo neón reutilizable — */
+/* — reusable neon glow utility — */
 .rk-neon-primary {
   color: var(--rk-cyan);
   text-shadow:
@@ -275,7 +275,7 @@ html {
     0 0 12px rgba(16, 185, 129, 0.4);
 }
 
-/* — backdrop: sala de arcade en penumbra — */
+/* — backdrop: arcade hall in dim light — */
 .rk-backdrop {
   position: fixed;
   inset: 0;
@@ -293,7 +293,7 @@ html {
   animation: rk-fade 0.22s ease;
 }
 
-/* — gabinete: bisel + halo violeta — */
+/* — cabinet: bevel + violet halo — */
 .rk-cabinet {
   position: relative;
   display: flex;
@@ -323,7 +323,7 @@ html {
   background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.09) 0 1px, transparent 1px 3px);
 }
 
-/* — marquee: cartel iluminado — */
+/* — marquee: illuminated sign — */
 .rk-marquee {
   position: relative;
   z-index: 3;
@@ -341,7 +341,7 @@ html {
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
     0 4px 18px rgba(255, 46, 147, 0.14);
 }
-/* cabecera del detalle: INFO centrado, VOLVER anclado a la izquierda */
+/* detail header: INFO centered, VOLVER anchored to the left */
 .rk-marquee--back {
   flex-direction: row;
 }
@@ -410,14 +410,14 @@ html {
   box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
   transform: translateY(1px);
 }
-/* `.rk-marquee__back` (el "VOLVER") ya usa `transform` para centrarse verticalmente
-   (`translateY(-50%)`, está en `position: absolute`) — si dejamos que `.rk-chip:hover`
-   lo pise con `translateY(1px)` pierde el centrado y el botón "salta" al pasar el mouse. */
+/* `.rk-marquee__back` (the "VOLVER") already uses `transform` to center itself vertically
+   (`translateY(-50%)`, it is in `position: absolute`) — if we let `.rk-chip:hover`
+   override it with `translateY(1px)` it loses the centering and the button "jumps" on mouse hover. */
 .rk-marquee__back:hover {
   transform: translateY(calc(-50% + 1px));
 }
 
-/* — pantalla CRT hundida — */
+/* — sunken CRT screen — */
 .rk-screen {
   position: relative;
   z-index: 1;
@@ -435,7 +435,7 @@ html {
   display: none;
 }
 
-/* — deck de control — */
+/* — control deck — */
 .rk-deck {
   position: relative;
   z-index: 3;
@@ -457,7 +457,7 @@ html {
   font-size: 0.44rem;
   letter-spacing: 0.16em;
 }
-/* variante accionable: "IR A TU POSICIÓN · PRESS START" */
+/* actionable variant: "IR A TU POSICIÓN · PRESS START" */
 .rk-deck__text--btn {
   border: 2px solid currentColor;
   border-radius: 4px;
@@ -524,7 +524,7 @@ html {
   box-shadow: 0 0 8px rgba(255, 214, 10, 0.55);
 }
 
-/* — botón cerrar — */
+/* — close button — */
 .rk-close {
   position: absolute;
   top: 0.8rem;
@@ -539,7 +539,7 @@ html {
   box-shadow: 0 0 10px rgba(255, 46, 147, 0.5);
   transition: transform 0.15s ease;
 }
-/* la X dibujada con dos barras: siempre centrada y nítida */
+/* the X drawn with two bars: always centered and sharp */
 .rk-close::before,
 .rk-close::after {
   content: '';
@@ -562,7 +562,7 @@ html {
   box-shadow: 0 0 16px rgba(255, 46, 147, 0.7);
 }
 
-/* — banner "TU ESTADO": protagonista de la vista del alumno — */
+/* — "TU ESTADO" banner: protagonist of the student's view — */
 .rk-estado {
   display: flex;
   align-items: center;
@@ -650,7 +650,7 @@ button.rk-estado:hover {
   text-shadow: 0 0 8px var(--rk-estado-glow);
 }
 
-/* — etiqueta de estado en la fila (PROMOCIÓN / RIESGO) — */
+/* — status label in the row (PROMOCIÓN / RIESGO) — */
 .rk-tag {
   display: inline-block;
   margin-top: 0.15rem;
@@ -671,7 +671,7 @@ button.rk-estado:hover {
   text-shadow: 0 0 6px rgba(239, 68, 68, 0.65);
 }
 
-/* — divisor de corte P90 / P10 — */
+/* — P90 / P10 cutoff divider — */
 .rk-divider {
   display: flex;
   align-items: center;
@@ -712,11 +712,11 @@ button.rk-estado:hover {
   color: var(--rk-risk);
 }
 
-/* — grilla de fila: POS | ESTUDIANTE | PCTIL | NIVEL | XP — */
-/* Tabla de high-scores: los datos CORTOS (puesto, encabezado, pctil, nivel, XP) van en
-   Press Start 2P — cadenas de 2-4 caracteres donde el pixel-font se lee nítido. El NOMBRE
-   del estudiante, que es largo, queda en VT323 (fuente CRT, igual de arcade) en mayúsculas
-   con tracking, para que sea legible sin romper la estética. */
+/* — row grid: POS | ESTUDIANTE | PCTIL | NIVEL | XP — */
+/* High-scores table: the SHORT data (position, header, pctil, level, XP) go in
+   Press Start 2P — strings of 2-4 characters where the pixel-font reads sharp. The student's
+   NAME, which is long, stays in VT323 (CRT font, just as arcade) in uppercase
+   with tracking, so it is legible without breaking the aesthetic. */
 .rk-row,
 .rk-head {
   display: grid;
@@ -751,7 +751,7 @@ button.rk-estado:hover {
   border-color: var(--rk-cyan);
   transform: translateX(2px);
 }
-/* PROMOCIÓN (RF-RNK-05): borde y resplandor neón verde #10B981. */
+/* PROMOCIÓN (RF-RNK-05): green neon border and glow #10B981. */
 .rk-row--promo {
   border-color: var(--rk-promo);
   background: rgba(16, 185, 129, 0.09);
@@ -759,7 +759,7 @@ button.rk-estado:hover {
     inset 5px 0 0 var(--rk-promo),
     0 0 16px rgba(16, 185, 129, 0.4);
 }
-/* RIESGO (RF-RNK-06): borde y resplandor neón rojo #EF4444. */
+/* RIESGO (RF-RNK-06): red neon border and glow #EF4444. */
 .rk-row--riesgo {
   border-color: var(--rk-risk);
   background: rgba(239, 68, 68, 0.09);
@@ -767,7 +767,7 @@ button.rk-estado:hover {
     inset 5px 0 0 var(--rk-risk),
     0 0 16px rgba(239, 68, 68, 0.4);
 }
-/* La fila propia mantiene su fondo cian, pero el borde/resplandor de estado gana. */
+/* The own row keeps its cyan background, but the status border/glow wins. */
 .rk-row--me {
   border-color: var(--rk-cyan);
   background: var(--rk-bg3);
@@ -802,7 +802,7 @@ button.rk-estado:hover {
 .rk-row--me .rk-row__pos {
   color: var(--rk-cyan);
 }
-/* busto: recorta el sprite de cuerpo entero a cabeza+torso, igual que `ui-hud` */
+/* bust: crops the full-body sprite to head+torso, same as `ui-hud` */
 .rk-row__avatar {
   width: 34px;
   height: 34px;
@@ -843,7 +843,7 @@ button.rk-estado:hover {
   line-height: 1.5;
 }
 
-/* — barra de XP segmentada — */
+/* — segmented XP bar — */
 .rk-xpbar {
   display: block;
   width: 100%;
@@ -859,7 +859,7 @@ button.rk-estado:hover {
   transition: width 0.3s ease;
 }
 
-/* — HUD del detalle — */
+/* — detail HUD — */
 .rk-hud {
   display: flex;
   flex-direction: column;
@@ -873,7 +873,7 @@ button.rk-estado:hover {
     inset 0 0 30px rgba(0, 0, 0, 0.3);
   font-family: var(--font-console);
 }
-/* avatar redondo, como en el listado (con anillo neón del HUD) — busto recortado */
+/* round avatar, as in the list (with the HUD's neon ring) — cropped bust */
 .rk-shield {
   display: flex;
   align-items: flex-start;
@@ -888,7 +888,7 @@ button.rk-estado:hover {
   padding: 3px;
   box-shadow: 0 0 14px rgba(0, 229, 255, 0.35);
 }
-/* placa de puesto: kicker "PUESTO" + "NN / total" en pixel-font */
+/* position plate: "PUESTO" kicker + "NN / total" in pixel-font */
 .rk-plate {
   display: flex;
   flex-direction: column;
@@ -927,7 +927,7 @@ button.rk-estado:hover {
   line-height: 1.2;
   color: var(--rk-ink);
 }
-/* — bloque de auditoría / cierre de curso en el detalle — */
+/* — audit / course closing block in the detail — */
 .rk-audit {
   border-top: 2px solid var(--rk-bg3);
   padding-top: 0.85rem;
@@ -1001,7 +1001,7 @@ button.rk-estado:hover {
 .rk-heart--off {
   background: var(--rk-bg3);
 }
-/* moneda pixel-art (mismo tratamiento que .rk-heart: forma escalonada + color plano + glow) */
+/* pixel-art coin (same treatment as .rk-heart: stepped shape + flat color + glow) */
 .rk-coin {
   position: relative;
   width: 18px;
@@ -1032,7 +1032,7 @@ button.rk-estado:hover {
   );
   box-shadow: 0 0 6px rgba(255, 214, 10, 0.7);
 }
-/* banda central oscura — lee como el canto de la moneda */
+/* dark central band — reads as the coin's edge */
 .rk-coin::before {
   content: '';
   position: absolute;
@@ -1043,7 +1043,7 @@ button.rk-estado:hover {
   background: #b9840c;
 }
 
-/* — ícono arcade para el encabezado de "vidas perdidas históricas" en la tabla del staff — */
+/* — arcade icon for the "historical lost lives" header in the staff table — */
 .rk-ico {
   position: relative;
   display: inline-block;
@@ -1051,7 +1051,7 @@ button.rk-estado:hover {
   height: 16px;
   vertical-align: middle;
 }
-/* corazón pixel partido = vidas perdidas históricas */
+/* split pixel heart = historical lost lives */
 .rk-ico--heartbreak {
   background: var(--rk-magenta);
   clip-path: polygon(
@@ -1078,7 +1078,7 @@ button.rk-estado:hover {
   );
   filter: drop-shadow(0 0 4px rgba(255, 46, 147, 0.55));
 }
-/* la grieta: rayo en el color del encabezado que corta el corazón al medio */
+/* the crack: bolt in the header color that cuts the heart in half */
 .rk-ico--heartbreak::before {
   content: '';
   position: absolute;
@@ -1087,7 +1087,7 @@ button.rk-estado:hover {
   clip-path: polygon(46% 10%, 58% 42%, 44% 54%, 58% 74%, 50% 100%, 44% 100%, 50% 70%, 40% 50%, 52% 34%, 40% 10%);
 }
 
-/* — botón flotante "HI-SCORE" (entrada al ranking) — */
+/* — floating "HI-SCORE" button (entry to the ranking) — */
 .rk-hiscore {
   position: fixed;
   right: 1.5rem;
@@ -1179,7 +1179,7 @@ button.rk-estado:hover {
 }
 
 /* ============================================================
-   ARCADE CABINET & CONTROL DECK (Fusión Prototipo)
+   ARCADE CABINET & CONTROL DECK (Prototype Fusion)
    ============================================================ */
 
 /* Arcade neon glow text helpers */
@@ -1279,13 +1279,13 @@ button.rk-estado:hover {
   }
 }
 
-/* Ícono pixel art del alien (reemplaza al emoji 👾) */
+/* Pixel art icon of the alien (replaces the 👾 emoji) */
 .invader-ico {
   width: 27px;
   height: 24px;
 }
 
-/* Destello periódico de la ranura de moneda */
+/* Periodic flash of the coin slot */
 .coin-slot-glow {
   animation: coinSlotFlash 1.8s ease-in-out infinite;
 }
@@ -1298,7 +1298,7 @@ button.rk-estado:hover {
   }
 }
 
-/* Bola roja con collar metálico (joystick) */
+/* Red ball with metallic collar (joystick) */
 .joy-ball-red {
   background:
     radial-gradient(circle at 32% 24%, #ffffff 0%, #ffffff 6%, transparent 26%),
@@ -1314,7 +1314,7 @@ button.rk-estado:hover {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
 }
 
-/* Anillo de energía expansivo alrededor de la bola */
+/* Expanding energy ring around the ball */
 .joy-energy-ring {
   display: block;
   border: 2px solid rgba(255, 45, 45, 0.85);
@@ -1464,7 +1464,7 @@ button.rk-estado:hover {
   overflow: hidden;
 }
 
-/* Lente superior de brillo cristalino */
+/* Top lens of crystal-clear shine */
 .abtn-cap::before {
   content: '';
   position: absolute;
@@ -1478,7 +1478,7 @@ button.rk-estado:hover {
   transition: opacity 0.12s ease;
 }
 
-/* Estado presionado / mantenido: luz interna encendida como bombilla arcade retroiluminada */
+/* Pressed / held state: inner light on like a backlit arcade bulb */
 .abtn:hover .abtn-cap {
   filter: brightness(1.15) contrast(1.05);
 }
@@ -1488,7 +1488,7 @@ button.rk-estado:hover {
   filter: brightness(1.4) saturate(1.25);
 }
 
-/* Luces internas específicas por botón al presionar */
+/* Specific inner lights per button when pressed */
 .abtn-rank:active .abtn-cap,
 .abtn-rank:focus-visible .abtn-cap {
   box-shadow:
@@ -1529,7 +1529,7 @@ button.rk-estado:hover {
   filter: saturate(0.45) brightness(0.85);
 }
 
-/* Aro de color en el bisel, a juego con la cápsula de cada botón */
+/* Color ring on the bezel, matching each button's capsule */
 .abtn-rank {
   box-shadow:
     inset 0 2px 4px rgba(0, 0, 0, 0.9),
@@ -1558,7 +1558,7 @@ button.rk-estado:hover {
     0 0 14px rgba(0, 229, 255, 0.7);
 }
 
-/* Íconos pixel art de la botonera (reemplazan a los emoji) */
+/* Pixel art icons of the button panel (replace the emoji) */
 .pixel-ico {
   width: 40px;
   height: 40px;
@@ -2062,9 +2062,9 @@ button.rk-estado:hover {
   width: 250px;
   left: clamp(130px, var(--encounter-x), calc(100% - 130px));
   top: var(--encounter-y);
-  /* -110% ancla el fondo de la tarjeta muy cerca del nodo — con descripciones cortas (tarjeta
-     baja) eso queda por debajo de la cabeza del avatar parado en ese mismo punto y lo tapa.
-     El offset extra en px empuja la tarjeta lo suficiente para despejarlo siempre. */
+  /* -110% anchors the card's bottom very close to the node — with short descriptions (low
+     card) that ends up below the head of the avatar standing on that same point and covers it.
+     The extra px offset pushes the card enough to always clear it. */
   translate: -50% calc(-110% - 46px);
   padding: 16px;
   background: #fff8e5;
@@ -2073,7 +2073,7 @@ button.rk-estado:hover {
   color: #433626;
 }
 .encounter.below {
-  /* Ídem, pero hacia abajo: deja despejados los pies/sombra del avatar. */
+  /* Same, but downward: keeps the avatar's feet/shadow clear. */
   translate: -50% 27px;
 }
 .encounter::after {

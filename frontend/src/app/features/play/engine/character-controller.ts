@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { AssetCacheService } from './asset-cache.service';
 import type { AvatarBuild } from './avatar-modular.service';
-import type { Vista } from './camera-controller';
+import type { View } from './camera-controller';
 import type { Avatar } from '../world-gen';
 
 export interface Collider {
@@ -17,11 +17,11 @@ export interface FogFrontier {
   dz: number;
 }
 
-// Velocidad base (+20% sobre el 1.6 original) y multiplicador de carrera (Shift).
-const VELOCIDAD_BASE = 1.92;
-const MULT_CORRER = 1.75;
-// Giro en tercera persona (rad/s): A/D giran, W/S avanzan (controles tanque).
-const VEL_GIRO = 2.6;
+// Base speed (+20% over the original 1.6) and run multiplier (Shift).
+const SPEED_BASE = 1.92;
+const MULT_RUN = 1.75;
+// Third-person turn (rad/s): A/D turn, W/S advance (tank controls).
+const VEL_TURN = 2.6;
 
 export class CharacterController {
   public char: THREE.Group | null = null;
@@ -36,12 +36,12 @@ export class CharacterController {
   private wallToastAt = 0;
   private target: { x: number; z: number } | null = null;
   private stuckFrames = 0;
-  /** Efectos del avatar modular (RGB + mascotas): los avanza el loop del mundo. */
+  /** Modular avatar effects (RGB + pets): advanced by the world loop. */
   private fxTick: ((t: number, dt: number) => void) | null = null;
   private groundPet: THREE.Object3D | null = null;
   private avatarBuild: AvatarBuild | null = null;
-  /** Cuerpo sin mascota (lo que se oculta en primera persona). */
-  private cuerpo: THREE.Object3D | null = null;
+  /** Body without pet (what is hidden in first person). */
+  private body: THREE.Object3D | null = null;
 
   constructor(
     private assets: AssetCacheService,
@@ -54,7 +54,7 @@ export class CharacterController {
       const k = e.key.toLowerCase();
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
       if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) {
-        this.target = null; // el teclado toma el mando
+        this.target = null; // the keyboard takes control
       }
       this.keys.add(k);
     };
@@ -71,7 +71,7 @@ export class CharacterController {
     });
   }
 
-  /** Destino click-to-move (click izquierdo / tap). */
+  /** Click-to-move destination (left click / tap). */
   setTarget(x: number, z: number): void {
     this.target = { x, z };
   }
@@ -92,7 +92,7 @@ export class CharacterController {
       ]);
       this.walkClip =
         mclips.find((c) => /walk/i.test(c.name)) ?? mclips.find((c) => /run/i.test(c.name)) ?? null;
-      // Correr con Shift: Running_A/B del mismo GLB; si faltara, corre con la de caminar.
+      // Run with Shift: Running_A/B from the same GLB; if missing, it runs with the walk one.
       this.runClip = mclips.find((c) => /run/i.test(c.name)) ?? this.walkClip;
       this.idleClip = gclips.find((c) => /idle/i.test(c.name)) ?? null;
     } catch {
@@ -124,16 +124,16 @@ export class CharacterController {
     let h: number;
     if (typeof avatar === 'string') {
       g = await this.assets.load(`/world/characters/${avatar}.glb`);
-      this.cuerpo = g;
+      this.body = g;
       h = new THREE.Box3().setFromObject(g).getSize(new THREE.Vector3()).y || 1;
     } else {
-      // Personaje modular creado en la ciudad: ya viene ensamblado.
+      // Modular character created in the city: it already comes assembled.
       this.avatarBuild = avatar;
       g = avatar.group;
-      this.cuerpo = avatar.cuerpo;
-      // Composición preview/ciudad (cuerpo a 0.32, mascota sin escalar): se
-      // normaliza por el cuerpo para igualar esa proporción en vez de medir el
-      // grupo entero (la órbita inflaría la altura y achicaría todo).
+      this.body = avatar.body;
+      // Preview/city composition (body at 0.32, pet unscaled): it is
+      // normalized by the body to match that proportion instead of measuring the
+      // whole group (the orbit would inflate the height and shrink everything).
       h = avatar.baseHeight > 0
         ? avatar.baseHeight
         : new THREE.Box3().setFromObject(g).getSize(new THREE.Vector3()).y || 1;
@@ -143,11 +143,11 @@ export class CharacterController {
       }
       this.fxTick = (t, dt): void => avatar.tick(t, dt);
     }
-    const escala = (this.sx / h) * 0.5625;
-    g.scale.setScalar(escala);
-    // La mascota terrestre vive a nivel de escena (igual que en preview/ciudad):
-    // se escala aparte para acompañar la normalización del cuerpo.
-    this.groundPet?.scale.multiplyScalar(escala);
+    const scale = (this.sx / h) * 0.5625;
+    g.scale.setScalar(scale);
+    // The ground pet lives at scene level (same as in preview/city):
+    // it is scaled separately to accompany the body's normalization.
+    this.groundPet?.scale.multiplyScalar(scale);
     g.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) o.castShadow = true;
     });
@@ -199,7 +199,7 @@ export class CharacterController {
     maxRadius: number,
     frontier: FogFrontier | null,
     onHitBarrier?: () => void,
-    vista: Vista = 'libre',
+    view: View = 'libre',
   ): void {
     const char = this.char;
     if (!char) return;
@@ -210,13 +210,13 @@ export class CharacterController {
     let seekingTarget = false;
 
     if (!isLocked) {
-      if (vista === 'tercera') {
-        // Controles tanque: A/D giran en el lugar, W/S avanzan sobre el frente.
-        // (Con strafe + giro instantáneo, A/D realimentaban el giro y el
-        // personaje pirueteaba sin trasladarse.)
-        const izq = this.keys.has('a') || this.keys.has('arrowleft') ? 1 : 0;
-        const der = this.keys.has('d') || this.keys.has('arrowright') ? 1 : 0;
-        char.rotation.y += (izq - der) * VEL_GIRO * dt;
+      if (view === 'tercera') {
+        // Tank controls: A/D turn in place, W/S advance along the front.
+        // (With strafe + instant turn, A/D fed back into the turn and the
+        // character pirouetted without moving.)
+        const left = this.keys.has('a') || this.keys.has('arrowleft') ? 1 : 0;
+        const right = this.keys.has('d') || this.keys.has('arrowright') ? 1 : 0;
+        char.rotation.y += (left - right) * VEL_TURN * dt;
         const av =
           (this.keys.has('w') || this.keys.has('arrowup') ? 1 : 0) -
           (this.keys.has('s') || this.keys.has('arrowdown') ? 1 : 0);
@@ -233,7 +233,7 @@ export class CharacterController {
         const dx = this.target.x - char.position.x;
         const dz = this.target.z - char.position.z;
         if (Math.hypot(dx, dz) < 0.3) {
-          this.target = null; // llegado
+          this.target = null; // arrived
         } else {
           mv.set(dx, dz);
           seekingTarget = true;
@@ -246,20 +246,20 @@ export class CharacterController {
     const moving = mv.lengthSq() > 0;
     const px0 = char.position.x;
     const pz0 = char.position.z;
-    // Correr con Shift: 75% más rápido que caminar (que ya es 20% más que antes).
-    const corriendo = moving && this.keys.has('shift');
+    // Run with Shift: 75% faster than walking (which is already 20% more than before).
+    const running = moving && this.keys.has('shift');
 
     if (moving) {
       mv.normalize();
-      const sp = this.sx * VELOCIDAD_BASE * (corriendo ? MULT_CORRER : 1) * dt;
+      const sp = this.sx * SPEED_BASE * (running ? MULT_RUN : 1) * dt;
       char.position.x += mv.x * sp;
       char.position.z += mv.y * sp;
-      // En tanque el giro lo mandan A/D: auto-encarar voltearía al personaje en
-      // S (flip-flop por frame, desplazamiento nulo). Solo se encara al seguir
-      // un destino por click.
-      if (vista !== 'tercera' || seekingTarget) char.rotation.y = Math.atan2(mv.x, mv.y);
-      this.play(corriendo ? this.runClip : this.walkClip);
-      if (!this.mixer) char.position.y = Math.abs(Math.sin(t * (corriendo ? 14 : 10))) * 0.08;
+      // In tank mode A/D command the turn: auto-facing would flip the character on
+      // S (per-frame flip-flop, zero displacement). It only faces when following
+      // a click destination.
+      if (view !== 'tercera' || seekingTarget) char.rotation.y = Math.atan2(mv.x, mv.y);
+      this.play(running ? this.runClip : this.walkClip);
+      if (!this.mixer) char.position.y = Math.abs(Math.sin(t * (running ? 14 : 10))) * 0.08;
     } else {
       this.play(this.idleClip);
       if (!this.mixer) char.position.y = 0;
@@ -304,7 +304,7 @@ export class CharacterController {
       }
     }
 
-    // Destino inalcanzable (agua/muro): si no avanza, se cancela
+    // Unreachable destination (water/wall): if it does not advance, it is cancelled
     if (seekingTarget) {
       if (Math.hypot(char.position.x - px0, char.position.z - pz0) < 0.0005) {
         this.stuckFrames++;
@@ -322,14 +322,14 @@ export class CharacterController {
     this.mixer?.update(dt);
   }
 
-  /** Avanza RGB y mascotas del avatar modular (no-op con cuerpo legado). */
+  /** Advances RGB and pets of the modular avatar (no-op with a legacy body). */
   tickFx(t: number, dt: number): void {
     this.fxTick?.(t, dt);
   }
 
-  /** En primera persona el cuerpo se oculta; la mascota queda visible. */
-  setVistaPrimera(primera: boolean): void {
-    if (this.cuerpo) this.cuerpo.visible = !primera;
+  /** In first person the body is hidden; the pet stays visible. */
+  setViewFirst(first: boolean): void {
+    if (this.body) this.body.visible = !first;
   }
 
   dispose(): void {

@@ -1,14 +1,14 @@
 import { Component, input, output, signal } from '@angular/core';
-import type { Biome, TipoAnexo } from '../../../core/educa/models';
+import type { Biome, AttachmentType } from '../../../core/educa/models';
 
 export type EditorKind = 'unidad' | 'modulo' | 'anexo';
 
 export interface EditorResult {
-  titulo: string;
-  descripcion: string;
+  title: string;
+  description: string;
   color?: string;
-  bioma?: Biome;
-  tipo?: TipoAnexo;
+  biome?: Biome;
+  type?: AttachmentType;
   url?: string;
 }
 
@@ -24,13 +24,13 @@ export interface EditorResult {
         </div>
 
         <label class="mt-3 block text-xs font-semibold ui-font">Título
-          <input [value]="titulo()" (input)="titulo.set(inputValue($event))"
+          <input [value]="title()" (input)="title.set(inputValue($event))"
             placeholder="Nombre o título..."
             class="input input-bordered input-sm w-full mt-1" />
         </label>
 
         <label class="mt-2 block text-xs font-semibold ui-font">Descripción
-          <textarea [value]="descripcion()" (input)="descripcion.set(inputValue($event))" rows="2"
+          <textarea [value]="description()" (input)="description.set(inputValue($event))" rows="2"
             placeholder="Descripción u objetivos..."
             class="textarea textarea-bordered textarea-sm w-full mt-1"></textarea>
         </label>
@@ -45,7 +45,7 @@ export interface EditorResult {
             </label>
 
             <label class="block text-xs font-semibold ui-font">Bioma (Mundo 3D)
-              <select [value]="bioma()" (change)="bioma.set(inputBioma($event))" class="select select-bordered select-sm w-full mt-1">
+              <select [value]="biome()" (change)="biome.set(inputBiome($event))" class="select select-bordered select-sm w-full mt-1">
                 <option value="pradera">🌿 Pradera</option>
                 <option value="desierto">🏜️ Desierto</option>
                 <option value="nieve">❄️ Nieve</option>
@@ -58,9 +58,9 @@ export interface EditorResult {
         @if (kind() === 'anexo') {
           <div class="mt-2 flex flex-col sm:flex-row gap-2">
             <label class="text-xs font-semibold ui-font">Tipo
-              <select [value]="tipo()" (change)="tipo.set(inputTipo($event))" class="select select-bordered select-sm w-full mt-1">
-                @for (t of tipos; track t) {
-                  <option [value]="t">{{ iconoDe(t) }} {{ t }}</option>
+              <select [value]="type()" (change)="type.set(inputType($event))" class="select select-bordered select-sm w-full mt-1">
+                @for (t of types; track t) {
+                  <option [value]="t">{{ iconOf(t) }} {{ t }}</option>
                 }
               </select>
             </label>
@@ -73,7 +73,7 @@ export interface EditorResult {
 
         <div class="mt-5 flex justify-end gap-2 border-t border-base-300 pt-3">
           <button (click)="cancel.emit()" class="btn btn-sm btn-ghost ui-font text-[9px]">Cancelar</button>
-          <button (click)="save()" [disabled]="!titulo().trim()" class="btn btn-sm btn-primary ui-font text-[9px]">Guardar</button>
+          <button (click)="save()" [disabled]="!title().trim()" class="btn btn-sm btn-primary ui-font text-[9px]">Guardar</button>
         </div>
       </div>
     </div>
@@ -82,31 +82,31 @@ export interface EditorResult {
 export class EditorComponent {
   kind = input<EditorKind>('unidad');
   heading = input('Editar');
-  initialTitulo = input('');
-  initialDescripcion = input('');
+  initialTitle = input('');
+  initialDescription = input('');
   initialColor = input('#6366f1');
-  initialBioma = input<Biome>('pradera');
-  initialTipo = input<TipoAnexo>('documento');
+  initialBiome = input<Biome>('pradera');
+  initialType = input<AttachmentType>('documento');
   initialUrl = input('');
 
   saveResult = output<EditorResult>();
   cancel = output<void>();
 
-  titulo = signal('');
-  descripcion = signal('');
+  title = signal('');
+  description = signal('');
   color = signal('#6366f1');
-  bioma = signal<Biome>('pradera');
-  tipo = signal<TipoAnexo>('documento');
+  biome = signal<Biome>('pradera');
+  type = signal<AttachmentType>('documento');
   url = signal('');
-  tipos: TipoAnexo[] = ['documento', 'video', 'enlace', 'imagen', 'ejercicio'];
+  types: AttachmentType[] = ['documento', 'video', 'enlace', 'imagen', 'ejercicio'];
 
   constructor() {
     queueMicrotask(() => {
-      this.titulo.set(this.initialTitulo());
-      this.descripcion.set(this.initialDescripcion());
+      this.title.set(this.initialTitle());
+      this.description.set(this.initialDescription());
       this.color.set(this.initialColor());
-      this.bioma.set(this.initialBioma());
-      this.tipo.set(this.initialTipo());
+      this.biome.set(this.initialBiome());
+      this.type.set(this.initialType());
       this.url.set(this.initialUrl());
     });
   }
@@ -115,12 +115,12 @@ export class EditorComponent {
     return (e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null)?.value ?? '';
   }
 
-  inputTipo(e: Event): TipoAnexo {
+  inputType(e: Event): AttachmentType {
     const val = (e.target as HTMLSelectElement | null)?.value;
-    return (this.tipos.includes(val as TipoAnexo) ? val : 'documento') as TipoAnexo;
+    return (this.types.includes(val as AttachmentType) ? val : 'documento') as AttachmentType;
   }
 
-  inputBioma(e: Event): Biome {
+  inputBiome(e: Event): Biome {
     const val = (e.target as HTMLSelectElement | null)?.value;
     if (val === 'desierto') return 'desierto';
     if (val === 'nieve') return 'nieve';
@@ -128,7 +128,7 @@ export class EditorComponent {
     return 'pradera';
   }
 
-  iconoDe(t: TipoAnexo): string {
+  iconOf(t: AttachmentType): string {
     switch (t) {
       case 'documento': return '📄';
       case 'video': return '🎬';
@@ -141,11 +141,11 @@ export class EditorComponent {
 
   save(): void {
     this.saveResult.emit({
-      titulo: this.titulo().trim(),
-      descripcion: this.descripcion(),
+      title: this.title().trim(),
+      description: this.description(),
       color: this.color(),
-      bioma: this.bioma(),
-      tipo: this.tipo(),
+      biome: this.biome(),
+      type: this.type(),
       url: this.url(),
     });
   }

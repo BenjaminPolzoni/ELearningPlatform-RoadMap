@@ -2,12 +2,12 @@ import { Component, signal } from '@angular/core';
 import { RankingPanel } from './ranking-panel';
 
 /**
- * Botón flotante "HI-RANKING" (E8). Único punto de entrada al ranking desde cualquier
- * pantalla con sesión: se monta una vez en el shell y abre el `RankingPanel`. El
- * contenido del panel cambia según el rol — este botón es igual para todos.
+ * Floating "HI-RANKING" button (E8). Single entry point to the ranking from any
+ * screen with a session: it is mounted once in the shell and opens the `RankingPanel`. The
+ * panel's content changes according to the role — this button is the same for everyone.
  *
- * El panel se carga con `@defer` para no sumar la tabla, el detalle ni el fixture al
- * bundle inicial: recién baja al abrir el botón.
+ * The panel is loaded with `@defer` so as not to add the table, the detail or the fixture to the
+ * initial bundle: it only downloads when the button is opened.
  */
 @Component({
   selector: 'app-ranking-trigger',
@@ -17,19 +17,19 @@ import { RankingPanel } from './ranking-panel';
       type="button"
       class="rk-hiscore"
       aria-label="Ver el ranking de la cohorte"
-      (click)="abierto.set(true)"
+      (click)="isOpen.set(true)"
     >
       <span class="rk-hiscore__mark" aria-hidden="true">&#9656;</span>
       <span class="rk-hiscore__text">HI-RANKING</span>
     </button>
 
-    @defer (when abierto()) {
-      @if (abierto()) {
-        <app-ranking-panel (cerrar)="abierto.set(false)" />
+    @defer (when isOpen()) {
+      @if (isOpen()) {
+        <app-ranking-panel (close)="isOpen.set(false)" />
       }
     }
   `,
 })
 export class RankingTrigger {
-  protected readonly abierto = signal(false);
+  protected readonly isOpen = signal(false);
 }

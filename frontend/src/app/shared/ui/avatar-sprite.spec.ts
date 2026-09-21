@@ -1,186 +1,186 @@
 import { TestBed } from '@angular/core/testing';
 import {
-  ACCESORIOS,
-  ANTEOJOS,
+  ACCESSORIES,
+  GLASSES,
   AvatarConfig,
-  avatarPorDefecto,
-  BARBAS,
-  EMBLEMAS,
-  IdGenero,
-  OBJETOS,
-  PELOS,
-  PRENDAS,
+  defaultAvatar,
+  BEARDS,
+  EMBLEMS,
+  GenderId,
+  OBJECTS,
+  HAIRSTYLES,
+  GARMENTS,
 } from '../../core/avatar/avatar.models';
 import { AvatarSprite } from './avatar-sprite';
 
-function dibujar(
-  cambios: Partial<AvatarConfig> = {},
-  mirando: 'derecha' | 'izquierda' = 'derecha',
+function draw(
+  changes: Partial<AvatarConfig> = {},
+  facing: 'derecha' | 'izquierda' = 'derecha',
 ): HTMLElement {
   const f = TestBed.createComponent(AvatarSprite);
-  f.componentRef.setInput('config', { ...avatarPorDefecto('indefinido'), ...cambios });
-  f.componentRef.setInput('mirando', mirando);
+  f.componentRef.setInput('config', { ...defaultAvatar('indefinido'), ...changes });
+  f.componentRef.setInput('facing', facing);
   f.detectChanges();
   return f.nativeElement as HTMLElement;
 }
 
-const capa = (el: HTMLElement, nombre: string) =>
-  el.querySelector<SVGGElement>(`[data-capa="${nombre}"]`);
-const pixeles = (el: HTMLElement, nombre: string) =>
-  capa(el, nombre)?.querySelectorAll('rect').length ?? 0;
-const fills = (el: HTMLElement, nombre: string) =>
-  [...(capa(el, nombre)?.querySelectorAll('rect') ?? [])].map((r) => r.getAttribute('fill'));
+const layer = (el: HTMLElement, name: string) =>
+  el.querySelector<SVGGElement>(`[data-capa="${name}"]`);
+const pixels = (el: HTMLElement, name: string) =>
+  layer(el, name)?.querySelectorAll('rect').length ?? 0;
+const fills = (el: HTMLElement, name: string) =>
+  [...(layer(el, name)?.querySelectorAll('rect') ?? [])].map((r) => r.getAttribute('fill'));
 
-const GENEROS_IDS: IdGenero[] = ['mujer', 'varon', 'indefinido'];
+const GENDERS_IDS: GenderId[] = ['mujer', 'varon', 'indefinido'];
 
 beforeEach(async () => {
   await TestBed.configureTestingModule({ imports: [AvatarSprite] }).compileComponents();
 });
 
-describe('AvatarSprite — siluetas', () => {
-  it.each(GENEROS_IDS)('marca la silueta %s', (genero) => {
-    expect(capa(dibujar({ genero }), 'torso')?.getAttribute('data-silueta')).toBe(genero);
+describe('AvatarSprite — silhouettes', () => {
+  it.each(GENDERS_IDS)('marca la silueta %s', (gender) => {
+    expect(layer(draw({ gender }), 'torso')?.getAttribute('data-silueta')).toBe(gender);
   });
 
-  it('solo la mujer tiene pestañas y solo el varón cejas', () => {
-    const mujer = dibujar({ genero: 'mujer' });
-    const varon = dibujar({ genero: 'varon' });
-    const indefinido = dibujar({ genero: 'indefinido' });
-    expect(capa(mujer, 'pestanas')).not.toBeNull();
-    expect(capa(mujer, 'cejas')).toBeNull();
-    expect(capa(varon, 'cejas')).not.toBeNull();
-    expect(capa(varon, 'pestanas')).toBeNull();
-    expect(capa(indefinido, 'cejas')).toBeNull();
-    expect(capa(indefinido, 'pestanas')).toBeNull();
+  it('only the female has eyelashes and only the male eyebrows', () => {
+    const mujer = draw({ gender: 'mujer' });
+    const varon = draw({ gender: 'varon' });
+    const indefinido = draw({ gender: 'indefinido' });
+    expect(layer(mujer, 'pestanas')).not.toBeNull();
+    expect(layer(mujer, 'cejas')).toBeNull();
+    expect(layer(varon, 'cejas')).not.toBeNull();
+    expect(layer(varon, 'pestanas')).toBeNull();
+    expect(layer(indefinido, 'cejas')).toBeNull();
+    expect(layer(indefinido, 'pestanas')).toBeNull();
   });
 
-  it.each(GENEROS_IDS)('las manos de %s quedan donde se sostiene el objeto', (genero) => {
-    const posiciones = [...capa(dibujar({ genero }), 'brazos')!.querySelectorAll('rect')].map(
+  it.each(GENDERS_IDS)('las manos de %s quedan donde se sostiene el objeto', (gender) => {
+    const positions = [...layer(draw({ gender }), 'brazos')!.querySelectorAll('rect')].map(
       (r) => `${r.getAttribute('x')},${r.getAttribute('y')}`,
     );
-    expect(posiciones).toContain('2,16');
-    expect(posiciones).toContain('12,16');
+    expect(positions).toContain('2,16');
+    expect(positions).toContain('12,16');
   });
 });
 
-describe('AvatarSprite — prendas', () => {
-  it.each(PRENDAS.filter((p) => p.id !== 'traje').map((p) => p.id))(
+describe('AvatarSprite — garments', () => {
+  it.each(GARMENTS.filter((p) => p.id !== 'traje').map((p) => p.id))(
     'la prenda %s dibuja sus detalles',
-    (prenda) => {
-      expect(pixeles(dibujar({ prenda }), 'prenda')).toBeGreaterThan(0);
+    (garment) => {
+      expect(pixels(draw({ garment }), 'prenda')).toBeGreaterThan(0);
     },
   );
 
-  it('el traje es un mono: las piernas van del color de la ropa', () => {
-    expect(fills(dibujar({ prenda: 'traje', colorRopa: 'rosa' }), 'piernas')[0]).toBe('#B3123A');
+  it('the suit is a jumpsuit: the legs are the color of the clothing', () => {
+    expect(fills(draw({ garment: 'traje', clothesColor: 'rosa' }), 'piernas')[0]).toBe('#B3123A');
   });
 
-  it('con las demás prendas las piernas llevan pantalón, que contrasta con la ropa', () => {
-    expect(fills(dibujar({ prenda: 'hoodie', colorRopa: 'rosa' }), 'piernas')[0]).toBe('#2D164A');
-    expect(fills(dibujar({ prenda: 'hoodie', colorRopa: 'negro' }), 'piernas')[0]).toBe('#4B4A57');
+  it('with the other garments the legs wear pants, which contrast with the clothing', () => {
+    expect(fills(draw({ garment: 'hoodie', clothesColor: 'rosa' }), 'piernas')[0]).toBe('#2D164A');
+    expect(fills(draw({ garment: 'hoodie', clothesColor: 'negro' }), 'piernas')[0]).toBe('#4B4A57');
   });
 
-  it('los zapatos se ven aunque la ropa sea hueso', () => {
-    expect(fills(dibujar({ prenda: 'traje', colorRopa: 'hueso' }), 'piernas')[2]).toBe('#2D164A');
-    expect(fills(dibujar({ prenda: 'hoodie', colorRopa: 'hueso' }), 'piernas')[2]).toBe('#F3EAFF');
+  it('the shoes are visible even if the clothing is bone-colored', () => {
+    expect(fills(draw({ garment: 'traje', clothesColor: 'hueso' }), 'piernas')[2]).toBe('#2D164A');
+    expect(fills(draw({ garment: 'hoodie', clothesColor: 'hueso' }), 'piernas')[2]).toBe('#F3EAFF');
   });
 });
 
-describe('AvatarSprite — emblema', () => {
-  it.each(EMBLEMAS.filter((e) => e.id !== 'ninguno').map((e) => e.id))(
+describe('AvatarSprite — emblem', () => {
+  it.each(EMBLEMS.filter((e) => e.id !== 'ninguno').map((e) => e.id))(
     'el emblema %s se dibuja',
-    (emblema) => {
-      expect(pixeles(dibujar({ prenda: 'hoodie', emblema }), 'emblema')).toBeGreaterThan(0);
+    (emblem) => {
+      expect(pixels(draw({ garment: 'hoodie', emblem }), 'emblema')).toBeGreaterThan(0);
     },
   );
 
-  it('sin emblema, con camisa o con laptop no hay capa de emblema', () => {
-    expect(capa(dibujar({ emblema: 'ninguno' }), 'emblema')).toBeNull();
-    expect(capa(dibujar({ prenda: 'camisa', emblema: 'tag' }), 'emblema')).toBeNull();
-    expect(capa(dibujar({ prenda: 'hoodie', objeto: 'laptop', emblema: 'tag' }), 'emblema')).toBeNull();
+  it('with no emblem, with a shirt or with a laptop there is no emblem layer', () => {
+    expect(layer(draw({ emblem: 'ninguno' }), 'emblema')).toBeNull();
+    expect(layer(draw({ garment: 'camisa', emblem: 'tag' }), 'emblema')).toBeNull();
+    expect(layer(draw({ garment: 'hoodie', object: 'laptop', emblem: 'tag' }), 'emblema')).toBeNull();
   });
 
-  it('contrasta con lo que tiene debajo (la remera, si la campera está abierta)', () => {
-    const color = (c: Partial<AvatarConfig>) => capa(dibujar(c), 'emblema')!.getAttribute('fill');
-    expect(color({ prenda: 'hoodie', colorRopa: 'violeta' })).toBe('#FF2758');
-    expect(color({ prenda: 'hoodie', colorRopa: 'rosa' })).toBe('#F3EAFF');
-    expect(color({ prenda: 'hoodie', colorRopa: 'rosa-pastel' })).toBe('#F3EAFF');
-    expect(color({ prenda: 'campera', colorRopa: 'rosa' })).toBe('#FF2758');
+  it('contrasts with what is underneath (the t-shirt, if the jacket is open)', () => {
+    const color = (c: Partial<AvatarConfig>) => layer(draw(c), 'emblema')!.getAttribute('fill');
+    expect(color({ garment: 'hoodie', clothesColor: 'violeta' })).toBe('#FF2758');
+    expect(color({ garment: 'hoodie', clothesColor: 'rosa' })).toBe('#F3EAFF');
+    expect(color({ garment: 'hoodie', clothesColor: 'rosa-pastel' })).toBe('#F3EAFF');
+    expect(color({ garment: 'campera', clothesColor: 'rosa' })).toBe('#FF2758');
   });
 
-  it('mirando a la izquierda se contra-espeja para que el glifo siga legible', () => {
-    expect(capa(dibujar({ emblema: 'lambda' }, 'izquierda'), 'emblema')!.getAttribute('transform')).toBe(
+  it('when facing left it is counter-mirrored so the glyph stays legible', () => {
+    expect(layer(draw({ emblem: 'lambda' }, 'izquierda'), 'emblema')!.getAttribute('transform')).toBe(
       'translate(16 0) scale(-1 1)',
     );
-    expect(capa(dibujar({ emblema: 'lambda' }, 'derecha'), 'emblema')!.getAttribute('transform')).toBeNull();
+    expect(layer(draw({ emblem: 'lambda' }, 'derecha'), 'emblema')!.getAttribute('transform')).toBeNull();
   });
 });
 
-describe('AvatarSprite — cabeza y equipo', () => {
-  const capasEnOrden = (el: HTMLElement) =>
+describe('AvatarSprite — head and gear', () => {
+  const layersInOrder = (el: HTMLElement) =>
     [...el.querySelectorAll('svg > g[data-capa]')].map((g) => g.getAttribute('data-capa'));
 
-  it.each(PELOS.map((p) => p.id))('el pelo %s se dibuja', (pelo) => {
-    expect(pixeles(dibujar({ pelo }), 'pelo')).toBeGreaterThan(0);
+  it.each(HAIRSTYLES.map((p) => p.id))('el pelo %s se dibuja', (hair) => {
+    expect(pixels(draw({ hair }), 'pelo')).toBeGreaterThan(0);
   });
 
-  it.each(BARBAS.filter((b) => b.id !== 'ninguna').map((b) => b.id))(
+  it.each(BEARDS.filter((b) => b.id !== 'ninguna').map((b) => b.id))(
     'la barba %s se dibuja del color del pelo',
-    (barba) => {
-      const el = dibujar({ barba, colorPelo: 'pelirrojo' });
-      expect(pixeles(el, 'barba')).toBeGreaterThan(0);
+    (beard) => {
+      const el = draw({ beard, hairColor: 'pelirrojo' });
+      expect(pixels(el, 'barba')).toBeGreaterThan(0);
       expect(fills(el, 'barba').every((f) => f === '#C2502A' || f === '#853316')).toBe(true);
     },
   );
 
-  it('sin barba no hay capa de barba', () => {
-    expect(capa(dibujar({ barba: 'ninguna' }), 'barba')).toBeNull();
+  it('with no beard there is no beard layer', () => {
+    expect(layer(draw({ beard: 'ninguna' }), 'barba')).toBeNull();
   });
 
-  it.each(ACCESORIOS.filter((a) => a.id !== 'ninguno').map((a) => a.id))(
+  it.each(ACCESSORIES.filter((a) => a.id !== 'ninguno').map((a) => a.id))(
     'el accesorio %s se dibuja',
-    (accesorio) => {
-      expect(pixeles(dibujar({ accesorio }), 'accesorio')).toBeGreaterThan(0);
+    (accessory) => {
+      expect(pixels(draw({ accessory }), 'accesorio')).toBeGreaterThan(0);
     },
   );
 
   it.each(['gorra', 'gorra-atras', 'beanie'] as const)(
     '%s tapa todo el casco (filas 0-3) para que ningún peinado lo atraviese',
-    (accesorio) => {
-      const filasTapadas = new Set<number>();
-      for (const r of capa(dibujar({ accesorio, pelo: 'cresta' }), 'accesorio')!.querySelectorAll('rect')) {
+    (accessory) => {
+      const coveredRows = new Set<number>();
+      for (const r of layer(draw({ accessory, hair: 'cresta' }), 'accesorio')!.querySelectorAll('rect')) {
         const [x, y, w, h] = ['x', 'y', 'width', 'height'].map((a) => Number(r.getAttribute(a)));
-        // la cresta ocupa las columnas 6..9: la fila queda tapada si un rect las cubre enteras
-        if (x <= 6 && x + w >= 10) for (let fila = y; fila < y + h; fila++) filasTapadas.add(fila);
+        // the crest occupies columns 6..9: the row is covered if a rect spans them all
+        if (x <= 6 && x + w >= 10) for (let row = y; row < y + h; row++) coveredRows.add(row);
       }
-      expect([0, 1, 2, 3].every((f) => filasTapadas.has(f))).toBe(true);
+      expect([0, 1, 2, 3].every((f) => coveredRows.has(f))).toBe(true);
     },
   );
 
-  it.each(ANTEOJOS.filter((a) => a.id !== 'ninguno').map((a) => a.id))(
+  it.each(GLASSES.filter((a) => a.id !== 'ninguno').map((a) => a.id))(
     'los anteojos %s se dibujan',
-    (anteojos) => {
-      expect(pixeles(dibujar({ anteojos }), 'anteojos')).toBeGreaterThan(0);
+    (glasses) => {
+      expect(pixels(draw({ glasses }), 'anteojos')).toBeGreaterThan(0);
     },
   );
 
-  it('con visor no se dibujan los anteojos', () => {
-    expect(capa(dibujar({ accesorio: 'visor', anteojos: 'sol' }), 'anteojos')).toBeNull();
-    expect(capa(dibujar({ accesorio: 'gorra', anteojos: 'sol' }), 'anteojos')).not.toBeNull();
+  it('with a visor the glasses are not drawn', () => {
+    expect(layer(draw({ accessory: 'visor', glasses: 'sol' }), 'anteojos')).toBeNull();
+    expect(layer(draw({ accessory: 'gorra', glasses: 'sol' }), 'anteojos')).not.toBeNull();
   });
 
-  it.each(OBJETOS.filter((o) => o.id !== 'ninguno').map((o) => o.id))(
+  it.each(OBJECTS.filter((o) => o.id !== 'ninguno').map((o) => o.id))(
     'el objeto %s se dibuja por delante de todo',
-    (objeto) => {
-      const el = dibujar({ objeto });
-      expect(pixeles(el, 'objeto')).toBeGreaterThan(0);
-      expect(capasEnOrden(el).at(-1)).toBe('objeto');
+    (object) => {
+      const el = draw({ object });
+      expect(pixels(el, 'objeto')).toBeGreaterThan(0);
+      expect(layersInOrder(el).at(-1)).toBe('objeto');
     },
   );
 
-  it('respeta el orden de capas: barba < pelo < anteojos < accesorio', () => {
-    const el = dibujar({ prenda: 'hoodie', barba: 'barba', anteojos: 'redondos', accesorio: 'gorra' });
-    expect(capasEnOrden(el)).toEqual([
+  it('respects the layer order: beard < hair < glasses < accessory', () => {
+    const el = draw({ garment: 'hoodie', beard: 'barba', glasses: 'redondos', accessory: 'gorra' });
+    expect(layersInOrder(el)).toEqual([
       'piernas',
       'torso',
       'brazos',

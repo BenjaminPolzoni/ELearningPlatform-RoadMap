@@ -4,9 +4,9 @@ import { AuthMockService } from '../auth/auth-mock.service';
 import { InMemoryRankingAdapter } from './in-memory-ranking.adapter';
 import { RoadmapDataPort } from './roadmap-data.port';
 import { InMemoryRoadmapAdapter } from './in-memory-roadmap.adapter';
-import { VistaRankingAlumno, VistaRankingStaff } from './ranking.models';
+import { StudentRankingView, StaffRankingView } from './ranking.models';
 
-describe('InMemoryRankingAdapter — recorte por rol (RF-RNK-03 / 10)', () => {
+describe('InMemoryRankingAdapter — trimming by role (RF-RNK-03 / 10)', () => {
   let adapter: InMemoryRankingAdapter;
   let auth: AuthMockService;
 
@@ -18,53 +18,53 @@ describe('InMemoryRankingAdapter — recorte por rol (RF-RNK-03 / 10)', () => {
     auth = TestBed.inject(AuthMockService);
   });
 
-  afterEach(() => auth.salir());
+  afterEach(() => auth.exit());
 
-  it('ALUMNO: la lista viene anonimizada salvo la fila propia, que va identificada', async () => {
-    auth.entrarComo('ALUMNO');
-    const v = (await firstValueFrom(adapter.getRanking('cc'))) as VistaRankingAlumno;
+  it('ALUMNO: the list comes anonymized except the own row, which is identified', async () => {
+    auth.enterAs('ALUMNO');
+    const v = (await firstValueFrom(adapter.getRanking('cc'))) as StudentRankingView;
 
-    expect(v.rol).toBe('ALUMNO');
-    const identificadas = v.lista.filter((f) => 'nombre' in f);
-    expect(identificadas).toHaveLength(1);
-    expect((identificadas[0] as { nombre: string }).nombre).toBe('Camila');
-    expect(v.lista.filter((f) => 'seudonimo' in f)).toHaveLength(11);
-    expect(v.top3.every((f) => 'seudonimo' in f && !('nombre' in f))).toBe(true);
+    expect(v.role).toBe('ALUMNO');
+    const identified = v.list.filter((f) => 'name' in f);
+    expect(identified).toHaveLength(1);
+    expect((identified[0] as { name: string }).name).toBe('Camila');
+    expect(v.list.filter((f) => 'pseudonym' in f)).toHaveLength(11);
+    expect(v.top3.every((f) => 'pseudonym' in f && !('name' in f))).toBe(true);
     expect(v.top3).toHaveLength(3);
     expect(v.bottom3).toHaveLength(3);
-    expect(v.yo?.nombre).toBe('Camila'); // alu-01 en alumnosSeed()
-    expect(v.yo?.legajo).toBe('90001');
+    expect(v.yo?.name).toBe('Camila'); // alu-01 in studentsSeed()
+    expect(v.yo?.fileNumber).toBe('90001');
   });
 
-  it('ALUMNO: con 12 inscriptos hay cortes P90/P10 (RF-RNK-09)', async () => {
-    auth.entrarComo('ALUMNO');
-    const v = (await firstValueFrom(adapter.getRanking('cc'))) as VistaRankingAlumno;
-    expect(v.totalInscriptos).toBe(12);
-    expect(v.cortes).not.toBeNull();
-    expect(v.cortes!.p90.zona).toBe('p90');
-    expect(v.cortes!.p10.zona).toBe('p10');
+  it('ALUMNO: with 12 enrolled there are P90/P10 cutoffs (RF-RNK-09)', async () => {
+    auth.enterAs('ALUMNO');
+    const v = (await firstValueFrom(adapter.getRanking('cc'))) as StudentRankingView;
+    expect(v.totalEnrolled).toBe(12);
+    expect(v.cutoffs).not.toBeNull();
+    expect(v.cutoffs!.p90.zone).toBe('p90');
+    expect(v.cutoffs!.p10.zone).toBe('p10');
   });
 
-  it('PROFESOR: recibe todas las filas identificadas', async () => {
-    auth.entrarComo('PROFESOR');
-    const v = (await firstValueFrom(adapter.getRanking('cc'))) as VistaRankingStaff;
-    expect(v.rol).toBe('PROFESOR');
-    expect(v.filas).toHaveLength(12);
-    expect(v.filas.every((f) => typeof f.legajo === 'string' && f.legajo.length > 0)).toBe(true);
-    expect(v.filas[0].posicion).toBe(1);
+  it('PROFESOR: receives all the identified rows', async () => {
+    auth.enterAs('PROFESOR');
+    const v = (await firstValueFrom(adapter.getRanking('cc'))) as StaffRankingView;
+    expect(v.role).toBe('PROFESOR');
+    expect(v.rows).toHaveLength(12);
+    expect(v.rows.every((f) => typeof f.fileNumber === 'string' && f.fileNumber.length > 0)).toBe(true);
+    expect(v.rows[0].position).toBe(1);
   });
 
-  it('ADMIN: misma vista identificada que PROFESOR (RF-RNK-10)', async () => {
-    auth.entrarComo('ADMIN');
-    const v = (await firstValueFrom(adapter.getRanking('cc'))) as VistaRankingStaff;
-    expect(v.rol).toBe('ADMIN');
-    expect(v.filas).toHaveLength(12);
+  it('ADMIN: same identified view as PROFESOR (RF-RNK-10)', async () => {
+    auth.enterAs('ADMIN');
+    const v = (await firstValueFrom(adapter.getRanking('cc'))) as StaffRankingView;
+    expect(v.role).toBe('ADMIN');
+    expect(v.rows).toHaveLength(12);
   });
 
-  it('el orden respeta XP descendente', async () => {
-    auth.entrarComo('PROFESOR');
-    const v = (await firstValueFrom(adapter.getRanking('cc'))) as VistaRankingStaff;
-    const xps = v.filas.map((f) => f.xpTotal);
+  it('the order respects descending XP', async () => {
+    auth.enterAs('PROFESOR');
+    const v = (await firstValueFrom(adapter.getRanking('cc'))) as StaffRankingView;
+    const xps = v.rows.map((f) => f.xpTotal);
     expect(xps).toEqual([...xps].sort((a, b) => b - a));
   });
 });

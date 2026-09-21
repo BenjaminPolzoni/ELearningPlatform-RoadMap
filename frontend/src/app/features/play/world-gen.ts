@@ -1,24 +1,24 @@
-import type { Asignatura, Biome, TipoAnexo, Unidad } from '../../core/educa/models';
+import type { Subject, Biome, AttachmentType, Section } from '../../core/educa/models';
 export type { Biome } from '../../core/educa/models';
 
-// ponytail: ausente = pradera (mundos viejos sin migrar)
-export function biomeOf(u: Pick<Unidad, 'bioma'>): Biome {
-  return u.bioma === 'desierto' || u.bioma === 'nieve' || u.bioma === 'lava' ? u.bioma : 'pradera';
+// ponytail: absent = meadow (old worlds not yet migrated)
+export function biomeOf(u: Pick<Section, 'biome'>): Biome {
+  return u.biome === 'desierto' || u.biome === 'nieve' || u.biome === 'lava' ? u.biome : 'pradera';
 }
 
-// Un mundo por unidad: castillo (unidad) al final de una espina recta de
-// tierra → torres (módulos) en hierba lateral → casas (anexos) en hierba
-// junto a su tramo. Ningún edificio pisa camino: la unión es por adyacencia
-// (cada edificio a dist 1 de un road de su grupo) + grupo de niebla.
-// Solo rectas A y remates M (orientación verificada); sin curvas.
-// ponytail: determinista por seed = id, mundo estable entre visitas.
+// One world per section: castle (section) at the end of a straight spine of
+// dirt → towers (modules) on side grass → houses (attachments) on grass
+// next to their stretch. No building steps on a road: the connection is by adjacency
+// (each building at dist 1 from a road of its group) + fog group.
+// Only straight A and finishing M pieces (orientation verified); no curves.
+// ponytail: deterministic by seed = id, stable world between visits.
 
 export type BuildingColor = 'blue' | 'green' | 'red' | 'yellow';
 
 export const AVATARS = ['Knight', 'Barbarian', 'Mage', 'Ranger', 'Rogue', 'Rogue_Hooded'] as const;
 export type Avatar = (typeof AVATARS)[number];
 
-export const ANEXO_EMOJI: Record<TipoAnexo, string> = {
+export const ATTACHMENT_EMOJI: Record<AttachmentType, string> = {
   documento: '📄',
   video: '🎬',
   enlace: '🔗',
@@ -35,29 +35,29 @@ export { getRoadModelAndRot } from './domain/auto-tiler';
 
 export interface Placed extends TileRef {
   model: string;
-  ox: number; // offset en fracción de tile
+  ox: number; // offset as a fraction of a tile
   oz: number;
   rotY: number;
-  group?: string; // tramo de niebla: moduloId, '__start' o '__end'
-  s?: number; // escala (cordón montañoso)
+  group?: string; // fog stretch: moduleId, '__start' or '__end'
+  s?: number; // scale (mountain ring)
 }
-export interface UnidadHq extends Placed {
-  unidadId: string;
-  titulo: string;
+export interface SectionHq extends Placed {
+  sectionId: string;
+  title: string;
   color: BuildingColor;
 }
-export interface ModuloPlaced extends Placed {
-  unidadId: string;
-  moduloId: string;
-  titulo: string;
+export interface ModulePlaced extends Placed {
+  sectionId: string;
+  moduleId: string;
+  title: string;
 }
-export interface AnexoMarker extends Placed {
-  unidadId: string;
-  moduloId: string;
-  anexoId: string;
-  titulo: string;
-  descripcion: string;
-  tipo: TipoAnexo;
+export interface AttachmentMarker extends Placed {
+  sectionId: string;
+  moduleId: string;
+  attachmentId: string;
+  title: string;
+  description: string;
+  type: AttachmentType;
   url?: string;
 }
 export interface Cloud {
@@ -71,17 +71,17 @@ export interface WorldLayout {
   waters: TileRef[];
   roads: Placed[];
   castle: Placed;
-  hqs: UnidadHq[];
-  modulos: ModuloPlaced[];
-  anexos: AnexoMarker[];
+  hqs: SectionHq[];
+  modules: ModulePlaced[];
+  attachments: AttachmentMarker[];
   decor: Placed[];
   clouds: Cloud[];
-  islets: TileRef[]; // bases de hierba de los islotes (fuera de walk y clamp)
-  ridge: Placed[]; // cordón montañoso de fondo
-  volcanes: TileRef[]; // montañas del cordón con cráter activo (solo lava)
+  islets: TileRef[]; // grass bases of the islets (outside walk and clamp)
+  ridge: Placed[]; // background mountain ring
+  volcanoes: TileRef[]; // ring mountains with an active crater (lava only)
   spawn: TileRef;
-  boundR: number; // radio de isla en tiles para clamp
-  bioma: Biome;
+  boundR: number; // island radius in tiles for clamp
+  biome: Biome;
 }
 
 export function colorFor(color: string | undefined): BuildingColor {
@@ -92,13 +92,13 @@ export function colorFor(color: string | undefined): BuildingColor {
   return 'blue';
 }
 
-export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
-  const rand = rng(hash(`${asignaturaId}:${u.id}`));
+export function genSectionWorld(u: Section, subjectId: string): WorldLayout {
+  const rand = rng(hash(`${subjectId}:${u.id}`));
   const color = colorFor(u.color);
-  const bioma = biomeOf(u);
-  const desert = bioma === 'desierto';
-  const snow = bioma === 'nieve';
-  const lava = bioma === 'lava';
+  const biome = biomeOf(u);
+  const desert = biome === 'desierto';
+  const snow = biome === 'nieve';
+  const lava = biome === 'lava';
   const VOLCANO = `${G}/decoration/nature/volcano.glb`;
   const tiles = new Map<string, TileRef>();
   const put = (q: number, r: number): void => {
@@ -120,47 +120,47 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
   };
 
   const roads: Placed[] = [];
-  const modulos: ModuloPlaced[] = [];
-  const anexos: AnexoMarker[] = [];
+  const modules: ModulePlaced[] = [];
+  const attachments: AttachmentMarker[] = [];
   const taken = new Set<string>();
 
-  // 1. Spawn del personaje (el camino nace directamente en su posición)
+  // 1. Character spawn (the road starts directly at its position)
   const spawn: TileRef = { q: -2, r: 0 };
   connect(-2, 0, -1, 0, '__start');
   connect(-1, 0, 0, 0, '__start');
 
-  // Bandera de la unidad en el spawn
-  modulos.push({
+  // Section flag at the spawn
+  modules.push({
     q: spawn.q,
     r: spawn.r,
     model: `${G}/decoration/props/flag_${color}.gltf`,
     ox: 0.3,
     oz: 0,
     rotY: 0,
-    unidadId: u.id,
-    moduloId: `__flag_${u.id}`,
-    titulo: `Bandera ${u.titulo}`,
+    sectionId: u.id,
+    moduleId: `__flag_${u.id}`,
+    title: `Bandera ${u.title}`,
   });
 
-  // 2. Mercado inicial: sobre baldosa de remate hex_road_M (Foto 2), con conector previo completo (Foto 1)
+  // 2. Initial market: on an hex_road_M finishing tile (Photo 2), with a complete preceding connector (Photo 1)
   const mkSpot = { q: -2, r: -2 };
   const mkDoor = { q: -2, r: -1 };
   connect(-2, 0, mkDoor.q, mkDoor.r, '__start');
   connect(mkDoor.q, mkDoor.r, mkSpot.q, mkSpot.r, '__start');
   taken.add(key(mkSpot.q, mkSpot.r));
-  modulos.push({
+  modules.push({
     q: mkSpot.q,
     r: mkSpot.r,
     model: `${G}/buildings/${color}/building_market_${color}.gltf`,
     ox: 0,
     oz: 0,
     rotY: faceDoor(mkSpot.q, mkSpot.r, mkDoor.q, mkDoor.r),
-    unidadId: u.id,
-    moduloId: `__market_${u.id}`,
-    titulo: 'Mercado',
+    sectionId: u.id,
+    moduleId: `__market_${u.id}`,
+    title: 'Mercado',
   });
 
-  // Mazo de edificios barajado
+  // Shuffled building deck
   const homes = ['building_tavern', 'building_barracks', 'building_archeryrange', 'building_lumbermill', 'building_windmill', 'building_home_B'];
   const deck: string[] = [];
   const deal = (): string => {
@@ -174,17 +174,17 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
     return deck.pop() as string;
   };
 
-  // 3. Troncal serpenteante con red orgánica en pulpo (varios trayectos y ramales a cada edificación)
+  // 3. Winding trunk with an organic octopus network (several paths and branches to each building)
   let curQ = 0;
   let curR = 0;
 
-  u.modulos.forEach((m, mi) => {
+  u.modules.forEach((m, mi) => {
     const side = mi % 2 === 0 ? -1 : 1;
-    const numAnexos = m.anexos.length;
-    // Longitud generosa para que el distrito y los ramales queden holgados
-    const segLen = Math.max(6, (numAnexos + 1) * 2 + 2);
+    const numAttachments = m.attachments.length;
+    // Generous length so the district and the branches have room
+    const segLen = Math.max(6, (numAttachments + 1) * 2 + 2);
 
-    // Troncal serpenteante (S-curves orgánicas que rompen la línea recta)
+    // Winding trunk (organic S-curves that break the straight line)
     const trunkTiles: TileRef[] = [{ q: curQ, r: curR }];
     for (let s = 1; s <= segLen; s++) {
       let nq = curQ + 1;
@@ -212,67 +212,67 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
       trunkTiles.push({ q: curQ, r: curR });
     }
 
-    // Torre del módulo: sobre baldosa de remate hex_road_M (Foto 2), con conector previo completo (Foto 1)
+    // Module tower: on an hex_road_M finishing tile (Photo 2), with a complete preceding connector (Photo 1)
     const towerDoor = { q: curQ, r: curR + side };
     const towerSpot = { q: curQ, r: curR + side * 2 };
     connect(curQ, curR, towerDoor.q, towerDoor.r, m.id);
     connect(towerDoor.q, towerDoor.r, towerSpot.q, towerSpot.r, m.id);
     taken.add(key(towerSpot.q, towerSpot.r));
-    modulos.push({
+    modules.push({
       q: towerSpot.q,
       r: towerSpot.r,
       model: `${G}/buildings/${color}/building_tower_A_${color}.gltf`,
       ox: 0,
       oz: 0,
       rotY: faceDoor(towerSpot.q, towerSpot.r, towerDoor.q, towerDoor.r),
-      unidadId: u.id,
-      moduloId: m.id,
-      titulo: m.titulo,
+      sectionId: u.id,
+      moduleId: m.id,
+      title: m.title,
     });
 
-    // Anexos: tentáculos orgánicos hacia claros en el paisaje
-    const anexoDoors: { door: TileRef; spot: TileRef }[] = [];
-    m.anexos.forEach((x, xi) => {
-      const anexoSide = xi % 2 === 0 ? -side : side;
+    // Attachments: organic tentacles toward clearings in the landscape
+    const attachmentDoors: { door: TileRef; spot: TileRef }[] = [];
+    m.attachments.forEach((x, xi) => {
+      const attachmentSide = xi % 2 === 0 ? -side : side;
       const trunkIdx = 1 + xi * 2;
       const anchor = trunkTiles[Math.min(trunkIdx, trunkTiles.length - 3)];
 
-      let step1 = { q: anchor.q, r: anchor.r + anexoSide };
+      let step1 = { q: anchor.q, r: anchor.r + attachmentSide };
       if (taken.has(key(step1.q, step1.r)) || (step1.q === curQ && step1.r === curR)) {
-        step1 = { q: anchor.q + 1, r: anchor.r + anexoSide };
+        step1 = { q: anchor.q + 1, r: anchor.r + attachmentSide };
       }
 
-      const anexoDoor = { q: step1.q, r: step1.r + anexoSide };
-      const anexoSpot = { q: step1.q, r: anexoDoor.r + anexoSide };
+      const attachmentDoor = { q: step1.q, r: step1.r + attachmentSide };
+      const attachmentSpot = { q: step1.q, r: attachmentDoor.r + attachmentSide };
 
       connect(anchor.q, anchor.r, step1.q, step1.r, m.id);
-      connect(step1.q, step1.r, anexoDoor.q, anexoDoor.r, m.id);
-      connect(anexoDoor.q, anexoDoor.r, anexoSpot.q, anexoSpot.r, m.id);
+      connect(step1.q, step1.r, attachmentDoor.q, attachmentDoor.r, m.id);
+      connect(attachmentDoor.q, attachmentDoor.r, attachmentSpot.q, attachmentSpot.r, m.id);
 
-      taken.add(key(anexoSpot.q, anexoSpot.r));
+      taken.add(key(attachmentSpot.q, attachmentSpot.r));
 
-      anexoDoors.push({ door: anexoDoor, spot: anexoSpot });
-      anexos.push({
-        q: anexoSpot.q,
-        r: anexoSpot.r,
+      attachmentDoors.push({ door: attachmentDoor, spot: attachmentSpot });
+      attachments.push({
+        q: attachmentSpot.q,
+        r: attachmentSpot.r,
         model: `${G}/buildings/${color}/${deal()}_${color}.gltf`,
         ox: 0,
         oz: 0,
-        rotY: faceDoor(anexoSpot.q, anexoSpot.r, anexoDoor.q, anexoDoor.r),
-        unidadId: u.id,
-        moduloId: m.id,
-        anexoId: x.id,
-        titulo: x.titulo,
-        descripcion: x.descripcion ?? '',
-        tipo: x.tipo,
+        rotY: faceDoor(attachmentSpot.q, attachmentSpot.r, attachmentDoor.q, attachmentDoor.r),
+        sectionId: u.id,
+        moduleId: m.id,
+        attachmentId: x.id,
+        title: x.title,
+        description: x.description ?? '',
+        type: x.type,
         url: x.url,
       });
     });
 
-    // Trayecto secundario / Loop entre anexos cercanos (crea trayectos alternativos)
-    if (anexoDoors.length >= 2) {
-      const d1 = anexoDoors[0].door;
-      const d2 = anexoDoors[1].door;
+    // Secondary route / Loop between nearby appendices (creates alternative routes)
+    if (attachmentDoors.length >= 2) {
+      const d1 = attachmentDoors[0].door;
+      const d2 = attachmentDoors[1].door;
       const distD = dist(d1.q - d2.q, d1.r - d2.r);
       if (distD >= 2 && distD <= 3) {
         for (const [dq, dr] of NB) {
@@ -291,7 +291,7 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
     }
   });
 
-  // 4. Castillo final: sobre baldosa de remate hex_road_M (Foto 2), con conector previo completo (Foto 1)
+  // 4. Final castle: on an hex_road_M finishing tile (Photo 2), with a complete preceding connector (Photo 1)
   connect(curQ, curR, curQ + 1, curR, '__end');
   connect(curQ + 1, curR, curQ + 2, curR, '__end');
   connect(curQ + 2, curR, curQ + 3, curR, '__end');
@@ -301,7 +301,7 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
   connect(curQ + 3, curR, endQ, endR, '__end');
   taken.add(key(endQ, endR));
 
-  // 5. Resolver piezas de camino y rotaciones mediante Auto-Tiling
+  // 5. Resolve road pieces and rotations through Auto-Tiling
   for (const [k, nbs] of roadEdges) {
     const [q, r] = k.split(',').map(Number);
     const connIndices: number[] = [];
@@ -324,7 +324,7 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
     });
   }
 
-  // 6. Cuerpo de la isla: rodear caminos y edificios con hierba (los caminos no llevan hierba debajo)
+  // 6. Island body: surround roads and buildings with grass (roads have no grass underneath)
   const roadKeySet = new Set(roadEdges.keys());
   const corePlots = [
     ...tiles.values(),
@@ -342,7 +342,7 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
     }
   }
 
-  // Penínsulas decorativas de hierba
+  // Decorative grass peninsulas
   const blobTiles: TileRef[] = [];
   const nB = 2 + Math.floor(rand() * 2);
   for (let b = 0; b < nB; b++) {
@@ -363,7 +363,7 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
     }
   }
 
-  // Reserva de islotes exteriores
+  // Reserve of outer islets
   const islets: TileRef[] = [];
   const isletSeen = new Set<string>();
   const iput = (q: number, r: number): void => {
@@ -373,7 +373,7 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
     islets.push({ q, r });
   };
 
-  // Agua: anillo + conexiones (excluye estrictamente cualquier tierra, camino o edificación)
+  // Water: ring + connections (strictly excludes any land, road or building)
   const isLand = (q: number, r: number): boolean => {
     const k = key(q, r);
     return tiles.has(k) || roadKeySet.has(k) || taken.has(k) || isletSeen.has(k);
@@ -393,7 +393,7 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
     for (const [dq, dr] of NB) wput(t.q + dq, t.r + dr);
   }
 
-  // Islotes con montañas
+  // Islets with mountains
   const NB6V: ReadonlyArray<readonly [number, number]> = [[1, 0], [0.5, -0.866], [-0.5, -0.866], [-1, 0], [-0.5, 0.866], [0.5, 0.866]];
   const allGrass = [...tiles.values()];
   const gcx = allGrass.reduce((n, t) => n + t.q, 0) / allGrass.length;
@@ -502,7 +502,7 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
     });
   }
 
-  // Anillo de agua alrededor de hierba y caminos
+  // Water ring around grass and roads
   for (const t of [...tiles.values(), ...roads]) {
     for (const [dq, dr] of NB) {
       wput(t.q + dq, t.r + dr);
@@ -522,11 +522,11 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
     wput(hi + 2, r);
   }
 
-  // Decoración en hierba libre (árboles y rocas)
+  // Decoration on free grass (trees and rocks)
   const busy = new Set<string>([
     ...roadKeySet,
-    ...modulos.map((m) => key(m.q, m.r)),
-    ...anexos.map((x) => key(x.q, x.r)),
+    ...modules.map((m) => key(m.q, m.r)),
+    ...attachments.map((x) => key(x.q, x.r)),
     key(endQ, endR),
     key(spawn.q, spawn.r),
   ]);
@@ -623,7 +623,7 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
     if (i % 2 !== 0) return;
     decor.push({ ...t, model: blobDecor[Math.floor(rand() * blobDecor.length)], ox: (rand() - 0.5) * 0.4, oz: (rand() - 0.5) * 0.4, rotY: rand() * Math.PI * 2, s: 0.8 + rand() * 0.6 });
   });
-  // Garantía de vegetación (el azar del pool podría omitirla)
+  // Vegetation guarantee (the pool's randomness might omit it)
   if (desert) {
     const has = new Set(decor.map((d) => d.model));
     const needs: string[] = [];
@@ -650,7 +650,7 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
   }
   decor.push(...isletDecor);
 
-  // Huesos desérticos: 2 osamentas en tiles libres al azar (determinista, sin llenar)
+  // Desert bones: 2 skeletons on random free tiles (deterministic, without filling)
   if (desert) {
     for (let i = 0; i < 2; i++) {
       const boneSpot = free.find((t) => !decor.some((d) => d.q === t.q && d.r === t.r));
@@ -658,7 +658,7 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
       decor.push({ ...boneSpot, model: 'proc:huesos', ox: 0, oz: 0, rotY: rand() * Math.PI * 2, s: 0.9 + rand() * 0.3 });
     }
   }
-  // Utilería solo junto al mercado: barriles y cajas (desierto, nieve y lava)
+  // Props only next to the market: barrels and crates (desert, snow and lava)
   if (desert || snow || lava) {
     const marketProps = [
       `${G}/decoration/props/barrel.gltf`,
@@ -673,11 +673,11 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
     });
   }
 
-  // Volcanes: nuevos islotes tipo volcán solo en bioma lava (no reemplazan existentes)
-  const volcanes: TileRef[] = [];
+  // Volcanoes: new volcano-type islets only in the lava biome (they do not replace existing ones)
+  const volcanoes: TileRef[] = [];
   if (lava && ridge.length) {
-    // Candidatos: entradas del ridge cercanas al camino principal (spawn -> castillo)
-    // El camino va aproximadamente de q=-2 a endQ, con r variable
+    // Candidates: ridge entries close to the main road (spawn -> castle)
+    // The road goes roughly from q=-2 to endQ, with variable r
     const roadQs = roads.map((r) => r.q);
     const minRoadQ = Math.min(...roadQs, -2);
     const maxRoadQ = Math.max(...roadQs, endQ);
@@ -685,10 +685,10 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
 
     const volcanoCandidates = ridge
       .map((p, i) => ({ ...p, idx: i, distToPath: Math.abs(p.q - roadQCenter) }))
-      .filter((p) => p.distToPath <= 6) // Cerca del eje horizontal del camino (más permisivo)
+      .filter((p) => p.distToPath <= 6) // Near the road's horizontal axis (more permissive)
       .sort((a, b) => a.distToPath - b.distToPath);
 
-    // Fallback: si no hay candidatos cerca del camino, usar los más cercanos al centro
+    // Fallback: if there are no candidates near the road, use those closest to the center
     const finalCandidates = volcanoCandidates.length
       ? volcanoCandidates
       : ridge
@@ -696,12 +696,12 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
           .sort((a, b) => a.distToPath - b.distToPath);
 
     if (finalCandidates.length) {
-      // Aleatorizar candidatos (pero manteniendo prioridad por cercanía al camino)
+      // Randomize candidates (but keeping priority by proximity to the road)
       for (let i = finalCandidates.length - 1; i > 0; i--) {
         const j = Math.floor(rand() * (i + 1));
         [finalCandidates[i], finalCandidates[j]] = [finalCandidates[j], finalCandidates[i]];
       }
-      // 1-2 volcanes nuevos cerca del camino (máx 2 total)
+      // 1-2 new volcanoes near the road (max 2 in total)
       const nV = Math.min(1 + Math.floor(rand() * 2), finalCandidates.length);
       for (const c of finalCandidates.slice(0, nV)) {
         ridge.push({
@@ -713,23 +713,23 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
           rotY: rand() * Math.PI * 2,
           s: (c.s ?? 2) * 3,
         });
-        volcanes.push({ q: c.q, r: c.r });
+        volcanoes.push({ q: c.q, r: c.r });
       }
     }
   }
 
-  // Limpieza de decor sobre edificios
+  // Cleanup of decor on top of buildings
   const reserved = new Set<string>([
     key(spawn.q, spawn.r),
     key(endQ, endR),
-    ...modulos.map((m) => key(m.q, m.r)),
-    ...anexos.map((x) => key(x.q, x.r)),
+    ...modules.map((m) => key(m.q, m.r)),
+    ...attachments.map((x) => key(x.q, x.r)),
   ]);
   for (let i = decor.length - 1; i >= 0; i--) {
     if (reserved.has(key(decor[i].q, decor[i].r))) decor.splice(i, 1);
   }
 
-  // Limpieza final de aguas para asegurar que ninguna casilla de agua coincida con tierra, caminos, islotes o edificios
+  // Final water cleanup to ensure no water cell coincides with land, roads, islets or buildings
   const finalLand = new Set<string>([
     ...tiles.keys(),
     ...roadKeySet,
@@ -752,22 +752,22 @@ export function genUnidadWorld(u: Unidad, asignaturaId: string): WorldLayout {
       s: 1.3,
     },
     hqs: [],
-    modulos,
-    anexos,
+    modules,
+    attachments,
     decor,
     clouds,
     islets,
     ridge,
-    volcanes,
+    volcanoes,
     spawn,
     boundR: boundTiles + 2,
-    bioma,
+    biome,
   };
 }
 
-// compat: genera el mundo de la primera unidad (hub decide en la app real)
-export function genWorld(a: Asignatura): WorldLayout {
-  const u = a.unidades[0];
+// compat: generates the world of the first section (the hub decides in the real app)
+export function genWorld(a: Subject): WorldLayout {
+  const u = a.sections[0];
   if (!u) {
     return {
       tiles: [{ q: 0, r: 0 }],
@@ -775,68 +775,68 @@ export function genWorld(a: Asignatura): WorldLayout {
       roads: [],
       castle: { q: 0, r: 0, model: `${G}/buildings/blue/building_castle_blue.gltf`, ox: 0, oz: 0, rotY: 0, s: 1.3 },
       hqs: [],
-      modulos: [],
-      anexos: [],
+      modules: [],
+      attachments: [],
       decor: [],
       clouds: [],
       islets: [],
       ridge: [],
-      volcanes: [],
+      volcanoes: [],
       spawn: { q: 0, r: 0 },
       boundR: 4,
-      bioma: 'pradera',
+      biome: 'pradera',
     };
   }
-  return genUnidadWorld(u, a.id);
+  return genSectionWorld(u, a.id);
 }
 
-// — Mapa de islas del curso (hub /play/:id): una isla por unidad —
+// — Map of the course's islands (hub /play/:id): one island per section —
 
-export interface IslaEntrada {
+export interface IslandEntry {
   id: string;
-  anexos: number;
+  attachments: number;
 }
 
-export interface IslaColocada extends IslaEntrada {
+export interface PlacedIsland extends IslandEntry {
   cx: number;
   cy: number;
   r: number;
 }
 
-export interface Archipielago {
-  islas: IslaColocada[];
-  /** Ancho del viewBox SVG. */
+export interface Archipelago {
+  islands: PlacedIsland[];
+  /** Width of the SVG viewBox. */
   w: number;
-  /** Alto del viewBox SVG (crece con las filas). */
+  /** Height of the SVG viewBox (grows with the rows). */
   h: number;
-  /** Ruta punteada que une las islas en orden de cursada. */
-  ruta: string;
+  /** Dotted route that joins the islands in course order. */
+  route: string;
 }
 
-const ISLAS_POR_FILA = 3;
-const ISLAS_ANCHO = 1200;
-const ISLAS_X0 = 200;
-const ISLAS_DX = 400;
-const ISLAS_Y0 = 150;
-const ISLAS_DY = 270;
-const ISLA_R_BASE = 54;
-const ISLA_R_MAX = 82;
+const ISLANDS_BY_ROW = 3;
+const ISLANDS_WIDTH = 1200;
+const ISLANDS_X0 = 200;
+const ISLANDS_DX = 400;
+const ISLANDS_Y0 = 150;
+const ISLANDS_DY = 270;
+const ISLAND_R_BASE = 54;
+const ISLAND_R_MAX = 82;
 
-// ponytail: serpentina determinista por orden, sin física ni RNG.
-export function genIslasLayout(unidades: IslaEntrada[]): Archipielago {
-  const islas: IslaColocada[] = unidades.map((u, i) => {
-    const fila = Math.floor(i / ISLAS_POR_FILA);
-    const pos = i % ISLAS_POR_FILA;
-    const col = fila % 2 === 0 ? pos : ISLAS_POR_FILA - 1 - pos;
+// ponytail: deterministic serpentine by order, no physics or RNG.
+export function genIslandsLayout(sections: IslandEntry[]): Archipelago {
+  const islands: PlacedIsland[] = sections.map((u, i) => {
+    const row = Math.floor(i / ISLANDS_BY_ROW);
+    const pos = i % ISLANDS_BY_ROW;
+    const col = row % 2 === 0 ? pos : ISLANDS_BY_ROW - 1 - pos;
     return {
       ...u,
-      cx: ISLAS_X0 + col * ISLAS_DX,
-      cy: ISLAS_Y0 + fila * ISLAS_DY,
-      r: Math.min(ISLA_R_MAX, ISLA_R_BASE + u.anexos * 3),
+      cx: ISLANDS_X0 + col * ISLANDS_DX,
+      cy: ISLANDS_Y0 + row * ISLANDS_DY,
+      r: Math.min(ISLAND_R_MAX, ISLAND_R_BASE + u.attachments * 3),
     };
   });
-  const filas = Math.ceil(unidades.length / ISLAS_POR_FILA);
-  const h = filas === 0 ? 0 : ISLAS_Y0 + (filas - 1) * ISLAS_DY + ISLA_R_MAX + 120;
-  const ruta = islas.map((s, i) => `${i === 0 ? 'M' : 'L'}${s.cx},${s.cy}`).join(' ');
-  return { islas, w: ISLAS_ANCHO, h, ruta };
+  const rows = Math.ceil(sections.length / ISLANDS_BY_ROW);
+  const h = rows === 0 ? 0 : ISLANDS_Y0 + (rows - 1) * ISLANDS_DY + ISLAND_R_MAX + 120;
+  const route = islands.map((s, i) => `${i === 0 ? 'M' : 'L'}${s.cx},${s.cy}`).join(' ');
+  return { islands, w: ISLANDS_WIDTH, h, route };
 }

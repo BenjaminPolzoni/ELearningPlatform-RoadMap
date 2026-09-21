@@ -3,19 +3,19 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { StoreService } from '../../../core/educa/store.service';
 import { UiBadge, UiCard } from '../shared/educa-ui';
 import { EditorComponent, type EditorKind, type EditorResult } from './editor.component';
-import type { Biome, TipoAnexo } from '../../../core/educa/models';
+import type { Biome, AttachmentType } from '../../../core/educa/models';
 
 interface Editing {
   kind: EditorKind;
-  unidadId?: string;
-  moduloId?: string;
-  anexoId?: string;
+  sectionId?: string;
+  moduleId?: string;
+  attachmentId?: string;
   heading: string;
-  titulo: string;
-  descripcion: string;
+  title: string;
+  description: string;
   color: string;
-  bioma: Biome;
-  tipo: TipoAnexo;
+  biome: Biome;
+  type: AttachmentType;
   url: string;
 }
 
@@ -27,7 +27,7 @@ const ICON: Record<string, string> = {
   ejercicio: '✏️',
 };
 
-const BIOMA_LABEL: Record<Biome, { icon: string; label: string }> = {
+const BIOME_LABEL: Record<Biome, { icon: string; label: string }> = {
   pradera: { icon: '🌿', label: 'Pradera' },
   desierto: { icon: '🏜️', label: 'Desierto' },
   nieve: { icon: '❄️', label: 'Nieve' },
@@ -38,13 +38,13 @@ const BIOMA_LABEL: Record<Biome, { icon: string; label: string }> = {
   selector: 'app-builder',
   standalone: true,
   imports: [RouterLink, UiBadge, UiCard, EditorComponent],
-  // El shell raíz (app.html) es h-[98vh] con overflow hidden: esta vista scrollea
-  // puertas adentro con altura acotada (h-full), igual que avatar-editor y catálogo.
+  // The root shell (app.html) is h-[98vh] with overflow hidden: this view scrolls
+  // internally with bounded height (h-full), same as avatar-editor and catalog.
   host: { class: 'block w-full h-full overflow-y-auto' },
   template: `
     @if (store.current(); as a) {
       <div class="mx-auto max-w-4xl p-6">
-        <!-- Barra de navegación superior -->
+        <!-- Top navigation bar -->
         <div class="flex items-center justify-between gap-4 border-b border-base-300 pb-4">
           <a routerLink="/profesor" class="btn btn-sm btn-ghost ui-font text-[9px]">
             ← Asignaturas
@@ -62,92 +62,92 @@ const BIOMA_LABEL: Record<Biome, { icon: string; label: string }> = {
           </div>
         </div>
 
-        <!-- Encabezado de la asignatura -->
+        <!-- Subject header -->
         <div class="mt-4 flex flex-wrap items-center gap-3">
-          <h1 class="text-2xl font-bold title-font text-primary">🧩 {{ a.nombre }}</h1>
-          <ui-badge>🌍 {{ counts().unidades }} unidades</ui-badge>
-          <ui-badge>🎯 {{ counts().modulos }} módulos</ui-badge>
-          <ui-badge>📦 {{ counts().anexos }} anexos</ui-badge>
+          <h1 class="text-2xl font-bold title-font text-primary">🧩 {{ a.name }}</h1>
+          <ui-badge>🌍 {{ counts().sections }} unidades</ui-badge>
+          <ui-badge>🎯 {{ counts().modules }} módulos</ui-badge>
+          <ui-badge>📦 {{ counts().attachments }} anexos</ui-badge>
         </div>
-        <p class="text-sm opacity-70 mt-1">{{ a.descripcion }}</p>
+        <p class="text-sm opacity-70 mt-1">{{ a.description }}</p>
 
-        <!-- Alta rápida de unidad -->
+        <!-- Quick section creation -->
         <div class="mt-5 flex gap-2">
           <input #u placeholder="Nueva unidad (mundo/nivel)…" class="input input-bordered input-sm flex-1"
-            (keydown.enter)="addUnidad(u.value); u.value=''" />
-          <button (click)="addUnidad(u.value); u.value=''" class="btn btn-sm btn-primary ui-font text-[9px]">+ Unidad</button>
+            (keydown.enter)="addSection(u.value); u.value=''" />
+          <button (click)="addSection(u.value); u.value=''" class="btn btn-sm btn-primary ui-font text-[9px]">+ Unidad</button>
         </div>
 
-        <!-- Lista de Unidades -->
+        <!-- Section list -->
         <div class="mt-6 grid gap-4">
-          @for (un of a.unidades; track un.id) {
+          @for (un of a.sections; track un.id) {
             <ui-card>
               <div class="flex items-center gap-3 flex-wrap">
                 <span class="h-4 w-4 rounded-full shrink-0 shadow" [style.background]="un.color || '#6366f1'"></span>
-                <strong class="text-base text-base-content">{{ $index + 1 }}. {{ un.titulo }}</strong>
+                <strong class="text-base text-base-content">{{ $index + 1 }}. {{ un.title }}</strong>
 
-                <!-- Badge de Bioma 3D -->
+                <!-- 3D Biome badge -->
                 <span class="badge badge-sm badge-outline gap-1 font-mono text-[10px] text-accent border-accent/40">
-                  {{ biomaInfo(un.bioma).icon }} {{ biomaInfo(un.bioma).label }}
+                  {{ biomeInfo(un.biome).icon }} {{ biomeInfo(un.biome).label }}
                 </span>
 
                 <span class="flex-1"></span>
 
                 <div class="flex items-center gap-1">
-                  <button (click)="store.moveUnidad(un.id, -1)" aria-label="Subir unidad" class="btn btn-xs btn-ghost" [disabled]="$index === 0">↑</button>
-                  <button (click)="store.moveUnidad(un.id, 1)" aria-label="Bajar unidad" class="btn btn-xs btn-ghost" [disabled]="$last">↓</button>
-                  <button (click)="editUnidad(un.id, un.titulo, un.descripcion, un.color || '#6366f1', un.bioma || 'pradera')" class="btn btn-xs btn-outline btn-primary">Editar</button>
-                  <button (click)="store.removeUnidad(un.id)" class="btn btn-xs btn-ghost text-error">✕</button>
+                  <button (click)="store.moveSection(un.id, -1)" aria-label="Subir unidad" class="btn btn-xs btn-ghost" [disabled]="$index === 0">↑</button>
+                  <button (click)="store.moveSection(un.id, 1)" aria-label="Bajar unidad" class="btn btn-xs btn-ghost" [disabled]="$last">↓</button>
+                  <button (click)="editSection(un.id, un.title, un.description, un.color || '#6366f1', un.biome || 'pradera')" class="btn btn-xs btn-outline btn-primary">Editar</button>
+                  <button (click)="store.removeSection(un.id)" class="btn btn-xs btn-ghost text-error">✕</button>
                 </div>
               </div>
 
-              @if (un.descripcion) {
-                <p class="text-xs opacity-70 mt-1">{{ un.descripcion }}</p>
+              @if (un.description) {
+                <p class="text-xs opacity-70 mt-1">{{ un.description }}</p>
               }
 
-              <!-- Alta rápida de módulo -->
+              <!-- Quick module creation -->
               <div class="mt-3 flex gap-2">
                 <input #m placeholder="Nuevo módulo (etapa)…" class="input input-bordered input-xs flex-1"
-                  (keydown.enter)="store.addModulo(un.id, m.value); m.value=''" />
-                <button (click)="store.addModulo(un.id, m.value); m.value=''" class="btn btn-xs btn-neutral ui-font text-[8px]">+ Módulo</button>
+                  (keydown.enter)="store.addModule(un.id, m.value); m.value=''" />
+                <button (click)="store.addModule(un.id, m.value); m.value=''" class="btn btn-xs btn-neutral ui-font text-[8px]">+ Módulo</button>
               </div>
 
-              <!-- Módulos de la unidad -->
+              <!-- Section modules -->
               <div class="mt-3 ml-2 sm:ml-5 grid gap-2.5">
-                @for (mo of un.modulos; track mo.id) {
+                @for (mo of un.modules; track mo.id) {
                   <div class="rounded-lg border border-base-300 bg-base-100/50 p-3">
                     <div class="flex items-center gap-2 text-sm flex-wrap">
-                      <strong class="text-xs text-secondary">🎯 {{ mo.titulo }}</strong>
+                      <strong class="text-xs text-secondary">🎯 {{ mo.title }}</strong>
                       <span class="flex-1"></span>
-                      <button (click)="store.moveModulo(un.id, mo.id, -1)" aria-label="Subir módulo" class="btn btn-xs btn-ghost" [disabled]="$index === 0">↑</button>
-                      <button (click)="store.moveModulo(un.id, mo.id, 1)" aria-label="Bajar módulo" class="btn btn-xs btn-ghost" [disabled]="$last">↓</button>
-                      <button (click)="editModulo(un.id, mo.id, mo.titulo, mo.descripcion)" class="btn btn-xs btn-ghost text-primary">Editar</button>
-                      <button (click)="store.removeModulo(un.id, mo.id)" class="btn btn-xs btn-ghost text-error">✕</button>
+                      <button (click)="store.moveModule(un.id, mo.id, -1)" aria-label="Subir módulo" class="btn btn-xs btn-ghost" [disabled]="$index === 0">↑</button>
+                      <button (click)="store.moveModule(un.id, mo.id, 1)" aria-label="Bajar módulo" class="btn btn-xs btn-ghost" [disabled]="$last">↓</button>
+                      <button (click)="editModule(un.id, mo.id, mo.title, mo.description)" class="btn btn-xs btn-ghost text-primary">Editar</button>
+                      <button (click)="store.removeModule(un.id, mo.id)" class="btn btn-xs btn-ghost text-error">✕</button>
                     </div>
 
-                    @if (mo.descripcion) {
-                      <p class="text-xs opacity-60 mt-0.5">{{ mo.descripcion }}</p>
+                    @if (mo.description) {
+                      <p class="text-xs opacity-60 mt-0.5">{{ mo.description }}</p>
                     }
 
-                    <!-- Alta rápida de anexo -->
+                    <!-- Quick appendix creation -->
                     <div class="mt-2 flex gap-2">
                       <input #x placeholder="Nuevo anexo / actividad…" class="input input-bordered input-xs flex-1"
-                        (keydown.enter)="store.addAnexo(un.id, mo.id, x.value); x.value=''" />
-                      <button (click)="store.addAnexo(un.id, mo.id, x.value); x.value=''" class="btn btn-xs btn-neutral ui-font text-[8px]">+ Anexo</button>
+                        (keydown.enter)="store.addAttachment(un.id, mo.id, x.value); x.value=''" />
+                      <button (click)="store.addAttachment(un.id, mo.id, x.value); x.value=''" class="btn btn-xs btn-neutral ui-font text-[8px]">+ Anexo</button>
                     </div>
 
-                    <!-- Anexos del módulo -->
-                    @for (an of mo.anexos; track an.id) {
+                    <!-- Module appendices -->
+                    @for (an of mo.attachments; track an.id) {
                       <div class="mt-1.5 flex items-center gap-2 text-xs bg-base-200/40 rounded p-1.5">
-                        <span class="text-sm shrink-0">{{ icon(an.tipo) }}</span>
-                        <span class="font-medium truncate">{{ an.titulo }}</span>
-                        <span class="badge badge-xs badge-neutral shrink-0">{{ an.tipo }}</span>
+                        <span class="text-sm shrink-0">{{ icon(an.type) }}</span>
+                        <span class="font-medium truncate">{{ an.title }}</span>
+                        <span class="badge badge-xs badge-neutral shrink-0">{{ an.type }}</span>
                         @if (an.url) {
                           <a [href]="an.url" target="_blank" rel="noopener" class="link link-primary text-[10px] truncate max-w-40">↗ enlace</a>
                         }
                         <span class="flex-1"></span>
-                        <button (click)="editAnexo(un.id, mo.id, an.id, an.titulo, an.descripcion || '', an.tipo, an.url || '')" class="btn btn-xs btn-ghost text-primary">Editar</button>
-                        <button (click)="store.removeAnexo(un.id, mo.id, an.id)" class="btn btn-xs btn-ghost text-error">✕</button>
+                        <button (click)="editAttachment(un.id, mo.id, an.id, an.title, an.description || '', an.type, an.url || '')" class="btn btn-xs btn-ghost text-primary">Editar</button>
+                        <button (click)="store.removeAttachment(un.id, mo.id, an.id)" class="btn btn-xs btn-ghost text-error">✕</button>
                       </div>
                     }
                   </div>
@@ -161,8 +161,8 @@ const BIOMA_LABEL: Record<Biome, { icon: string; label: string }> = {
 
         @if (editing(); as e) {
           <app-editor [kind]="e.kind" [heading]="e.heading"
-            [initialTitulo]="e.titulo" [initialDescripcion]="e.descripcion"
-            [initialColor]="e.color" [initialBioma]="e.bioma" [initialTipo]="e.tipo" [initialUrl]="e.url"
+            [initialTitle]="e.title" [initialDescription]="e.description"
+            [initialColor]="e.color" [initialBiome]="e.biome" [initialType]="e.type" [initialUrl]="e.url"
             (cancel)="editing.set(null)" (saveResult)="onSave($event)" />
         }
       </div>
@@ -189,35 +189,35 @@ export class BuilderComponent {
     return ICON[t] ?? '📦';
   }
 
-  biomaInfo(b?: Biome): { icon: string; label: string } {
-    return BIOMA_LABEL[b ?? 'pradera'] ?? BIOMA_LABEL.pradera;
+  biomeInfo(b?: Biome): { icon: string; label: string } {
+    return BIOME_LABEL[b ?? 'pradera'] ?? BIOME_LABEL.pradera;
   }
 
-  addUnidad(v: string): void {
-    if (v.trim()) this.store.addUnidad(v.trim());
+  addSection(v: string): void {
+    if (v.trim()) this.store.addSection(v.trim());
   }
 
-  editUnidad(id: string, titulo: string, descripcion: string, color: string, bioma: Biome = 'pradera'): void {
-    this.editing.set({ kind: 'unidad', unidadId: id, heading: 'Editar unidad', titulo, descripcion, color, bioma, tipo: 'documento', url: '' });
+  editSection(id: string, title: string, description: string, color: string, biome: Biome = 'pradera'): void {
+    this.editing.set({ kind: 'unidad', sectionId: id, heading: 'Editar unidad', title, description, color, biome, type: 'documento', url: '' });
   }
 
-  editModulo(unidadId: string, moduloId: string, titulo: string, descripcion: string): void {
-    this.editing.set({ kind: 'modulo', unidadId, moduloId, heading: 'Editar módulo', titulo, descripcion, color: '#6366f1', bioma: 'pradera', tipo: 'documento', url: '' });
+  editModule(sectionId: string, moduleId: string, title: string, description: string): void {
+    this.editing.set({ kind: 'modulo', sectionId, moduleId, heading: 'Editar módulo', title, description, color: '#6366f1', biome: 'pradera', type: 'documento', url: '' });
   }
 
-  editAnexo(unidadId: string, moduloId: string, anexoId: string, titulo: string, descripcion: string, tipo: Editing['tipo'], url: string): void {
-    this.editing.set({ kind: 'anexo', unidadId, moduloId, anexoId, heading: 'Editar anexo', titulo, descripcion, color: '#6366f1', bioma: 'pradera', tipo, url });
+  editAttachment(sectionId: string, moduleId: string, attachmentId: string, title: string, description: string, type: Editing['type'], url: string): void {
+    this.editing.set({ kind: 'anexo', sectionId, moduleId, attachmentId, heading: 'Editar anexo', title, description, color: '#6366f1', biome: 'pradera', type, url });
   }
 
   onSave(r: EditorResult): void {
     const e = this.editing();
     if (!e) return;
-    if (e.kind === 'unidad' && e.unidadId)
-      this.store.editUnidad(e.unidadId, { titulo: r.titulo, descripcion: r.descripcion, color: r.color, bioma: r.bioma });
-    if (e.kind === 'modulo' && e.unidadId && e.moduloId)
-      this.store.editModulo(e.unidadId, e.moduloId, { titulo: r.titulo, descripcion: r.descripcion });
-    if (e.kind === 'anexo' && e.unidadId && e.moduloId && e.anexoId)
-      this.store.editAnexo(e.unidadId, e.moduloId, e.anexoId, { titulo: r.titulo, descripcion: r.descripcion, tipo: r.tipo, url: r.url });
+    if (e.kind === 'unidad' && e.sectionId)
+      this.store.editSection(e.sectionId, { title: r.title, description: r.description, color: r.color, biome: r.biome });
+    if (e.kind === 'modulo' && e.sectionId && e.moduleId)
+      this.store.editModule(e.sectionId, e.moduleId, { title: r.title, description: r.description });
+    if (e.kind === 'anexo' && e.sectionId && e.moduleId && e.attachmentId)
+      this.store.editAttachment(e.sectionId, e.moduleId, e.attachmentId, { title: r.title, description: r.description, type: r.type, url: r.url });
     this.editing.set(null);
   }
 }

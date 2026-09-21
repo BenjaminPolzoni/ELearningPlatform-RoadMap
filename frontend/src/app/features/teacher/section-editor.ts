@@ -4,69 +4,69 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { RoadmapStore } from '../../core/data/roadmap.store';
 import {
-  Actividad,
-  Dificultad,
-  descripcionPorDefecto,
-  NuevaActividad,
-  TipoNodo,
-  TipoRecursoTeoria,
-  XP_POR_DIFICULTAD,
+  Activity,
+  Difficulty,
+  defaultDescription,
+  NewActivity,
+  NodeType,
+  ResourceTheoryType,
+  XP_BY_DIFFICULTY,
 } from '../../core/data/roadmap.models';
 import { ConfirmButton } from './confirm-button';
-import { NodoCanvas } from './nodo-canvas';
+import { NodeCanvas } from './node-canvas';
 import { SaveFeedbackToast } from './save-feedback-toast';
 
-// Tipos creables desde este formulario — 'boss'/'hito' quedan afuera (ver roadmap.models.ts).
-type TipoContenido = 'teoria' | 'desafio-teorico' | 'desafio-practico';
-type Vista = 'lista' | 'mapa';
+// Types creatable from this form — 'boss'/'hito' are left out (see roadmap.models.ts).
+type ContentType = 'teoria' | 'desafio-teorico' | 'desafio-practico';
+type View = 'lista' | 'mapa';
 
 /**
- * Editor de una unidad (E1 / Fase 2, estilo Moodle). El contenido se lista en columna,
- * lineal hacia abajo — como la página de un curso de Moodle: desafíos teóricos y prácticos
- * apilados en orden, cada uno con su acción (RF-CUR-04/05, RF-DES-06/07, PAR-01/13).
- * Todo va por `RoadmapStore` → `RoadmapDataPort`, así el swap a HTTP de Fase 3 no toca esto.
+ * Editor of a section (E1 / Phase 2, Moodle style). The content is listed in a column,
+ * linear downwards — like a Moodle course page: theory and practice challenges
+ * stacked in order, each with its action (RF-CUR-04/05, RF-DES-06/07, PAR-01/13).
+ * Everything goes through `RoadmapStore` → `RoadmapDataPort`, so the Phase 3 swap to HTTP does not touch this.
  *
- * "Mapa de nodos" (G9): el mismo contenido, pero como el tablero que va a recorrer el
- * alumno (`unidad-mapa.ts`) — posición de cada nodo y prerequisitos entre ellos, ver
- * `nodo-canvas.ts`.
+ * "Node map" (G9): the same content, but as the board the student will go
+ * through (`section-map.ts`) — position of each node and prerequisites between them, see
+ * `node-canvas.ts`.
  */
 @Component({
-  selector: 'app-unidad-editor',
-  imports: [FormsModule, NgTemplateOutlet, RouterLink, NodoCanvas, ConfirmButton, SaveFeedbackToast],
-  // Ídem editor.ts: el shell raíz recorta el <router-outlet> sin scroll, así que esta vista
-  // (la lista de nodos, que puede ser más alta que la pantalla) scrollea puertas adentro.
+  selector: 'app-section-editor',
+  imports: [FormsModule, NgTemplateOutlet, RouterLink, NodeCanvas, ConfirmButton, SaveFeedbackToast],
+  // Same as editor.ts: the root shell clips the <router-outlet> without scroll, so this view
+  // (the node list, which may be taller than the screen) scrolls internally.
   host: { class: 'block w-full h-full overflow-y-auto p-6' },
   template: `
     <a routerLink="/profesor" class="btn btn-sm btn-ghost mb-4">← Volver al curso</a>
 
-    @if (unidad(); as u) {
+    @if (section(); as u) {
       <div class="max-w-3xl mx-auto">
         <div class="mb-4 text-center">
-          <h2 class="title-font text-primary text-xl">{{ u.nombre }}</h2>
+          <h2 class="title-font text-primary text-xl">{{ u.name }}</h2>
         </div>
 
-        <!-- ── Tabs: contenido (CRUD) / mapa de nodos (prerequisitos) ── -->
+        <!-- ── Tabs: content (CRUD) / node map (prerequisites) ── -->
         <div class="flex gap-2 mb-4">
           <button type="button" class="btn btn-sm"
-            [class.btn-primary]="vista() === 'lista'" [class.btn-outline]="vista() !== 'lista'"
-            (click)="vista.set('lista')">
+            [class.btn-primary]="view() === 'lista'" [class.btn-outline]="view() !== 'lista'"
+            (click)="view.set('lista')">
             📋 Contenido
           </button>
           <button type="button" class="btn btn-sm"
-            [class.btn-primary]="vista() === 'mapa'" [class.btn-outline]="vista() !== 'mapa'"
-            (click)="vista.set('mapa')">
+            [class.btn-primary]="view() === 'mapa'" [class.btn-outline]="view() !== 'mapa'"
+            (click)="view.set('mapa')">
             🗺️ Mapa de nodos
           </button>
         </div>
 
-        @if (vista() === 'mapa') {
-          <app-nodo-canvas [unidad]="u" class="block mb-8" />
+        @if (view() === 'mapa') {
+          <app-node-canvas [section]="u" class="block mb-8" />
         } @else {
-          <!-- ── Contenido en columna, lineal hacia abajo (Moodle) ──────── -->
+          <!-- ── Content in a column, linear downwards (Moodle) ──────── -->
           <ol class="flex flex-col">
-            @for (a of u.actividades; track a.id; let idx = $index; let last = $last) {
+            @for (a of u.activities; track a.id; let idx = $index; let last = $last) {
               <li class="relative pl-12">
-                <!-- rail: número + línea vertical que baja al siguiente -->
+                <!-- rail: number + vertical line going down to the next one -->
                 <span
                   class="absolute left-0 top-4 z-10 grid place-items-center w-8 h-8 rounded-full
                          bg-base-300 text-base-content ui-font text-sm tabular"
@@ -77,56 +77,56 @@ type Vista = 'lista' | 'mapa';
 
                 <div
                   class="card bg-base-200 border-2 mb-4"
-                  [class.border-primary]="editandoId() === a.id"
-                  [class.border-base-300]="editandoId() !== a.id"
+                  [class.border-primary]="editingId() === a.id"
+                  [class.border-base-300]="editingId() !== a.id"
                 >
                   <div class="card-body p-4 gap-2">
                     <div class="flex items-center justify-between gap-3">
                       <button
                         type="button"
                         class="flex items-center gap-2 min-w-0 flex-1 text-left"
-                        (click)="toggleExpandido(a.id)"
-                        [attr.aria-expanded]="expandido(a.id)"
+                        (click)="toggleExpanded(a.id)"
+                        [attr.aria-expanded]="isExpanded(a.id)"
                         title="ver detalle"
                       >
-                        <span class="text-lg leading-none shrink-0">{{ icono(a.tipo) }}</span>
-                        <span class="font-bold truncate">{{ a.nombre }}</span>
-                        <span class="text-xs opacity-50 shrink-0">{{ expandido(a.id) ? '▲' : '▼' }}</span>
+                        <span class="text-lg leading-none shrink-0">{{ icon(a.type) }}</span>
+                        <span class="font-bold truncate">{{ a.name }}</span>
+                        <span class="text-xs opacity-50 shrink-0">{{ isExpanded(a.id) ? '▲' : '▼' }}</span>
                       </button>
                       <div class="flex flex-col items-end gap-1 shrink-0">
                         <div class="flex gap-1">
-                          <button class="btn btn-xs btn-ghost" (click)="mover(a.id, 'arriba')" [disabled]="idx === 0" title="subir">↑</button>
-                          <button class="btn btn-xs btn-ghost" (click)="mover(a.id, 'abajo')" [disabled]="last" title="bajar">↓</button>
+                          <button class="btn btn-xs btn-ghost" (click)="move(a.id, 'arriba')" [disabled]="idx === 0" title="subir">↑</button>
+                          <button class="btn btn-xs btn-ghost" (click)="move(a.id, 'abajo')" [disabled]="last" title="bajar">↓</button>
                         </div>
                         <div class="flex gap-1">
-                          <button class="btn btn-xs btn-outline" (click)="editar(a)" title="editar contenido" aria-label="editar contenido">✏️</button>
-                          <app-confirm-button title="quitar contenido" (confirmado)="store.quitarActividad(u.id, a.id)" />
+                          <button class="btn btn-xs btn-outline" (click)="edit(a)" title="editar contenido" aria-label="editar contenido">✏️</button>
+                          <app-confirm-button title="quitar contenido" (confirmed)="store.removeActivity(u.id, a.id)" />
                         </div>
                       </div>
                     </div>
-                    @if (expandido(a.id)) {
+                    @if (isExpanded(a.id)) {
                       <div class="flex items-center gap-2 flex-wrap">
-                        <span class="badge badge-sm ui-font" [class]="badgeTipo(a.tipo)">{{ etiquetaTipo(a) }}</span>
-                        @if (a.dificultad) {
-                          <span class="badge badge-sm ui-font" [class]="badgeDificultad(a.dificultad)">
-                            {{ a.dificultad }} · {{ xpDe(a.dificultad) }} XP
+                        <span class="badge badge-sm ui-font" [class]="badgeType(a.type)">{{ typeLabel(a) }}</span>
+                        @if (a.difficulty) {
+                          <span class="badge badge-sm ui-font" [class]="badgeDifficulty(a.difficulty)">
+                            {{ a.difficulty }} · {{ xpFor(a.difficulty) }} XP
                           </span>
                         }
-                        @if (a.esObligatorio) { <span class="badge badge-sm badge-warning ui-font">obligatorio</span> }
-                        @if (esDesafio(a.tipo)) {
-                          <span class="badge badge-sm badge-ghost ui-font">{{ a.reintentosPermitidos }} reintentos</span>
+                        @if (a.isMandatory) { <span class="badge badge-sm badge-warning ui-font">obligatorio</span> }
+                        @if (isChallenge(a.type)) {
+                          <span class="badge badge-sm badge-ghost ui-font">{{ a.allowedRetries }} reintentos</span>
                         }
                       </div>
-                      <p class="text-sm opacity-70">{{ a.descripcion || descripcionDefault(a.tipo) }}</p>
+                      <p class="text-sm opacity-70">{{ a.description || descriptionDefault(a.type) }}</p>
                     }
                   </div>
                 </div>
               </li>
-              <!-- Editar este contenido se abre acá mismo, debajo de lo que se tocó — no
-                   al final de la lista, para no perder de vista qué se está editando. -->
-              @if (mostrarForm() && editandoId() === a.id) {
+              <!-- Editing this content opens right here, below what was tapped — not
+                   at the end of the list, so as not to lose sight of what is being edited. -->
+              @if (showForm() && editingId() === a.id) {
                 <li class="relative pl-12 mb-4">
-                  <ng-container [ngTemplateOutlet]="formularioContenido" />
+                  <ng-container [ngTemplateOutlet]="formularioContent" />
                 </li>
               }
             } @empty {
@@ -134,24 +134,24 @@ type Vista = 'lista' | 'mapa';
             }
           </ol>
 
-          <!-- ── Agregar (al final de la columna, como Moodle) ── -->
-          @if (mostrarForm() && !editandoId()) {
-            <ng-container [ngTemplateOutlet]="formularioContenido" />
-          } @else if (!mostrarForm()) {
-            <button class="btn btn-outline btn-primary w-full border-dashed" (click)="abrirForm()" title="Atajo: Alt+A">
+          <!-- ── Add (at the end of the column, like Moodle) ── -->
+          @if (showForm() && !editingId()) {
+            <ng-container [ngTemplateOutlet]="formularioContent" />
+          } @else if (!showForm()) {
+            <button class="btn btn-outline btn-primary w-full border-dashed" (click)="openForm()" title="Atajo: Alt+A">
               ＋ Agregar contenido <kbd class="kbd kbd-xs ml-2">Alt</kbd>+<kbd class="kbd kbd-xs">A</kbd>
             </button>
           }
 
-          <ng-template #formularioContenido>
-            <form class="card bg-base-200 border-2 border-primary" (submit)="guardar($event)">
+          <ng-template #formularioContent>
+            <form class="card bg-base-200 border-2 border-primary" (submit)="save($event)">
               <div class="card-body gap-4">
-                <h3 class="ui-font text-sm">{{ editandoId() ? 'Editar contenido' : 'Agregar contenido' }}</h3>
+                <h3 class="ui-font text-sm">{{ editingId() ? 'Editar contenido' : 'Agregar contenido' }}</h3>
 
                 <div class="flex flex-wrap gap-3">
                   <label class="form-control">
                     <span class="label-text ui-font">Tipo</span>
-                    <select class="select select-bordered select-sm" [ngModel]="tipo()" (ngModelChange)="tipo.set($event)" name="tipo">
+                    <select class="select select-bordered select-sm" [ngModel]="type()" (ngModelChange)="type.set($event)" name="tipo">
                       <option value="teoria">Contenido teórico</option>
                       <option value="desafio-teorico">Desafío teórico</option>
                       <option value="desafio-practico">Desafío práctico</option>
@@ -160,8 +160,8 @@ type Vista = 'lista' | 'mapa';
                   <label class="form-control flex-1 min-w-52">
                     <span class="label-text ui-font">Nombre</span>
                     <input
-                      #nombreInput
-                      class="input input-bordered input-sm" [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" name="nombre" required
+                      #nameInput
+                      class="input input-bordered input-sm" [ngModel]="name()" (ngModelChange)="name.set($event)" name="nombre" required
                     />
                   </label>
                 </div>
@@ -170,18 +170,18 @@ type Vista = 'lista' | 'mapa';
                   <span class="label-text ui-font">Descripción</span>
                   <textarea
                     class="textarea textarea-bordered textarea-sm" rows="2"
-                    [ngModel]="descripcion()" (ngModelChange)="descripcion.set($event)" name="descripcion"
-                    [placeholder]="descripcionDefault(tipo())"
+                    [ngModel]="description()" (ngModelChange)="description.set($event)" name="descripcion"
+                    [placeholder]="descriptionDefault(type())"
                   ></textarea>
                   <span class="label-text-alt opacity-60 mt-1">
                     Si la dejás vacía, el alumno ve la descripción sugerida de arriba.
                   </span>
                 </label>
-                @if (tipo() === 'teoria') {
+                @if (type() === 'teoria') {
                   <div class="flex flex-wrap gap-3">
                     <label class="form-control">
                       <span class="label-text ui-font">Tipo de recurso</span>
-                      <select class="select select-bordered select-sm" [ngModel]="recursoTipo()" (ngModelChange)="recursoTipo.set($event)" name="recursoTipo">
+                      <select class="select select-bordered select-sm" [ngModel]="resourceType()" (ngModelChange)="resourceType.set($event)" name="recursoTipo">
                         <option value="pdf">PDF</option>
                         <option value="video">Video</option>
                         <option value="ppt">Presentación (PPT)</option>
@@ -190,7 +190,7 @@ type Vista = 'lista' | 'mapa';
                     <label class="form-control flex-1 min-w-52">
                       <span class="label-text ui-font">URL del recurso</span>
                       <input
-                        class="input input-bordered input-sm" type="url" [ngModel]="recursoUrl()" (ngModelChange)="recursoUrl.set($event)"
+                        class="input input-bordered input-sm" type="url" [ngModel]="resourceUrl()" (ngModelChange)="resourceUrl.set($event)"
                         name="recursoUrl" placeholder="https://..." required
                       />
                     </label>
@@ -202,7 +202,7 @@ type Vista = 'lista' | 'mapa';
                   <div class="flex flex-wrap gap-3">
                     <label class="form-control">
                       <span class="label-text ui-font">Dificultad</span>
-                      <select class="select select-bordered select-sm" [ngModel]="dificultad()" (ngModelChange)="dificultad.set($event)" name="dificultad">
+                      <select class="select select-bordered select-sm" [ngModel]="difficulty()" (ngModelChange)="difficulty.set($event)" name="dificultad">
                         <option value="BASICO">Básico · 100 XP</option>
                         <option value="MEDIO">Medio · 250 XP</option>
                         <option value="AVANZADO">Avanzado · 500 XP</option>
@@ -210,21 +210,21 @@ type Vista = 'lista' | 'mapa';
                     </label>
                     <label class="form-control">
                       <span class="label-text ui-font">Reintentos (0-3)</span>
-                      <input class="input input-bordered input-sm w-24 tabular" type="number" min="0" max="3" [ngModel]="reintentos()" (ngModelChange)="reintentos.set($event)" name="reintentos" />
+                      <input class="input input-bordered input-sm w-24 tabular" type="number" min="0" max="3" [ngModel]="retries()" (ngModelChange)="retries.set($event)" name="reintentos" />
                     </label>
                   </div>
                 }
 
                 <label class="label cursor-pointer justify-start gap-3">
-                  <input type="checkbox" class="checkbox checkbox-sm" [ngModel]="esObligatorio()" (ngModelChange)="esObligatorio.set($event)" name="obligatorio" />
+                  <input type="checkbox" class="checkbox checkbox-sm" [ngModel]="isMandatory()" (ngModelChange)="isMandatory.set($event)" name="obligatorio" />
                   <span class="label-text">Obligatorio para avanzar (RF-DES-06)</span>
                 </label>
 
                 <div class="flex gap-3">
-                  <button class="btn btn-sm btn-primary" type="submit" [disabled]="!nombre().trim()">
-                    {{ editandoId() ? 'Guardar cambios' : 'Agregar' }}
+                  <button class="btn btn-sm btn-primary" type="submit" [disabled]="!name().trim()">
+                    {{ editingId() ? 'Guardar cambios' : 'Agregar' }}
                   </button>
-                  <button class="btn btn-sm btn-ghost" type="button" (click)="cancelar()">Cancelar</button>
+                  <button class="btn btn-sm btn-ghost" type="button" (click)="cancel()">Cancelar</button>
                 </div>
               </div>
             </form>
@@ -238,111 +238,111 @@ type Vista = 'lista' | 'mapa';
     <app-save-feedback-toast />
   `,
 })
-export class UnidadEditor {
+export class SectionEditor {
   protected readonly store = inject(RoadmapStore);
   private readonly route = inject(ActivatedRoute);
-  private readonly nombreInputRef = viewChild<ElementRef<HTMLInputElement>>('nombreInput');
+  private readonly nameInputRef = viewChild<ElementRef<HTMLInputElement>>('nombreInput');
 
-  private readonly unidadId = this.route.snapshot.paramMap.get('id') ?? '';
-  protected readonly unidad = computed(() => this.store.unidadPorId(this.unidadId));
+  private readonly sectionId = this.route.snapshot.paramMap.get('id') ?? '';
+  protected readonly section = computed(() => this.store.sectionById(this.sectionId));
 
-  protected readonly vista = signal<Vista>('lista');
+  protected readonly view = signal<View>('lista');
 
-  // ── desplegable de detalle por contenido (tipo/XP/obligatorio/reintentos/descripción) ──
-  private readonly expandidos = signal<ReadonlySet<string>>(new Set());
-  protected expandido(id: string): boolean {
-    return this.expandidos().has(id);
+  // ── detail dropdown per content item (type/XP/mandatory/retries/description) ──
+  private readonly expandedIds = signal<ReadonlySet<string>>(new Set());
+  protected isExpanded(id: string): boolean {
+    return this.expandedIds().has(id);
   }
-  protected toggleExpandido(id: string): void {
-    const actual = new Set(this.expandidos());
-    if (actual.has(id)) actual.delete(id);
-    else actual.add(id);
-    this.expandidos.set(actual);
+  protected toggleExpanded(id: string): void {
+    const current = new Set(this.expandedIds());
+    if (current.has(id)) current.delete(id);
+    else current.add(id);
+    this.expandedIds.set(current);
   }
 
-  // ── estado del formulario ──────────────────────────────────
-  protected readonly mostrarForm = signal(false);
-  protected readonly editandoId = signal<string | null>(null);
-  protected readonly tipo = signal<TipoContenido>('desafio-teorico');
-  protected readonly nombre = signal('');
-  protected readonly esObligatorio = signal(true);
-  protected readonly descripcion = signal('');
-  protected readonly dificultad = signal<Dificultad>('BASICO');
-  protected readonly reintentos = signal(1);
-  protected readonly recursoUrl = signal('');
-  protected readonly recursoTipo = signal<TipoRecursoTeoria>('pdf');
+  // ── form state ──────────────────────────────────
+  protected readonly showForm = signal(false);
+  protected readonly editingId = signal<string | null>(null);
+  protected readonly type = signal<ContentType>('desafio-teorico');
+  protected readonly name = signal('');
+  protected readonly isMandatory = signal(true);
+  protected readonly description = signal('');
+  protected readonly difficulty = signal<Difficulty>('BASICO');
+  protected readonly retries = signal(1);
+  protected readonly resourceUrl = signal('');
+  protected readonly resourceType = signal<ResourceTheoryType>('pdf');
 
-  /** Alt+A: agregar contenido — equivalente al Alt+U de la pantalla de unidades. */
+  /** Alt+A: add content — equivalent to Alt+U on the sections screen. */
   @HostListener('document:keydown', ['$event'])
   protected onKeydown(ev: KeyboardEvent): void {
     if (ev.altKey && !ev.ctrlKey && !ev.metaKey && ev.key.toLowerCase() === 'a') {
       ev.preventDefault();
-      this.vista.set('lista');
-      this.abrirForm();
+      this.view.set('lista');
+      this.openForm();
     }
   }
 
-  protected abrirForm(): void {
-    this.mostrarForm.set(true);
-    setTimeout(() => this.nombreInputRef()?.nativeElement.focus());
+  protected openForm(): void {
+    this.showForm.set(true);
+    setTimeout(() => this.nameInputRef()?.nativeElement.focus());
   }
 
-  protected guardar(e: Event): void {
+  protected save(e: Event): void {
     e.preventDefault();
-    const nombre = this.nombre().trim();
-    if (!nombre) return;
+    const name = this.name().trim();
+    if (!name) return;
 
-    const esTeoria = this.tipo() === 'teoria';
-    const dto: NuevaActividad = {
-      nombre,
-      tipo: this.tipo(),
-      esObligatorio: this.esObligatorio(),
-      reintentosPermitidos: esTeoria ? 0 : Number(this.reintentos()) || 0,
-      descripcion: this.descripcion(),
-      dificultad: esTeoria ? undefined : this.dificultad(),
-      recursoUrl: esTeoria ? this.recursoUrl().trim() : undefined,
-      recursoTipo: esTeoria ? this.recursoTipo() : undefined,
+    const isTheory = this.type() === 'teoria';
+    const dto: NewActivity = {
+      name,
+      type: this.type(),
+      isMandatory: this.isMandatory(),
+      allowedRetries: isTheory ? 0 : Number(this.retries()) || 0,
+      description: this.description(),
+      difficulty: isTheory ? undefined : this.difficulty(),
+      resourceUrl: isTheory ? this.resourceUrl().trim() : undefined,
+      resourceType: isTheory ? this.resourceType() : undefined,
     };
 
-    const id = this.editandoId();
+    const id = this.editingId();
     if (id) {
-      this.store.editarActividad(this.unidadId, id, dto, () => this.limpiar());
+      this.store.editActivity(this.sectionId, id, dto, () => this.clean());
     } else {
-      this.store.agregarActividad(this.unidadId, dto, () => this.limpiar());
+      this.store.addActivity(this.sectionId, dto, () => this.clean());
     }
   }
 
-  protected editar(a: Actividad): void {
-    this.editandoId.set(a.id);
-    this.mostrarForm.set(true);
-    // 'boss'/'hito' no están en el selector — al editar uno caen a desafío práctico.
-    this.tipo.set(a.tipo === 'teoria' ? 'teoria' : a.tipo === 'desafio-teorico' ? 'desafio-teorico' : 'desafio-practico');
-    this.nombre.set(a.nombre);
-    this.esObligatorio.set(a.esObligatorio);
-    this.descripcion.set(a.descripcion ?? '');
-    this.dificultad.set(a.dificultad ?? 'BASICO');
-    this.reintentos.set(a.reintentosPermitidos);
-    this.recursoUrl.set(a.recursoUrl ?? '');
-    this.recursoTipo.set(a.recursoTipo ?? 'pdf');
+  protected edit(a: Activity): void {
+    this.editingId.set(a.id);
+    this.showForm.set(true);
+    // 'boss'/'hito' are not in the selector — when editing one they fall back to a practice challenge.
+    this.type.set(a.type === 'teoria' ? 'teoria' : a.type === 'desafio-teorico' ? 'desafio-teorico' : 'desafio-practico');
+    this.name.set(a.name);
+    this.isMandatory.set(a.isMandatory);
+    this.description.set(a.description ?? '');
+    this.difficulty.set(a.difficulty ?? 'BASICO');
+    this.retries.set(a.allowedRetries);
+    this.resourceUrl.set(a.resourceUrl ?? '');
+    this.resourceType.set(a.resourceType ?? 'pdf');
   }
 
-  protected cancelar(): void {
-    this.limpiar();
+  protected cancel(): void {
+    this.clean();
   }
 
-  protected mover(actividadId: string, direccion: 'arriba' | 'abajo'): void {
-    this.store.moverActividad(this.unidadId, actividadId, direccion);
+  protected move(activityId: string, direction: 'arriba' | 'abajo'): void {
+    this.store.moveActivity(this.sectionId, activityId, direction);
   }
 
-  // ── helpers de presentación ────────────────────────────────
-  protected esDesafio(tipo: TipoNodo): boolean {
-    return tipo !== 'hito' && tipo !== 'teoria';
+  // ── presentation helpers ────────────────────────────────
+  protected isChallenge(type: NodeType): boolean {
+    return type !== 'hito' && type !== 'teoria';
   }
-  protected xpDe(d: Dificultad): number {
-    return XP_POR_DIFICULTAD[d];
+  protected xpFor(d: Difficulty): number {
+    return XP_BY_DIFFICULTY[d];
   }
-  protected icono(tipo: TipoNodo): string {
-    switch (tipo) {
+  protected icon(type: NodeType): string {
+    switch (type) {
       case 'teoria': return '📖';
       case 'desafio-teorico': return '🧠';
       case 'desafio-practico': return '⚔️';
@@ -350,8 +350,8 @@ export class UnidadEditor {
       default: return '📍';
     }
   }
-  protected etiquetaTipo(a: Actividad): string {
-    switch (a.tipo) {
+  protected typeLabel(a: Activity): string {
+    switch (a.type) {
       case 'boss': return 'boss';
       case 'teoria': return 'contenido teórico';
       case 'desafio-teorico': return 'desafío teórico';
@@ -359,8 +359,8 @@ export class UnidadEditor {
       default: return 'hito';
     }
   }
-  protected badgeTipo(tipo: TipoNodo): string {
-    switch (tipo) {
+  protected badgeType(type: NodeType): string {
+    switch (type) {
       case 'desafio-teorico':
       case 'desafio-practico':
         return 'badge-primary';
@@ -369,23 +369,23 @@ export class UnidadEditor {
       default: return 'badge-info badge-outline';
     }
   }
-  protected badgeDificultad(d: Dificultad): string {
+  protected badgeDifficulty(d: Difficulty): string {
     return d === 'BASICO' ? 'badge-success' : d === 'MEDIO' ? 'badge-warning' : 'badge-error';
   }
-  protected descripcionDefault(tipo: TipoNodo): string {
-    return descripcionPorDefecto(tipo);
+  protected descriptionDefault(type: NodeType): string {
+    return defaultDescription(type);
   }
 
-  private limpiar(): void {
-    this.mostrarForm.set(false);
-    this.editandoId.set(null);
-    this.tipo.set('desafio-teorico');
-    this.nombre.set('');
-    this.esObligatorio.set(true);
-    this.descripcion.set('');
-    this.dificultad.set('BASICO');
-    this.reintentos.set(1);
-    this.recursoUrl.set('');
-    this.recursoTipo.set('pdf');
+  private clean(): void {
+    this.showForm.set(false);
+    this.editingId.set(null);
+    this.type.set('desafio-teorico');
+    this.name.set('');
+    this.isMandatory.set(true);
+    this.description.set('');
+    this.difficulty.set('BASICO');
+    this.retries.set(1);
+    this.resourceUrl.set('');
+    this.resourceType.set('pdf');
   }
 }

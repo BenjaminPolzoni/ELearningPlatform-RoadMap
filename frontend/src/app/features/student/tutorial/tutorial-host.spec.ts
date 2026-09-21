@@ -3,17 +3,17 @@ import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { vi } from 'vitest';
 import { RoadmapStore } from '../../../core/data/roadmap.store';
-import { Mundo3d } from '../mundo-3d';
+import { World3d } from '../world-3d';
 
-describe('Puente seguro de primeros pasos', () => {
+describe('Secure first steps bridge', () => {
   beforeEach(() => { localStorage.clear(); localStorage.setItem('mock-rol', 'ALUMNO'); });
   afterEach(() => localStorage.clear());
 
   async function setup() {
-    await TestBed.configureTestingModule({ imports: [Mundo3d], providers: [provideRouter([]),
-      { provide: RoadmapStore, useValue: { progreso: signal(null), unidades: signal([]), unidadPorId: () => undefined } },
+    await TestBed.configureTestingModule({ imports: [World3d], providers: [provideRouter([]),
+      { provide: RoadmapStore, useValue: { progress: signal(null), sections: signal([]), sectionById: () => undefined } },
     ] }).compileComponents();
-    const fixture = TestBed.createComponent(Mundo3d);
+    const fixture = TestBed.createComponent(World3d);
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
     const frame = root.querySelector('iframe')!;
@@ -26,7 +26,7 @@ describe('Puente seguro de primeros pasos', () => {
     return { fixture, root, message, snapshot };
   }
 
-  it('ignora otras ventanas, otros orígenes y snapshots malformados', async () => {
+  it('ignores other windows, other origins and malformed snapshots', async () => {
     const { root, message, snapshot } = await setup();
     message(snapshot, window);
     expect(root.querySelector('app-tutorial-card')).toBeNull();
@@ -38,7 +38,7 @@ describe('Puente seguro de primeros pasos', () => {
     expect(root.querySelector('app-tutorial-card')?.textContent).toContain('Probá moverte');
   });
 
-  it('oculta la tarjeta durante personalización y recuerda el paso al regresar', async () => {
+  it('hides the card during customization and remembers the step on return', async () => {
     const { root, message, snapshot } = await setup();
     message(snapshot);
     message({ type: 'tutorialMoved', attempt: 0 });
@@ -49,7 +49,7 @@ describe('Puente seguro de primeros pasos', () => {
     expect(root.querySelector('app-tutorial-card')?.textContent).toContain('Entrá a una unidad');
   });
 
-  it('no inicia automáticamente para el profesor', async () => {
+  it('does not start automatically for the teacher', async () => {
     localStorage.setItem('mock-rol', 'PROFESOR');
     const { root, message, snapshot } = await setup();
     message(snapshot);
@@ -57,7 +57,7 @@ describe('Puente seguro de primeros pasos', () => {
     expect(root.querySelector('.tutorial-help')).toBeNull();
   });
 
-  it('navega al mapa de hexágonos al recibir openUnitPlay', async () => {
+  it('navigates to the hexagon map on receiving openUnitPlay', async () => {
     const { message } = await setup();
     const router = TestBed.inject(Router);
     const spy = vi.spyOn(router, 'navigate').mockResolvedValue(true);

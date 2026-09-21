@@ -1,16 +1,16 @@
-// "Lv X" del ranking = NODO actual del alumno en el mapa de progreso del curso.
-// No es `floor(xp / n)`: la XP se acumula por los desafíos dentro de cada nodo, y el
-// nivel mostrado es el nodo sobre el que el alumno está parado (RF-NIV-05: el nivel es
-// un rótulo cosmético; el ranking ordena por XP real).
+// The ranking's "Lv X" = the student's CURRENT NODE on the course's progress map.
+// It is not `floor(xp / n)`: XP accumulates through the challenges inside each node, and the
+// level shown is the node the student is standing on (RF-NIV-05: the level is a
+// cosmetic label; the ranking sorts by real XP).
 
-import { Progreso } from '../../core/data/roadmap.models';
+import { Progress } from '../../core/data/roadmap.models';
 
 /**
- * Nodo actual = cantidad de nodos ya completados + 1, tope en el total de nodos del curso.
- * `totalNodos` se pasa aparte porque `Progreso.nodos` solo trae los nodos con estado
- * conocido para ese alumno; si no se conoce, cae en la longitud de `progreso.nodos`.
+ * Current node = number of already completed nodes + 1, capped at the course's total nodes.
+ * `totalNodes` is passed separately because `Progress.nodes` only brings the nodes with a
+ * known status for that student; if it is not known, it falls back to the length of `progress.nodes`.
  */
-export function nivelNodo(progreso: Progreso, totalNodos = progreso.nodos.length): number {
-  const completados = progreso.nodos.filter((n) => n.estado === 'completado').length;
-  return Math.min(Math.max(1, completados + 1), Math.max(1, totalNodos));
+export function nodeLevel(progress: Progress, totalNodes = progress.nodes.length): number {
+  const completed = progress.nodes.filter((n) => n.status === 'completado').length;
+  return Math.min(Math.max(1, completed + 1), Math.max(1, totalNodes));
 }

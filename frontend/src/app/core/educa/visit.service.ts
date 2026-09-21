@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 
 interface Progress {
-  v: string[]; // anexos finalizados (botón Finalizar)
-  p: string[]; // desafíos de torre superados (moduloId)
+  v: string[]; // finished attachments (Finish button)
+  p: string[]; // tower challenges passed (moduleId)
 }
 
 function migrate(raw: string | null): Progress {
@@ -53,10 +53,10 @@ export class VisitService {
     return this.read(aid).p;
   }
 
-  pass(aid: string, moduloId: string): string[] {
+  pass(aid: string, moduleId: string): string[] {
     const p = this.read(aid);
-    if (!p.p.includes(moduloId)) {
-      p.p.push(moduloId);
+    if (!p.p.includes(moduleId)) {
+      p.p.push(moduleId);
       this.write(aid, p);
     }
     return p.p;

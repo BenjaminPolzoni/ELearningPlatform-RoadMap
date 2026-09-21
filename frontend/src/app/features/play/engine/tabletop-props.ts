@@ -12,14 +12,14 @@ export class TabletopBuilder {
     canvas.height = 1024;
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-    // Fondo base de madera de roble oscuro
+    // Dark oak wood base background
     ctx.fillStyle = '#3a2315';
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // Tablones horizontales
+    // Horizontal planks
     const plankHeight = 128;
     for (let y = 0; y < 1024; y += plankHeight) {
-      // Variación sutil de color entre tablones
+      // Subtle color variation between planks
       const shade = (Math.random() - 0.5) * 15;
       const r = Math.min(255, Math.max(0, 58 + shade));
       const g = Math.min(255, Math.max(0, 35 + shade * 0.7));
@@ -27,7 +27,7 @@ export class TabletopBuilder {
       ctx.fillStyle = `rgb(${r},${g},${b})`;
       ctx.fillRect(0, y, 1024, plankHeight);
 
-      // Líneas de vetas de madera
+      // Wood grain lines
       ctx.strokeStyle = 'rgba(25, 14, 7, 0.25)';
       ctx.lineWidth = 2;
       for (let i = 0; i < 18; i++) {
@@ -45,10 +45,10 @@ export class TabletopBuilder {
         ctx.stroke();
       }
 
-      // Ranura oscura entre tablones
+      // Dark groove between planks
       ctx.fillStyle = '#180e07';
       ctx.fillRect(0, y + plankHeight - 3, 1024, 3);
-      // Bisel iluminado en el borde superior del tablón
+      // Lit bevel on the top edge of the plank
       ctx.fillStyle = 'rgba(255, 235, 205, 0.08)';
       ctx.fillRect(0, y, 1024, 2);
     }
@@ -69,11 +69,11 @@ export class TabletopBuilder {
     canvas.height = 700;
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-    // Pergamino envejecido
+    // Aged parchment
     ctx.fillStyle = '#f5ebd7';
     ctx.fillRect(0, 0, 512, 700);
 
-    // Borde pergamino
+    // Parchment border
     ctx.strokeStyle = '#c4ab82';
     ctx.lineWidth = 4;
     ctx.strokeRect(16, 16, 480, 668);
@@ -81,12 +81,12 @@ export class TabletopBuilder {
     ctx.lineWidth = 1.5;
     ctx.strokeRect(22, 22, 468, 656);
 
-    // Encabezado hoja de personaje RPG
+    // RPG character sheet header
     ctx.fillStyle = '#3e2c1c';
     ctx.font = 'bold 26px serif';
     ctx.fillText('CHARACTER SHEET', 40, 60);
 
-    // Cajas de atributos (STR, DEX, CON, INT, WIS, CHA)
+    // Attribute boxes (STR, DEX, CON, INT, WIS, CHA)
     const stats = ['STR 16', 'DEX 14', 'CON 15', 'INT 18', 'WIS 12', 'CHA 10'];
     ctx.font = 'bold 15px sans-serif';
     stats.forEach((s, idx) => {
@@ -98,7 +98,7 @@ export class TabletopBuilder {
       ctx.fillText(s, 48, sy + 24);
     });
 
-    // Diagrama central / mapa
+    // Central diagram / map
     ctx.fillStyle = '#ebdcc2';
     ctx.fillRect(145, 100, 325, 240);
     ctx.strokeStyle = '#a88c65';
@@ -107,7 +107,7 @@ export class TabletopBuilder {
     ctx.font = 'italic 16px serif';
     ctx.fillText('Quest Log & World Notes', 160, 130);
 
-    // Líneas de texto simuladas
+    // Simulated text lines
     ctx.strokeStyle = '#b8a280';
     ctx.lineWidth = 1;
     for (let ly = 160; ly <= 310; ly += 24) {
@@ -117,7 +117,7 @@ export class TabletopBuilder {
       ctx.stroke();
     }
 
-    // Boceto de dragón / escudo
+    // Dragon / shield sketch
     ctx.fillStyle = '#6b4f35';
     ctx.beginPath();
     ctx.arc(307, 480, 70, 0, Math.PI * 2);
@@ -212,7 +212,7 @@ export class TabletopBuilder {
   static createCoffeeMug(): THREE.Group {
     const group = new THREE.Group();
 
-    // Cuerpo de la taza
+    // Cup body
     const bodyGeo = new THREE.CylinderGeometry(0.7, 0.62, 1.4, 18);
     const mugMat = new THREE.MeshStandardMaterial({
       color: 0xf5f0ea,
@@ -225,7 +225,7 @@ export class TabletopBuilder {
     body.receiveShadow = true;
     group.add(body);
 
-    // Café interior
+    // Inner coffee
     const coffeeGeo = new THREE.CylinderGeometry(0.66, 0.66, 0.1, 16);
     const coffeeMat = new THREE.MeshStandardMaterial({
       color: 0x3d2011,
@@ -235,7 +235,7 @@ export class TabletopBuilder {
     coffee.position.y = 1.32;
     group.add(coffee);
 
-    // Asa de la taza
+    // Cup handle
     const handleGeo = new THREE.TorusGeometry(0.4, 0.1, 8, 16, Math.PI);
     const handle = new THREE.Mesh(handleGeo, mugMat);
     handle.rotation.z = Math.PI / 2;
@@ -250,7 +250,7 @@ export class TabletopBuilder {
     const group = new THREE.Group();
     const tableY = -1.02;
 
-    // Gran Mesa de Madera situada bajo la base inferior de todos los hexágonos
+    // Great Wooden Table placed under the lower base of all the hexagons
     const tableSpan = Math.max(140, islandRadius * 2.8);
     const table = this.createTable(tableSpan, tableSpan, tableY);
     group.add(table);
@@ -263,7 +263,7 @@ export class ArcadeBuilder {
   static createArcadeTable(width: number, depth: number, yPos = -1.02): THREE.Group {
     const group = new THREE.Group();
 
-    // Superficie oscura estilo mesa arcade / cocktail cabinet
+    // Dark surface arcade table / cocktail cabinet style
     const geo = new THREE.BoxGeometry(width, 1.0, depth);
     const mat = new THREE.MeshStandardMaterial({
       color: 0x121318,
@@ -275,7 +275,7 @@ export class ArcadeBuilder {
     table.receiveShadow = true;
     group.add(table);
 
-    // Biseles de neón en los bordes de la mesa (cian neón)
+    // Neon bevels on the table's edges (neon cyan)
     const rimGeo = new THREE.BoxGeometry(width + 0.2, 0.08, depth + 0.2);
     const rimMat = new THREE.MeshBasicMaterial({
       color: 0x06b6d4,
@@ -290,7 +290,7 @@ export class ArcadeBuilder {
   static createJoystick(): THREE.Group {
     const group = new THREE.Group();
 
-    // Caja base del mando arcade
+    // Base box of the arcade controller
     const baseGeo = new THREE.BoxGeometry(3.6, 0.8, 2.6);
     const baseMat = new THREE.MeshStandardMaterial({
       color: 0x1e1e24,
@@ -303,14 +303,14 @@ export class ArcadeBuilder {
     base.receiveShadow = true;
     group.add(base);
 
-    // Borde brillante en la base (magenta neón)
+    // Glowing edge at the base (neon magenta)
     const edgeGeo = new THREE.BoxGeometry(3.65, 0.08, 2.65);
     const edgeMat = new THREE.MeshBasicMaterial({ color: 0xec4899 });
     const edge = new THREE.Mesh(edgeGeo, edgeMat);
     edge.position.y = 0.78;
     group.add(edge);
 
-    // Eje metálico del joystick
+    // Metallic joystick shaft
     const shaftGeo = new THREE.CylinderGeometry(0.09, 0.09, 1.3, 16);
     const shaftMat = new THREE.MeshStandardMaterial({
       color: 0xe2e8f0,
@@ -322,7 +322,7 @@ export class ArcadeBuilder {
     shaft.castShadow = true;
     group.add(shaft);
 
-    // Bola superior roja clásica (Sanwa style ball-top)
+    // Classic red top ball (Sanwa style ball-top)
     const ballGeo = new THREE.SphereGeometry(0.5, 24, 24);
     const ballMat = new THREE.MeshStandardMaterial({
       color: 0xef4444,
@@ -334,7 +334,7 @@ export class ArcadeBuilder {
     ball.castShadow = true;
     group.add(ball);
 
-    // Botones arcade (Azul, Amarillo, Verde)
+    // Arcade buttons (Blue, Yellow, Green)
     const buttonColors = [0x3b82f6, 0xfacc15, 0x10b981];
     const buttonGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.18, 16);
     buttonColors.forEach((color, i) => {
@@ -378,7 +378,7 @@ export class ArcadeBuilder {
   static createNeonDrink(): THREE.Group {
     const group = new THREE.Group();
 
-    // Vaso traslúcido
+    // Translucent glass
     const cupGeo = new THREE.CylinderGeometry(0.65, 0.5, 1.8, 16);
     const cupMat = new THREE.MeshStandardMaterial({
       color: 0x06b6d4,
@@ -392,7 +392,7 @@ export class ArcadeBuilder {
     cup.castShadow = true;
     group.add(cup);
 
-    // Pajita / bombilla de neón
+    // Neon straw / bombilla
     const strawGeo = new THREE.CylinderGeometry(0.05, 0.05, 2.4, 12);
     const strawMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
     const straw = new THREE.Mesh(strawGeo, strawMat);
@@ -407,7 +407,7 @@ export class ArcadeBuilder {
     const group = new THREE.Group();
     const tableY = -1.02;
 
-    // Mesa estilo Cocktail Arcade limpia
+    // Clean Cocktail Arcade style table
     const tableSpan = Math.max(140, islandRadius * 2.8);
     const table = this.createArcadeTable(tableSpan, tableSpan, tableY);
     group.add(table);

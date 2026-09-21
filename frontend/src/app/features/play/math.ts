@@ -1,10 +1,10 @@
-// Desafíos de mates por semilla: fijos por módulo hasta acertar.
-// ponytail: generador puro, sin assets ni deps.
+// Math challenges by seed: fixed per module until answered correctly.
+// ponytail: pure generator, no assets or deps.
 
 export interface Question {
-  texto: string;
-  opciones: number[];
-  respuesta: number;
+  text: string;
+  options: number[];
+  answer: number;
 }
 
 function hash(s: string): number {
@@ -31,35 +31,35 @@ export function genQuestion(seed: string): Question {
   const r = rng(hash(seed));
   const pick = (n: number): number => Math.floor(r() * n);
   const kind = pick(3);
-  let texto = '';
-  let respuesta = 0;
+  let text = '';
+  let answer = 0;
   if (kind === 0) {
     const a = 2 + pick(11);
     let b = 2 + pick(9);
     if (a + b > 20) b = 20 - a; // cap 20
-    texto = `${a} + ${b} = ?`;
-    respuesta = a + b;
+    text = `${a} + ${b} = ?`;
+    answer = a + b;
   } else if (kind === 1) {
     const a = 3 + pick(18);
     const b = 1 + pick(a - 1);
-    texto = `${a} − ${b} = ?`;
-    respuesta = a - b;
+    text = `${a} − ${b} = ?`;
+    answer = a - b;
   } else {
     const a = 2 + pick(4);
     const b = 2 + pick(4);
-    texto = `${a} × ${b} = ?`;
-    respuesta = a * b;
+    text = `${a} × ${b} = ?`;
+    answer = a * b;
   }
-  // 4 opciones únicas con la respuesta dentro, barajadas
-  const set = new Set<number>([respuesta]);
+  // 4 unique options with the answer included, shuffled
+  const set = new Set<number>([answer]);
   while (set.size < 4) {
-    const d = respuesta + pick(7) - 3;
-    if (d >= 0 && d !== respuesta) set.add(d);
+    const d = answer + pick(7) - 3;
+    if (d >= 0 && d !== answer) set.add(d);
   }
-  const opciones = [...set];
-  for (let i = opciones.length - 1; i > 0; i--) {
+  const options = [...set];
+  for (let i = options.length - 1; i > 0; i--) {
     const j = Math.floor(r() * (i + 1));
-    [opciones[i], opciones[j]] = [opciones[j], opciones[i]];
+    [options[i], options[j]] = [options[j], options[i]];
   }
-  return { texto, opciones, respuesta };
+  return { text, options, answer };
 }

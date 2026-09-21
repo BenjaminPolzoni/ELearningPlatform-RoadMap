@@ -2,11 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { AvatarPanel } from './avatar-panel';
 import { MODULAR_CONFIG_KEY } from './engine/avatar-config';
 
-describe('AvatarPanel (picker de guitarra)', () => {
+describe('AvatarPanel (guitar picker)', () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => localStorage.clear());
 
-  async function crear() {
+  async function create() {
     TestBed.resetTestingModule();
     await TestBed.configureTestingModule({ imports: [AvatarPanel] }).compileComponents();
     const fixture = TestBed.createComponent(AvatarPanel);
@@ -15,54 +15,54 @@ describe('AvatarPanel (picker de guitarra)', () => {
     return fixture;
   }
 
-  function selectConOpcion(html: HTMLElement, valorOpcion: string): HTMLSelectElement {
+  function selectWithOption(html: HTMLElement, valueOption: string): HTMLSelectElement {
     const selects = [...html.querySelectorAll('select')];
-    const found = selects.find((s) => s.querySelector(`option[value="${valorOpcion}"]`));
-    if (!found) throw new Error(`sin select con opción ${valorOpcion}`);
+    const found = selects.find((s) => s.querySelector(`option[value="${valueOption}"]`));
+    if (!found) throw new Error(`sin select con opción ${valueOption}`);
     return found;
   }
 
-  function elegir(select: HTMLSelectElement, valor: string): void {
-    select.value = valor;
+  function choose(select: HTMLSelectElement, value: string): void {
+    select.value = value;
     select.dispatchEvent(new Event('change'));
   }
 
-  it('al elegir Guitarra aparece el selector COLOR GUITARRA', async () => {
-    const fixture = await crear();
+  it('choosing Guitar shows the GUITAR COLOR selector', async () => {
+    const fixture = await create();
     const html = fixture.nativeElement as HTMLElement;
     expect(html.textContent).not.toContain('COLOR GUITARRA');
-    elegir(selectConOpcion(html, 'guitar'), 'guitar');
+    choose(selectWithOption(html, 'guitar'), 'guitar');
     fixture.detectChanges();
     await fixture.whenStable();
     expect(html.textContent).toContain('COLOR GUITARRA');
   });
 
-  it('elegir Azul persiste guitarColor B', async () => {
-    const fixture = await crear();
+  it('choosing Blue persists guitarColor B', async () => {
+    const fixture = await create();
     const html = fixture.nativeElement as HTMLElement;
-    elegir(selectConOpcion(html, 'guitar'), 'guitar');
+    choose(selectWithOption(html, 'guitar'), 'guitar');
     fixture.detectChanges();
     await fixture.whenStable();
-    const azul = html.querySelector('button[aria-label="Guitarra azul"]') as HTMLButtonElement;
-    expect(azul).toBeTruthy();
-    azul.click();
+    const blue = html.querySelector('button[aria-label="Guitarra azul"]') as HTMLButtonElement;
+    expect(blue).toBeTruthy();
+    blue.click();
     fixture.detectChanges();
     await fixture.whenStable();
     expect(JSON.parse(localStorage.getItem(MODULAR_CONFIG_KEY)!).guitarColor).toBe('B');
   });
 
-  it('regresión: la guitarra elegida sigue seleccionada al reabrir el panel', async () => {
-    const primera = await crear();
-    const html1 = primera.nativeElement as HTMLElement;
-    elegir(selectConOpcion(html1, 'guitar'), 'guitar');
-    primera.detectChanges();
-    await primera.whenStable();
-    primera.destroy();
+  it('regression: the chosen guitar stays selected when the panel is reopened', async () => {
+    const first = await create();
+    const html1 = first.nativeElement as HTMLElement;
+    choose(selectWithOption(html1, 'guitar'), 'guitar');
+    first.detectChanges();
+    await first.whenStable();
+    first.destroy();
 
-    const segunda = await crear();
-    const html2 = segunda.nativeElement as HTMLElement;
-    const espalda = selectConOpcion(html2, 'guitar');
-    expect(espalda.value).toBe('guitar');
+    const second = await create();
+    const html2 = second.nativeElement as HTMLElement;
+    const back = selectWithOption(html2, 'guitar');
+    expect(back.value).toBe('guitar');
     expect(html2.textContent).toContain('COLOR GUITARRA');
   });
 });

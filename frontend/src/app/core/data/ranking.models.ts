@@ -1,78 +1,78 @@
-// Tipos del ranking por cohorte (épica E8 — "Comparativas de cohorte").
-// Espejo reducido de la vista materializada `RankingEntrada` (02-modelo-de-datos.md
-// §"Niveles, insignias, ranking y cierre") y de la respuesta de `GET /roadmaps/{cc}/ranking`.
+// Types for the per-cohort ranking (epic E8 — "Cohort comparisons").
+// Reduced mirror of the materialized view `RankingEntrada` (02-modelo-de-datos.md
+// §"Niveles, insignias, ranking y cierre") and of the response of `GET /roadmaps/{cc}/ranking`.
 //
-// Regla clave (06-contrato-api.md §3): esa respuesta CAMBIA según el rol del token.
-// El servidor filtra y el front nunca recibe lo que ese rol no puede ver — por eso hay
-// dos vistas distintas (`VistaRankingAlumno` / `VistaRankingStaff`), no una sola que el
-// componente recorte.
+// Key rule (06-contrato-api.md §3): that response CHANGES depending on the token's role.
+// The server filters and the front never receives what that role cannot see — that is why there are
+// two distinct views (`StudentRankingView` / `StaffRankingView`), not a single one that the
+// component would trim.
 
 import { AvatarConfig } from '../avatar/avatar.models';
 
-export type Zona = 'ninguna' | 'p90' | 'p10';
+export type Zone = 'ninguna' | 'p90' | 'p10';
 
 /**
- * Fila identificada. Solo la reciben: PROFESOR/ADMIN (todas, RF-RNK-10) o el propio
- * ALUMNO respecto de SU fila (RF-RNK-03/07). `monedas` y el perfil (nombre/legajo/avatar)
- * son campos que en producción consolida el BFF desde otros servicios — acá son stub.
+ * Identified row. Only received by: PROFESOR/ADMIN (all of them, RF-RNK-10) or the ALUMNO
+ * themselves regarding THEIR row (RF-RNK-03/07). `coins` and the profile (name/file number/avatar)
+ * are fields that in production the BFF consolidates from other services — here they are stubs.
  */
-export interface FilaRanking {
-  alumnoId: string;
-  posicion: number;
-  nombre: string;
-  apellido: string;
-  legajo: string;
-  /** Mismo sprite pixel-art que el resto de la plataforma (HUD, mapa, "Mi personaje"). */
+export interface RankingRow {
+  studentId: string;
+  position: number;
+  name: string;
+  lastName: string;
+  fileNumber: string;
+  /** Same pixel-art sprite as the rest of the platform (HUD, map, "My character"). */
   avatar: AvatarConfig;
   xpTotal: number;
   /**
-   * NODO actual del alumno dentro del mapa de progreso del curso (no `floor(xp/n)`):
-   * la XP se acumula por los desafíos de cada nodo; el nivel es el nodo donde está parado.
-   * RF-NIV-05: el nivel es cosmético, el ranking ordena por `xpTotal` real.
+   * CURRENT NODE of the student within the course's progress map (not `floor(xp/n)`):
+   * XP accumulates through each node's challenges; the level is the node where they stand.
+   * RF-NIV-05: the level is cosmetic, the ranking sorts by real `xpTotal`.
    */
-  nivelNodo: number;
-  percentil: number;
-  zona: Zona;
-  /** Primer criterio de desempate (RF-RNK-11). */
-  insignias: number;
-  vidas: number; // vigentes (PAR-12: máx 3) — stub del BFF
-  monedas: number; // stub del BFF (Banco, T-Banco)
-  vidasPerdidasHistorico: number;
-  ejerciciosCompletados: number;
-  /** 0..100 — insumo del candidato a promoción (RF-RNK-05). */
-  obligatoriosAprobadosPct: number;
+  nodeLevel: number;
+  percentile: number;
+  zone: Zone;
+  /** First tiebreaker criterion (RF-RNK-11). */
+  badges: number;
+  lives: number; // current (PAR-12: max 3) — BFF stub
+  coins: number; // BFF stub (Bank, T-Bank)
+  lostLives: number;
+  completedExercises: number;
+  /** 0..100 — input for the promotion candidate (RF-RNK-05). */
+  mandatoryPassedPct: number;
 }
 
-/** Lo que un ALUMNO ve de cualquier fila que NO es la suya: stats sin identidad (RF-RNK-03/07). */
-export type FilaRankingAnon = Omit<FilaRanking, 'alumnoId' | 'nombre' | 'apellido' | 'legajo'> & {
-  /** Seudónimo estable por posición, p. ej. "Estudiante #07". */
-  seudonimo: string;
+/** What a STUDENT sees of any row that is NOT theirs: stats without identity (RF-RNK-03/07). */
+export type RankingAnonRow = Omit<RankingRow, 'studentId' | 'name' | 'lastName' | 'fileNumber'> & {
+  /** Stable pseudonym by position, e.g. "Estudiante #07". */
+  pseudonym: string;
 };
 
-/** Vista del ALUMNO (RF-RNK-03): anonimato estricto salvo la fila propia. */
-export interface VistaRankingAlumno {
-  rol: 'ALUMNO';
-  /** Fila propia con identidad completa; null si el alumno no está en la cohorte. */
-  yo: FilaRanking | null;
-  top3: FilaRankingAnon[];
-  bottom3: FilaRankingAnon[];
-  /** Filas de corte, anónimas. null si la cohorte tiene < 10 inscriptos (RF-RNK-09). */
-  cortes: { p90: FilaRankingAnon; p10: FilaRankingAnon } | null;
+/** STUDENT view (RF-RNK-03): strict anonymity except the own row. */
+export interface StudentRankingView {
+  role: 'ALUMNO';
+  /** Own row with full identity; null if the student is not in the cohort. */
+  yo: RankingRow | null;
+  top3: RankingAnonRow[];
+  bottom3: RankingAnonRow[];
+  /** Cutoff rows, anonymous. null if the cohort has < 10 enrolled (RF-RNK-09). */
+  cutoffs: { p90: RankingAnonRow; p10: RankingAnonRow } | null;
   /**
-   * Cohorte completa, con scroll: cada entrada anonimizada salvo la fila propia, que
-   * viene identificada y se resalta dentro de la misma lista (RF-RNK-03).
+   * Full cohort, scrollable: each entry anonymized except the own row, which
+   * comes identified and is highlighted inside the same list (RF-RNK-03).
    */
-  lista: (FilaRanking | FilaRankingAnon)[];
-  totalInscriptos: number;
+  list: (RankingRow | RankingAnonRow)[];
+  totalEnrolled: number;
 }
 
-/** Vista de PROFESOR/ADMIN (RF-RNK-10): cero anonimato, para auditar antes de archivar. */
-export interface VistaRankingStaff {
-  rol: 'PROFESOR' | 'ADMIN';
-  filas: FilaRanking[];
-  /** Posiciones de corte (p. ej. 2 y 11); null si < 10 inscriptos (RF-RNK-09). */
-  cortes: { p90: number; p10: number } | null;
-  totalInscriptos: number;
+/** PROFESOR/ADMIN view (RF-RNK-10): zero anonymity, to audit before archiving. */
+export interface StaffRankingView {
+  role: 'PROFESOR' | 'ADMIN';
+  rows: RankingRow[];
+  /** Cutoff positions (e.g. 2 and 11); null if < 10 enrolled (RF-RNK-09). */
+  cutoffs: { p90: number; p10: number } | null;
+  totalEnrolled: number;
 }
 
-export type VistaRanking = VistaRankingAlumno | VistaRankingStaff;
+export type RankingView = StudentRankingView | StaffRankingView;

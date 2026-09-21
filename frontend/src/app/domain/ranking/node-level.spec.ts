@@ -1,27 +1,27 @@
-import { Progreso } from '../../core/data/roadmap.models';
-import { nivelNodo } from './nivel-nodo';
+import { Progress } from '../../core/data/roadmap.models';
+import { nodeLevel } from './node-level';
 
-function progreso(estados: Progreso['nodos'][number]['estado'][]): Progreso {
+function progress(statuses: Progress['nodes'][number]['status'][]): Progress {
   return {
-    alumnoId: 'alu-01',
-    cursoCohorteId: 'cc',
+    studentId: 'alu-01',
+    courseCohortId: 'cc',
     xpTotal: 0,
-    vidasVigentes: 3,
-    nodos: estados.map((estado, i) => ({ nodoId: `n${i}`, estado })),
+    currentLives: 3,
+    nodes: statuses.map((status, i) => ({ nodeId: `n${i}`, status })),
   };
 }
 
-describe('nivelNodo', () => {
-  it('es la cantidad de nodos completados + 1 (el nodo donde está parado)', () => {
-    expect(nivelNodo(progreso(['completado', 'completado', 'habilitado', 'bloqueado']))).toBe(3);
+describe('nodeLevel', () => {
+  it('is the number of completed nodes + 1 (the node where they stand)', () => {
+    expect(nodeLevel(progress(['completado', 'completado', 'habilitado', 'bloqueado']))).toBe(3);
   });
 
-  it('sin ningún nodo completado, está en el nodo 1', () => {
-    expect(nivelNodo(progreso(['habilitado', 'bloqueado']))).toBe(1);
+  it('with no completed node, they are on node 1', () => {
+    expect(nodeLevel(progress(['habilitado', 'bloqueado']))).toBe(1);
   });
 
-  it('no supera el total de nodos del curso', () => {
-    expect(nivelNodo(progreso(['completado', 'completado', 'completado']))).toBe(3);
-    expect(nivelNodo(progreso(['completado', 'completado', 'completado']), 3)).toBe(3);
+  it('does not exceed the total number of nodes of the course', () => {
+    expect(nodeLevel(progress(['completado', 'completado', 'completado']))).toBe(3);
+    expect(nodeLevel(progress(['completado', 'completado', 'completado']), 3)).toBe(3);
   });
 });

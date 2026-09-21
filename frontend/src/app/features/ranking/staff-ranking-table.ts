@@ -1,18 +1,18 @@
 import { Component, input, output } from '@angular/core';
-import { FilaRanking, VistaRankingStaff } from '../../core/data/ranking.models';
-import { enRiesgoRegularidad, esCandidatoPromocion } from '../../domain/ranking/ranking.reglas';
+import { RankingRow, StaffRankingView } from '../../core/data/ranking.models';
+import { inRiskRegularity, isCandidatePromotion } from '../../domain/ranking/ranking.rules';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 
 /**
- * Vista de PROFESOR/ADMIN (RF-RNK-10): tabla densa, identificada y sin anonimato, con las
- * columnas mínimas para escanear la cohorte — puesto, alumno, legajo, percentil, XP, vidas
- * perdidas históricas y el estado sugerido (candidato a promoción RF-RNK-05 / riesgo de
- * regularidad RF-RNK-06). El resto (nodo actual, insignias, ejercicios, % de obligatorios)
- * vive en el detalle "INFO" al hacer click en la fila, para no desbordar la pantalla CRT
- * del gabinete.
+ * PROFESOR/ADMIN view (RF-RNK-10): dense, identified table with no anonymity, with the
+ * minimum columns to scan the cohort — position, student, file number, percentile, XP, historical
+ * lost lives and the suggested status (promotion candidate RF-RNK-05 / regularity
+ * risk RF-RNK-06). The rest (current node, badges, exercises, % of mandatory)
+ * lives in the "INFO" detail on clicking the row, so as not to overflow the cabinet's
+ * CRT screen.
  */
 @Component({
-  selector: 'app-ranking-tabla-staff',
+  selector: 'app-ranking-table-staff',
   imports: [AvatarSprite],
   template: `
     <div class="staff-scroll">
@@ -31,29 +31,29 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
           </tr>
         </thead>
         <tbody>
-          @for (f of vista().filas; track f.alumnoId) {
+          @for (f of view().rows; track f.studentId) {
             <tr
-              [class.up]="f.zona === 'p90'"
-              [class.down]="f.zona === 'p10'"
-              [class.promo]="candidato(f)"
+              [class.up]="f.zone === 'p90'"
+              [class.down]="f.zone === 'p10'"
+              [class.promo]="candidate(f)"
               [class.riesgo]="riesgo(f)"
-              (click)="seleccionar.emit(f)"
+              (click)="select.emit(f)"
             >
-              <td class="tabular">{{ f.posicion }}</td>
+              <td class="tabular">{{ f.position }}</td>
               <td class="staff__alumno">
                 <div class="staff__ident">
-                  <ui-avatar-sprite class="rk-row__avatar" [config]="f.avatar" [alto]="43" />
-                  <b class="staff__nombre">{{ f.nombre }} {{ f.apellido }}</b>
+                  <ui-avatar-sprite class="rk-row__avatar" [config]="f.avatar" [height]="43" />
+                  <b class="staff__nombre">{{ f.name }} {{ f.lastName }}</b>
                 </div>
               </td>
-              <td class="staff__legajo">{{ f.legajo }}</td>
-              <td class="tabular">P{{ f.percentil }}</td>
+              <td class="staff__legajo">{{ f.fileNumber }}</td>
+              <td class="tabular">P{{ f.percentile }}</td>
               <td class="tabular" style="text-align:right;color:var(--rk-yellow)">
                 {{ f.xpTotal }}
               </td>
-              <td class="tabular">{{ f.vidasPerdidasHistorico }}</td>
+              <td class="tabular">{{ f.lostLives }}</td>
               <td style="text-align:left">
-                @if (candidato(f)) {
+                @if (candidate(f)) {
                   <span class="tag tag--ok">promoción</span>
                 } @else if (riesgo(f)) {
                   <span class="tag tag--risk">riesgo</span>
@@ -78,8 +78,8 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
       font-size: 1.05rem;
       color: var(--rk-ink);
     }
-    /* encabezados en VT323: los labels son palabras ("Alumno", "Estado"),
-       en Press Start 2P a este tamaño no se leían. */
+    /* headers in VT323: the labels are words ("Alumno", "Estado"),
+       in Press Start 2P at this size they were not readable. */
     .staff th {
       font-family: var(--font-console);
       font-size: 1rem;
@@ -99,8 +99,8 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
       border-bottom: 1px solid var(--rk-bg3);
       cursor: pointer;
     }
-    /* Alumno + legajo: dos columnas alineadas a la izquierda para que cada
-       nombre quede enfrentado con su legajo y ambos se lean sin esfuerzo. */
+    /* Student + file number: two left-aligned columns so each
+       name faces its file number and both read effortlessly. */
     .staff__alumno {
       text-align: left;
     }
@@ -121,8 +121,8 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
     }
     .staff__legajo {
       text-align: left;
-      /* Dato de auditoría, no el protagonista de la fila: chico para no competir
-         con el nombre del alumno. */
+      /* Audit data, not the protagonist of the row: small so as not to compete
+         with the student's name. */
       font-family: var(--font-ui);
       font-size: 0.55rem;
       font-variant-numeric: tabular-nums;
@@ -130,7 +130,7 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
       color: var(--rk-cyan);
       white-space: nowrap;
     }
-    /* datos numéricos en Press Start 2P; el nombre del alumno queda en VT323 (celda base) */
+    /* numeric data in Press Start 2P; the student's name stays in VT323 (base cell) */
     .staff td.tabular {
       font-family: var(--font-title);
       font-size: 0.8rem;
@@ -162,9 +162,9 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
       color: var(--rk-magenta);
       text-shadow: 0 0 6px rgba(255, 46, 147, 0.6);
     }
-    /* Neón de fila igual que la lista del alumno (.rk-row--promo / --riesgo):
-       fondo tenue + barra lateral + resplandor. En tabla con border-collapse el
-       box-shadow del <tr> no pinta, así que el bloom va como drop-shadow. */
+    /* Neon row, same as the student's list (.rk-row--promo / --riesgo):
+       faint background + side bar + glow. In a table with border-collapse the
+       box-shadow of the <tr> does not paint, so the bloom goes as drop-shadow. */
     .staff tbody tr.promo {
       background: rgba(57, 255, 136, 0.09);
       filter: drop-shadow(0 0 8px rgba(57, 255, 136, 0.35));
@@ -195,10 +195,10 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
     }
   `,
 })
-export class RankingTablaStaff {
-  readonly vista = input.required<VistaRankingStaff>();
-  readonly seleccionar = output<FilaRanking>();
+export class StaffRankingTable {
+  readonly view = input.required<StaffRankingView>();
+  readonly select = output<RankingRow>();
 
-  protected candidato = esCandidatoPromocion;
-  protected riesgo = enRiesgoRegularidad;
+  protected candidate = isCandidatePromotion;
+  protected riesgo = inRiskRegularity;
 }

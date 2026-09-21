@@ -1,4 +1,4 @@
-export type TipoAnexo = 'documento' | 'video' | 'enlace' | 'imagen' | 'ejercicio';
+export type AttachmentType = 'documento' | 'video' | 'enlace' | 'imagen' | 'ejercicio';
 
 export type Biome = 'pradera' | 'desierto' | 'nieve' | 'lava';
 
@@ -6,17 +6,17 @@ export interface BiomeOption {
   id: Biome;
   label: string;
   icon: string;
-  mundo3d: string;
+  world3d: string;
 }
 
-export const BIOMAS_EDUCA: BiomeOption[] = [
-  { id: 'pradera', label: 'Pradera', icon: '🌿', mundo3d: 'Bosque' },
-  { id: 'desierto', label: 'Desierto', icon: '🏜️', mundo3d: 'Desierto' },
-  { id: 'nieve', label: 'Nieve', icon: '❄️', mundo3d: 'Nieve' },
-  { id: 'lava', label: 'Lava', icon: '🌋', mundo3d: 'Nether' },
+export const BIOMES_EDUCA: BiomeOption[] = [
+  { id: 'pradera', label: 'Pradera', icon: '🌿', world3d: 'Bosque' },
+  { id: 'desierto', label: 'Desierto', icon: '🏜️', world3d: 'Desierto' },
+  { id: 'nieve', label: 'Nieve', icon: '❄️', world3d: 'Nieve' },
+  { id: 'lava', label: 'Lava', icon: '🌋', world3d: 'Nether' },
 ];
 
-export function educaBiomeToMundo3d(biome?: Biome | string): string {
+export function educaBiomeToWorld3d(biome?: Biome | string): string {
   switch (biome) {
     case 'desierto':
       return 'Desierto';
@@ -30,39 +30,39 @@ export function educaBiomeToMundo3d(biome?: Biome | string): string {
   }
 }
 
-export interface Anexo {
+export interface Attachment {
   id: string;
-  titulo: string;
-  tipo: TipoAnexo;
-  descripcion?: string;
+  title: string;
+  type: AttachmentType;
+  description?: string;
   url?: string;
 }
 
-export interface Modulo {
+export interface Module {
   id: string;
-  titulo: string;
-  descripcion: string;
-  orden: number;
-  anexos: Anexo[];
-  duracionEstimada?: number;
-  objetivos?: string[];
+  title: string;
+  description: string;
+  order: number;
+  attachments: Attachment[];
+  estimatedDuration?: number;
+  objectives?: string[];
 }
 
-export interface Unidad {
+export interface Section {
   id: string;
-  titulo: string;
-  descripcion: string;
-  orden: number;
-  modulos: Modulo[];
+  title: string;
+  description: string;
+  order: number;
+  modules: Module[];
   color?: string;
-  bioma?: Biome; // ausente = pradera
+  biome?: Biome; // absent = meadow
 }
 
-export interface Asignatura {
+export interface Subject {
   id: string;
-  nombre: string;
-  descripcion: string;
-  unidades: Unidad[];
-  fechaCreacion: string; // ISO string para JSON directo
-  fechaModificacion: string;
+  name: string;
+  description: string;
+  sections: Section[];
+  creationDate: string; // ISO string for direct JSON
+  modificationDate: string;
 }

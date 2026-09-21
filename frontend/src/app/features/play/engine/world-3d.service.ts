@@ -4,15 +4,15 @@ import { AssetCacheService } from './asset-cache.service';
 import { CameraController } from './camera-controller';
 import { CharacterController, type Collider, type FogFrontier } from './character-controller';
 import type { AvatarBuild } from './avatar-modular.service';
-import { yawMovimiento, type Vista } from './camera-controller';
+import { yawMovement, type View } from './camera-controller';
 import { TabletopBuilder, ArcadeBuilder } from './tabletop-props';
 import type { EnvironmentTheme } from '../../../core/theme.service';
 import {
-  ANEXO_EMOJI,
-  type AnexoMarker,
+  ATTACHMENT_EMOJI,
+  type AttachmentMarker,
   type Avatar,
   type Biome,
-  type ModuloPlaced,
+  type ModulePlaced,
   type WorldLayout,
 } from '../world-gen';
 
@@ -88,19 +88,19 @@ const TILE_GRASS = `${G}/tiles/base/hex_grass.gltf`;
 const TILE_WATER = `${G}/tiles/base/hex_water.gltf`;
 const TUMBLEWEED = `${G}/decoration/nature/tumbleweed_lowpoly.glb`;
 const TUMBLEWEED_SCALE = 0.2;
-// Escalas normalizadas a igual altura (~1.2u = 60% de la proporción anterior)
+// Scales normalized to equal height (~1.2u = 60% of the previous proportion)
 const CACTUS_SCALE: Record<string, number> = {
   [`${G}/decoration/nature/cactus_1.glb`]: 0.06,
   [`${G}/decoration/nature/cactus_2.glb`]: 0.06,
   [`${G}/decoration/nature/cactus_3.glb`]: 0.2316,
   [`${G}/decoration/nature/cactus_4.glb`]: 1.939,
 };
-// cactus_4 trae la base bajo el origen (min y = -0.464): hay que levantarlo
+// cactus_4 has its base below the origin (min y = -0.464): it must be lifted
 const CACTUS_LIFT: Record<string, number> = {
   [`${G}/decoration/nature/cactus_4.glb`]: 0.464,
 };
 const isCactus = (m: string): boolean => m.includes('/cactus_');
-// Escalas de nieve (los 3 hunden la base bajo el origen: hay que levantarlos)
+// Snow scales (all 3 sink the base below the origin: they must be lifted)
 const SNOW_SCALE: Record<string, number> = {
   [`${G}/decoration/nature/snowman.glb`]: 1.0,
   [`${G}/decoration/nature/pine_snow.glb`]: 1.85,
@@ -127,9 +127,9 @@ const EMBER_HEIGHT = 12;
 
 export interface WorldCallbacks {
   onProgress: (pct: number) => void;
-  onNearAnexo: (anexo: AnexoMarker | null) => void;
-  onNearTower: (tower: ModuloPlaced | null) => void;
-  onNearMarket: (market: ModuloPlaced | null) => void;
+  onNearAttachment: (attachment: AttachmentMarker | null) => void;
+  onNearTower: (tower: ModulePlaced | null) => void;
+  onNearMarket: (market: ModulePlaced | null) => void;
   onAtCastle: (atCastle: boolean) => void;
   onHitFogBarrier: () => void;
   isOpenGroup: (group: string) => boolean;
@@ -175,16 +175,16 @@ export class World3dService {
   private emberVel: Float32Array | null = null;
   private magmaMats: THREE.MeshStandardMaterial[] = [];
   private volcanoSmoke: { s: THREE.Sprite; seed: number; bx: number; by: number; bz: number }[] = [];
-  private volcanos: VolcanoState[] = [];
+  private volcanoes: VolcanoState[] = [];
   private lavaBombs: LavaBomb[] = [];
   private bombGeo: THREE.BufferGeometry | null = null;
   private bombMat: THREE.Material | null = null;
   private eruptionSparks: THREE.Points | null = null;
   private sparkVel: Float32Array | null = null;
   private sparkLife: Float32Array | null = null;
-  private praderaFish: JumpingFish[] = [];
-  private praderaRipples: WaterRipple[] = [];
-  private praderaBirds: FlockBirdMember[] = [];
+  private meadowFish: JumpingFish[] = [];
+  private meadowRipples: WaterRipple[] = [];
+  private meadowBirds: FlockBirdMember[] = [];
   private birdFlockRoot: THREE.Group | null = null;
   private flockAngle = 0;
   private flockCenter = { x: 0, z: 0 };
@@ -193,7 +193,7 @@ export class World3dService {
   private nextFishJump = 0;
   private waterCoastData: WaterCoastSpot[] = [];
   private effectsOn = true;
-  private bioma: Biome = 'pradera';
+  private biome: Biome = 'pradera';
   private clickCleanups: (() => void)[] = [];
   private grow: { o: THREE.Object3D; base: THREE.Vector3; t0: number }[] = [];
   private booted = false;
@@ -209,7 +209,7 @@ export class World3dService {
   private callbacks: WorldCallbacks | null = null;
 
   // Track last dispatched proximity states to avoid redundant NgZone.run invocations
-  private lastNearAnexoId: string | null = null;
+  private lastNearAttachmentId: string | null = null;
   private lastNearTowerId: string | null = null;
   private lastNearMarketId: string | null = null;
   private lastAtCastle = false;
@@ -228,7 +228,7 @@ export class World3dService {
     this.groups.set(key, arr);
   }
 
-  /** Tiñe un tile clonando materiales (SkeletonUtils.clone comparte materiales). */
+  /** Tints a tile by cloning materials (SkeletonUtils.clone shares materials). */
   private sand(g: THREE.Group, hex: number, flat: boolean): void {
     if (!hex) return;
     const tint = new THREE.Color(hex);
@@ -247,7 +247,7 @@ export class World3dService {
     });
   }
 
-  /** Senda angosta sobre base plana: remapea por luminancia (oscuros→senda, claros→base). */
+  /** Narrow path over a flat base: remaps by luminance (dark→path, light→base). */
   private trailRoad(g: THREE.Group, baseHex: number, darkHex: number): void {
     const toVec = (h: number): string =>
       `vec3(${((h >> 16) & 255) / 255}, ${((h >> 8) & 255) / 255}, ${(h & 255) / 255})`;
@@ -275,7 +275,7 @@ export class World3dService {
     });
   }
 
-  /** Ríos de magma: base oscura + emissive naranja pulsante (ver loop). */
+  /** Magma rivers: dark base + pulsing orange emissive (see loop). */
   private magma(g: THREE.Group, hex = 0xff5a1a): void {
     g.traverse((o) => {
       const mesh = o as THREE.Mesh;
@@ -291,7 +291,7 @@ export class World3dService {
     });
   }
 
-  /** Capa de nieve: mezcla blanco en caras que miran arriba (montañas y rocas). */
+  /** Snow layer: mixes white on upward-facing faces (mountains and rocks). */
   private snowcap(g: THREE.Group, snowHex = 0xeef3f6): void {
     const w = ((snowHex >> 16) & 255) / 255;
     const v = ((snowHex >> 8) & 255) / 255;
@@ -332,7 +332,7 @@ export class World3dService {
     });
   }
 
-  /** Material dinámico para volcanes: corriente animada de lava en las grietas + ceniza en roca. */
+  /** Dynamic material for volcanoes: animated lava flow in the cracks + ash on rock. */
   private applyVolcanoMaterial(
     g: THREE.Group,
     uniforms: { uTime: { value: number }; uEruptionIntensity: { value: number } },
@@ -411,11 +411,11 @@ export class World3dService {
     });
   }
 
-  /** Vegetación procedural (modelos `proc:` — sin assets). */
+  /** Procedural vegetation (`proc:` models — no assets). */
   private buildProcedural(model: string): THREE.Group {
     const g = new THREE.Group();
     if (model === 'proc:palmera') {
-      // palmera: tronco segmentado con curva + copa de hojas planas
+      // palm: segmented trunk with a curve + crown of flat leaves
       const trunkMat = new THREE.MeshStandardMaterial({ color: 0x7a5a34, flatShading: true, roughness: 1 });
       const leafMat = new THREE.MeshStandardMaterial({ color: 0x3e7d3a, roughness: 0.9, side: THREE.DoubleSide });
       let px = 0;
@@ -439,7 +439,7 @@ export class World3dService {
         g.add(leaf);
       }
     } else if (model === 'proc:huesos') {
-      // osamenta: calavera marfil + costillas, perfil bajo sobre la arena
+      // skeleton: ivory skull + ribs, low profile over the sand
       const boneMat = new THREE.MeshStandardMaterial({ color: 0xe8e0cc, flatShading: true, roughness: 0.95 });
       const skull = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 7), boneMat);
       skull.scale.set(1, 0.85, 1.15);
@@ -462,7 +462,7 @@ export class World3dService {
   private twMinZ = 0;
   private twMaxZ = 0;
 
-  /** Límites de la isla jugable para el corredor de entrada de las rodadoras. */
+  /** Limits of the playable island for the tumbleweeds' entry corridor. */
   private computeTumbleweedBounds(): void {
     const pts = [...(this.layout?.tiles ?? []), ...(this.layout?.roads ?? [])];
     if (!pts.length) {
@@ -487,7 +487,7 @@ export class World3dService {
 
   private twCount = 4;
 
-  /** Carril propio por rodadora + velocidad distinta: nunca se amontonan. */
+  /** Own lane per tumbleweed + different speed: they never pile up. */
   private placeTumbleweed(g: THREE.Group, initial: boolean): void {
     const lane = (g.userData['lane'] as number) ?? 0;
     const range = Math.max(1, this.twMaxZ - this.twMinZ);
@@ -498,7 +498,7 @@ export class World3dService {
     g.position.set(x, 0, z);
   }
 
-  /** Click izquierdo / tap → destino del personaje (raycast al plano y=0). */
+  /** Left click / tap → character destination (raycast to the y=0 plane). */
   private moveToScreenPoint(cx: number, cy: number, canvas: HTMLCanvasElement): void {
     const cam = this.camController?.camera;
     const ch = this.charController;
@@ -519,7 +519,7 @@ export class World3dService {
     ch.setTarget(p.x, p.z);
   }
 
-  /** Efectos del bioma (nevada / rodadoras / humo, volcanes, fauna y brasas): visibles o no. */
+  /** Biome effects (snowfall / tumbleweeds / smoke, volcanoes, fauna and embers): visible or not. */
   setEffectsEnabled(on: boolean): void {
     this.effectsOn = on;
     if (this.snow) this.snow.visible = on;
@@ -527,27 +527,27 @@ export class World3dService {
     if (this.eruptionSparks) this.eruptionSparks.visible = on;
     for (const tw of this.tumbleweeds) tw.visible = on;
     for (const p of this.volcanoSmoke) p.s.visible = on;
-    for (const v of this.volcanos) v.light.visible = on;
+    for (const v of this.volcanoes) v.light.visible = on;
     for (const b of this.lavaBombs) {
       if (!on) b.mesh.visible = false;
       else if (b.active) b.mesh.visible = true;
     }
-    for (const f of this.praderaFish) {
+    for (const f of this.meadowFish) {
       if (!on) f.mesh.visible = false;
       else if (f.active) f.mesh.visible = true;
     }
     if (this.birdFlockRoot) this.birdFlockRoot.visible = on;
-    for (const r of this.praderaRipples) {
+    for (const r of this.meadowRipples) {
       if (!on) r.mesh.visible = false;
       else if (r.active) r.mesh.visible = true;
     }
   }
 
-  /** Aplica atmósfera del bioma sin pisar el fondo (la imagen de tienda se conserva). */
+  /** Applies the biome atmosphere without overriding the background (the store image is kept). */
   private applyBiome(): void {
-    const style = BIOME_STYLE[this.bioma];
-    if (!style || this.bioma === 'pradera') return;
-    if (this.bioma === 'desierto' || this.bioma === 'nieve' || this.bioma === 'lava') {
+    const style = BIOME_STYLE[this.biome];
+    if (!style || this.biome === 'pradera') return;
+    if (this.biome === 'desierto' || this.biome === 'nieve' || this.biome === 'lava') {
       const fog = this.scene.fog as THREE.Fog | null;
       if (fog) fog.color.setHex(style.sky);
       else this.scene.fog = new THREE.Fog(style.sky, 50, 130);
@@ -566,7 +566,7 @@ export class World3dService {
     this.callbacks = callbacks;
     this.isDestroyed = false;
     this.currentTheme = initialTheme;
-    this.bioma = layout.bioma ?? 'pradera';
+    this.biome = layout.biome ?? 'pradera';
     this.tumbleweeds = [];
     this.magmaMats = [];
     this.volcanoSmoke = [];
@@ -585,7 +585,7 @@ export class World3dService {
       this.renderer?.setSize(nw, nh);
     });
 
-    // Configurar luces base
+    // Configure base lights
     this.hemiLight = new THREE.HemisphereLight(0xfff1e0, 0x3d271d, 1.1);
     this.scene.add(this.hemiLight);
 
@@ -610,7 +610,7 @@ export class World3dService {
     this.accentLight2.visible = false;
     this.scene.add(this.accentLight2);
 
-    // Precargar ambas texturas de fondo (tienda de juegos y salón arcade)
+    // Preload both background textures (game store and arcade hall)
     const texLoader = new THREE.TextureLoader();
     texLoader.load('/world/game_store_bg.jpg', (tex) => {
       tex.mapping = THREE.EquirectangularReflectionMapping;
@@ -626,21 +626,21 @@ export class World3dService {
       if (this.currentTheme === 'arcade') this.scene.background = tex;
     });
 
-    // Medir dimensiones reales del tile
+    // Measure the tile's real dimensions
     const probe = await this.assets.load(TILE_GRASS);
     const box = new THREE.Box3().setFromObject(probe);
     const size = box.getSize(new THREE.Vector3());
     this.sx = size.x;
     this.sz = size.z * 0.75;
 
-    // Aplicar el tema inicial (mesa, iluminación y accesorios)
+    // Apply the initial theme (table, lighting and accessories)
     this.applyTheme(initialTheme);
     this.applyBiome();
 
     this.charController = new CharacterController(this.assets, this.sx, this.sz);
     this.charController.bindInput();
 
-    // Click-to-move: click derecho o tap (arrastrar no mueve)
+    // Click-to-move: right click or tap (dragging does not move)
     {
       let downX = 0;
       let downY = 0;
@@ -671,7 +671,7 @@ export class World3dService {
       layout.waters.length +
       layout.roads.length +
       layout.hqs.length +
-      layout.modulos.length +
+      layout.modules.length +
       layout.islets.length +
       layout.ridge.length +
       3;
@@ -690,10 +690,10 @@ export class World3dService {
       });
     };
 
-    const snow = this.bioma === 'nieve';
-    const lava = this.bioma === 'lava';
-    const tinted = this.bioma === 'desierto' || snow || lava;
-    const style = BIOME_STYLE[this.bioma];
+    const snow = this.biome === 'nieve';
+    const lava = this.biome === 'lava';
+    const tinted = this.biome === 'desierto' || snow || lava;
+    const style = BIOME_STYLE[this.biome];
 
     for (const t of layout.tiles) {
       const [x, z] = this.ax(t.q, t.r);
@@ -740,7 +740,7 @@ export class World3dService {
       if (p.s) m.scale.setScalar(p.s);
       if (snow) this.snowcap(m);
       if (lava) {
-        const isVolcano = (layout.volcanes ?? []).some((v) => v.q === p.q && v.r === p.r);
+        const isVolcano = (layout.volcanoes ?? []).some((v) => v.q === p.q && v.r === p.r);
         if (isVolcano) {
           const uniforms = {
             uTime: { value: Math.random() * 10 },
@@ -756,7 +756,7 @@ export class World3dService {
             uniforms,
           });
         } else {
-          this.snowcap(m, 0x4a4440); // ceniza en vez de nieve en rocas estándar
+          this.snowcap(m, 0x4a4440); // ash instead of snow on standard rocks
         }
       }
       this.scene.add(m);
@@ -815,18 +815,18 @@ export class World3dService {
       tick();
     }
 
-    for (const m of layout.modulos) {
+    for (const m of layout.modules) {
       const [x, z] = this.ax(m.q, m.r, m.ox, m.oz);
       const g = await this.assets.load(m.model);
       g.position.set(x, 0, z);
       g.rotation.y = m.rotY;
       shadowed(g);
       this.scene.add(g);
-      if (!m.moduloId.startsWith('__flag')) {
+      if (!m.moduleId.startsWith('__flag')) {
         this.colliders.push({ x, z, r: this.sx * 0.42 });
-        if (!m.moduloId.startsWith('__market')) this.groupAdd(m.moduloId, g);
+        if (!m.moduleId.startsWith('__market')) this.groupAdd(m.moduleId, g);
       }
-      if (m.moduloId.startsWith('__market')) {
+      if (m.moduleId.startsWith('__market')) {
         const topY = new THREE.Box3().setFromObject(g).max.y;
         const my = topY + 0.35;
         const spr = new THREE.Sprite(
@@ -840,7 +840,7 @@ export class World3dService {
       tick();
     }
 
-    for (const x of layout.anexos) {
+    for (const x of layout.attachments) {
       const [px, pz] = this.ax(x.q, x.r, x.ox, x.oz);
       const g = await this.assets.load(x.model);
       g.position.set(px, 0, pz);
@@ -851,15 +851,15 @@ export class World3dService {
         if (o.name.toLowerCase().includes('fan')) this.spinners.push(o);
       });
       this.colliders.push({ x: px, z: pz, r: this.sx * 0.42 });
-      this.groupAdd(x.moduloId, g);
+      this.groupAdd(x.moduleId, g);
 
       const spr = new THREE.Sprite(
-        new THREE.SpriteMaterial({ map: this.emojiTexture(ANEXO_EMOJI[x.tipo]), depthTest: false }),
+        new THREE.SpriteMaterial({ map: this.emojiTexture(ATTACHMENT_EMOJI[x.type]), depthTest: false }),
       );
       spr.scale.set(0.55, 0.55, 1);
       spr.position.set(px, 1.6, pz);
       this.scene.add(spr);
-      this.groupAdd(x.moduloId, spr);
+      this.groupAdd(x.moduleId, spr);
       this.floaters.push({ s: spr, y: 1.6, p: Math.random() * 6 });
     }
 
@@ -885,14 +885,14 @@ export class World3dService {
       this.scene.add(g);
     }
 
-    // En la estética de tablero de rol sobre mesa de tienda, se omiten las nubes de cielo exterior
+    // In the tabletop role-playing board aesthetic over a store table, exterior sky clouds are omitted
     for (const _c of layout.clouds) {
-      // noop para mantener despejada la vista de la mesa y la tienda
+      // noop to keep the view of the table and the store clear
     }
 
-    // Rodadoras con viento (solo desierto, ambiente: sin colisión, sin seed)
-    // Entran por detrás del borde izquierdo; 4 unidades escalonadas.
-    if (this.bioma === 'desierto') {
+    // Tumbleweeds with wind (desert only, ambience: no collision, no seed)
+    // They enter from behind the left edge; 4 staggered units.
+    if (this.biome === 'desierto') {
       this.computeTumbleweedBounds();
       for (let i = 0; i < this.twCount; i++) {
         const g = await this.assets.load(TUMBLEWEED);
@@ -906,24 +906,24 @@ export class World3dService {
       }
     }
 
-    // Nevada (solo nieve): 1 draw call siguiendo al personaje
-    if (this.bioma === 'nieve') {
+    // Snowfall (snow only): 1 draw call following the character
+    if (this.biome === 'nieve') {
       this.startSnowfall((layout.boundR ?? 14) * this.sx);
     }
 
-    // Volcanes (solo lava): cráter incandescente + columna de humo + brasas + erupciones
+    // Volcanoes (lava only): glowing crater + smoke column + embers + eruptions
     if (lava) {
       const smokeTex = this.fogTexture();
       this.initVolcanoSystem(volcanoTops, smokeTex);
       this.startEmbers((layout.boundR ?? 14) * this.sx);
     }
 
-    // Fauna de Pradera: pececitos saltando en el agua y bandada de aves
-    if (this.bioma === 'pradera') {
-      this.initPraderaWildlife(layout);
+    // Meadow fauna: little fish jumping in the water and a flock of birds
+    if (this.biome === 'pradera') {
+      this.initMeadowWildlife(layout);
     }
 
-    // Neblina de guerra esponjosa, volumétrica y orgánica (confinada estrictamente a la calzada jugable)
+    // Fluffy, volumetric and organic war fog (strictly confined to the playable road)
     {
       const tex = this.fogTexture();
       const PUFF_COUNT = 32;
@@ -937,19 +937,19 @@ export class World3dService {
             rotation: (i * 1.618 * Math.PI) % (Math.PI * 2),
           }),
         );
-        // Tamaños variados y redondeados (entre 4.6 y 6.8 de ancho, 2.8 y 4.2 de alto)
+        // Varied and rounded sizes (between 4.6 and 6.8 wide, 2.8 and 4.2 high)
         const sw = 4.6 + (i % 5) * 0.55;
         const sh = 2.8 + (i % 4) * 0.45;
         s.scale.set(sw, sh, 1);
         s.visible = false;
 
-        // Distribución orgánica tridimensional extendida a lo largo de toda la calzada jugable:
-        // - oz: desde -3.2 (lado izquierdo) hasta +10.0 (arropando completamente la curva hacia la derecha)
+        // Three-dimensional organic distribution extended along the whole playable road:
+        // - oz: from -3.2 (left side) to +10.0 (completely wrapping the curve toward the right)
         const tZ = i / (PUFF_COUNT - 1);
         const oz = -3.2 + tZ * 13.2 + (((i * 7) % 5) - 2) * 0.35;
-        // - ox: profundidad a lo largo del tramo (0.3 a 5.6), acompañando el recorrido de la calzada
+        // - ox: depth along the stretch (0.3 to 5.6), accompanying the road's course
         const ox = 0.3 + ((i % 4) * 1.1) + tZ * 1.6;
-        // - oy: altura rasante multicapa entre 0.48 y 1.18 unidades
+        // - oy: multi-layer grazing height between 0.48 and 1.18 units
         const oy = 0.5 + ((i * 5) % 4) * 0.22;
         s.userData = {
           ox,
@@ -972,7 +972,7 @@ export class World3dService {
     await this.charController.loadAnimations();
     await this.charController.setAvatar(avatar, this.scene);
 
-    // Spawn seguro fuera de colisionadores
+    // Safe spawn outside colliders
     const free = (wx: number, wz: number): boolean =>
       this.colliders.every((c) => Math.hypot(wx - c.x, wz - c.z) > c.r + this.sx * 0.6);
     let [sx0, sz0] = this.ax(layout.spawn.q, layout.spawn.r);
@@ -989,10 +989,10 @@ export class World3dService {
       }
     }
     this.charController.char?.position.set(sx0, 0, sz0);
-    // Ojos para primera persona: 90% de la altura normalizada del personaje.
-    if (this.camController) this.camController.alturaOjos = this.sx * 0.5625 * 0.9;
+    // Eyes for first person: 90% of the character's normalized height.
+    if (this.camController) this.camController.eyeHeight = this.sx * 0.5625 * 0.9;
 
-    // Ejecutar el bucle de render fuera de NgZone para máxima eficiencia
+    // Run the render loop outside NgZone for maximum efficiency
     this.ngZone.runOutsideAngular(() => {
       this.startLoop();
     });
@@ -1002,7 +1002,7 @@ export class World3dService {
     this.currentTheme = theme;
     const islandRadius = (this.layout?.boundR ?? 14) * this.sx;
 
-    // 1. Remover y disponer entorno previo
+    // 1. Remove and dispose of the previous environment
     if (this.environmentGroup) {
       this.scene.remove(this.environmentGroup);
       this.environmentGroup.traverse((obj) => {
@@ -1016,7 +1016,7 @@ export class World3dService {
       this.environmentGroup = null;
     }
 
-    // 2. Instanciar nuevo entorno según el tema
+    // 2. Instantiate a new environment according to the theme
     if (theme === 'arcade') {
       this.environmentGroup = ArcadeBuilder.buildArcadeEnvironment(islandRadius);
       this.scene.add(this.environmentGroup);
@@ -1039,7 +1039,7 @@ export class World3dService {
       }
       if (this.accentLight1) {
         this.accentLight1.position.set(-15, 12, 10);
-        this.accentLight1.color.setHex(0x06b6d4); // Cian
+        this.accentLight1.color.setHex(0x06b6d4); // Cyan
         this.accentLight1.intensity = 2.2;
         this.accentLight1.visible = true;
       }
@@ -1071,7 +1071,7 @@ export class World3dService {
       }
       if (this.accentLight1) {
         this.accentLight1.position.set(0, 15, 0);
-        this.accentLight1.color.setHex(0xf59e0b); // Ámbar cálido
+        this.accentLight1.color.setHex(0xf59e0b); // Warm amber
         this.accentLight1.intensity = 0.6;
         this.accentLight1.visible = true;
       }
@@ -1082,11 +1082,11 @@ export class World3dService {
     this.applyBiome();
   }
 
-  /** Conmuta cámara primera/tercera persona / libre (oculta el cuerpo en primera). */
-  alternarVista(): Vista {
-    const vista = this.camController?.alternarVista() ?? 'libre';
-    this.charController?.setVistaPrimera(vista === 'primera');
-    return vista;
+  /** Toggles first/third person / free camera (hides the body in first). */
+  toggleView(): View {
+    const view = this.camController?.toggleView() ?? 'libre';
+    this.charController?.setViewFirst(view === 'primera');
+    return view;
   }
 
   startReading(): void {
@@ -1118,7 +1118,7 @@ export class World3dService {
     const ids = this.callbacks.towerIds();
     const n = this.callbacks.unlockedCount();
     if (n < ids.length && this.fogWall.length) {
-      const towers = this.layout.modulos.filter((m) => !m.moduloId.startsWith('__'));
+      const towers = this.layout.modules.filter((m) => !m.moduleId.startsWith('__'));
       const lockedRoads = this.layout.roads.filter((r) => r.group === ids[n]);
       let minX = Infinity;
       let targetRoad = lockedRoads[0];
@@ -1134,10 +1134,10 @@ export class World3dService {
         ? this.ax(targetRoad.q, targetRoad.r)
         : this.ax(t.q, t.r);
 
-      // Barrera física invisible a la entrada del tramo
+      // Invisible physical barrier at the entrance of the stretch
       this.frontier = { x: cutX - this.sx * 0.3, z: roadZ, dx: 1, dz: 0 };
 
-      // Posicionamiento de los copos esponjosos en volumen sobre la calzada bloqueada
+      // Positioning of the fluffy flakes in volume over the blocked road
       this.fogWall.forEach((s) => {
         const ox = (s.userData['ox'] as number) || 0;
         const oz = (s.userData['oz'] as number) || 0;
@@ -1193,7 +1193,7 @@ export class World3dService {
       this.charController.update(
         dt,
         t,
-        yawMovimiento(this.camController.vista, this.camController.yaw, char.rotation.y),
+        yawMovement(this.camController.view, this.camController.yaw, char.rotation.y),
         isLocked,
         this.colliders,
         this.walk,
@@ -1202,13 +1202,13 @@ export class World3dService {
         () => {
           this.ngZone.run(() => this.callbacks?.onHitFogBarrier());
         },
-        this.camController.vista,
+        this.camController.view,
       );
 
       this.camController.update(dt, char);
       this.charController.tickFx(t, dt);
 
-      // Elementos ambientales
+      // Environmental elements
       const maxR = layout.boundR * this.sx;
       for (const c of this.clouds) {
         c.position.x += dt * 0.4;
@@ -1218,7 +1218,7 @@ export class World3dService {
         if (!this.effectsOn) break;
         const ph = (tw.userData['ph'] as number) ?? 0;
         const sp = (tw.userData['speed'] as number) ?? 1;
-        // Ráfagas de viento: avance a saltos (rebote) con balanceo, sin giros que hundan la bola
+        // Wind gusts: hopping advance (bounce) with sway, without turns that sink the ball
         tw.position.x += dt * (1.5 + Math.sin(t * 0.7 + ph) * 0.6) * sp;
         tw.position.z += Math.sin(t * 1.1 + ph) * dt * 0.8;
         tw.position.y = Math.abs(Math.sin(t * 2.2 + ph)) * 0.45;
@@ -1227,7 +1227,7 @@ export class World3dService {
         tw.rotation.x = Math.cos(t * 1.7 + ph) * 0.15;
         if (tw.position.x > maxR + 10) this.placeTumbleweed(tw, true);
       }
-      // Nevada: cae con deriva de viento y sigue al personaje (wrap en la caja)
+      // Snowfall: falls with wind drift and follows the character (wrap in the box)
       if (this.effectsOn && this.snow && this.snowVel) {
         const attr = this.snow.geometry.getAttribute('position') as THREE.BufferAttribute;
         const arr = attr.array as Float32Array;
@@ -1238,7 +1238,7 @@ export class World3dService {
           arr[j] += Math.sin(t * 0.9 + i * 1.7) * dt * 0.7;
           arr[j + 1] -= this.snowVel[i] * dt;
           arr[j + 2] += Math.cos(t * 0.7 + i * 2.3) * dt * 0.5;
-          // wrap relativo al personaje
+          // wrap relative to the character
           if (arr[j] < cx - maxR) arr[j] += maxR * 2;
           else if (arr[j] > cx + maxR) arr[j] -= maxR * 2;
           if (arr[j + 2] < cz - maxR) arr[j + 2] += maxR * 2;
@@ -1247,13 +1247,13 @@ export class World3dService {
         }
         attr.needsUpdate = true;
       }
-      // Magma: pulso incandescente + humo de volcanes + brasas ascendentes
+      // Magma: incandescent pulse + volcano smoke + rising embers
       for (const m of this.magmaMats) m.emissiveIntensity = 1 + Math.sin(t * 2.2) * 0.3;
       if (this.effectsOn) {
         for (const p of this.volcanoSmoke) {
-          const nearV = this.volcanos.find((v) => Math.hypot(v.x - p.bx, v.z - p.bz) < 1.2);
+          const nearV = this.volcanoes.find((v) => Math.hypot(v.x - p.bx, v.z - p.bz) < 1.2);
           const eruptBoost = nearV?.isErupting ? 1.4 : 1.0;
-          const k = ((t * (0.25 * eruptBoost) + p.seed) % 1 + 1) % 1; // 0→1 ciclo de subida
+          const k = ((t * (0.25 * eruptBoost) + p.seed) % 1 + 1) % 1; // 0→1 rise cycle
           p.s.position.set(
             p.bx + Math.sin(t * 0.8 + p.seed * 5) * (0.5 + k * 1.5),
             p.by + k * (6 * eruptBoost),
@@ -1263,11 +1263,11 @@ export class World3dService {
           p.s.scale.set(sc, sc * 0.8, 1);
           (p.s.material as THREE.SpriteMaterial).opacity = (nearV?.isErupting ? 0.7 : 0.55) * (1 - k);
         }
-        if (this.volcanos.length) {
+        if (this.volcanoes.length) {
           this.updateVolcanoEruptions(t, dt);
         }
-        if (this.praderaFish.length || this.praderaBirds.length) {
-          this.updatePraderaWildlife(t, dt);
+        if (this.meadowFish.length || this.meadowBirds.length) {
+          this.updateMeadowWildlife(t, dt);
         }
         if (this.embers && this.emberVel) {
           const attr = this.embers.geometry.getAttribute('position') as THREE.BufferAttribute;
@@ -1295,7 +1295,7 @@ export class World3dService {
         f.rotation.z += dt * 0.8;
       }
 
-      // Confeti
+      // Confetti
       if (this.partying) {
         this.partyT += dt;
         for (const c of this.party) {
@@ -1323,7 +1323,7 @@ export class World3dService {
         }
       }
 
-      // Animación de la niebla: oleaje suave y giro lento de los copos esponjosos
+      // Fog animation: gentle swell and slow spin of the fluffy flakes
       for (const s of this.fogWall) {
         if (!s.visible) continue;
         const ph = s.userData['ph'] as number;
@@ -1343,7 +1343,7 @@ export class World3dService {
         }
       }
 
-      // Aparición suave de tramos
+      // Smooth appearance of stretches
       if (this.grow.length) {
         const now = performance.now() / 1000;
         this.grow = this.grow.filter((g) => {
@@ -1358,29 +1358,29 @@ export class World3dService {
         });
       }
 
-      // Proximidad a anexos
-      let bestAnexo: AnexoMarker | null = null;
+      // Proximity to appendices
+      let bestAttachment: AttachmentMarker | null = null;
       let bd = 1.7 * this.sx * 0.6;
-      for (const x of layout.anexos) {
-        if (!this.callbacks?.isOpenGroup(x.moduloId)) continue;
+      for (const x of layout.attachments) {
+        if (!this.callbacks?.isOpenGroup(x.moduleId)) continue;
         const [px, pz] = this.ax(x.q, x.r, x.ox, x.oz);
         const d = Math.hypot(char.position.x - px, char.position.z - pz);
         if (d < bd) {
           bd = d;
-          bestAnexo = x;
+          bestAttachment = x;
         }
       }
-      const anexoId = bestAnexo?.anexoId ?? null;
-      if (anexoId !== this.lastNearAnexoId) {
-        this.lastNearAnexoId = anexoId;
-        this.ngZone.run(() => this.callbacks?.onNearAnexo(bestAnexo));
+      const attachmentId = bestAttachment?.attachmentId ?? null;
+      if (attachmentId !== this.lastNearAttachmentId) {
+        this.lastNearAttachmentId = attachmentId;
+        this.ngZone.run(() => this.callbacks?.onNearAttachment(bestAttachment));
       }
 
-      // Proximidad a torres
-      let bestTower: ModuloPlaced | null = null;
+      // Proximity to towers
+      let bestTower: ModulePlaced | null = null;
       let td = 2.2;
-      for (const m of layout.modulos) {
-        if (m.moduloId.startsWith('__') || !this.callbacks?.isOpenGroup(m.moduloId)) continue;
+      for (const m of layout.modules) {
+        if (m.moduleId.startsWith('__') || !this.callbacks?.isOpenGroup(m.moduleId)) continue;
         const [px, pz] = this.ax(m.q, m.r, m.ox, m.oz);
         const d = Math.hypot(char.position.x - px, char.position.z - pz);
         if (d < td) {
@@ -1388,17 +1388,17 @@ export class World3dService {
           bestTower = m;
         }
       }
-      const towerId = bestTower?.moduloId ?? null;
+      const towerId = bestTower?.moduleId ?? null;
       if (towerId !== this.lastNearTowerId) {
         this.lastNearTowerId = towerId;
         this.ngZone.run(() => this.callbacks?.onNearTower(bestTower));
       }
 
-      // Proximidad al mercado
-      let bestMarket: ModuloPlaced | null = null;
+      // Proximity to the market
+      let bestMarket: ModulePlaced | null = null;
       let md = 3.5;
-      for (const m of layout.modulos) {
-        if (!m.moduloId.startsWith('__market')) continue;
+      for (const m of layout.modules) {
+        if (!m.moduleId.startsWith('__market')) continue;
         const [px, pz] = this.ax(m.q, m.r, m.ox, m.oz);
         const d = Math.hypot(char.position.x - px, char.position.z - pz);
         if (d < md) {
@@ -1406,13 +1406,13 @@ export class World3dService {
           bestMarket = m;
         }
       }
-      const marketId = bestMarket?.moduloId ?? null;
+      const marketId = bestMarket?.moduleId ?? null;
       if (marketId !== this.lastNearMarketId) {
         this.lastNearMarketId = marketId;
         this.ngZone.run(() => this.callbacks?.onNearMarket(bestMarket));
       }
 
-      // Castillo final
+      // Final castle
       const dc2 = Math.hypot(char.position.x - this.castleXZ.x, char.position.z - this.castleXZ.z);
       const isAtCastle = dc2 < 4.4;
       if (isAtCastle !== this.lastAtCastle) {
@@ -1442,7 +1442,7 @@ export class World3dService {
     c.height = 256;
     const ctx = c.getContext('2d') as CanvasRenderingContext2D;
 
-    // Lóbulos múltiples que crean una forma esponjosa y orgánica (aspecto de bruma/nube real)
+    // Multiple lobes that create a fluffy, organic shape (real mist/cloud look)
     const lobes = [
       { x: 128, y: 128, r: 85, a: 0.45 },
       { x: 95, y: 110, r: 65, a: 0.35 },
@@ -1497,7 +1497,7 @@ export class World3dService {
     return new THREE.CanvasTexture(c);
   }
 
-  /** Nevada: nube de copos en caja centrada al origen (el loop la sigue al personaje). */
+  /** Snowfall: cloud of flakes in a box centered at the origin (the loop follows the character with it). */
   private startSnowfall(half: number): void {
     this.stopSnowfall();
     const pos = new Float32Array(SNOW_COUNT * 3);
@@ -1534,7 +1534,7 @@ export class World3dService {
     this.snowVel = null;
   }
 
-  /** Brasas (solo lava): como la nevada pero subiendo. */
+  /** Embers (lava only): like snowfall but rising. */
   private startEmbers(half: number): void {
     this.stopEmbers();
     const pos = new Float32Array(EMBER_COUNT * 3);
@@ -1589,7 +1589,7 @@ export class World3dService {
     return new THREE.CanvasTexture(c);
   }
 
-  /** Inicializa el sistema de volcanes: luces, humo, proyectiles piroclásticos y chispas. */
+  /** Initializes the volcano system: lights, smoke, pyroclastic projectiles and sparks. */
   private initVolcanoSystem(
     volcanoTops: {
       x: number;
@@ -1600,7 +1600,7 @@ export class World3dService {
     }[],
     smokeTex: THREE.Texture,
   ): void {
-    // 1. Columnas de humo y luces puntuales en cada cráter
+    // 1. Smoke columns and point lights at each crater
     for (const v of volcanoTops) {
       for (let i = 0; i < 12; i++) {
         const s = new THREE.Sprite(
@@ -1623,7 +1623,7 @@ export class World3dService {
       light.position.set(v.x, v.y + 0.25, v.z);
       this.scene.add(light);
 
-      this.volcanos.push({
+      this.volcanoes.push({
         x: v.x,
         y: v.y,
         z: v.z,
@@ -1637,7 +1637,7 @@ export class World3dService {
       });
     }
 
-    // 2. Pool de bombas de lava (fragmentos de roca low-poly balísticos)
+    // 2. Pool of lava bombs (ballistic low-poly rock fragments)
     const BOMB_COUNT = 24;
     this.bombGeo = new THREE.DodecahedronGeometry(0.13, 0);
     this.bombMat = new THREE.MeshStandardMaterial({
@@ -1668,7 +1668,7 @@ export class World3dService {
       });
     }
 
-    // 3. Sistema de chispas incandescentes de erupción
+    // 3. Incandescent eruption spark system
     const SPARK_COUNT = 50;
     const sparkPos = new Float32Array(SPARK_COUNT * 3);
     this.sparkVel = new Float32Array(SPARK_COUNT * 3);
@@ -1698,12 +1698,12 @@ export class World3dService {
     this.scene.add(this.eruptionSparks);
   }
 
-  /** Actualiza el ciclo de erupciones volcánicas, proyectiles balísticos y chispas. */
+  /** Updates the volcanic eruption cycle, ballistic projectiles and sparks. */
   private updateVolcanoEruptions(t: number, dt: number): void {
     const now = performance.now() / 1000;
 
-    for (let vi = 0; vi < this.volcanos.length; vi++) {
-      const v = this.volcanos[vi];
+    for (let vi = 0; vi < this.volcanoes.length; vi++) {
+      const v = this.volcanoes[vi];
       v.uniforms.uTime.value = t;
 
       if (!this.effectsOn) {
@@ -1713,7 +1713,7 @@ export class World3dService {
       }
       v.light.visible = true;
 
-      // Disparar erupción periódica
+      // Trigger a periodic eruption
       if (!v.isErupting && now >= v.nextEruption) {
         v.isErupting = true;
         v.burstTimer = 0;
@@ -1721,20 +1721,20 @@ export class World3dService {
         this.triggerEruptionBurst(v);
       }
 
-      // Procesar erupción en curso
+      // Process the ongoing eruption
       if (v.isErupting) {
         v.burstTimer += dt;
         const progress = Math.min(1, v.burstTimer / v.burstDuration);
         const flare = Math.sin(progress * Math.PI);
 
-        // Destello de iluminación en el cráter
+        // Lighting flash at the crater
         v.light.intensity = 0.6 + flare * 3.4;
         v.light.color.setHex(flare > 0.4 ? 0xff7711 : 0xff4400);
 
-        // Pulso de brillo en el río de magma del shader
+        // Brightness pulse in the shader's magma river
         v.uniforms.uEruptionIntensity.value = 1.0 + flare * 1.5;
 
-        // Salva secundaria a un tercio de la duración
+        // Secondary salvo at a third of the duration
         if (progress > 0.28 && progress < 0.35 && v.burstTimer - dt <= 0.28 * v.burstDuration) {
           this.launchLavaBombs(v, 2 + Math.floor(Math.random() * 3));
         }
@@ -1744,7 +1744,7 @@ export class World3dService {
           v.light.intensity = 0.6;
           v.light.color.setHex(0xff4400);
           v.uniforms.uEruptionIntensity.value = 1.0;
-          v.nextEruption = now + 4.0 + Math.random() * 2.5; // Pausa acordada de 4 a 6.5s
+          v.nextEruption = now + 4.0 + Math.random() * 2.5; // Agreed pause of 4 to 6.5s
         }
       } else {
         v.light.intensity = 0.5 + Math.sin(t * 2.2 + v.x) * 0.15;
@@ -1752,7 +1752,7 @@ export class World3dService {
       }
     }
 
-    // Actualizar movimiento de las bombas de lava
+    // Update the movement of the lava bombs
     for (const b of this.lavaBombs) {
       if (!b.active) continue;
       b.life += dt;
@@ -1762,18 +1762,18 @@ export class World3dService {
         continue;
       }
 
-      // Parábola balística con gravedad
+      // Ballistic parabola with gravity
       b.vy -= 9.8 * dt;
       b.mesh.position.x += b.vx * dt;
       b.mesh.position.y += b.vy * dt;
       b.mesh.position.z += b.vz * dt;
 
-      // Volteo 3D
+      // 3D flip
       b.mesh.rotation.x += b.rotVx * dt;
       b.mesh.rotation.y += b.rotVy * dt;
       b.mesh.rotation.z += b.rotVz * dt;
 
-      // Desvanecimiento suave al tocar el lago de lava
+      // Smooth fade on touching the lava lake
       if (b.mesh.position.y < 0.1) {
         const depth = (0.1 - b.mesh.position.y) / 0.3;
         const shrink = Math.max(0, 1 - depth);
@@ -1785,7 +1785,7 @@ export class World3dService {
       }
     }
 
-    // Actualizar chispas volcánicas
+    // Update volcanic sparks
     if (this.eruptionSparks && this.sparkVel && this.sparkLife) {
       const posAttr = this.eruptionSparks.geometry.getAttribute('position') as THREE.BufferAttribute;
       const posArr = posAttr.array as Float32Array;
@@ -1885,7 +1885,7 @@ export class World3dService {
     this.eruptionSparks.visible = true;
   }
 
-  /** Construye un pececito estilizado con cuerpo ahusado, ojos laterales, vientre claro y cola ahorquillada en V. */
+  /** Builds a stylized little fish with a tapered body, side eyes, light belly and a V-forked tail. */
   private buildProceduralFish(bodyHex: number, accentHex: number): THREE.Group {
     const g = new THREE.Group();
     const bodyMat = new THREE.MeshStandardMaterial({
@@ -1900,7 +1900,7 @@ export class World3dService {
       metalness: 0.05,
       flatShading: true,
     });
-    const finMat = new THREE.MeshStandardMaterial({
+    const endMat = new THREE.MeshStandardMaterial({
       color: accentHex,
       roughness: 0.35,
       transparent: true,
@@ -1911,20 +1911,20 @@ export class World3dService {
     const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const pupilMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
 
-    // 1. Cuerpo principal alargado y aerodinámico
+    // 1. Elongated and aerodynamic main body
     const bodyGeo = new THREE.SphereGeometry(0.12, 10, 8);
     const body = new THREE.Mesh(bodyGeo, bodyMat);
     body.scale.set(0.42, 0.72, 1.45);
     g.add(body);
 
-    // 2. Vientre claro inferior (dos tonos de color clásicos de pez)
+    // 2. Light lower belly (two classic fish color tones)
     const bellyGeo = new THREE.SphereGeometry(0.1, 8, 6);
     const belly = new THREE.Mesh(bellyGeo, bellyMat);
     belly.position.set(0, -0.025, 0.02);
     belly.scale.set(0.38, 0.45, 1.25);
     g.add(belly);
 
-    // 3. Ojos laterales expresivos (esclerótica blanca + pupila negra)
+    // 3. Expressive side eyes (white sclera + black pupil)
     const eyeGeo = new THREE.SphereGeometry(0.022, 6, 5);
     const pupilGeo = new THREE.SphereGeometry(0.012, 5, 4);
 
@@ -1942,46 +1942,46 @@ export class World3dService {
     pupilR.position.set(0.052, 0.025, 0.108);
     g.add(pupilR);
 
-    // 4. Cola ahorquillada en V (aleta caudal bipartita clásica)
-    const tailUpper = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.14, 4), finMat);
+    // 4. V-forked tail (classic bipartite caudal fin)
+    const tailUpper = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.14, 4), endMat);
     tailUpper.position.set(0, 0.045, -0.22);
     tailUpper.rotation.x = -Math.PI / 4;
     tailUpper.scale.set(0.25, 1.0, 1.0);
     g.add(tailUpper);
 
-    const tailLower = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.14, 4), finMat);
+    const tailLower = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.14, 4), endMat);
     tailLower.position.set(0, -0.045, -0.22);
     tailLower.rotation.x = Math.PI / 4 + Math.PI;
     tailLower.scale.set(0.25, 1.0, 1.0);
     g.add(tailLower);
 
-    // 5. Aleta dorsal arqueada
-    const dorsal = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.11, 4), finMat);
+    // 5. Arched dorsal fin
+    const dorsal = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.11, 4), endMat);
     dorsal.position.set(0, 0.085, -0.02);
     dorsal.rotation.x = -0.4;
     dorsal.scale.set(0.2, 1.0, 1.0);
     g.add(dorsal);
 
-    // 6. Aletas pectorales laterales
+    // 6. Lateral pectoral fins
     const pecGeo = new THREE.PlaneGeometry(0.05, 0.08);
-    const pecL = new THREE.Mesh(pecGeo, finMat);
+    const pecL = new THREE.Mesh(pecGeo, endMat);
     pecL.position.set(-0.055, -0.02, 0.03);
     pecL.rotation.y = -0.5;
     pecL.rotation.z = 0.4;
     g.add(pecL);
 
-    const pecR = new THREE.Mesh(pecGeo, finMat);
+    const pecR = new THREE.Mesh(pecGeo, endMat);
     pecR.position.set(0.055, -0.02, 0.03);
     pecR.rotation.y = 0.5;
     pecR.rotation.z = -0.4;
     g.add(pecR);
 
-    // Escala equilibrada y estilizada: visible y proporcionada
+    // Balanced and stylized scale: visible and proportioned
     g.scale.setScalar(0.72);
     return g;
   }
 
-  /** Construye un ave silvestre compacta low-poly con alas articuladas para aleteo y planeo. */
+  /** Builds a compact low-poly wild bird with articulated wings for flapping and gliding. */
   private buildProceduralBird(bodyHex: number, wingHex: number): {
     group: THREE.Group;
     wingL: THREE.Object3D;
@@ -2005,24 +2005,24 @@ export class World3dService {
       flatShading: true,
     });
 
-    // Cuerpo
+    // Body
     const body = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.28, 5), bodyMat);
     body.rotation.x = Math.PI / 2;
     body.scale.set(0.8, 1.0, 0.75);
     g.add(body);
 
-    // Cabeza
+    // Head
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.055, 6, 5), bodyMat);
     head.position.set(0, 0.035, 0.16);
     g.add(head);
 
-    // Pico
+    // Beak
     const beak = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.065, 4), beakMat);
     beak.rotation.x = Math.PI / 2;
     beak.position.set(0, 0.025, 0.235);
     g.add(beak);
 
-    // Ala izquierda articulada
+    // Articulated left wing
     const wingL = new THREE.Group();
     wingL.position.set(-0.05, 0.02, 0.03);
     const wingLMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.13), wingMat);
@@ -2031,7 +2031,7 @@ export class World3dService {
     wingL.add(wingLMesh);
     g.add(wingL);
 
-    // Ala derecha articulada
+    // Articulated right wing
     const wingR = new THREE.Group();
     wingR.position.set(0.05, 0.02, 0.03);
     const wingRMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.13), wingMat);
@@ -2040,18 +2040,18 @@ export class World3dService {
     wingR.add(wingRMesh);
     g.add(wingR);
 
-    // Cola estilizada
+    // Stylized tail
     const tail = new THREE.Mesh(new THREE.PlaneGeometry(0.11, 0.15), wingMat);
     tail.position.set(0, 0.02, -0.2);
     tail.rotation.x = Math.PI / 2;
     g.add(tail);
 
-    // Escala pequeña (~33% del tamaño anterior)
+    // Small scale (~33% of the previous size)
     g.scale.setScalar(0.45);
     return { group: g, wingL, wingR };
   }
 
-  /** Textura circular translúcida para los aros concéntricos de salpicadura en el agua. */
+  /** Translucent circular texture for the concentric splash rings on the water. */
   private rippleTexture(): THREE.Texture {
     const c = document.createElement('canvas');
     c.width = 128;
@@ -2071,27 +2071,27 @@ export class World3dService {
     return new THREE.CanvasTexture(c);
   }
 
-  /** Inicializa la fauna del bioma Pradera: pececitos costeros en agua azul y bandada en formación V. */
-  private initPraderaWildlife(layout: WorldLayout): void {
-    // 1. Variedad multicolor de pececitos (pool de 10 peces)
+  /** Initializes the fauna of the Meadow biome: coastal little fish in blue water and a V-formation flock. */
+  private initMeadowWildlife(layout: WorldLayout): void {
+    // 1. Multicolor variety of little fish (pool of 10 fish)
     const FISH_COLORS = [
-      { body: 0xf59e0b, fin: 0xfef08a }, // Dorado / Goldfish
-      { body: 0xea580c, fin: 0xffedd5 }, // Carpa Koi naranja
-      { body: 0x06b6d4, fin: 0xa5f3fc }, // Pez turquesa
-      { body: 0xef4444, fin: 0xfecaca }, // Pez coral rojizo
-      { body: 0x3b82f6, fin: 0xbfdbfe }, // Azul lago
-      { body: 0x8b5cf6, fin: 0xede9fe }, // Violeta amatista
-      { body: 0x10b981, fin: 0xa7f3d0 }, // Verde esmeralda
-      { body: 0xf97316, fin: 0xfef08a }, // Mandarina brillante
-      { body: 0x0284c7, fin: 0xbae6fd }, // Azul cielo
-      { body: 0xec4899, fin: 0xfbcfe8 }, // Rosa coral
+      { body: 0xf59e0b, fin: 0xfef08a }, // Golden / Goldfish
+      { body: 0xea580c, fin: 0xffedd5 }, // Orange Koi carp
+      { body: 0x06b6d4, fin: 0xa5f3fc }, // Turquoise fish
+      { body: 0xef4444, fin: 0xfecaca }, // Reddish coral fish
+      { body: 0x3b82f6, fin: 0xbfdbfe }, // Lake blue
+      { body: 0x8b5cf6, fin: 0xede9fe }, // Amethyst violet
+      { body: 0x10b981, fin: 0xa7f3d0 }, // Emerald green
+      { body: 0xf97316, fin: 0xfef08a }, // Bright tangerine
+      { body: 0x0284c7, fin: 0xbae6fd }, // Sky blue
+      { body: 0xec4899, fin: 0xfbcfe8 }, // Coral pink
     ];
 
     for (const col of FISH_COLORS) {
       const mesh = this.buildProceduralFish(col.body, col.fin);
       mesh.visible = false;
       this.scene.add(mesh);
-      this.praderaFish.push({
+      this.meadowFish.push({
         mesh,
         active: false,
         startX: 0,
@@ -2105,7 +2105,7 @@ export class World3dService {
       });
     }
 
-    // 2. Pool ampliado de aros de ondas concéntricas en el agua
+    // 2. Enlarged pool of concentric wave rings on the water
     this.rippleGeo = new THREE.PlaneGeometry(1, 1);
     this.rippleMat = new THREE.MeshBasicMaterial({
       map: this.rippleTexture(),
@@ -2120,7 +2120,7 @@ export class World3dService {
       mesh.rotation.x = -Math.PI / 2;
       mesh.visible = false;
       this.scene.add(mesh);
-      this.praderaRipples.push({
+      this.meadowRipples.push({
         mesh,
         active: false,
         t: 0,
@@ -2129,9 +2129,9 @@ export class World3dService {
       });
     }
 
-    // 3. Precalcula las coordenadas de costa con vectores normales hacia mar abierto
-    // Filtro estricto: descarta casillas que coincidan con tierra/caminos/edificios,
-    // casillas próximas al trazado de caminos (< 3.2u) y bolsillos cerrados de tierra.
+    // 3. Precompute the coast coordinates with normal vectors toward the open sea
+    // Strict filter: discards cells that coincide with land/roads/buildings,
+    // cells close to the road layout (< 3.2u) and closed pockets of land.
     const landKeys = new Set<string>();
     const landPts: [number, number][] = [];
 
@@ -2151,11 +2151,11 @@ export class World3dService {
       landKeys.add(`${layout.castle.q},${layout.castle.r}`);
       landPts.push(this.ax(layout.castle.q, layout.castle.r));
     }
-    for (const m of layout.modulos) {
+    for (const m of layout.modules) {
       landKeys.add(`${m.q},${m.r}`);
       landPts.push(this.ax(m.q, m.r));
     }
-    for (const a of layout.anexos) {
+    for (const a of layout.attachments) {
       landKeys.add(`${a.q},${a.r}`);
       landPts.push(this.ax(a.q, a.r));
     }
@@ -2175,12 +2175,12 @@ export class World3dService {
 
     this.waterCoastData = [];
     for (const w of layout.waters) {
-      // 1. Excluir si la coordenada coincide con cualquier baldosa de tierra, camino o edificio
+      // 1. Exclude if the coordinate coincides with any land, road or building tile
       if (landKeys.has(`${w.q},${w.r}`)) continue;
 
       const [wx, wz] = this.ax(w.q, w.r);
 
-      // 2. Distancia al camino más cercano: debe estar a más de 3.2u (lejos de la calzada jugable)
+      // 2. Distance to the nearest road: must be more than 3.2u away (far from the playable road)
       let minDistToRoadSq = Infinity;
       for (const [rx, rz] of roadPts) {
         const dSq = (wx - rx) * (wx - rx) + (wz - rz) * (wz - rz);
@@ -2188,7 +2188,7 @@ export class World3dService {
       }
       if (minDistToRoadSq < 3.2 * 3.2) continue;
 
-      // 3. Solo agua costera abierta: descartar huecos interiores con más de 2 vecinos de tierra
+      // 3. Open coastal water only: discard interior gaps with more than 2 land neighbors
       let landNeighbors = 0;
       for (const [dq, dr] of NB_DIRS) {
         if (landKeys.has(`${w.q + dq},${w.r + dr}`)) landNeighbors++;
@@ -2207,7 +2207,7 @@ export class World3dService {
         }
       }
       const distToLand = Math.sqrt(minDistSq);
-      // Debe estar separado del centro de la tierra adyacente (mínimo 1.7u)
+      // Must be separated from the center of the adjacent land (minimum 1.7u)
       if (distToLand < 1.7) continue;
 
       const dx = wx - closestLx;
@@ -2220,21 +2220,21 @@ export class World3dService {
       this.waterCoastData.push({ wx, wz, nx, nz, tx, tz });
     }
 
-    // 4. Bandada de aves en formación V ("la típica formación en V")
+    // 4. Flock of birds in V formation ("the typical V formation")
     const BIRD_PALETTES = [
-      { body: 0x1e3a8a, wing: 0x2563eb }, // Líder: Azul marino real
-      { body: 0x0284c7, wing: 0x38bdf8 }, // Ala izq 1: Celeste cielo
-      { body: 0x991b1b, wing: 0xef4444 }, // Ala izq 2: Bermellón
-      { body: 0x0f766e, wing: 0x14b8a6 }, // Ala der 1: Esmeralda
-      { body: 0x78350f, wing: 0xb45309 }, // Ala der 2: Ámbar silvestre
+      { body: 0x1e3a8a, wing: 0x2563eb }, // Leader: Royal navy blue
+      { body: 0x0284c7, wing: 0x38bdf8 }, // Left wing 1: Sky blue
+      { body: 0x991b1b, wing: 0xef4444 }, // Left wing 2: Vermilion
+      { body: 0x0f766e, wing: 0x14b8a6 }, // Right wing 1: Emerald
+      { body: 0x78350f, wing: 0xb45309 }, // Right wing 2: Wild amber
     ];
 
     const FLOCK_SLOTS = [
-      { x: 0, y: 0, z: 0, flap: 0 },             // Punta de la V (líder)
-      { x: -0.65, y: 0.02, z: -0.75, flap: 0.2 }, // Ala izquierda 1
-      { x: -1.3, y: -0.01, z: -1.5, flap: 0.4 },   // Ala izquierda 2
-      { x: 0.65, y: -0.02, z: -0.75, flap: 0.2 },  // Ala derecha 1
-      { x: 1.3, y: 0.01, z: -1.5, flap: 0.4 },    // Ala derecha 2
+      { x: 0, y: 0, z: 0, flap: 0 },             // Tip of the V (leader)
+      { x: -0.65, y: 0.02, z: -0.75, flap: 0.2 }, // Left wing 1
+      { x: -1.3, y: -0.01, z: -1.5, flap: 0.4 },   // Left wing 2
+      { x: 0.65, y: -0.02, z: -0.75, flap: 0.2 },  // Right wing 1
+      { x: 1.3, y: 0.01, z: -1.5, flap: 0.4 },    // Right wing 2
     ];
 
     let avgX = 0;
@@ -2262,7 +2262,7 @@ export class World3dService {
       bird.group.position.set(slot.x, slot.y, slot.z);
       this.birdFlockRoot.add(bird.group);
 
-      this.praderaBirds.push({
+      this.meadowBirds.push({
         group: bird.group,
         wingLeft: bird.wingL,
         wingRight: bird.wingR,
@@ -2273,10 +2273,10 @@ export class World3dService {
     this.nextFishJump = 0.8;
   }
 
-  /** Lanza un aro concéntrico de agua expandiéndose y desvaneciéndose. */
+  /** Launches a concentric water ring expanding and fading out. */
   private spawnWaterRipple(x: number, z: number): void {
     if (!this.effectsOn) return;
-    const r = this.praderaRipples.find((item) => !item.active);
+    const r = this.meadowRipples.find((item) => !item.active);
     if (!r) return;
     r.active = true;
     r.t = 0;
@@ -2286,11 +2286,11 @@ export class World3dService {
     r.mesh.visible = true;
   }
 
-  /** Activa un salto parabólico de pez estrictamente en agua azul marina, lejos de caminos y tierra. */
+  /** Triggers a parabolic fish jump strictly in deep-blue water, far from roads and land. */
   private triggerFishJump(fish: JumpingFish): void {
     if (!this.waterCoastData.length || !this.effectsOn) return;
 
-    // Priorizar casillas de agua en el campo de visión del personaje (entre 6u y 26u de distancia)
+    // Prioritize water cells in the character's field of view (between 6u and 26u away)
     let spot = this.waterCoastData[Math.floor(Math.random() * this.waterCoastData.length)];
     const charPos = this.charController?.char?.position;
     if (charPos && Math.random() < 0.78) {
@@ -2305,9 +2305,9 @@ export class World3dService {
 
     const dir = Math.random() < 0.5 ? 1 : -1;
     const halfSpan = 0.25 + Math.random() * 0.1;
-    const outBias = 0.35 + Math.random() * 0.15; // Claramente desplazado hacia el mar exterior
+    const outBias = 0.35 + Math.random() * 0.15; // Clearly displaced toward the outer sea
 
-    // Desplaza el centro del salto hacia mar abierto, alejándose de toda tierra y camino
+    // Shifts the jump center toward open sea, away from all land and roads
     const cx = spot.wx + spot.nx * outBias;
     const cz = spot.wz + spot.nz * outBias;
 
@@ -2317,22 +2317,22 @@ export class World3dService {
     fish.targetZ = cz + spot.tz * halfSpan * dir;
     fish.t = 0;
     fish.duration = 1.05 + Math.random() * 0.25;
-    fish.peakHeight = 0.52 + Math.random() * 0.16; // Arco visible y elegante sobre el nivel del agua
+    fish.peakHeight = 0.52 + Math.random() * 0.16; // Visible and elegant arc above the water level
     fish.active = true;
     fish.mesh.position.set(fish.startX, fish.waterY, fish.startZ);
     fish.mesh.visible = true;
 
-    // Onda en el agua al emerger
+    // Ripple in the water when emerging
     this.spawnWaterRipple(fish.startX, fish.startZ);
   }
 
-  /** Actualiza la animación de los pececitos saltarines y la bandada en V en Pradera. */
-  private updatePraderaWildlife(t: number, dt: number): void {
-    // 1. Peces saltarines (ritmo continuo y activo: un salto cada 0.35s a 0.80s)
+  /** Updates the animation of the jumping little fish and the V flock in Meadow. */
+  private updateMeadowWildlife(t: number, dt: number): void {
+    // 1. Jumping fish (continuous and active rhythm: a jump every 0.35s to 0.80s)
     if (this.effectsOn && this.waterCoastData.length) {
       this.nextFishJump -= dt;
       if (this.nextFishJump <= 0) {
-        const inactiveFish = this.praderaFish.find((f) => !f.active);
+        const inactiveFish = this.meadowFish.find((f) => !f.active);
         if (inactiveFish) {
           this.triggerFishJump(inactiveFish);
         }
@@ -2340,7 +2340,7 @@ export class World3dService {
       }
     }
 
-    for (const f of this.praderaFish) {
+    for (const f of this.meadowFish) {
       if (!f.active) continue;
       f.t += dt;
       const p = Math.min(1, f.t / f.duration);
@@ -2352,25 +2352,25 @@ export class World3dService {
 
       f.mesh.position.set(curX, curY, curZ);
 
-      // Orientación siguiendo la tangente del salto balístico (la cabeza lidera el salto)
+      // Orientation following the tangent of the ballistic jump (the head leads the jump)
       const dx = f.targetX - f.startX;
       const dz = f.targetZ - f.startZ;
       const dy = Math.cos(p * Math.PI) * Math.PI * f.peakHeight;
       f.mesh.lookAt(curX + dx, curY + dy, curZ + dz);
 
-      // Coletazo lateral y arqueo dinámico en el aire
+      // Lateral tail flick and dynamic arching in the air
       f.mesh.rotateY(Math.sin(p * 20) * 0.18);
 
       if (p >= 1) {
         f.active = false;
         f.mesh.visible = false;
-        // Onda en el agua al zambullirse
+        // Ripple in the water when diving in
         this.spawnWaterRipple(f.targetX, f.targetZ);
       }
     }
 
-    // 2. Ondas de agua
-    for (const r of this.praderaRipples) {
+    // 2. Water ripples
+    for (const r of this.meadowRipples) {
       if (!r.active) continue;
       r.t += dt;
       const progress = r.t / r.maxT;
@@ -2384,9 +2384,9 @@ export class World3dService {
       }
     }
 
-    // 3. Bandada de aves en formación en V sobrevolando el mapa
+    // 3. Flock of birds in V formation flying over the map
     if (this.birdFlockRoot) {
-      this.flockAngle += 0.16 * dt; // Vuelo pausado y majestuoso
+      this.flockAngle += 0.16 * dt; // Slow and majestic flight
 
       const rx = 22.0;
       const rz = 14.0;
@@ -2395,18 +2395,18 @@ export class World3dService {
       const by = 7.2 + Math.sin(this.flockAngle * 2.0) * 0.35;
       this.birdFlockRoot.position.set(bx, by, bz);
 
-      // Orientación en dirección de avance del vuelo
+      // Orientation in the flight's direction of travel
       const fwdX = -Math.sin(this.flockAngle) * rx;
       const fwdZ = Math.cos(this.flockAngle) * rz;
       this.birdFlockRoot.rotation.y = Math.atan2(fwdX, fwdZ);
-      // Alabeo suave en las curvas
+      // Gentle banking in the turns
       this.birdFlockRoot.rotation.z = -Math.sin(this.flockAngle) * 0.12;
 
-      // Ciclo de aleteo coordinado (1.6s) y planeo majestuoso (2.4s)
+      // Coordinated flapping cycle (1.6s) and majestic gliding (2.4s)
       const flapCycle = t % 4.0;
       const isFlapping = flapCycle < 1.6;
 
-      for (const b of this.praderaBirds) {
+      for (const b of this.meadowBirds) {
         if (isFlapping) {
           const wingAng = Math.sin(t * 14 + b.flapOffset) * 0.42;
           b.wingLeft.rotation.z = wingAng;
@@ -2429,7 +2429,7 @@ export class World3dService {
     this.camController?.dispose();
     this.camController = null;
 
-    // Disponer de todos los recursos de la escena Three.js
+    // Dispose of all the Three.js scene resources
     this.scene.traverse((obj) => {
       if ((obj as THREE.Mesh).isMesh) {
         const mesh = obj as THREE.Mesh;
@@ -2446,12 +2446,12 @@ export class World3dService {
       }
     });
 
-    // Disponer sistema de volcanes
-    for (const v of this.volcanos) {
+    // Dispose of the volcano system
+    for (const v of this.volcanoes) {
       this.scene.remove(v.light);
       v.light.dispose();
     }
-    this.volcanos = [];
+    this.volcanoes = [];
     for (const b of this.lavaBombs) {
       this.scene.remove(b.mesh);
     }
@@ -2474,20 +2474,20 @@ export class World3dService {
       this.sparkLife = null;
     }
 
-    // Disponer fauna de pradera
-    for (const f of this.praderaFish) {
+    // Dispose of the meadow fauna
+    for (const f of this.meadowFish) {
       this.scene.remove(f.mesh);
     }
-    this.praderaFish = [];
+    this.meadowFish = [];
     if (this.birdFlockRoot) {
       this.scene.remove(this.birdFlockRoot);
       this.birdFlockRoot = null;
     }
-    this.praderaBirds = [];
-    for (const r of this.praderaRipples) {
+    this.meadowBirds = [];
+    for (const r of this.meadowRipples) {
       this.scene.remove(r.mesh);
     }
-    this.praderaRipples = [];
+    this.meadowRipples = [];
     this.rippleGeo?.dispose();
     this.rippleGeo = null;
     if (this.rippleMat) {

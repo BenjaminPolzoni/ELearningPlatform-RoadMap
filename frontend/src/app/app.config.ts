@@ -5,27 +5,27 @@ import { RoadmapDataPort } from './core/data/roadmap-data.port';
 import { InMemoryRoadmapAdapter } from './core/data/in-memory-roadmap.adapter';
 import { RankingDataPort } from './core/data/ranking-data.port';
 import { InMemoryRankingAdapter } from './core/data/in-memory-ranking.adapter';
-import { InsigniasDataPort } from './core/data/insignias-data.port';
-import { InMemoryInsigniasAdapter } from './core/data/in-memory-insignias.adapter';
-import { BancoDataPort } from './core/data/banco-data.port';
-import { InMemoryBancoAdapter } from './core/data/in-memory-banco.adapter';
+import { BadgesDataPort } from './core/data/badges-data.port';
+import { InMemoryBadgesAdapter } from './core/data/in-memory-badges.adapter';
+import { BankDataPort } from './core/data/bank-data.port';
+import { InMemoryBankAdapter } from './core/data/in-memory-bank.adapter';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    // withComponentInputBinding: los params de ruta llegan como input() del componente
-    // (lo usa UnidadMapa para recibir el id de la unidad).
+    // withComponentInputBinding: route params arrive as the component's input()
+    // (used by SectionMap to receive the section id).
     provideRouter(routes, withComponentInputBinding()),
-    // Fase 3: cambiar a HttpRoadmapAdapter — es la única línea que se toca
+    // Phase 3: switch to HttpRoadmapAdapter — it is the only line to touch
     // (01-arquitectura-y-stack.md §4).
     { provide: RoadmapDataPort, useClass: InMemoryRoadmapAdapter },
-    // Fase 3: idem — HttpRankingAdapter contra `GET /roadmaps/{cc}/ranking` (06-contrato-api.md §3).
+    // Phase 3: idem — HttpRankingAdapter against `GET /roadmaps/{cc}/ranking` (06-contrato-api.md §3).
     { provide: RankingDataPort, useClass: InMemoryRankingAdapter },
-    // Fase 3: idem — no hay endpoint de catálogo todavía (solo el de insignias ganadas
-    // está [PLANEADO] en 06-contrato-api.md).
-    { provide: InsigniasDataPort, useClass: InMemoryInsigniasAdapter },
-    // Banco (Tema 08): monedas, XP y vidas como fuente de verdad. Mock con caché
-    // 30s y degradación a indisponible si el "servicio" falla.
-    { provide: BancoDataPort, useClass: InMemoryBancoAdapter },
+    // Phase 3: same — there is no catalog endpoint yet (only the earned-badges one
+    // is [PLANEADO] in 06-contrato-api.md).
+    { provide: BadgesDataPort, useClass: InMemoryBadgesAdapter },
+    // Bank (Topic 08): coins, XP and lives as the source of truth. Mock with a 30s
+    // cache and degradation to unavailable if the "service" fails.
+    { provide: BankDataPort, useClass: InMemoryBankAdapter },
   ],
 };

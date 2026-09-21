@@ -31,7 +31,7 @@ const EMPTY_COLORS: Record<number, string> = {
   3: 'var(--color-base-200)',
 };
 
-/** Lives HUD (pixel-art hearts). Mirrors `ranking-detalle`'s `corazones()` logic (PAR-12: max 3). */
+/** Lives HUD (pixel-art hearts). Mirrors `ranking-detail`'s `hearts()` logic (PAR-12: max 3). */
 @Component({
   selector: 'app-lives',
   imports: [PixelIcon],

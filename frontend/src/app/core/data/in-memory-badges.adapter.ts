@@ -1,89 +1,89 @@
 import { Injectable } from '@angular/core';
 import { delay, Observable, of } from 'rxjs';
-import { InsigniasDataPort } from './insignias-data.port';
+import { BadgesDataPort } from './badges-data.port';
 import {
-  CRITERIO_LABEL,
-  CRITERIO_NODO_ESPECIFICO,
-  CRITERIOS_CON_VALOR,
-  InsigniaCatalogo,
-  InsigniaOtorgada,
-  NuevaInsignia,
-} from './insignias.models';
-import { catalogoInsigniasSeed, insigniasGanadasSeed } from '../../mocks/insignias.seed';
-import { GENERIC_ICONS } from '../../features/insignias/generic-icons';
+  CRITERION_LABEL,
+  CRITERION_SPECIFIC_NODE,
+  CRITERIA_WITH_VALUE,
+  BadgeCatalog,
+  GrantedBadge,
+  NewBadge,
+} from './badges.models';
+import { catalogBadgesSeed, earnedBadgesSeed } from '../../mocks/badges.seed';
+import { GENERIC_ICONS } from '../../features/badges/generic-icons';
 
-const LS_KEY = 'insignias-mock-v1';
+const LS_KEY = 'insignias-mock-v2';
 
 /**
- * Implementación de {@link InsigniasDataPort} para Fases 0-2. Arranca del seed (14 del
- * sistema), muta en memoria y persiste en localStorage cuando el profesor crea una nueva —
- * mismo patrón que `InMemoryRoadmapAdapter`. Fase 3: se reemplaza por `HttpInsigniasAdapter`
- * (una línea en `app.config.ts`).
+ * Implementation of {@link BadgesDataPort} for Phases 0-2. Starts from the seed (14 from the
+ * system), mutates in memory and persists in localStorage when the teacher creates a new one —
+ * same pattern as `InMemoryRoadmapAdapter`. Phase 3: replaced by `HttpBadgesAdapter`
+ * (one line in `app.config.ts`).
  */
 @Injectable()
-export class InMemoryInsigniasAdapter extends InsigniasDataPort {
-  private catalogo: InsigniaCatalogo[] = this.cargar();
+export class InMemoryBadgesAdapter extends BadgesDataPort {
+  private catalog: BadgeCatalog[] = this.load();
 
-  getCatalogo(_cursoCohorteId: string): Observable<InsigniaCatalogo[]> {
-    return of(structuredClone(this.catalogo)).pipe(delay(300)); // simula la latencia de red del BFF
+  getCatalog(_courseCohortId: string): Observable<BadgeCatalog[]> {
+    return of(structuredClone(this.catalog)).pipe(delay(300)); // simulates the BFF's network latency
   }
 
-  getGanadasPorAlumno(alumnoId: string): Observable<InsigniaOtorgada[]> {
-    return of(insigniasGanadasSeed(alumnoId)).pipe(delay(300));
+  getEarnedByStudent(studentId: string): Observable<GrantedBadge[]> {
+    return of(earnedBadgesSeed(studentId)).pipe(delay(300));
   }
 
-  crear(_cursoCohorteId: string, dto: NuevaInsignia): Observable<InsigniaCatalogo> {
-    const insignia: InsigniaCatalogo = {
-      insigniaId: `ins-profesor-${Date.now().toString(36)}`,
-      codigo: dto.icono,
-      nombre: dto.nombre,
-      descripcion: this.describir(dto),
-      tipo: dto.tipo,
-      origen: 'PROFESOR',
-      iconoPendiente: GENERIC_ICONS[dto.icono]?.needsRework ?? false,
-      criterio: dto.criterio,
-      valorCriterio: dto.valorCriterio,
-      nodoId: dto.nodoId,
+  create(_courseCohortId: string, dto: NewBadge): Observable<BadgeCatalog> {
+    const badge: BadgeCatalog = {
+      badgeId: `ins-profesor-${Date.now().toString(36)}`,
+      code: dto.icon,
+      name: dto.name,
+      description: this.describe(dto),
+      type: dto.type,
+      origin: 'PROFESOR',
+      pendingIcon: GENERIC_ICONS[dto.icon]?.needsRework ?? false,
+      criterion: dto.criterion,
+      valueCriterion: dto.valueCriterion,
+      nodeId: dto.nodeId,
     };
-    this.catalogo = [...this.catalogo, insignia];
-    this.guardar();
-    return of(structuredClone(insignia)).pipe(delay(300));
+    this.catalog = [...this.catalog, badge];
+    this.save();
+    return of(structuredClone(badge)).pipe(delay(300));
   }
 
-  /** El profesor no escribe descripción a mano (no es un campo del form) — se arma sola. */
-  private describir(dto: NuevaInsignia): string {
-    if (dto.tipo === 'POR_NODO') return 'Insignia por nodo — se otorga al completar el nodo elegido.';
-    if (!dto.criterio) return '';
-    if (dto.criterio === CRITERIO_NODO_ESPECIFICO) {
-      return CRITERIO_LABEL[dto.criterio];
+  /** The teacher does not write the description by hand (it is not a form field) — it builds itself. */
+  private describe(dto: NewBadge): string {
+    if (dto.type === 'POR_NODO') return 'Insignia por nodo — se otorga al completar el nodo elegido.';
+    if (!dto.criterion) return '';
+    if (dto.criterion === CRITERION_SPECIFIC_NODE) {
+      return CRITERION_LABEL[dto.criterion];
     }
-    if (CRITERIOS_CON_VALOR.has(dto.criterio) && dto.valorCriterio != null) {
-      return `${CRITERIO_LABEL[dto.criterio]}: ${dto.valorCriterio}`;
+    if (CRITERIA_WITH_VALUE.has(dto.criterion) && dto.valueCriterion != null) {
+      return `${CRITERION_LABEL[dto.criterion]}: ${dto.valueCriterion}`;
     }
-    return CRITERIO_LABEL[dto.criterio];
+    return CRITERION_LABEL[dto.criterion];
   }
 
-  private cargar(): InsigniaCatalogo[] {
+  private load(): BadgeCatalog[] {
     try {
       const raw = localStorage.getItem(LS_KEY);
-      if (raw) return JSON.parse(raw) as InsigniaCatalogo[];
+      if (raw) return JSON.parse(raw) as BadgeCatalog[];
     } catch {
-      /* localStorage no disponible o corrupto — se cae al seed */
+      /* localStorage unavailable or corrupt — fall back to the seed */
     }
-    const seed = catalogoInsigniasSeed();
-    this.persistir(seed);
+    const seed = catalogBadgesSeed();
+    this.persist(seed);
     return seed;
   }
 
-  private guardar(): void {
-    this.persistir(this.catalogo);
+  private save(): void {
+    this.persist(this.catalog);
   }
 
-  private persistir(catalogo: InsigniaCatalogo[]): void {
+  private persist(catalog: BadgeCatalog[]): void {
     try {
-      localStorage.setItem(LS_KEY, JSON.stringify(catalogo));
+      localStorage.setItem(LS_KEY, JSON.stringify(catalog));
     } catch {
-      /* modo incógnito / storage lleno — el mock sigue en memoria */
+      /* incognito mode / storage full — the mock keeps working in memory */
     }
   }
 }

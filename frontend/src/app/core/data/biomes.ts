@@ -1,29 +1,29 @@
-// Bioma visual de una unidad, elegido por el profesor (editor.ts). Las claves coinciden
-// con las carpetas de assets del mundo 3D (frontend/public/mundo-3d/Assets/House/<Bioma>),
-// para no tener que traducir/remapear nada del lado del visor 3D.
-export type Bioma = 'Desierto' | 'Bosque' | 'Arenisca' | 'Nieve' | 'Nether' | 'Espacio';
+// Visual biome of a section, chosen by the teacher (editor.ts). The keys match
+// the asset folders of the 3D world (frontend/public/mundo-3d/Assets/House/<Biome>),
+// so nothing has to be translated/remapped on the 3D viewer side.
+export type Biome = 'Desierto' | 'Bosque' | 'Arenisca' | 'Nieve' | 'Nether' | 'Espacio';
 
-export interface BiomaInfo {
-  id: Bioma;
+export interface BiomeInfo {
+  id: Biome;
   label: string;
   icon: string;
-  // Nether todavía no tiene tema equivalente en el mapa 2D (WorldTheme) — se muestra
-  // en el selector pero deshabilitado hasta que lo tenga.
-  disponible: boolean;
-  // Vista previa de cómo se ve el mapa de ese bioma — mismo tile que usa el mapa 2D real
-  // (vertical-world.engine.ts, WORLD_APPEARANCE). Por ahora 1 por bioma; el día que haya
-  // variantes, esto pasa a ser una lista y el profesor elige entre ellas.
+  // Nether does not have an equivalent theme in the 2D map (WorldTheme) yet — it is shown
+  // in the selector but disabled until it does.
+  available: boolean;
+  // Preview of what the map of that biome looks like — same tile the real 2D map uses
+  // (vertical-world.engine.ts, WORLD_APPEARANCE). For now 1 per biome; the day there are
+  // variants, this becomes a list and the teacher chooses among them.
   previewImage?: string;
 }
 
-export const BIOMAS: BiomaInfo[] = [
-  { id: 'Desierto', label: 'Desierto', icon: '🏜️', disponible: true, previewImage: '/mapa_desierto_tile_vertical.png' },
-  { id: 'Bosque', label: 'Bosque', icon: '🌲', disponible: true, previewImage: '/mapa_selva_tile.png' },
-  { id: 'Arenisca', label: 'Arenisca', icon: '🏛️', disponible: true, previewImage: '/mapa_castillo_tile.png' },
-  { id: 'Nieve', label: 'Nieve', icon: '❄️', disponible: true, previewImage: '/mapa_nieve_tile.png' },
-  { id: 'Nether', label: 'Nether', icon: '🔥', disponible: false },
-  // Espacio: islas sin agua/nubes, nodos-planeta y nave como avatar (ver buildChallengeIsland en mundo-3d/index.html).
-  { id: 'Espacio', label: 'Espacio', icon: '🚀', disponible: true },
+export const BIOMES: BiomeInfo[] = [
+  { id: 'Desierto', label: 'Desierto', icon: '🏜️', available: true, previewImage: '/mapa_desierto_tile_vertical.png' },
+  { id: 'Bosque', label: 'Bosque', icon: '🌲', available: true, previewImage: '/mapa_selva_tile.png' },
+  { id: 'Arenisca', label: 'Arenisca', icon: '🏛️', available: true, previewImage: '/mapa_castillo_tile.png' },
+  { id: 'Nieve', label: 'Nieve', icon: '❄️', available: true, previewImage: '/mapa_nieve_tile.png' },
+  { id: 'Nether', label: 'Nether', icon: '🔥', available: false },
+  // Space: islands without water/clouds, planet-nodes and a ship as the avatar (see buildChallengeIsland in mundo-3d/index.html).
+  { id: 'Espacio', label: 'Espacio', icon: '🚀', available: true },
 ];
 
-export const BIOMA_DEFAULT: Bioma = 'Desierto';
+export const BIOME_DEFAULT: Biome = 'Desierto';

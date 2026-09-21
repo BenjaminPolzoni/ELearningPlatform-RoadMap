@@ -1,55 +1,55 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import {
-  anteojosVisibles,
+  visibleGlasses,
   AvatarConfig,
-  colorPorId,
-  emblemaVisible,
-  IdAccesorio,
+  colorById,
+  emblemVisible,
+  AccessoryId,
   IdColor,
-  pielPorId,
+  skinById,
 } from '../../core/avatar/avatar.models';
 
-const HUESO = '#F3EAFF';
-const NOCHE = '#2D164A';
-const ROSA = '#FF2758';
-const VIOLETA_PROFUNDO = '#6B21C9';
-const GRAFITO = '#4B4A57';
+const BONE = '#F3EAFF';
+const NIGHT = '#2D164A';
+const PINK = '#FF2758';
+const VIOLET_DEEP = '#6B21C9';
+const GRAPHITE = '#4B4A57';
 
-const esRosa = (c: IdColor) => c === 'rosa' || c === 'rosa-pastel';
+const isPink = (c: IdColor) => c === 'rosa' || c === 'rosa-pastel';
 
-/** Accesorios que cubren toda la cabeza (ver `cubreCabeza`). */
-const CUBREN_CABEZA: readonly IdAccesorio[] = ['gorra', 'gorra-atras', 'beanie'];
+/** Accessories that cover the whole head (see `coversHead`). */
+const COVER_HEAD: readonly AccessoryId[] = ['gorra', 'gorra-atras', 'beanie'];
 
 /**
- * Sprite pixel-art del alumno (05-design-system.md §4, `ui-avatar`).
+ * Student pixel-art sprite (05-design-system.md §4, `ui-avatar`).
  *
- * Es un SVG de grilla 16×22 con `shape-rendering: crispEdges`: escala a cualquier tamaño
- * sin perder el borde duro del pixel-art y sin necesitar un atlas de PNGs — el arte real
- * (04-engine §8) puede reemplazarlo después sin tocar a los consumidores, que solo pasan
- * `config` y `alto`.
+ * It is a 16×22 grid SVG with `shape-rendering: crispEdges`: it scales to any size
+ * without losing the hard pixel-art edge and without needing a PNG atlas — the real art
+ * (04-engine §8) can replace it later without touching the consumers, which only pass
+ * `config` and `height`.
  *
- * Se usa en cuatro lugares con el mismo componente: HUD (chico), isla actual del mapa 2.5D,
- * ficha del tablero de unidad (grande, animado) y ranking.
+ * It is used in four places with the same component: HUD (small), current island of the 2.5D map,
+ * section board card (large, animated) and ranking.
  *
- * El template (`avatar-sprite.html`) pinta una capa por `<g data-capa>`, en orden de atrás
- * hacia adelante. Las reglas de convivencia entre partes (qué tapa a qué, qué contrasta con
- * qué) se resuelven acá, en `computed`, para que el template solo dibuje.
+ * The template (`avatar-sprite.html`) paints one layer per `<g data-layer>`, in back-to-front
+ * order. The rules for how parts coexist (what covers what, what contrasts with
+ * what) are resolved here, in `computed`, so the template only draws.
  */
 @Component({
   selector: 'ui-avatar-sprite',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'inline-block leading-none' },
   styles: `
-    /* Paso de caminata: el sprite entero pisa fuerte en lugar de animar las piernas por
-       separado — a 16×22 px un ciclo de piernas real no se lee. */
+    /* Walking step: the whole sprite stomps instead of animating the legs
+       separately — at 16×22 px a real leg cycle is not legible. */
     @keyframes paso {
       0%, 100% { transform: translateY(0) }
       50%      { transform: translateY(-10%) }
     }
     .caminando { animation: paso 0.24s steps(2, end) infinite }
 
-    /* Salto de alegría (unidad completada): squash-stretch tipo arcade. Va en un wrapper
-       aparte para no pelear con el scaleX(-1) que orienta el sprite sobre el propio <svg>. */
+    /* Joy jump (section completed): arcade-style squash-stretch. It goes on a separate
+       wrapper so as not to fight with the scaleX(-1) that orients the sprite on the <svg> itself. */
     @keyframes salto-alegria {
       0%   { transform: translateY(0) scaleY(1); }
       20%  { transform: translateY(2%) scaleY(0.82); }
@@ -67,69 +67,69 @@ const CUBREN_CABEZA: readonly IdAccesorio[] = ['gorra', 'gorra-atras', 'beanie']
 })
 export class AvatarSprite {
   readonly config = input.required<AvatarConfig>();
-  /** Alto en px del sprite; el ancho se deriva del aspect 16:22. */
-  readonly alto = input(64);
-  readonly caminando = input(false);
-  /** Salto de alegría (ej. al completar una unidad). Independiente de `caminando`. */
-  readonly celebrando = input(false);
-  readonly mirando = input<'derecha' | 'izquierda'>('derecha');
-  readonly sombra = input(false);
-  readonly etiqueta = input('Tu avatar');
+  /** Height in px of the sprite; the width is derived from the 16:22 aspect. */
+  readonly height = input(64);
+  readonly walking = input(false);
+  /** Joy jump (e.g. on completing a section). Independent of `walking`. */
+  readonly celebrating = input(false);
+  readonly facing = input<'derecha' | 'izquierda'>('derecha');
+  readonly shadow = input(false);
+  readonly label = input('Tu avatar');
 
-  protected readonly piel = computed(() => pielPorId(this.config().piel));
-  protected readonly pelo = computed(() => colorPorId(this.config().colorPelo));
-  protected readonly ropa = computed(() => colorPorId(this.config().colorRopa));
-  protected readonly acc = computed(() => colorPorId(this.config().colorAccesorio));
+  protected readonly skin = computed(() => skinById(this.config().skin));
+  protected readonly hair = computed(() => colorById(this.config().hairColor));
+  protected readonly clothes = computed(() => colorById(this.config().clothesColor));
+  protected readonly acc = computed(() => colorById(this.config().accessoryColor));
 
-  /** El traje es un mono: piernas del color de la ropa. Con las demás prendas va pantalón. */
-  protected readonly pantalon = computed(() => {
-    const { prenda, colorRopa } = this.config();
-    if (prenda === 'traje') return this.ropa().sombra;
-    return colorRopa === 'noche' || colorRopa === 'negro' ? GRAFITO : NOCHE;
+  /** The suit is a jumpsuit: legs the color of the clothing. With the other garments pants are worn. */
+  protected readonly pants = computed(() => {
+    const { garment, clothesColor } = this.config();
+    if (garment === 'traje') return this.clothes().shadow;
+    return clothesColor === 'noche' || clothesColor === 'negro' ? GRAPHITE : NIGHT;
   });
 
   /**
-   * Los zapatos son el punto de apoyo del sprite sobre la isla o el casillero: van siempre
-   * en hueso, salvo con un traje hueso (piernas claras), donde un zapato hueso desaparece.
+   * The shoes are the sprite's point of support on the island or the square: they are always
+   * bone-colored, except with a bone suit (light legs), where a bone shoe disappears.
    */
-  protected readonly zapatos = computed(() => {
-    const { prenda, colorRopa } = this.config();
-    return prenda === 'traje' && colorRopa === 'hueso' ? NOCHE : HUESO;
+  protected readonly shoes = computed(() => {
+    const { garment, clothesColor } = this.config();
+    return garment === 'traje' && clothesColor === 'hueso' ? NIGHT : BONE;
   });
 
-  /** Remera que asoma debajo de la campera abierta: tiene que contrastar con la campera. */
-  protected readonly remera = computed(() => (this.config().colorRopa === 'hueso' ? NOCHE : HUESO));
+  /** T-shirt peeking out under the open jacket: it must contrast with the jacket. */
+  protected readonly tshirt = computed(() => (this.config().clothesColor === 'hueso' ? NIGHT : BONE));
 
-  /** La corbata va en el rosa de marca, salvo que la camisa ya sea rosa. */
-  protected readonly corbata = computed(() =>
-    esRosa(this.config().colorRopa) ? VIOLETA_PROFUNDO : ROSA,
+  /** The tie comes in the brand pink, unless the shirt is already pink. */
+  protected readonly tie = computed(() =>
+    isPink(this.config().clothesColor) ? VIOLET_DEEP : PINK,
   );
 
-  protected readonly mostrarEmblema = computed(() => emblemaVisible(this.config()));
+  protected readonly showEmblem = computed(() => emblemVisible(this.config()));
 
-  protected readonly mostrarAnteojos = computed(() => anteojosVisibles(this.config()));
+  protected readonly showGlasses = computed(() => visibleGlasses(this.config()));
 
-  /** Gorra, gorra hacia atrás y beanie pintan todo el casco (filas 0-3) para que ningún
-   *  peinado los atraviese. */
-  protected readonly cubreCabeza = computed(() => CUBREN_CABEZA.includes(this.config().accesorio));
+  /** Cap, backwards cap and beanie paint the whole helmet (rows 0-3) so that no
+   *  hairstyle goes through them. */
+  protected readonly coversHead = computed(() => COVER_HEAD.includes(this.config().accessory));
 
   /**
-   * El emblema tiene que contrastar contra lo que tiene debajo, si no desaparece: la remera
-   * cuando la campera está abierta, la ropa en el resto de los casos.
+   * The emblem has to contrast against what is underneath, otherwise it disappears: the t-shirt
+   * when the jacket is open, the clothing in the rest of the cases.
    */
-  protected readonly colorEmblema = computed(() => {
-    const { prenda, colorRopa } = this.config();
-    // Con la campera abierta el emblema va sobre la remera, que es hueso o noche: nunca rosa.
-    if (prenda === 'campera') return ROSA;
-    return esRosa(colorRopa) ? HUESO : ROSA;
+  protected readonly emblemColor = computed(() => {
+    const { garment, clothesColor } = this.config();
+    // With the jacket open the emblem goes on the t-shirt, which is bone or night: never pink.
+    if (garment === 'campera') return PINK;
+    return isPink(clothesColor) ? BONE : PINK;
   });
 
   /**
-   * Mirando a la izquierda el `<svg>` entero se espeja con `scaleX(-1)`, y eso invertiría
-   * glifos como `λ` o `>_`. El grupo del emblema se vuelve a espejar para anularlo; como la
-   * grilla es simétrica respecto de x=8, el emblema no se mueve de lugar.
+   * When facing left the whole `<svg>` is mirrored with `scaleX(-1)`, and that would invert
+   * glyphs like `λ` or `>_`. The emblem group is mirrored again to cancel it; since the
+   * grid is symmetric about x=8, the emblem does not move from its place.
    */
-  protected readonly contraEspejo = computed(() =>
-    this.mirando() === 'izquierda' ? 'translate(16 0) scale(-1 1)' : null,
+  protected readonly counterMirror = computed(() =>
+    this.facing() === 'izquierda' ? 'translate(16 0) scale(-1 1)' : null,
   );
 }

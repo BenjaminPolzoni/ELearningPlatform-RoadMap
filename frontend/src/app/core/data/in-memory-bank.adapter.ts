@@ -1,152 +1,152 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
-import { BancoDataPort } from './banco-data.port';
+import { BankDataPort } from './bank-data.port';
 
 const LS_PREFIX = 'banco-mock-v2';
-const CACHE_TTL_MS = 30_000; // 30 segundos — datos frescos del "servicio"
+const CACHE_TTL_MS = 30_000; // 30 seconds — fresh data from the "service"
 
-interface BancoCacheEntry {
-  monedas: number;
+interface BankCacheEntry {
+  coins: number;
   xp: number;
-  vidas: number;
+  lives: number;
   lastFetch: number;
 }
 
-interface BancoSeed {
-  monedas: number;
+interface BankSeed {
+  coins: number;
   xp: number;
-  vidas: number;
+  lives: number;
 }
 
-/** Seed por alumno (simula lo que Banco tendría en su base). */
-const SEED: Record<string, BancoSeed> = {
-  'alu-01': { monedas: 3050, xp: 350, vidas: 3 },
-  'alu-02': { monedas: 5400, xp: 0, vidas: 3 },
-  'alu-03': { monedas: 1200, xp: 0, vidas: 3 },
-  'alu-04': { monedas: 800, xp: 0, vidas: 3 },
-  'alu-05': { monedas: 4200, xp: 0, vidas: 3 },
+/** Seed per student (simulates what the Bank would have in its database). */
+const SEED: Record<string, BankSeed> = {
+  'alu-01': { coins: 3050, xp: 350, lives: 3 },
+  'alu-02': { coins: 5400, xp: 0, lives: 3 },
+  'alu-03': { coins: 1200, xp: 0, lives: 3 },
+  'alu-04': { coins: 800, xp: 0, lives: 3 },
+  'alu-05': { coins: 4200, xp: 0, lives: 3 },
 };
 
 /**
- * Mock del Banco (Tema 08) con caché por alumno y degradación a indisponible.
+ * Bank mock (Topic 08) with per-student cache and degradation to unavailable.
  *
- * Estrategia:
- * 1. Primero intenta leer de caché (localStorage + BehaviorSubject).
- * 2. Si la caché está fresca (< CACHE_TTL_MS), devuelve el valor cacheado.
- * 3. Si está vencida o no existe, simula una llamada al "servicio" (setTimeout 200ms).
- * 4. Si la "llamada" falla (simulada con probabilidad 10%), degrada: devuelve el
- *    último valor conocido o 0 si nunca hubo caché.
- * 5. `comprarVida` valida saldo y vidas antes de ejecutar.
+ * Strategy:
+ * 1. First try to read from the cache (localStorage + BehaviorSubject).
+ * 2. If the cache is fresh (< CACHE_TTL_MS), return the cached value.
+ * 3. If it is stale or missing, simulate a call to the "service" (setTimeout 200ms).
+ * 4. If the "call" fails (simulated with 10% probability), degrade: return the
+ *    last known value or 0 if there was never a cache.
+ * 5. `buyLife` validates balance and lives before executing.
  */
 @Injectable()
-export class InMemoryBancoAdapter extends BancoDataPort {
-  private readonly cache = new Map<string, BehaviorSubject<BancoCacheEntry>>();
-  private readonly failedAlumnos = new Set<string>();
+export class InMemoryBankAdapter extends BankDataPort {
+  private readonly cache = new Map<string, BehaviorSubject<BankCacheEntry>>();
+  private readonly failedStudents = new Set<string>();
 
   constructor() {
     super();
   }
 
-  getMonedas(alumnoId: string, cursoCohorteId: string): Observable<number> {
-    return this.getEntry(alumnoId, cursoCohorteId).pipe(map((e) => e.monedas));
+  getCoins(studentId: string, courseCohortId: string): Observable<number> {
+    return this.getEntry(studentId, courseCohortId).pipe(map((e) => e.coins));
   }
 
-  getXP(alumnoId: string, cursoCohorteId: string): Observable<number> {
-    return this.getEntry(alumnoId, cursoCohorteId).pipe(map((e) => e.xp));
+  getXP(studentId: string, courseCohortId: string): Observable<number> {
+    return this.getEntry(studentId, courseCohortId).pipe(map((e) => e.xp));
   }
 
-  getVidas(alumnoId: string, cursoCohorteId: string): Observable<number> {
-    return this.getEntry(alumnoId, cursoCohorteId).pipe(map((e) => e.vidas));
+  getLives(studentId: string, courseCohortId: string): Observable<number> {
+    return this.getEntry(studentId, courseCohortId).pipe(map((e) => e.lives));
   }
 
-  comprarVida(
-    alumnoId: string,
-    cursoCohorteId: string,
-    costoMonedas: number,
-  ): Observable<{ exito: boolean; nuevoSaldo: number; nuevasVidas: number; razon?: string }> {
-    return this.getEntry(alumnoId, cursoCohorteId).pipe(
+  buyLife(
+    studentId: string,
+    courseCohortId: string,
+    costCoins: number,
+  ): Observable<{ success: boolean; newBalance: number; newLives: number; reason?: string }> {
+    return this.getEntry(studentId, courseCohortId).pipe(
       switchMap((entry) => {
-        if (entry.vidas >= 3) {
-          return of({ exito: false, nuevoSaldo: entry.monedas, nuevasVidas: entry.vidas, razon: 'Ya tienes el máximo de vidas' });
+        if (entry.lives >= 3) {
+          return of({ success: false, newBalance: entry.coins, newLives: entry.lives, reason: 'Ya tienes el máximo de vidas' });
         }
-        if (entry.monedas < costoMonedas) {
-          return of({ exito: false, nuevoSaldo: entry.monedas, nuevasVidas: entry.vidas, razon: `Monedas insuficientes (necesitás ${costoMonedas})` });
+        if (entry.coins < costCoins) {
+          return of({ success: false, newBalance: entry.coins, newLives: entry.lives, reason: `Monedas insuficientes (necesitás ${costCoins})` });
         }
-        const updated: BancoCacheEntry = {
+        const updated: BankCacheEntry = {
           ...entry,
-          monedas: entry.monedas - costoMonedas,
-          vidas: entry.vidas + 1,
+          coins: entry.coins - costCoins,
+          lives: entry.lives + 1,
           lastFetch: Date.now(),
         };
-        this.setEntry(alumnoId, cursoCohorteId, updated);
-        return of({ exito: true, nuevoSaldo: updated.monedas, nuevasVidas: updated.vidas });
+        this.setEntry(studentId, courseCohortId, updated);
+        return of({ success: true, newBalance: updated.coins, newLives: updated.lives });
       }),
     );
   }
 
-  // ── Internos ──────────────────────────────────────────────────────────
+  // ── Internals ──────────────────────────────────────────────────────────
 
-  private getEntry(alumnoId: string, cursoCohorteId: string): Observable<BancoCacheEntry> {
-    const key = this.key(alumnoId, cursoCohorteId);
+  private getEntry(studentId: string, courseCohortId: string): Observable<BankCacheEntry> {
+    const key = this.key(studentId, courseCohortId);
     const existing = this.cache.get(key);
 
-    // Caché fresca → devolver directo
+    // Fresh cache → return directly
     if (existing && Date.now() - existing.value.lastFetch < CACHE_TTL_MS) {
       return existing.asObservable();
     }
 
-    // Simular llamada al "servicio Banco" (200ms latencia, 10% fallo)
-    return new Observable<BancoCacheEntry>((observer) => {
+    // Simulate a call to the "Bank service" (200ms latency, 10% failure)
+    return new Observable<BankCacheEntry>((observer) => {
       setTimeout(() => {
-        // 10% de probabilidad de fallo si no hay datos previos
+        // 10% probability of failure if there is no previous data
         if (!existing && Math.random() < 0.1) {
-          this.failedAlumnos.add(alumnoId);
-          observer.next(this.fallbackEntry(alumnoId));
+          this.failedStudents.add(studentId);
+          observer.next(this.fallbackEntry(studentId));
           observer.complete();
           return;
         }
 
-        const seed = SEED[alumnoId] ?? { monedas: 0, xp: 0, vidas: 3 };
-        const entry: BancoCacheEntry = { ...seed, lastFetch: Date.now() };
+        const seed = SEED[studentId] ?? { coins: 0, xp: 0, lives: 3 };
+        const entry: BankCacheEntry = { ...seed, lastFetch: Date.now() };
 
-        // Si hubo fallo previo, recuperar (simula que el servicio volvió)
-        this.failedAlumnos.delete(alumnoId);
-        this.setEntry(alumnoId, cursoCohorteId, entry);
+        // If there was a previous failure, recover (simulates the service coming back)
+        this.failedStudents.delete(studentId);
+        this.setEntry(studentId, courseCohortId, entry);
         observer.next(entry);
         observer.complete();
       }, 200);
     }).pipe(
       catchError(() => {
-        // Degradación total: devolver último conocido o seed
+        // Total degradation: return last known or seed
         const cached = this.cache.get(key);
-        return of(cached?.value ?? this.fallbackEntry(alumnoId));
+        return of(cached?.value ?? this.fallbackEntry(studentId));
       }),
     );
   }
 
-  private fallbackEntry(alumnoId: string): BancoCacheEntry {
-    const seed = SEED[alumnoId] ?? { monedas: 0, xp: 0, vidas: 3 };
-    return { ...seed, lastFetch: 0 }; // lastFetch=0 → siempre vencida
+  private fallbackEntry(studentId: string): BankCacheEntry {
+    const seed = SEED[studentId] ?? { coins: 0, xp: 0, lives: 3 };
+    return { ...seed, lastFetch: 0 }; // lastFetch=0 → always stale
   }
 
-  private setEntry(alumnoId: string, cursoCohorteId: string, entry: BancoCacheEntry): void {
-    const key = this.key(alumnoId, cursoCohorteId);
+  private setEntry(studentId: string, courseCohortId: string, entry: BankCacheEntry): void {
+    const key = this.key(studentId, courseCohortId);
     const subject = this.cache.get(key);
     if (subject) {
       subject.next(entry);
     } else {
-      this.cache.set(key, new BehaviorSubject<BancoCacheEntry>(entry));
+      this.cache.set(key, new BehaviorSubject<BankCacheEntry>(entry));
     }
-    // Persistir a localStorage para sobrevivir refresh
+    // Persist to localStorage to survive a refresh
     try {
       localStorage.setItem(key, JSON.stringify(entry));
     } catch {
-      /* modo incógnito / storage lleno */
+      /* incognito mode / storage full */
     }
   }
 
-  private key(alumnoId: string, cursoCohorteId: string): string {
-    return `${LS_PREFIX}-${cursoCohorteId}-${alumnoId}`;
+  private key(studentId: string, courseCohortId: string): string {
+    return `${LS_PREFIX}-${courseCohortId}-${studentId}`;
   }
 }

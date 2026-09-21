@@ -2,7 +2,7 @@ import { Component, HostListener, inject, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { AuthMockService } from './core/auth/auth-mock.service';
 
-/** Shell: outlet + gate desktop-only (RF-NFR-05). */
+/** Shell: outlet + desktop-only gate (RF-NFR-05). */
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet],
@@ -13,19 +13,19 @@ export class App {
   protected readonly auth = inject(AuthMockService);
   private readonly router = inject(Router);
 
-  protected readonly esDesktop = signal(this.medir());
+  protected readonly isDesktop = signal(this.measure());
 
   @HostListener('window:resize')
   protected onResize(): void {
-    this.esDesktop.set(this.medir());
+    this.isDesktop.set(this.measure());
   }
 
-  protected salir(): void {
-    this.auth.salir();
+  protected exit(): void {
+    this.auth.exit();
     this.router.navigate(['/login']);
   }
 
-  private medir(): boolean {
+  private measure(): boolean {
     return window.innerWidth >= 1024;
   }
 }

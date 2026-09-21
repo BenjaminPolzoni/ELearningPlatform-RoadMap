@@ -1,40 +1,40 @@
 import { Injectable, signal } from '@angular/core';
 
-export type Rol = 'PROFESOR' | 'ALUMNO' | 'ADMIN';
+export type Role = 'PROFESOR' | 'ALUMNO' | 'ADMIN';
 
 const LS_KEY = 'mock-rol';
 
 /**
- * Login mock (03-plan-de-implementacion.md, Fase 0). No hay JWT ni backend de auth: el
- * usuario elige un rol y queda guardado en localStorage. En producción la identidad la
- * inyecta el Gateway vía headers `X-User-*` (06-contrato-api.md §0.3).
+ * Mock login (03-plan-de-implementacion.md, Phase 0). There is no JWT or auth backend: the
+ * user picks a role and it is saved in localStorage. In production the identity is
+ * injected by the Gateway through `X-User-*` headers (06-contrato-api.md §0.3).
  */
 @Injectable({ providedIn: 'root' })
 export class AuthMockService {
-  private readonly _rol = signal<Rol | null>(this.leer());
-  readonly rol = this._rol.asReadonly();
+  private readonly _role = signal<Role | null>(this.read());
+  readonly role = this._role.asReadonly();
 
-  entrarComo(rol: Rol): void {
+  enterAs(role: Role): void {
     try {
-      localStorage.setItem(LS_KEY, rol);
+      localStorage.setItem(LS_KEY, role);
     } catch {
-      /* ignorar */
+      /* ignore */
     }
-    this._rol.set(rol);
+    this._role.set(role);
   }
 
-  salir(): void {
+  exit(): void {
     try {
       localStorage.removeItem(LS_KEY);
     } catch {
-      /* ignorar */
+      /* ignore */
     }
-    this._rol.set(null);
+    this._role.set(null);
   }
 
-  private leer(): Rol | null {
+  private read(): Role | null {
     try {
-      return (localStorage.getItem(LS_KEY) as Rol) || null;
+      return (localStorage.getItem(LS_KEY) as Role) || null;
     } catch {
       return null;
     }

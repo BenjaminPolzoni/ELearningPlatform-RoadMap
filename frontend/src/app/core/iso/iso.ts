@@ -1,33 +1,33 @@
 /**
- * Proyección isométrica y layout procedural del mapa de islas.
+ * Isometric projection and procedural layout of the island map.
  *
- * Es la implementación en SVG del contrato descrito en `path/04-engine-2-5d.md`: mismas
- * reglas (posición **siempre calculada**, ruido determinista por índice, reflow solo al
- * agregar/quitar unidades), pero con matemática 2D en vez de three.js — sin dependencias
- * nuevas, y con nodos que siguen siendo DOM (accesibles y focusables, 05 §5/§7).
+ * It is the SVG implementation of the contract described in `path/04-engine-2-5d.md`: same
+ * rules (position **always computed**, deterministic noise by index, reflow only when
+ * adding/removing sections), but with 2D math instead of three.js — no new dependencies,
+ * and with nodes that remain DOM (accessible and focusable, 05 §5/§7).
  *
- * Si más adelante entra el engine con three.js, `layoutIslas()` es lo único que se
- * reutiliza tal cual: devuelve coordenadas de mundo, no píxeles.
+ * If the three.js engine comes in later, `layoutIslands()` is the only thing that is
+ * reused as is: it returns world coordinates, not pixels.
  */
 
-/** Punto en el mundo isométrico. `y` es profundidad, `z` es altura (flotación). */
+/** Point in the isometric world. `y` is depth, `z` is height (floating). */
 export interface Vec3 {
   x: number;
   y: number;
   z: number;
 }
 
-export interface Punto {
+export interface Point {
   x: number;
   y: number;
 }
 
-/** Tile 2:1 — la proporción clásica del pixel-art isométrico. */
+/** 2:1 tile — the classic proportion of isometric pixel art. */
 export const TILE_W = 64;
 export const TILE_H = 32;
 
-/** Mundo → pantalla. La altura (`z`) solo levanta el sprite, no lo desplaza en x. */
-export function proyectar(v: Vec3): Punto {
+/** World → screen. Height (`z`) only lifts the sprite, it does not shift it in x. */
+export function project(v: Vec3): Point {
   return {
     x: (v.x - v.y) * (TILE_W / 2),
     y: (v.x + v.y) * (TILE_H / 2) - v.z,
@@ -35,128 +35,128 @@ export function proyectar(v: Vec3): Punto {
 }
 
 export interface LayoutOpts {
-  /** Avance por unidad sobre el eje **horizontal de pantalla** (u = x − y). */
-  pasoU?: number;
-  /** Descenso por unidad sobre el eje **vertical de pantalla** (w = x + y). */
-  pasoW?: number;
-  /** Amplitud del zig-zag vertical: sin esto el mapa es una diagonal recta y aburrida. */
+  /** Advance per unit along the **horizontal screen axis** (u = x − y). */
+  stepU?: number;
+  /** Descent per unit along the **vertical screen axis** (w = x + y). */
+  stepW?: number;
+  /** Amplitude of the vertical zig-zag: without it the map is a straight, boring diagonal. */
   zigzag?: number;
-  /** Desorden determinista para que no se lea como una grilla (04 §4). */
+  /** Deterministic disorder so it does not read as a grid (04 §4). */
   jitter?: number;
-  /** Altura de flotación alternada, en px de pantalla. */
-  alturas?: readonly number[];
+  /** Alternating floating height, in screen px. */
+  heights?: readonly number[];
 }
 
 /**
- * Ruta serpenteante que avanza hacia la derecha alternando arriba/abajo. Elegida sobre la
- * serpentina en filas de 04 §4 porque el mapa se recorre con **paneo horizontal** (04 §9):
- * una cinta larga se lee mejor que un bloque que crece hacia abajo, y es lo que muestra la
- * referencia de estilo.
+ * Winding route that advances to the right alternating up/down. Chosen over the
+ * row-based serpentine of 04 §4 because the map is traversed with **horizontal panning** (04 §9):
+ * a long ribbon reads better than a block growing downwards, and it is what the
+ * style reference shows.
  *
- * El layout se parametriza en los **ejes de pantalla** (`u` horizontal, `w` vertical) y
- * recién después se convierte a coordenadas de mundo. Parametrizarlo directo en `x`/`y`
- * de mundo es la trampa: como la proyección resta (`u = x − y`), un zig-zag simétrico en
- * mundo se amplifica en horizontal y termina apilando islas encima de las anteriores.
+ * The layout is parameterized in **screen axes** (`u` horizontal, `w` vertical) and
+ * only afterwards converted to world coordinates. Parameterizing it directly in world `x`/`y`
+ * is the trap: since the projection subtracts (`u = x − y`), a symmetric zig-zag in
+ * world gets amplified horizontally and ends up stacking islands on top of the previous ones.
  *
- * Determinista: la unidad `i` cae siempre en el mismo lugar, con o sin las demás.
+ * Deterministic: section `i` always lands in the same place, with or without the others.
  */
-export function layoutIslas(n: number, o: LayoutOpts = {}): Vec3[] {
-  const { pasoU = 8.2, pasoW = 2.6, zigzag = 2.2, jitter = 0.5, alturas = [0, 28, 10, 36] } = o;
+export function layoutIslands(n: number, o: LayoutOpts = {}): Vec3[] {
+  const { stepU = 8.2, stepW = 2.6, zigzag = 2.2, jitter = 0.5, heights = [0, 28, 10, 36] } = o;
   const out: Vec3[] = [];
 
   for (let i = 0; i < n; i++) {
-    // ruido determinista por índice — mismo input, mismo output (04 §4)
-    const u = i * pasoU + ruido(i * 127.1) * jitter;
-    const w = i * pasoW + (i % 2 === 0 ? -zigzag : zigzag) + ruido(i * 311.7) * jitter;
+    // deterministic noise by index — same input, same output (04 §4)
+    const u = i * stepU + noise(i * 127.1) * jitter;
+    const w = i * stepW + (i % 2 === 0 ? -zigzag : zigzag) + noise(i * 311.7) * jitter;
 
     out.push({
       x: (u + w) / 2,
       y: (w - u) / 2,
-      z: alturas[i % alturas.length],
+      z: heights[i % heights.length],
     });
   }
   return out;
 }
 
-/** Ruido pseudo-aleatorio en [-0.5, 0.5], estable para el mismo `semilla`. */
-function ruido(semilla: number): number {
-  const r = Math.sin(semilla) * 43758.5453;
+/** Pseudo-random noise in [-0.5, 0.5], stable for the same `seed`. */
+function noise(seed: number): number {
+  const r = Math.sin(seed) * 43758.5453;
   return r - Math.floor(r) - 0.5;
 }
 
-export interface Caja {
+export interface Box {
   x: number;
   y: number;
-  ancho: number;
-  alto: number;
+  width: number;
+  height: number;
 }
 
-/** Bounding box de los puntos proyectados, con margen — de acá sale el `viewBox`. */
-export function caja(puntos: readonly Punto[], margen: number): Caja {
-  if (puntos.length === 0) return { x: 0, y: 0, ancho: 800, alto: 500 };
-  const xs = puntos.map((p) => p.x);
-  const ys = puntos.map((p) => p.y);
-  const x = Math.min(...xs) - margen;
-  const y = Math.min(...ys) - margen;
+/** Bounding box of the projected points, with margin — the `viewBox` comes from here. */
+export function box(points: readonly Point[], margin: number): Box {
+  if (points.length === 0) return { x: 0, y: 0, width: 800, height: 500 };
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  const x = Math.min(...xs) - margin;
+  const y = Math.min(...ys) - margin;
   return {
     x,
     y,
-    ancho: Math.max(...xs) + margen - x,
-    alto: Math.max(...ys) + margen - y,
+    width: Math.max(...xs) + margin - x,
+    height: Math.max(...ys) + margin - y,
   };
 }
 
-/** Rombo (cara superior de la isla) como lista de puntos para un `<polygon>`. */
-export function rombo(c: Punto, semiAncho: number, semiAlto: number): string {
+/** Rhombus (top face of the island) as a list of points for a `<polygon>`. */
+export function diamond(c: Point, semiWidth: number, semiHeight: number): string {
   return [
-    `${c.x},${c.y - semiAlto}`,
-    `${c.x + semiAncho},${c.y}`,
-    `${c.x},${c.y + semiAlto}`,
-    `${c.x - semiAncho},${c.y}`,
+    `${c.x},${c.y - semiHeight}`,
+    `${c.x + semiWidth},${c.y}`,
+    `${c.x},${c.y + semiHeight}`,
+    `${c.x - semiWidth},${c.y}`,
   ].join(' ');
 }
 
-/** Cara lateral extruida hacia abajo — es lo que convierte el rombo en un volumen. */
-export function caraLateral(
-  c: Punto,
-  semiAncho: number,
-  semiAlto: number,
-  espesor: number,
-  lado: 'izq' | 'der',
+/** Side face extruded downwards — it is what turns the rhombus into a volume. */
+export function faceLateral(
+  c: Point,
+  semiWidth: number,
+  semiHeight: number,
+  thickness: number,
+  side: 'izq' | 'der',
 ): string {
-  const sx = lado === 'izq' ? -semiAncho : semiAncho;
+  const sx = side === 'izq' ? -semiWidth : semiWidth;
   return [
     `${c.x + sx},${c.y}`,
-    `${c.x},${c.y + semiAlto}`,
-    `${c.x},${c.y + semiAlto + espesor}`,
-    `${c.x + sx},${c.y + espesor}`,
+    `${c.x},${c.y + semiHeight}`,
+    `${c.x},${c.y + semiHeight + thickness}`,
+    `${c.x + sx},${c.y + thickness}`,
   ].join(' ');
 }
 
-/** Base rocosa que se afina hacia abajo: da el efecto de isla flotante de la referencia. */
-export function base(c: Punto, semiAncho: number, semiAlto: number, espesor: number, largo: number): string {
+/** Rocky base that tapers downwards: gives the floating island effect of the reference. */
+export function base(c: Point, semiWidth: number, semiHeight: number, thickness: number, long: number): string {
   return [
-    `${c.x - semiAncho},${c.y + espesor}`,
-    `${c.x},${c.y + semiAlto + espesor}`,
-    `${c.x + semiAncho},${c.y + espesor}`,
-    `${c.x + semiAncho * 0.32},${c.y + espesor + largo * 0.55}`,
-    `${c.x},${c.y + espesor + largo}`,
-    `${c.x - semiAncho * 0.32},${c.y + espesor + largo * 0.55}`,
+    `${c.x - semiWidth},${c.y + thickness}`,
+    `${c.x},${c.y + semiHeight + thickness}`,
+    `${c.x + semiWidth},${c.y + thickness}`,
+    `${c.x + semiWidth * 0.32},${c.y + thickness + long * 0.55}`,
+    `${c.x},${c.y + thickness + long}`,
+    `${c.x - semiWidth * 0.32},${c.y + thickness + long * 0.55}`,
   ].join(' ');
 }
 
 /**
- * Camino en escuadra entre dos islas: un único quiebre en ángulo recto (sube/baja recto,
- * después corre horizontal), nunca una curva ni varios quiebres cortos seguidos — como las
- * corridas largas del mapa de Super Mario Bros. 3, no una escalera de pasos chicos. Cada
- * tramo queda tan largo como el hueco real entre islas.
+ * Right-angle path between two islands: a single right-angle bend (goes straight up/down,
+ * then runs horizontally), never a curve nor several short bends in a row — like the
+ * long runs of the Super Mario Bros. 3 map, not a staircase of small steps. Each
+ * segment ends up as long as the real gap between islands.
  */
-export function camino(a: Punto, b: Punto): string {
-  const codo: Punto = { x: a.x, y: b.y };
-  return `M ${a.x} ${a.y} L ${codo.x} ${codo.y} L ${b.x} ${b.y}`;
+export function path(a: Point, b: Point): string {
+  const elbow: Point = { x: a.x, y: b.y };
+  return `M ${a.x} ${a.y} L ${elbow.x} ${elbow.y} L ${b.x} ${b.y}`;
 }
 
-/** Parte fraccionaria en [0,1) — base del ruido determinista de decorado. */
+/** Fractional part in [0,1) — basis of the deterministic decor noise. */
 export function frac(v: number): number {
   return v - Math.floor(v);
 }

@@ -19,12 +19,12 @@ import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-brows
 import { AvatarService } from '../../core/avatar/avatar.service';
 import { RoadmapDataPort } from '../../core/data/roadmap-data.port';
 import { RoadmapStore } from '../../core/data/roadmap.store';
-import { descripcionPorDefecto, EstadoNodo, XP_POR_DIFICULTAD } from '../../core/data/roadmap.models';
-import { CURSO_SEED_ID } from '../../mocks/seed';
-import { toEmbedUrl } from './recurso-embed.util';
+import { defaultDescription, NodeStatus, XP_BY_DIFFICULTY } from '../../core/data/roadmap.models';
+import { COURSE_SEED_ID } from '../../mocks/seed';
+import { toEmbedUrl } from './resource-embed.util';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 import {
-  BIOMA_A_WORLD_THEME,
+  BIOME_TO_WORLD_THEME,
   GeneratedWorld,
   generateVerticalWorld,
   nodeArt,
@@ -53,7 +53,7 @@ interface ConfettiPiece {
 }
 
 @Component({
-  selector: 'app-unidad-mapa',
+  selector: 'app-section-map',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AvatarSprite, RouterLink, UpperCasePipe],
   host: { class: 'block w-full h-full' },
@@ -67,10 +67,10 @@ interface ConfettiPiece {
       flex: 1 1 0%;
       min-height: 0;
       width: 100%;
-      /* Sin scroll horizontal manual: la cámara mueve scrollLeft sola siguiendo al
-         explorador. El vertical sí queda libre (rueda/touch/teclado) pero recortado
-         por onViewportScroll() para que nunca se pueda ver más arriba de lo que ya
-         desbloqueaste — la barra se oculta igual, la interacción sigue funcionando. */
+      /* No manual horizontal scroll: the camera moves scrollLeft by itself following the
+         explorer. Vertical stays free (wheel/touch/keyboard) but clipped
+         by onViewportScroll() so you can never see higher up than what you already
+         unlocked — the bar is hidden anyway, the interaction keeps working. */
       overflow-x: hidden;
       overflow-y: auto;
       overscroll-behavior: contain;
@@ -86,12 +86,12 @@ interface ConfettiPiece {
       position: relative;
     }
     /*
-      En pantalla completa, el panel debe cubrir TODO el viewport real — pero el elemento
-      fullscreen-eado (#mapPanel) trae position: relative de Tailwind (clase relative en el
-      template), y esa regla de autor le gana a la posición fixed que el navegador intenta
-      aplicarle vía :fullscreen. Sin este override, el panel se queda con el ancho heredado
-      de .vertical-world (tope de 1448px) en vez de ocupar el monitor entero, y el fondo del
-      mapa (tile) no llega a cubrir el resto: se ve el color plano de --ground.
+      In fullscreen, the panel must cover the WHOLE real viewport — but the
+      fullscreened element (#mapPanel) carries Tailwind's position: relative (class relative in the
+      template), and that author rule beats the fixed position the browser tries to
+      apply to it via :fullscreen. Without this override, the panel keeps the width inherited
+      from .vertical-world (cap of 1448px) instead of filling the whole monitor, and the map
+      background (tile) does not cover the rest: the flat color of --ground shows.
     */
     .map-panel.expanded {
       position: fixed;
@@ -105,7 +105,7 @@ interface ConfettiPiece {
       max-height: none;
     }
 
-    /* Confetti del cartel "Unidad completada" */
+    /* Confetti of the "Unidad completada" sign */
     @keyframes confetti-caida {
       0%   { transform: translateY(-10%) rotate(0deg); opacity: 1; }
       100% { transform: translateY(650%) rotate(540deg); opacity: 0.15; }
@@ -124,14 +124,14 @@ interface ConfettiPiece {
     }
   `,
   template: `
-    @if (unidad(); as u) {
+    @if (section(); as u) {
       <div
         class="vertical-world relative flex flex-col w-full max-w-[1448px] h-full mx-auto overflow-hidden rounded-[20px] border-[6px] border-[#23242E] bg-base-300 shadow-[0_0_80px_rgba(139,92,246,0.18)]"
         [attr.data-theme]="theme()"
       >
-        <!-- PANEL DE MAPA Y NAVEGACIÓN -->
+        <!-- MAP AND NAVIGATION PANEL -->
         <div #mapPanel class="map-panel flex-1 min-h-0 relative flex flex-col" [class.expanded]="isExpanded()">
-          <!-- Toolbar del Mapa -->
+          <!-- Map toolbar -->
           <div
             class="flex-shrink-0 flex items-center justify-between border-b-2 border-[#2E303D] bg-[#1E202C] px-5 py-2 text-xs text-[#E0E2EC]"
           >
@@ -144,17 +144,17 @@ interface ConfettiPiece {
               </a>
               <span class="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span class="ui-font text-[8px] tracking-wider text-emerald-300">
-                MUNDO 0{{ u.orden }} · {{ world().setting | uppercase }}
+                MUNDO 0{{ u.order }} · {{ world().setting | uppercase }}
               </span>
             </div>
 
-            <!-- Controles de cámara y pantalla completa -->
+            <!-- Camera and fullscreen controls -->
             <div class="flex items-center gap-2">
-              <!-- Ni "ver meta" ni "ir al inicio": la cámara solo la mueve el propio
-                   recorrido del explorador (ver followPlayerScroll), nunca el jugador
-                   a mano — así nunca se asoma a una parte del mundo que todavía no
-                   desbloqueó. Este botón sí queda: no revela nada nuevo, solo re-centra
-                   sobre la posición actual (por si la ventana cambia de tamaño). -->
+              <!-- Neither "see goal" nor "go to start": the camera is only moved by the
+                   explorer's own journey (see followPlayerScroll), never by the player
+                   by hand — so it never peeks at a part of the world that has not been
+                   unlocked yet. This button does stay: it reveals nothing new, it only re-centers
+                   on the current position (in case the window changes size). -->
               <button
                 type="button"
                 class="btn btn-xs border border-white/20 bg-white/10 ui-font text-[8px] text-white hover:bg-white/20"
@@ -183,15 +183,15 @@ interface ConfettiPiece {
             </div>
           </div>
 
-          <!-- VIEWPORT CON SCROLL VERTICAL (Ocupa 100% del ancho y alto) -->
+          <!-- VIEWPORT WITH VERTICAL SCROLL (Takes 100% of the width and height) -->
           <div #mapViewport class="map-viewport" (scroll)="onViewportScroll()">
             <!--
-              Wrapper del tamaño YA escalado: es lo que le da al scroll nativo de
-              .map-viewport un scrollHeight/scrollWidth correctos. Adentro, .map-world
-              mantiene su tamaño real (1448 x worldHeight, el mismo en el que están
-              calculadas las curvas del camino) y se agranda con transform:scale()
-              desde la esquina superior izquierda — así el wrapper y el resultado
-              visual escalado miden exactamente lo mismo.
+              Wrapper of the ALREADY scaled size: it is what gives the native scroll of
+              .map-viewport a correct scrollHeight/scrollWidth. Inside, .map-world
+              keeps its real size (1448 x worldHeight, the same one the path
+              curves are calculated in) and grows with transform:scale()
+              from the top-left corner — so the wrapper and the scaled
+              visual result measure exactly the same.
             -->
             <div
               class="map-world-zoom"
@@ -208,9 +208,9 @@ interface ConfettiPiece {
               [style.background-image]="'url(' + world().tile + ')'"
               style="background-repeat: repeat-y; background-size: 100% auto; background-position: center top; image-rendering: pixelated; transform-origin: top left;"
             >
-              <!-- 1. Capa de Terreno y Caminos SVG -->
+              <!-- 1. SVG Terrain and Paths layer -->
               <div class="vertical-terrain">
-                <!-- Caminos Bezier calculados -->
+                <!-- Computed Bezier paths -->
                 <svg
                   class="vertical-road"
                   [attr.viewBox]="'0 0 ' + world().worldWidth + ' ' + world().worldHeight"
@@ -218,22 +218,22 @@ interface ConfettiPiece {
                   shape-rendering="crispEdges"
                   aria-hidden="true"
                 >
-                  <!-- Ramales de bonus y recuperación -->
+                  <!-- Bonus and recovery branches -->
                   @for (br of branchPaths(); track $index) {
                     <path [attr.d]="br" class="support-road-edge" />
                     <path [attr.d]="br" class="support-road" />
                   }
-                  <!-- Camino principal con múltiples capas -->
+                  <!-- Main path with multiple layers -->
                   <path [attr.d]="roadPathD()" class="road-shadow" />
                   <path [attr.d]="roadPathD()" class="road-edge" />
                   <path [attr.d]="roadPathD()" class="road-sand" />
-                  <!-- Tramo final: del último desafío a la base del castillo/casa -->
+                  <!-- Final stretch: from the last challenge to the base of the castle/house -->
                   <path [attr.d]="castleApproachD()" class="road-shadow" />
                   <path [attr.d]="castleApproachD()" class="road-edge" />
                   <path [attr.d]="castleApproachD()" class="road-sand" />
                 </svg>
 
-                <!-- Anillos conectores 16x16 en cada parada y bifurcacion del camino -->
+                <!-- 16x16 connector rings at every stop and fork of the path -->
                 @for (s of roadJoints(); track $index) {
                   <div
                     class="road-joint absolute pointer-events-none"
@@ -247,13 +247,13 @@ interface ConfettiPiece {
 
 
 
-                <!-- Punto de partida START en la base -->
+                <!-- START point at the base -->
                 <div class="vertical-start" [style.top.%]="startTopPercent()">
                   <div class="w-12 h-12 mx-auto mb-1" [innerHTML]="startSignHtml()"></div>
                   <small>Tu aventura empieza aquí</small>
                 </div>
 
-                <!-- Hitos / Sectores en el ascenso -->
+                <!-- Milestones / Sectors on the ascent -->
                 @for (m of milestones(); track m.id) {
                   <div class="ascent-milestone" [style.top.%]="m.y">
                     <span>↑</span> SECTOR {{ m.sector }}
@@ -262,10 +262,10 @@ interface ConfettiPiece {
               </div>
 
               <!--
-                Letreros de soporte para bonus y recuperación: van FUERA de .vertical-terrain
-                (que tiene z-index:1) a propósito — ahí quedaban siempre por detrás de los
-                nodos (z-index:8) sin importar el z-index propio del letrero, y el badge del
-                nodo (".node-sign") tapaba el título ("♥ RECUPERAR VIDA", etc.).
+                Support signs for bonus and recovery: they go OUTSIDE .vertical-terrain
+                (which has z-index:1) on purpose — there they always ended up behind the
+                nodes (z-index:8) regardless of the sign's own z-index, and the node's
+                badge (".node-sign") covered the title ("♥ RECUPERAR VIDA", etc.).
               -->
               @for (c of world().challenges; track c.id) {
                 @if (c.optional) {
@@ -281,12 +281,12 @@ interface ConfettiPiece {
                 }
               }
 
-              <!-- 2. Partículas de polvo de caminata -->
+              <!-- 2. Walking dust particles -->
               @for (p of walkPuffs(); track p.id) {
                 <div class="walk-puff" [style.left.px]="p.x" [style.top.px]="p.y"></div>
               }
 
-              <!-- 3. Nodos de Desafíos Interactivos -->
+              <!-- 3. Interactive Challenge Nodes -->
               @for (c of world().challenges; track c.id) {
                 <div
                   class="map-node"
@@ -301,20 +301,20 @@ interface ConfettiPiece {
                   role="button"
                   tabindex="0"
                 >
-                  <!-- Sombra en suelo para nodos disponibles -->
+                  <!-- Ground shadow for available nodes -->
                   <div class="object-ground"></div>
 
-                  <!-- Invitación flotante animada ("¡GOLPEA!", "¡ABRE!", "¡DESPIERTA!") -->
+                  <!-- Animated floating invitation ("¡GOLPEA!", "¡ABRE!", "¡DESPIERTA!") -->
                   @if (isAvailable(c) && !isCompleted(c)) {
                     <div class="node-invitation">
                       {{ nodeVerbText(c) }}
                     </div>
                   }
 
-                  <!-- Sprite SVG del Nodo -->
+                  <!-- Node SVG sprite -->
                   <div [innerHTML]="nodeSvg(c)" class="w-full"></div>
 
-                  <!-- Placa de número o check -->
+                  <!-- Number plate or check -->
                   <div class="node-sign">
                     @if (isCompleted(c)) {
                       ✓
@@ -329,7 +329,7 @@ interface ConfettiPiece {
                 </div>
               }
 
-              <!-- 4. Avatar del Explorador Caminando -->
+              <!-- 4. Walking Explorer Avatar -->
               <div
                 class="explorer absolute pointer-events-none z-20"
                 [style.left.%]="playerPos().x"
@@ -338,20 +338,20 @@ interface ConfettiPiece {
               >
                 <ui-avatar-sprite
                   [config]="avatarSrv.avatar()"
-                  [alto]="54"
-                  [sombra]="true"
-                  [caminando]="isWalking()"
-                  [celebrando]="celebrating()"
-                  [mirando]="facing()"
+                  [height]="54"
+                  [shadow]="true"
+                  [walking]="isWalking()"
+                  [celebrating]="celebrating()"
+                  [facing]="facing()"
                 />
               </div>
 
-              <!-- 5. Tarjeta de Encuentro Flotante (.encounter) — con el mundo ×ZOOM más
-                   grande, esta tarjeta (position/tamaño heredados de .map-world) también
-                   se agranda ×ZOOM y su texto/botón terminan saliéndose del viewport. La
-                   escala inversa la deja siempre a su tamaño normal, sin importar el zoom
-                   del mapa (su posición no se toca: eso sigue resuelto en layout, antes
-                   de aplicar cualquier transform/scale). -->
+              <!-- 5. Floating Encounter Card (.encounter) — with the world ×ZOOM
+                   larger, this card (position/size inherited from .map-world) also
+                   grows ×ZOOM and its text/button end up leaving the viewport. The
+                   inverse scale keeps it always at its normal size, regardless of the zoom
+                   of the map (its position is not touched: that is still resolved in layout, before
+                   applying any transform/scale). -->
               @if (sel(); as c) {
                 <div
                   class="encounter"
@@ -392,15 +392,15 @@ interface ConfettiPiece {
           </div>
 
           <!--
-            Los modales van DENTRO de #mapPanel (no como hermanos del panel) a propósito:
-            la Fullscreen API solo renderiza el subárbol del elemento fullscreenizado, así
-            que si quedaran afuera, no se verían al completar un desafío en pantalla completa.
+            The modals go INSIDE #mapPanel (not as siblings of the panel) on purpose:
+            the Fullscreen API only renders the subtree of the fullscreened element,
+            so if they were outside, they would not be seen when completing a challenge in fullscreen.
           -->
-          <!-- MODAL DE ACTIVIDAD Y PREGUNTAS (Quiz interactivo) -->
+          <!-- ACTIVITY AND QUESTIONS MODAL (Interactive quiz) -->
       @if (activeChallenge(); as c) {
         <div class="modal modal-open backdrop-blur-md z-50">
           <div class="modal-box max-w-xl border-4 border-primary bg-[#1C1E2B] p-6 text-white shadow-2xl chaflan">
-            <!-- Header Modal -->
+            <!-- Modal Header -->
             <div class="flex items-start justify-between gap-3 border-b-2 border-white/10 pb-3">
               <div>
                 <span class="ui-font text-[8px] text-accent tracking-widest">
@@ -425,26 +425,26 @@ interface ConfettiPiece {
               </button>
             </div>
 
-            <!-- Contenido de la Actividad / Pregunta -->
+            <!-- Activity / Question content -->
             <div class="my-4">
               @if (c.type === 'teoria') {
-                <!-- Nodo de contenido teórico: material embebido (PDF/video/PPT vía link
-                     externo), sin quiz — leer/ver alcanza para continuar. -->
+                <!-- Theory content node: embedded material (PDF/video/PPT via external
+                     link), no quiz — reading/watching is enough to continue. -->
                 <p class="text-sm text-[#E0E2EC] opacity-90 mb-3">{{ c.description }}</p>
                 <div class="rounded-lg overflow-hidden border border-white/10 bg-black/30" style="aspect-ratio: 16/9">
                   <iframe [src]="embedUrl(c)" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
                 </div>
-                <a [href]="c.recursoUrl" target="_blank" rel="noopener" class="link link-primary text-xs mt-2 inline-block">
+                <a [href]="c.resourceUrl" target="_blank" rel="noopener" class="link link-primary text-xs mt-2 inline-block">
                   Abrir en pestaña nueva ↗
                 </a>
               } @else if (!isQuizResolved()) {
                 <p class="text-base text-[#F3EAFF] leading-relaxed mb-4">
-                  {{ currentQuestion(c).pregunta }}
+                  {{ currentQuestion(c).question }}
                 </p>
 
-                <!-- Lista de opciones de respuesta -->
+                <!-- List of answer options -->
                 <div class="flex flex-col gap-2.5" role="group" aria-label="Opciones de respuesta">
-                  @for (opt of currentQuestion(c).opciones; track $index) {
+                  @for (opt of currentQuestion(c).options; track $index) {
                     <button
                       type="button"
                       class="flex items-center justify-between rounded-lg border-2 p-3 text-left transition-all text-sm"
@@ -468,14 +468,14 @@ interface ConfettiPiece {
                   }
                 </div>
 
-                <!-- Feedback en caso de respuesta incorrecta -->
+                <!-- Feedback in case of an incorrect answer -->
                 @if (quizFeedback()) {
                   <div class="alert alert-error mt-4 text-xs ui-font py-2.5">
                     <span>{{ quizFeedback() }}</span>
                   </div>
                 }
               } @else {
-                <!-- Pantalla de Recompensa y Éxito -->
+                <!-- Reward and Success screen -->
                 <div class="flex flex-col items-center py-6 text-center">
                   <div class="text-5xl mb-3 animate-bounce">
                     {{ c.recovery ? '♥' : '🏆' }}
@@ -487,7 +487,7 @@ interface ConfettiPiece {
                     {{ c.id === world().mainCount ? '¡HAS LLEGADO A LA META!' : '¡Excelente trabajo explorador!' }}
                   </h3>
                   <p class="mt-3 text-sm text-[#E0E2EC] max-w-md opacity-90">
-                    {{ currentQuestion(c).explicacion }}
+                    {{ currentQuestion(c).explanation }}
                   </p>
 
                   <div class="mt-5 flex items-center gap-4 rounded-xl border border-primary/40 bg-black/40 px-5 py-2.5">
@@ -503,7 +503,7 @@ interface ConfettiPiece {
               }
             </div>
 
-            <!-- Botones de Acción del Modal -->
+            <!-- Modal action buttons -->
             <div class="modal-action border-t-2 border-white/10 pt-3">
               @if (c.type === 'teoria') {
                 <button
@@ -543,7 +543,7 @@ interface ConfettiPiece {
         </div>
       }
 
-      <!-- CARTEL DE UNIDAD COMPLETADA (al terminar el último desafío principal) -->
+      <!-- SECTION COMPLETED SIGN (on finishing the last main challenge) -->
       @if (showUnitComplete()) {
         <div class="modal modal-open backdrop-blur-md z-50">
           <div class="pointer-events-none absolute inset-0 overflow-hidden">
@@ -570,7 +570,7 @@ interface ConfettiPiece {
             </button>
             <div class="text-6xl mb-3 animate-bounce">🏆</div>
             <span class="ui-font text-[9px] text-accent tracking-widest">¡UNIDAD COMPLETADA!</span>
-            <h2 class="title-font mt-2 text-2xl text-primary">{{ u.nombre }}</h2>
+            <h2 class="title-font mt-2 text-2xl text-primary">{{ u.name }}</h2>
             <p class="mt-3 text-sm text-[#E0E2EC] leading-relaxed opacity-90">
               Superaste los {{ world().mainCount }} desafíos de esta unidad. ¡Excelente trabajo, explorador!
             </p>
@@ -598,7 +598,7 @@ interface ConfettiPiece {
     }
   `,
 })
-export class UnidadMapa {
+export class SectionMap {
   readonly id = input.required<string>();
 
   protected readonly avatarSrv = inject(AvatarService);
@@ -607,81 +607,81 @@ export class UnidadMapa {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly progreso = toSignal(this.data.getProgreso('alu-01', CURSO_SEED_ID));
+  private readonly progress = toSignal(this.data.getProgress('alu-01', COURSE_SEED_ID));
 
   protected readonly mapViewport = viewChild<ElementRef<HTMLDivElement>>('mapViewport');
   protected readonly mapPanel = viewChild<ElementRef<HTMLDivElement>>('mapPanel');
 
-  protected readonly unidad = computed(() => this.store.unidadPorId(this.id()));
+  protected readonly section = computed(() => this.store.sectionById(this.id()));
 
-  // Bioma elegido por el profesor (editor.ts) manda; si no hay o todavía no tiene tema 2D
-  // (ej. "Nether"), cae a la heurística vieja por nombre/orden — cubre unidades creadas
-  // antes de que existiera el campo `bioma`.
+  // Biome chosen by the teacher (editor.ts) takes precedence; if there is none or it does not yet have a 2D theme
+  // (e.g. "Nether"), it falls back to the old heuristic by name/order — covers sections created
+  // before the `biome` field existed.
   protected readonly theme = computed<WorldTheme>(() => {
-    const u = this.unidad();
+    const u = this.section();
     if (!u) return 'desert';
-    if (u.bioma) {
-      const temaDeBioma = BIOMA_A_WORLD_THEME[u.bioma];
-      if (temaDeBioma) return temaDeBioma;
+    if (u.biome) {
+      const themeOfBiome = BIOME_TO_WORLD_THEME[u.biome];
+      if (themeOfBiome) return themeOfBiome;
     }
-    const nombre = u.nombre.toLowerCase();
-    if (nombre.includes('desierto') || nombre.includes('fundamento') || u.orden === 1) return 'desert';
-    if (nombre.includes('selva') || nombre.includes('control') || u.orden === 2) return 'jungle';
-    if (nombre.includes('castillo') || (nombre.includes('funcion') && !nombre.includes('concurrencia')) || u.orden === 3)
+    const name = u.name.toLowerCase();
+    if (name.includes('desierto') || name.includes('fundamento') || u.order === 1) return 'desert';
+    if (name.includes('selva') || name.includes('control') || u.order === 2) return 'jungle';
+    if (name.includes('castillo') || (name.includes('funcion') && !name.includes('concurrencia')) || u.order === 3)
       return 'castle';
     if (
-      nombre.includes('nieve') ||
-      nombre.includes('montaña') ||
-      nombre.includes('taiga') ||
-      nombre.includes('estructura de datos') ||
-      u.orden === 4
+      name.includes('nieve') ||
+      name.includes('montaña') ||
+      name.includes('taiga') ||
+      name.includes('estructura de datos') ||
+      u.order === 4
     )
       return 'snow';
     if (
-      nombre.includes('nether') ||
-      nombre.includes('lava') ||
-      nombre.includes('concurrencia') ||
-      nombre.includes('redes') ||
-      u.orden === 5
+      name.includes('nether') ||
+      name.includes('lava') ||
+      name.includes('concurrencia') ||
+      name.includes('redes') ||
+      u.order === 5
     )
       return 'nether';
-    if (nombre.includes('espacio') || nombre.includes('orbital') || nombre.includes('planeta')) return 'space';
-    return (['desert', 'jungle', 'castle', 'snow', 'nether', 'space'] as const)[(u.orden - 1) % 6];
+    if (name.includes('espacio') || name.includes('orbital') || name.includes('planeta')) return 'space';
+    return (['desert', 'jungle', 'castle', 'snow', 'nether', 'space'] as const)[(u.order - 1) % 6];
   });
 
-  // Lista de desafíos y generación del mundo vertical
+  // Challenge list and vertical world generation
   protected readonly world = computed<GeneratedWorld>(() => {
-    const u = this.unidad();
+    const u = this.section();
     const currentTheme = this.theme();
-    // El camino principal tiene que ser exactamente el contenido que cargó el profesor —
-    // nada de rellenar con "Desafío 3", "Desafío 4" fantasma hasta un mínimo arbitrario.
-    const count = u ? u.actividades.length : 6;
+    // The main path has to be exactly the content the teacher loaded —
+    // no padding with ghost "Challenge 3", "Challenge 4" up to an arbitrary minimum.
+    const count = u ? u.activities.length : 6;
 
     const baseChallenges: VerticalChallenge[] = Array.from({ length: count }, (_, i) => {
-      const act = u?.actividades[i];
+      const act = u?.activities[i];
       return {
         id: i + 1,
-        actividadId: act?.id,
-        title: act?.nombre || `Desafío ${i + 1}`,
-        type: act?.tipo || 'Práctico',
-        difficulty: act?.dificultad || 'Inicial',
+        activityId: act?.id,
+        title: act?.name || `Desafío ${i + 1}`,
+        type: act?.type || 'Práctico',
+        difficulty: act?.difficulty || 'Inicial',
         minutes: 8,
-        // El XP real que carga el profesor (PAR-01, XP_POR_DIFICULTAD) — antes era un
-        // valor inventado por posición (100 + i*25) que no coincidía con la dificultad
-        // asignada. 'hito' no tiene dificultad: recompensa fija. 'teoria' no se evalúa:
-        // no otorga XP.
-        xp: act?.tipo === 'teoria' ? 0 : act?.dificultad ? XP_POR_DIFICULTAD[act.dificultad] : 50,
-        // Si el profesor no escribió descripción, la misma que se le sugiere como
-        // placeholder en el editor (ver descripcionPorDefecto en roadmap.models.ts).
-        description: act?.descripcion || descripcionPorDefecto(act?.tipo ?? 'desafio-practico'),
-        recursoUrl: act?.recursoUrl,
-        recursoTipo: act?.recursoTipo,
+        // The real XP the teacher loads (PAR-01, XP_BY_DIFFICULTY) — it used to be a
+        // value made up by position (100 + i*25) that did not match the assigned
+        // difficulty. 'hito' has no difficulty: fixed reward. 'teoria' is not evaluated:
+        // it grants no XP.
+        xp: act?.type === 'teoria' ? 0 : act?.difficulty ? XP_BY_DIFFICULTY[act.difficulty] : 50,
+        // If the teacher did not write a description, the same one suggested to them as a
+        // placeholder in the editor (see defaultDescription in roadmap.models.ts).
+        description: act?.description || defaultDescription(act?.type ?? 'desafio-practico'),
+        resourceUrl: act?.resourceUrl,
+        resourceType: act?.resourceType,
         x: 50,
         y: 50,
       };
     });
 
-    // Añade desafíos opcionales (Bonus y Recuperación)
+    // Adds optional challenges (Bonus and Recovery)
     baseChallenges.push(
       {
         id: count + 1,
@@ -722,13 +722,13 @@ export class UnidadMapa {
     return generateVerticalWorld(currentTheme, baseChallenges);
   });
 
-  // Sincronización de progreso y estados con RoadmapStore
+  // Progress and state synchronization with RoadmapStore
   protected readonly completedIds = signal<number[]>([]);
-  protected readonly localVidas = signal<number>(3);
+  protected readonly localLives = signal<number>(3);
 
-  protected readonly vidas = computed(() => this.store.progreso()?.vidasVigentes ?? this.localVidas());
+  protected readonly lives = computed(() => this.store.progress()?.currentLives ?? this.localLives());
 
-  // Posicionamiento e interacción
+  // Positioning and interaction
   protected readonly sel = signal<VerticalChallenge | null>(null);
   protected readonly activeChallenge = signal<VerticalChallenge | null>(null);
   protected readonly selectedAnswer = signal<number | null>(null);
@@ -737,23 +737,23 @@ export class UnidadMapa {
   protected readonly soundEnabled = signal<boolean>(true);
   protected readonly isExpanded = signal<boolean>(false);
 
-  // Cámara: el mundo se renderiza a su tamaño real (1448×worldHeight) y se escala
-  // con CSS transform (no cambiando el layout) — así los nodos, que ya topan contra
-  // su `max-width` en CSS, también se ven más grandes en vez de solo separarse más.
+  // Camera: the world is rendered at its real size (1448×worldHeight) and scaled
+  // with a CSS transform (not by changing the layout) — this way the nodes, which already hit
+  // their `max-width` in CSS, also look bigger instead of just spreading further apart.
   protected readonly ZOOM = 1.6;
 
-  // Caminata del Avatar
+  // Avatar walk
   protected readonly playerPos = signal<{ x: number; y: number }>({ x: 50, y: 90.5 });
   protected readonly isWalking = signal<boolean>(false);
   protected readonly facing = signal<'derecha' | 'izquierda'>('derecha');
   protected readonly walkPuffs = signal<WalkPuff[]>([]);
-  // Id del stop del camino principal (0..mainCount) donde está parado lógicamente el avatar
+  // Id of the main path stop (0..mainCount) where the avatar is logically standing
   private readonly currentStopId = signal<number>(0);
-  // Id del desafío opcional (bonus/recuperación) en el que está el avatar; null = en el camino principal
+  // Id of the optional challenge (bonus/recovery) the avatar is at; null = on the main path
   private readonly visitingOptionalId = signal<number | null>(null);
   private walkAnimId = 0;
 
-  // Cierre de unidad (al completar el último desafío principal)
+  // Section closing (on completing the last main challenge)
   protected readonly celebrating = signal<boolean>(false);
   protected readonly showUnitComplete = signal<boolean>(false);
   protected readonly confettiPieces = signal<ConfettiPiece[]>([]);
@@ -768,28 +768,28 @@ export class UnidadMapa {
   });
 
   constructor() {
-    // Refleja en el estado local los desafíos que ya figuran completados en el progreso
-    // persistido — sin esto, `completedIds` arrancaba vacío en cada visita y reentrar a
-    // una unidad ya terminada mostraba todo bloqueado de nuevo.
+    // Reflects in the local state the challenges already completed in the persisted
+    // progress — without this, `completedIds` started empty on every visit and re-entering
+    // an already finished section showed everything locked again.
     effect(() => {
       const w = this.world();
-      const p = this.store.progreso();
-      const completos = new Set(
-        (p?.nodos ?? []).filter((n) => n.estado === 'completado').map((n) => n.nodoId),
+      const p = this.store.progress();
+      const complete = new Set(
+        (p?.nodes ?? []).filter((n) => n.status === 'completado').map((n) => n.nodeId),
       );
-      const idsPersistidos = w.challenges
-        .filter((c) => c.actividadId && completos.has(c.actividadId))
+      const persistedIds = w.challenges
+        .filter((c) => c.activityId && complete.has(c.activityId))
         .map((c) => c.id);
-      const actuales = untracked(() => this.completedIds());
-      const faltantes = idsPersistidos.filter((id) => !actuales.includes(id));
-      if (faltantes.length > 0) this.completedIds.set([...actuales, ...faltantes]);
+      const current = untracked(() => this.completedIds());
+      const missing = persistedIds.filter((id) => !current.includes(id));
+      if (missing.length > 0) this.completedIds.set([...current, ...missing]);
     });
 
-    // Al cargar o cambiar de unidad, posiciona instantáneamente al jugador en el ÚLTIMO
-    // desafío principal completado (o en el inicio si no completó ninguno) — nunca en el
-    // próximo por resolver: ese tramo lo tiene que caminar el propio jugador al tocarlo.
-    // `completedIds` se lee sin trackear para que completar un desafío no vuelva a disparar
-    // este salto instantáneo: ese caso lo anima `advanceToNext`.
+    // On loading or changing section, instantly places the player at the LAST completed
+    // main challenge (or at the start if none was completed) — never at the
+    // next one to solve: that stretch has to be walked by the player when tapping it.
+    // `completedIds` is read untracked so that completing a challenge does not trigger
+    // this instant jump again: that case is animated by `advanceToNext`.
     effect(() => {
       const w = this.world();
       const comp = untracked(() => this.completedIds());
@@ -804,7 +804,7 @@ export class UnidadMapa {
       this.visitingOptionalId.set(null);
     });
 
-    // Centra la cámara automáticamente en la posición del personaje al entrar
+    // Automatically centers the camera on the character's position on entering
     afterNextRender(() => {
       setTimeout(() => this.scrollToPlayer(), 200);
     });
@@ -815,7 +815,7 @@ export class UnidadMapa {
     });
   }
 
-  // Rutas SVG calculadas
+  // Computed SVG routes
   protected readonly roadPathD = computed(() => {
     const w = this.world();
     const points = w.roads.slice(1).flatMap((road, i) => (i ? road.slice(1) : road));
@@ -842,10 +842,10 @@ export class UnidadMapa {
   });
 
   /**
-   * Tramo final del camino, del último desafío principal a la base del castillo/casa: sin
-   * esto el sendero terminaba en el último nodo y la meta quedaba flotando, desconectada.
-   * `.vertical-castle` mide 17.5% del ancho del mundo con aspect-ratio 240:200 (ver
-   * styles.css); 0.92 aproxima dónde el dibujo pixelado toca el suelo dentro de ese alto.
+   * Final stretch of the path, from the last main challenge to the base of the castle/house: without
+   * it the trail ended at the last node and the goal floated, disconnected.
+   * `.vertical-castle` measures 17.5% of the world's width with aspect-ratio 240:200 (see
+   * styles.css); 0.92 approximates where the pixelated drawing touches the ground within that height.
    */
   protected readonly castleApproachD = computed(() => {
     const w = this.world();
@@ -884,7 +884,7 @@ export class UnidadMapa {
     }));
   });
 
-  // Helpers de Estado
+  // State helpers
   protected isCompleted(c: VerticalChallenge): boolean {
     return this.completedIds().includes(c.id);
   }
@@ -893,7 +893,7 @@ export class UnidadMapa {
     if (this.isCompleted(c)) return true;
     if (c.recovery) return true;
     if (c.optional) return this.completedIds().length >= 2;
-    // Secuencial: disponible si es el primer nodo o el anterior está completado
+    // Sequential: available if it is the first node or the previous one is completed
     return c.id === 1 || this.completedIds().includes(c.id - 1);
   }
 
@@ -902,15 +902,15 @@ export class UnidadMapa {
   }
 
   /**
-   * Solo el desafío principal inmediatamente siguiente al que camina el avatar dispara una
-   * caminata — igual que el prototipo de referencia (`awaitingWalk`/`walkingNext`): al resto
-   * de los nodos (completados, bonus, recuperación) se entra directo, sin desplazar al avatar.
+   * Only the main challenge immediately after the one the avatar is at triggers a
+   * walk — same as the reference prototype (`awaitingWalk`/`walkingNext`): the rest
+   * of the nodes (completed, bonus, recovery) are entered directly, without moving the avatar.
    */
   protected isWalkingNext(c: VerticalChallenge): boolean {
     return !c.optional && c.id === this.currentStopId() + 1 && this.isAvailable(c);
   }
 
-  /** Los desafíos opcionales (bonus/recuperación) también se caminan, siguiendo su ramal. */
+  /** Optional challenges (bonus/recovery) are also walked to, following their branch. */
   protected needsWalkToOptional(c: VerticalChallenge): boolean {
     return !!c.optional && this.isAvailable(c) && this.visitingOptionalId() !== c.id;
   }
@@ -920,7 +920,7 @@ export class UnidadMapa {
     return nodeVerb(this.theme(), status);
   }
 
-  // Renderizadores SVG Sanitizados
+  // Sanitized SVG Renderers
   protected roadJointHtml(): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(roadJointSvg(this.theme()));
   }
@@ -934,13 +934,13 @@ export class UnidadMapa {
     return this.sanitizer.bypassSecurityTrustHtml(nodeArt(this.theme(), c, status, this.world().mainCount));
   }
 
-  // Interacción y Caminata
+  // Interaction and Walking
   /**
-   * Tocar un nodo solo abre su tarjeta de encuentro — el avatar nunca se mueve por
-   * esto. Sí re-centra la cámara en el avatar (con zoom, la tarjeta de un nodo lejos
-   * del centro puede quedar cortada contra el borde del viewport) — y de paso deja la
-   * vista exactamente donde arrancará el primer frame de la caminata si tocan
-   * "caminar hasta aquí", así no hay un salto brusco antes de empezar a moverse.
+   * Tapping a node only opens its encounter card — the avatar never moves because of
+   * this. It does re-center the camera on the avatar (with zoom, the card of a node far
+   * from the center may end up cut off against the viewport edge) — and along the way leaves the
+   * view exactly where the first frame of the walk will start if they tap
+   * "walk here", so there is no abrupt jump before it starts moving.
    */
   protected onNodeClick(c: VerticalChallenge): void {
     if (this.isWalking()) return;
@@ -948,7 +948,7 @@ export class UnidadMapa {
     this.scrollToPlayer();
   }
 
-  /** Acción de la tarjeta de encuentro: caminar (si hace falta) o entrar directo. */
+  /** Encounter card action: walk (if needed) or enter directly. */
   protected onEncounterAction(c: VerticalChallenge): void {
     if (this.isLocked(c) || this.isWalking()) return;
     if (this.isWalkingNext(c)) {
@@ -959,9 +959,9 @@ export class UnidadMapa {
       this.walkToOptional(c);
       return;
     }
-    // "Repasar actividad" de un desafío principal ya completado y anterior al que
-    // camina el avatar (el inmediato siguiente ya lo cubre `isWalkingNext` arriba):
-    // también camina hasta ahí antes de abrirlo, en vez de abrir la tarjeta en seco.
+    // "Review activity" of a main challenge already completed and before the one
+    // the avatar walks to (the immediate next one is already covered by `isWalkingNext` above):
+    // it also walks there before opening it, instead of opening the card abruptly.
     if (!c.optional && c.id !== this.currentStopId()) {
       this.walkToCompleted(c);
       return;
@@ -970,9 +970,9 @@ export class UnidadMapa {
   }
 
   /**
-   * Camina por el tramo curvo real del camino (no en línea recta) desde la posición actual
-   * hasta el próximo desafío principal, a velocidad constante — igual que `advanceExplorer`
-   * en el prototipo de referencia. Al llegar, reabre la tarjeta ya con la acción actualizada.
+   * Walks along the real curved stretch of the path (not in a straight line) from the current position
+   * to the next main challenge, at constant speed — same as `advanceExplorer`
+   * in the reference prototype. On arrival, it reopens the card with the updated action.
    */
   private walkToNext(target: VerticalChallenge): void {
     this.sel.set(null);
@@ -984,10 +984,10 @@ export class UnidadMapa {
   }
 
   /**
-   * "Repasar actividad" de un desafío principal viejo (ya completado, distinto de donde
-   * está parado el avatar): camina por el tramo real del camino —hacia adelante o atrás,
-   * concatenando las curvas de `roads` que hagan falta, igual que `mainRoadToBranchPoint`
-   * para los ramales— en vez de entrar directo a la tarjeta.
+   * "Review activity" of an old main challenge (already completed, different from where
+   * the avatar is standing): walks along the real stretch of the path — forward or backward,
+   * concatenating the `roads` curves needed, same as `mainRoadToBranchPoint`
+   * does for the branches — instead of going straight to the card.
    */
   private walkToCompleted(target: VerticalChallenge): void {
     this.sel.set(null);
@@ -998,7 +998,7 @@ export class UnidadMapa {
     });
   }
 
-  /** Tramo del camino principal (curvas reales, no en línea recta) entre `currentStopId` y `targetId`, en cualquier sentido. */
+  /** Stretch of the main path (real curves, not a straight line) between `currentStopId` and `targetId`, in either direction. */
   private mainRoadTo(targetId: number): [number, number][] {
     const w = this.world();
     const from = this.currentStopId();
@@ -1015,11 +1015,11 @@ export class UnidadMapa {
   }
 
   /**
-   * Camina hasta un desafío opcional (bonus/recuperación): primero sigue la curva real del
-   * camino principal hasta el punto de bifurcación y después la curva real del ramal — las
-   * mismas que se dibujan en el SVG — en vez de cortar en línea recta a través del mapa. Al
-   * llegar, abre la actividad directamente (no hace falta un segundo toque, como sí ocurre en
-   * el camino principal).
+   * Walks to an optional challenge (bonus/recovery): first follows the real curve of the
+   * main path up to the fork point and then the real curve of the branch — the
+   * same ones drawn in the SVG — instead of cutting in a straight line across the map. On
+   * arrival, it opens the activity directly (no second tap is needed, unlike what happens on
+   * the main path).
    */
   private walkToOptional(target: VerticalChallenge): void {
     this.sel.set(null);
@@ -1030,7 +1030,7 @@ export class UnidadMapa {
     });
   }
 
-  /** Al salir de un desafío opcional, camina de vuelta al camino principal por el mismo ramal. */
+  /** On leaving an optional challenge, walks back to the main path along the same branch. */
   private walkBackToPath(): void {
     const optionalId = this.visitingOptionalId();
     if (optionalId === null) return;
@@ -1042,10 +1042,10 @@ export class UnidadMapa {
   }
 
   /**
-   * Puntos reales (no en línea recta) desde la posición actual del avatar hasta un desafío
-   * opcional: el tramo del camino principal que lleva a su punto de bifurcación (`branchFrom`,
-   * en `roads[branchStopId][17]`) seguido de la curva Bezier del propio ramal — la misma curva
-   * que dibuja `branchPaths()` en el SVG.
+   * Real points (not a straight line) from the avatar's current position to an optional
+   * challenge: the stretch of the main path leading to its fork point (`branchFrom`,
+   * in `roads[branchStopId][17]`) followed by the Bezier curve of the branch itself — the same curve
+   * that `branchPaths()` draws in the SVG.
    */
   private routeToBranch(target: VerticalChallenge): [number, number][] {
     if (!target.branchFrom || target.branchStopId === undefined) {
@@ -1057,10 +1057,10 @@ export class UnidadMapa {
   }
 
   /**
-   * Tramo del camino principal (siguiendo las curvas de `roads`, no los stops en línea recta)
-   * desde el stop donde está parado el avatar hasta el punto de bifurcación
-   * `roads[branchStopId][17]`, en cualquier sentido (el desafío opcional puede quedar por
-   * delante o por detrás de dónde está el jugador).
+   * Stretch of the main path (following the `roads` curves, not the stops in a straight line)
+   * from the stop where the avatar is standing to the fork point
+   * `roads[branchStopId][17]`, in either direction (the optional challenge may be
+   * ahead of or behind where the player is).
    */
   private mainRoadToBranchPoint(branchStopId: number): [number, number][] {
     const w = this.world();
@@ -1080,13 +1080,13 @@ export class UnidadMapa {
     return points;
   }
 
-  /** Muestrea el tramo en escuadra del ramal (misma geometría que dibuja `branchPaths()`). */
+  /** Samples the branch's square-cornered stretch (same geometry that `branchPaths()` draws). */
   private branchCurvePoints(target: VerticalChallenge, steps = 17): [number, number][] {
     const w = this.world();
     return orthogonalRoute(target.branchFrom!, [target.x, target.y], w.worldWidth, w.worldHeight, steps);
   }
 
-  /** Camina por el tramo curvo real hasta el próximo desafío, sin reabrir ninguna tarjeta. */
+  /** Walks along the real curved stretch to the next challenge, without reopening any card. */
   private advanceToNext(): void {
     const w = this.world();
     const nextId = w.challenges.find((c) => !c.optional && !this.completedIds().includes(c.id))?.id ?? w.mainCount;
@@ -1098,10 +1098,10 @@ export class UnidadMapa {
   }
 
   /**
-   * Anima al avatar a lo largo de un tramo del camino (33 puntos de la curva Bezier) a
-   * velocidad de suelo constante, igual que el prototipo de referencia: cada tramo dura lo
-   * que tarde en recorrerse a ~120 unidades/seg, con un piso de 1200ms para que incluso un
-   * tramo corto se sienta como una caminata y no como un salto.
+   * Animates the avatar along a stretch of the path (33 points of the Bezier curve) at a
+   * constant ground speed, same as the reference prototype: each stretch lasts
+   * as long as it takes to cover at ~120 units/sec, with a floor of 1200ms so that even a
+   * short stretch feels like a walk and not like a jump.
    */
   private walkAlongRoad(segment: [number, number][], onArrive?: () => void): void {
     if (this.walkAnimId) cancelAnimationFrame(this.walkAnimId);
@@ -1134,9 +1134,9 @@ export class UnidadMapa {
       const dx = clampedX - this.playerPos().x;
       if (Math.abs(dx) > 0.001) this.facing.set(dx < 0 ? 'izquierda' : 'derecha');
       this.playerPos.set({ x: clampedX, y: clampedY });
-      // Cámara pegada al jugador durante la caminata: el mundo se desplaza para
-      // mantenerlo centrado, en vez de que el avatar recorra un viewport fijo y
-      // haya que scrollear a mano después para volver a encontrarlo.
+      // Camera glued to the player during the walk: the world moves to
+      // keep them centered, instead of the avatar crossing a fixed viewport and
+      // having to scroll by hand afterwards to find them again.
       this.followPlayerScroll(clampedX, clampedY);
 
       if (elapsed - lastFootstep > 180) {
@@ -1155,7 +1155,7 @@ export class UnidadMapa {
     this.walkAnimId = requestAnimationFrame(step);
   }
 
-  // Desafíos y Actividad Interactiva
+  // Challenges and Interactive Activity
   protected openActivity(c: VerticalChallenge): void {
     this.sel.set(null);
     this.selectedAnswer.set(null);
@@ -1167,24 +1167,24 @@ export class UnidadMapa {
   protected closeActivity(): void {
     const wasOptional = this.activeChallenge()?.optional;
     this.activeChallenge.set(null);
-    // Al salir de un bonus/recuperación, el avatar vuelve caminando al camino principal.
+    // On leaving a bonus/recovery, the avatar walks back to the main path.
     if (wasOptional) this.walkBackToPath();
   }
 
   protected currentQuestion(c: VerticalChallenge): QuestionData {
     return (
       this.world().questions[c.id] ?? {
-        pregunta: '¿Cuál es el propósito principal de esta actividad?',
-        opciones: ['Aprender y validar los conceptos', 'Saltar al final sin responder', 'Ninguna de las anteriores'],
-        correcta: 0,
-        explicacion: '¡Excelente! Resolver las actividades te permite progresar y subir de nivel.',
+        question: '¿Cuál es el propósito principal de esta actividad?',
+        options: ['Aprender y validar los conceptos', 'Saltar al final sin responder', 'Ninguna de las anteriores'],
+        correct: 0,
+        explanation: '¡Excelente! Resolver las actividades te permite progresar y subir de nivel.',
       }
     );
   }
 
-  /** URL embebible del material de un nodo 'teoria' (ver recurso-embed.util.ts). */
+  /** Embeddable URL of the material of a 'teoria' node (see resource-embed.util.ts). */
   protected embedUrl(c: VerticalChallenge): SafeResourceUrl {
-    const url = toEmbedUrl(c.recursoTipo ?? 'pdf', c.recursoUrl ?? '');
+    const url = toEmbedUrl(c.resourceType ?? 'pdf', c.resourceUrl ?? '');
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
@@ -1193,19 +1193,19 @@ export class UnidadMapa {
     if (ans === null) return;
     const q = this.currentQuestion(c);
 
-    if (ans === q.correcta) {
+    if (ans === q.correct) {
       this.isQuizResolved.set(true);
       this.quizFeedback.set(null);
       this.playAudioTone(true);
     } else {
       this.playAudioTone(false);
-      // Descuenta una vida si no es modo repaso ni recuperación
+      // Deduct a life if it is not review mode nor recovery
       if (!this.isCompleted(c) && !c.recovery) {
-        this.localVidas.update((v) => Math.max(0, v - 1));
-        this.store.sumarProgreso(0, undefined, this.localVidas());
+        this.localLives.update((v) => Math.max(0, v - 1));
+        this.store.addProgress(0, undefined, this.localLives());
       }
       this.quizFeedback.set(
-        this.vidas() === 0 && !c.recovery
+        this.lives() === 0 && !c.recovery
           ? '¡Te has quedado sin vidas! Ve al nodo de recuperación para recargar tus corazones.'
           : 'Respuesta incorrecta. Revisa la consigna y vuelve a intentarlo.',
       );
@@ -1215,26 +1215,26 @@ export class UnidadMapa {
   protected onCompleteActivity(c: VerticalChallenge): void {
     const wasAlreadyCompleted = this.isCompleted(c);
     if (c.type === 'teoria' && !wasAlreadyCompleted) {
-      this.store.marcarContenidoLeido(c.actividadId ?? '', () => this.finalizarActividad(c));
+      this.store.markContentRead(c.activityId ?? '', () => this.finishActivity(c));
       return;
     }
-    this.finalizarActividad(c);
+    this.finishActivity(c);
   }
 
-  private finalizarActividad(c: VerticalChallenge): void {
+  private finishActivity(c: VerticalChallenge): void {
     const wasAlreadyCompleted = this.isCompleted(c);
     if (!wasAlreadyCompleted) {
       this.completedIds.update((ids) => [...ids, c.id]);
-      if (c.type !== 'teoria') this.store.sumarProgreso(c.xp, c.actividadId, this.localVidas());
+      if (c.type !== 'teoria') this.store.addProgress(c.xp, c.activityId, this.localLives());
     }
     if (c.recovery) {
-      this.localVidas.set(3);
-      this.store.sumarProgreso(0, undefined, 3);
+      this.localLives.set(3);
+      this.store.addProgress(0, undefined, 3);
     }
     this.closeActivity();
 
-    // Recién ahora (al cerrar/continuar) se anima el recorrido hacia el próximo desafío,
-    // para que el avatar no "salte" mientras el modal de la actividad seguía abierto.
+    // Only now (on closing/continuing) is the journey to the next challenge animated,
+    // so the avatar does not "jump" while the activity modal was still open.
     if (!wasAlreadyCompleted && !c.optional) {
       if (c.id === this.world().mainCount) {
         this.celebrateUnitComplete();
@@ -1244,7 +1244,7 @@ export class UnidadMapa {
     }
   }
 
-  /** Salto de alegría + fanfarria + cartel "Unidad completada", al terminar el último desafío. */
+  /** Joy jump + fanfare + "Unidad completada" sign, on finishing the last challenge. */
   private celebrateUnitComplete(): void {
     this.sel.set(null);
     this.confettiPieces.set(this.buildConfetti());
@@ -1252,8 +1252,8 @@ export class UnidadMapa {
     this.playVictoryFanfare();
 
     if (this.celebrateTimeoutId) clearTimeout(this.celebrateTimeoutId);
-    // Deja terminar los 4 saltos (4 × 0.75s, ver .celebrando en avatar-sprite.ts) antes de
-    // tapar la escena con el cartel.
+    // Lets the 4 jumps finish (4 × 0.75s, see .celebrando in avatar-sprite.ts) before
+    // covering the scene with the sign.
     this.celebrateTimeoutId = window.setTimeout(() => {
       this.showUnitComplete.set(true);
       this.celebrating.set(false);
@@ -1272,7 +1272,7 @@ export class UnidadMapa {
     }));
   }
 
-  // Navegación de Cámara
+  // Camera Navigation
   protected scrollToPlayer(): void {
     const el = this.mapViewport()?.nativeElement;
     if (!el) return;
@@ -1286,10 +1286,10 @@ export class UnidadMapa {
   }
 
   /**
-   * Igual que `scrollToPlayer` pero sin animación CSS propia — se llama una vez por
-   * frame desde el loop de `walkAlongRoad` (ya animado a mano con RAF), así que fijar
-   * `scrollTop`/`scrollLeft` directo evita que compita con un `scrollTo({ behavior:
-   * 'smooth' })` propio del navegador y se sienta como dos cámaras peleando.
+   * Same as `scrollToPlayer` but without its own CSS animation — it is called once per
+   * frame from the `walkAlongRoad` loop (already hand-animated with RAF), so setting
+   * `scrollTop`/`scrollLeft` directly keeps it from competing with the browser's own
+   * `scrollTo({ behavior: 'smooth' })` and feeling like two cameras fighting.
    */
   private followPlayerScroll(xPercent: number, yPercent: number): void {
     const el = this.mapViewport()?.nativeElement;
@@ -1300,16 +1300,16 @@ export class UnidadMapa {
   }
 
   /**
-   * El scroll vertical queda libre (rueda/touch/teclado) para repasar cualquier tramo
-   * YA desbloqueado/superado, pero no más allá: recorta `scrollTop` para que nunca se
-   * pueda ver, arriba del todo, una parte del mundo posterior al próximo desafío
-   * disponible.
+   * Vertical scroll stays free (wheel/touch/keyboard) to review any stretch
+   * ALREADY unlocked/passed, but no further: it clips `scrollTop` so that you can never
+   * see, at the very top, a part of the world beyond the next available
+   * challenge.
    *
-   * Importante: el límite se calcula con `completedIds` (lo que el alumno RESOLVIÓ de
-   * verdad), no con `currentStopId` — ese solo marca dónde quedó PARADO el avatar, y
-   * "caminar hasta aquí" ya lo mueve al próximo nodo disponible antes de resolverlo.
-   * Si el límite usara `currentStopId`, apenas caminabas hasta el desafío 2 (sin
-   * completarlo todavía) ya se podía ver/scrollear hasta el 3, que sigue bloqueado.
+   * Important: the limit is calculated with `completedIds` (what the student really
+   * SOLVED), not with `currentStopId` — that one only marks where the avatar is STANDING, and
+   * "walk here" already moves it to the next available node before it is solved.
+   * If the limit used `currentStopId`, as soon as you walked to challenge 2 (without
+   * completing it yet) you could already see/scroll up to 3, which is still locked.
    */
   protected onViewportScroll(): void {
     const el = this.mapViewport()?.nativeElement;
@@ -1335,7 +1335,7 @@ export class UnidadMapa {
     }
   }
 
-  // Efectos de Sonido Web Audio
+  // Web Audio Sound Effects
   private playAudioTone(success: boolean): void {
     if (!this.soundEnabled()) return;
     try {
@@ -1368,7 +1368,7 @@ export class UnidadMapa {
     } catch {}
   }
 
-  /** Fanfarria de "unidad completada": arpegio ascendente más largo que el de un desafío suelto. */
+  /** "Section completed" fanfare: ascending arpeggio longer than that of a single challenge. */
   private playVictoryFanfare(): void {
     if (!this.soundEnabled()) return;
     try {
@@ -1401,7 +1401,7 @@ interface Route {
   distance: number;
 }
 
-/** Mide un tramo del camino (en % del mundo) en unidades reales, usando el ancho/alto real. */
+/** Measures a stretch of the path (in % of the world) in real units, using the real width/height. */
 function measureRoute(points: [number, number][], width: number, height: number): Route {
   const lengths = points
     .slice(1)
@@ -1409,7 +1409,7 @@ function measureRoute(points: [number, number][], width: number, height: number)
   return { points, lengths, distance: lengths.reduce((sum, n) => sum + n, 0) };
 }
 
-/** Punto del tramo a una fracción [0,1] del recorrido, interpolando entre los puntos de la curva. */
+/** Point of the stretch at a fraction [0,1] of the journey, interpolating between the curve's points. */
 function pointOnRoute(route: Route, fraction: number): [number, number] {
   let distance = Math.max(0, Math.min(1, fraction)) * route.distance;
   for (let i = 0; i < route.lengths.length; i++) {

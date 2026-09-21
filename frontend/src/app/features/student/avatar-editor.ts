@@ -2,46 +2,46 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
-  ACCESORIOS,
-  ANTEOJOS,
-  anteojosVisibles,
+  ACCESSORIES,
+  GLASSES,
+  visibleGlasses,
   AvatarConfig,
-  BARBAS,
-  COLORES_MARCA,
-  COLORES_PELO_NATURALES,
-  COLORES_ROPA,
-  EMBLEMAS,
-  emblemaVisible,
-  GENEROS,
-  OBJETOS,
-  PELOS,
-  PIELES,
-  PRENDAS,
+  BEARDS,
+  MARK_COLORS,
+  NATURAL_HAIR_COLORS,
+  CLOTHES_COLORS,
+  EMBLEMS,
+  emblemVisible,
+  GENDERS,
+  OBJECTS,
+  HAIRSTYLES,
+  SKINS,
+  GARMENTS,
 } from '../../core/avatar/avatar.models';
 import { AvatarService } from '../../core/avatar/avatar.service';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 
-type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
+type Tab = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
 
 /**
- * Personalización del avatar. Todo cambio se aplica en vivo sobre el preview y se guarda
- * solo (`AvatarService` persiste en cada `set`): no hay botón "guardar" porque no hay nada
- * que se pueda perder — es la misma decisión que el toggle de tema.
+ * Avatar customization. Every change is applied live on the preview and saved
+ * automatically (`AvatarService` persists on every `set`): there is no "save" button because there is nothing
+ * that can be lost — it is the same decision as the theme toggle.
  *
- * Las partes se reparten en cuatro pestañas para que la vitrina quede siempre a la vista
- * mientras se elige. La pestaña activa no se persiste: al volver se arranca por CUERPO.
+ * The parts are split into four tabs so the showcase always stays in view
+ * while choosing. The active tab is not persisted: when coming back it starts at CUERPO.
  */
 @Component({
   selector: 'app-avatar-editor',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AvatarSprite, RouterLink, NgTemplateOutlet],
-  // El shell raíz (app.html) recorta el <router-outlet> a un cuadro fijo sin scroll (pensado
-  // para el mapa arcade del alumno) — esta vista puede ser más alta que la pantalla (barba
-  // en CUERPO), así que scrollea puertas adentro en vez de depender del documento.
+  // The root shell (app.html) clips the <router-outlet> to a fixed frame without scroll (designed
+  // for the student's arcade map) — this view may be taller than the screen (beard
+  // in CUERPO), so it scrolls internally instead of relying on the document.
   host: { class: 'block w-full max-w-6xl h-full overflow-y-auto' },
   styles: `
-    /* La muestra elegida se marca con un doble anillo, no solo con el color del borde:
-       sobre swatches oscuros un borde de 2 px es indistinguible del no-seleccionado. */
+    /* The chosen swatch is marked with a double ring, not just with the border color:
+       over dark swatches a 2 px border is indistinguishable from the unselected one. */
     .swatch {
       border: 2px solid var(--color-base-300);
       transition:
@@ -62,7 +62,7 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
       outline: 2px solid #f3eaff;
       outline-offset: 3px;
     }
-    /* Los emblemas se eligen por su glifo: en la pixel font de UI "</>" y "{}" no se leen. */
+    /* Emblems are chosen by their glyph: in the UI pixel font "</>" and "{}" are not legible. */
     .glifo {
       font-family: var(--font-console);
       font-size: 18px;
@@ -76,15 +76,15 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
     </div>
 
     <div class="grid gap-6 lg:grid-cols-[440px_1fr]">
-      <!-- vitrina del avatar: queda fija mientras se recorren las pestañas -->
+      <!-- avatar showcase: stays fixed while browsing the tabs -->
       <div
         class="escena-neon chaflan flex flex-col items-center gap-4 border-2 border-primary p-6 lg:sticky lg:top-4 lg:self-start"
       >
         <div class="grid h-96 w-full place-items-center">
           <ui-avatar-sprite
             [config]="srv.avatar()"
-            [alto]="340"
-            [sombra]="true"
+            [height]="340"
+            [shadow]="true"
             etiqueta="Vista previa de tu avatar"
           />
         </div>
@@ -92,10 +92,10 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
           ASÍ TE VAS A VER<br />RECORRIENDO EL MAPA
         </p>
         <div class="flex w-full gap-2">
-          <button type="button" class="btn btn-sm btn-primary ui-font flex-1 text-[8px]" (click)="srv.aleatorio()">
+          <button type="button" class="btn btn-sm btn-primary ui-font flex-1 text-[8px]" (click)="srv.random()">
             ⟳ AL AZAR
           </button>
-          <button type="button" class="btn btn-sm btn-outline ui-font flex-1 text-[8px]" (click)="srv.reiniciar()">
+          <button type="button" class="btn btn-sm btn-outline ui-font flex-1 text-[8px]" (click)="srv.reset()">
             RESET
           </button>
         </div>
@@ -103,18 +103,18 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
 
       <div class="flex flex-col gap-5">
         <div role="tablist" aria-label="Partes del personaje" class="tabs tabs-border">
-          @for (p of pestanas; track p.id) {
+          @for (p of tabs; track p.id) {
             <button
               type="button"
               role="tab"
               class="tab ui-font text-[8px]"
               [id]="'tab-' + p.id"
-              [class.tab-active]="pestana() === p.id"
-              [attr.aria-selected]="pestana() === p.id"
-              [attr.aria-controls]="pestana() === p.id ? 'panel-' + p.id : null"
-              (click)="pestana.set(p.id)"
+              [class.tab-active]="tab() === p.id"
+              [attr.aria-selected]="tab() === p.id"
+              [attr.aria-controls]="tab() === p.id ? 'panel-' + p.id : null"
+              (click)="tab.set(p.id)"
             >
-              {{ p.nombre }}
+              {{ p.name }}
             </button>
           }
         </div>
@@ -122,35 +122,35 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
         <div
           role="tabpanel"
           class="flex flex-col gap-5"
-          [id]="'panel-' + pestana()"
-          [attr.aria-labelledby]="'tab-' + pestana()"
+          [id]="'panel-' + tab()"
+          [attr.aria-labelledby]="'tab-' + tab()"
         >
-          @switch (pestana()) {
+          @switch (tab()) {
             @case ('cuerpo') {
               <section>
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">TONO DE PIEL</h3>
                 <ng-container
-                  *ngTemplateOutlet="muestras; context: { $implicit: pieles, campo: 'piel', etiqueta: 'Piel' }"
+                  *ngTemplateOutlet="muestras; context: { $implicit: skins, field: 'skin', label: 'Piel' }"
                 />
               </section>
 
               <section>
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">PELO</h3>
                 <div class="mb-2">
-                  <ng-container *ngTemplateOutlet="chips; context: { $implicit: pelos, campo: 'pelo' }" />
+                  <ng-container *ngTemplateOutlet="chips; context: { $implicit: hairstyles, field: 'hair' }" />
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
                   <ng-container
                     *ngTemplateOutlet="
                       muestras;
-                      context: { $implicit: coloresPeloNaturales, campo: 'colorPelo', etiqueta: 'Pelo' }
+                      context: { $implicit: naturalHairColors, field: 'hairColor', label: 'Pelo' }
                     "
                   />
                   <span class="h-8 w-px bg-base-300" aria-hidden="true"></span>
                   <ng-container
                     *ngTemplateOutlet="
                       muestras;
-                      context: { $implicit: coloresMarca, campo: 'colorPelo', etiqueta: 'Pelo' }
+                      context: { $implicit: markColors, field: 'hairColor', label: 'Pelo' }
                     "
                   />
                 </div>
@@ -158,14 +158,14 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
 
               <section>
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">BARBA</h3>
-                <ng-container *ngTemplateOutlet="chips; context: { $implicit: barbas, campo: 'barba' }" />
+                <ng-container *ngTemplateOutlet="chips; context: { $implicit: beards, field: 'beard' }" />
               </section>
             }
 
             @case ('ropa') {
               <section>
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">PRENDA</h3>
-                <ng-container *ngTemplateOutlet="chips; context: { $implicit: prendas, campo: 'prenda' }" />
+                <ng-container *ngTemplateOutlet="chips; context: { $implicit: garments, field: 'garment' }" />
               </section>
 
               <section>
@@ -173,7 +173,7 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
                 <ng-container
                   *ngTemplateOutlet="
                     muestras;
-                    context: { $implicit: coloresRopa, campo: 'colorRopa', etiqueta: 'Ropa' }
+                    context: { $implicit: clothesColors, field: 'clothesColor', label: 'Ropa' }
                   "
                 />
               </section>
@@ -181,23 +181,23 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
               <section>
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">EMBLEMA</h3>
                 <div class="flex flex-wrap gap-2">
-                  @for (e of emblemas; track e.id) {
+                  @for (e of emblems; track e.id) {
                     <button
                       type="button"
                       class="btn btn-sm glifo min-w-12"
-                      [class.btn-primary]="elegido('emblema', e.id)"
-                      [class.btn-outline]="!elegido('emblema', e.id)"
-                      [attr.aria-pressed]="elegido('emblema', e.id)"
-                      [attr.aria-label]="'Emblema ' + e.nombre"
-                      [title]="e.nombre"
-                      (click)="elegir('emblema', e.id)"
+                      [class.btn-primary]="chosen('emblem', e.id)"
+                      [class.btn-outline]="!chosen('emblem', e.id)"
+                      [attr.aria-pressed]="chosen('emblem', e.id)"
+                      [attr.aria-label]="'Emblema ' + e.name"
+                      [title]="e.name"
+                      (click)="choose('emblem', e.id)"
                     >
-                      {{ e.glifo }}
+                      {{ e.glyph }}
                     </button>
                   }
                 </div>
-                @if (avisoEmblema(); as aviso) {
-                  <p aria-live="polite" class="ui-font mt-2 text-[7px] leading-relaxed text-warning">{{ aviso }}</p>
+                @if (noticeEmblem(); as notice) {
+                  <p aria-live="polite" class="ui-font mt-2 text-[7px] leading-relaxed text-warning">{{ notice }}</p>
                 }
               </section>
             }
@@ -207,14 +207,14 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">CABEZA</h3>
                 <div class="mb-2">
                   <ng-container
-                    *ngTemplateOutlet="chips; context: { $implicit: accesorios, campo: 'accesorio' }"
+                    *ngTemplateOutlet="chips; context: { $implicit: accessories, field: 'accessory' }"
                   />
                 </div>
-                @if (srv.avatar().accesorio !== 'ninguno') {
+                @if (srv.avatar().accessory !== 'ninguno') {
                   <ng-container
                     *ngTemplateOutlet="
                       muestras;
-                      context: { $implicit: coloresRopa, campo: 'colorAccesorio', etiqueta: 'Accesorio' }
+                      context: { $implicit: clothesColors, field: 'accessoryColor', label: 'Accesorio' }
                     "
                   />
                 }
@@ -222,8 +222,8 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
 
               <section>
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">ANTEOJOS</h3>
-                <ng-container *ngTemplateOutlet="chips; context: { $implicit: anteojos, campo: 'anteojos' }" />
-                @if (avisoAnteojos()) {
+                <ng-container *ngTemplateOutlet="chips; context: { $implicit: glasses, field: 'glasses' }" />
+                @if (noticeGlasses()) {
                   <p aria-live="polite" class="ui-font mt-2 text-[7px] leading-relaxed text-warning">EL VISOR TAPA LOS ANTEOJOS</p>
                 }
               </section>
@@ -232,12 +232,12 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
             @case ('equipo') {
               <section>
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">OBJETO EN MANO</h3>
-                <ng-container *ngTemplateOutlet="chips; context: { $implicit: objetos, campo: 'objeto' }" />
+                <ng-container *ngTemplateOutlet="chips; context: { $implicit: objects, field: 'object' }" />
                 <p class="ui-font mt-2 text-[7px] leading-relaxed opacity-60">
                   LO LLEVÁS TAMBIÉN MIENTRAS CAMINÁS POR EL MAPA
                 </p>
-                @if (avisoEmblema(); as aviso) {
-                  <p aria-live="polite" class="ui-font mt-2 text-[7px] leading-relaxed text-warning">{{ aviso }}</p>
+                @if (noticeEmblem(); as notice) {
+                  <p aria-live="polite" class="ui-font mt-2 text-[7px] leading-relaxed text-warning">{{ notice }}</p>
                 }
               </section>
             }
@@ -248,37 +248,37 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
       </div>
     </div>
 
-    <!-- fila de opciones de texto; los ids vienen del catálogo del campo -->
-    <ng-template #chips let-opciones let-campo="campo">
+    <!-- row of text options; the ids come from the field's catalog -->
+    <ng-template #chips let-options let-field="field">
       <div class="flex flex-wrap gap-2">
-        @for (o of opciones; track o.id) {
+        @for (o of options; track o.id) {
           <button
             type="button"
             class="btn btn-xs ui-font text-[8px]"
-            [class.btn-primary]="elegido(campo, o.id)"
-            [class.btn-outline]="!elegido(campo, o.id)"
-            [attr.aria-pressed]="elegido(campo, o.id)"
-            (click)="elegir(campo, o.id)"
+            [class.btn-primary]="chosen(field, o.id)"
+            [class.btn-outline]="!chosen(field, o.id)"
+            [attr.aria-pressed]="chosen(field, o.id)"
+            (click)="choose(field, o.id)"
           >
-            {{ o.nombre }}
+            {{ o.name }}
           </button>
         }
       </div>
     </ng-template>
 
-    <!-- fila de muestras de color -->
-    <ng-template #muestras let-opciones let-campo="campo" let-etiqueta="etiqueta">
+    <!-- row of color swatches -->
+    <ng-template #muestras let-options let-field="field" let-label="label">
       <div class="flex flex-wrap gap-2">
-        @for (c of opciones; track c.id) {
+        @for (c of options; track c.id) {
           <button
             type="button"
             class="swatch h-9 w-9"
             [style.background]="c.base"
-            [class.sel]="elegido(campo, c.id)"
-            [attr.aria-pressed]="elegido(campo, c.id)"
-            [attr.aria-label]="etiqueta + ' ' + c.nombre"
-            [title]="c.nombre"
-            (click)="elegir(campo, c.id)"
+            [class.sel]="chosen(field, c.id)"
+            [attr.aria-pressed]="chosen(field, c.id)"
+            [attr.aria-label]="label + ' ' + c.name"
+            [title]="c.name"
+            (click)="choose(field, c.id)"
           ></button>
         }
       </div>
@@ -288,47 +288,47 @@ type Pestana = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
 export class AvatarEditor {
   protected readonly srv = inject(AvatarService);
 
-  protected readonly pestanas: readonly { id: Pestana; nombre: string }[] = [
-    { id: 'cuerpo', nombre: 'CUERPO' },
-    { id: 'ropa', nombre: 'ROPA' },
-    { id: 'accesorios', nombre: 'ACCESORIOS' },
-    { id: 'equipo', nombre: 'EQUIPO' },
+  protected readonly tabs: readonly { id: Tab; name: string }[] = [
+    { id: 'cuerpo', name: 'CUERPO' },
+    { id: 'ropa', name: 'ROPA' },
+    { id: 'accesorios', name: 'ACCESORIOS' },
+    { id: 'equipo', name: 'EQUIPO' },
   ];
-  protected readonly pestana = signal<Pestana>('cuerpo');
+  protected readonly tab = signal<Tab>('cuerpo');
 
-  protected readonly generos = GENEROS;
-  protected readonly pieles = PIELES;
-  protected readonly pelos = PELOS;
-  protected readonly barbas = BARBAS;
-  protected readonly prendas = PRENDAS;
-  protected readonly emblemas = EMBLEMAS;
-  protected readonly accesorios = ACCESORIOS;
-  protected readonly anteojos = ANTEOJOS;
-  protected readonly objetos = OBJETOS;
-  protected readonly coloresPeloNaturales = COLORES_PELO_NATURALES;
-  protected readonly coloresMarca = COLORES_MARCA;
-  protected readonly coloresRopa = COLORES_ROPA;
+  protected readonly genders = GENDERS;
+  protected readonly skins = SKINS;
+  protected readonly hairstyles = HAIRSTYLES;
+  protected readonly beards = BEARDS;
+  protected readonly garments = GARMENTS;
+  protected readonly emblems = EMBLEMS;
+  protected readonly accessories = ACCESSORIES;
+  protected readonly glasses = GLASSES;
+  protected readonly objects = OBJECTS;
+  protected readonly naturalHairColors = NATURAL_HAIR_COLORS;
+  protected readonly markColors = MARK_COLORS;
+  protected readonly clothesColors = CLOTHES_COLORS;
 
-  /** El sprite oculta el emblema en estos casos; sin el aviso, parecería que no anda. */
-  protected readonly avisoEmblema = computed(() => {
+  /** The sprite hides the emblem in these cases; without the warning, it would seem broken. */
+  protected readonly noticeEmblem = computed(() => {
     const a = this.srv.avatar();
-    if (a.emblema === 'ninguno' || emblemaVisible(a)) return null;
-    return a.prenda === 'camisa'
+    if (a.emblem === 'ninguno' || emblemVisible(a)) return null;
+    return a.garment === 'camisa'
       ? 'LA CORBATA DE LA CAMISA TAPA EL EMBLEMA'
       : 'LA LAPTOP TAPA EL EMBLEMA';
   });
 
-  protected readonly avisoAnteojos = computed(() => {
+  protected readonly noticeGlasses = computed(() => {
     const a = this.srv.avatar();
-    return a.anteojos !== 'ninguno' && !anteojosVisibles(a);
+    return a.glasses !== 'ninguno' && !visibleGlasses(a);
   });
 
-  protected elegido(campo: keyof AvatarConfig, id: string): boolean {
-    return this.srv.avatar()[campo] === id;
+  protected chosen(field: keyof AvatarConfig, id: string): boolean {
+    return this.srv.avatar()[field] === id;
   }
 
-  /** Los ids llegan de los catálogos que el propio template recorre para ese campo. */
-  protected elegir<K extends keyof AvatarConfig>(campo: K, id: AvatarConfig[K]): void {
-    this.srv.set(campo, id);
+  /** The ids come from the catalogs that the template itself iterates for that field. */
+  protected choose<K extends keyof AvatarConfig>(field: K, id: AvatarConfig[K]): void {
+    this.srv.set(field, id);
   }
 }

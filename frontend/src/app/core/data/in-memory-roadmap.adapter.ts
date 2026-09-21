@@ -1,29 +1,29 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { RoadmapDataPort } from './roadmap-data.port';
-import { Actividad, Alumno, Conexion, NuevaActividad, NuevaUnidad, Progreso, Roadmap, Unidad } from './roadmap.models';
-import { alumnosSeed, progresoSeed, roadmapSeed } from '../../mocks/seed';
+import { Activity, Student, Connection, NewActivity, NewSection, Progress, Roadmap, Section } from './roadmap.models';
+import { studentsSeed, seedProgress, roadmapSeed } from '../../mocks/seed';
 
-const LS_KEY = 'roadmap-mock-v2';
-const PROGRESO_LS_KEY = 'progreso-mock-v2';
+const LS_KEY = 'roadmap-mock-v3';
+const PROGRESS_LS_KEY = 'progreso-mock-v3';
 
-// Grilla de posiciones default para nodos sin posicion_x/y (altas nuevas, o datos viejos
-// del localStorage previos a este editor) — no solapada, en columnas de a 4 (mismo ancho
-// que usaba la serpentina de `unidad-mapa.ts` antes de que el editor expusiera la posición).
+// Default position grid for nodes without posicion_x/y (new creations, or old localStorage
+// data from before this editor) — non-overlapping, in columns of 4 (same width
+// the serpentine of `section-map.ts` used before the editor exposed the position).
 const GRID_COLS = 4;
 const GRID_CW = 170;
 const GRID_CH = 150;
 const GRID_X0 = 100;
 const GRID_Y0 = 100;
 
-function posicionDefault(indice: number): { posicionX: number; posicionY: number } {
+function positionDefault(index: number): { positionX: number; positionY: number } {
   return {
-    posicionX: GRID_X0 + (indice % GRID_COLS) * GRID_CW,
-    posicionY: GRID_Y0 + Math.floor(indice / GRID_COLS) * GRID_CH,
+    positionX: GRID_X0 + (index % GRID_COLS) * GRID_CW,
+    positionY: GRID_Y0 + Math.floor(index / GRID_COLS) * GRID_CH,
   };
 }
 
-/** Error de negocio simulando el ProblemDetail del backend (400/409, ver openapi). */
+/** Business error simulating the backend's ProblemDetail (400/409, see openapi). */
 class RoadmapApiError extends Error {
   constructor(message: string, readonly status: number) {
     super(message);
@@ -31,341 +31,341 @@ class RoadmapApiError extends Error {
 }
 
 /**
- * Implementación de {@link RoadmapDataPort} para Fases 0-2. Arranca del seed, muta en
- * memoria y persiste el grafo en localStorage — sobrevive al refresh sin backend.
- * Devuelve copias (`structuredClone`) para que ningún componente mute el estado interno.
+ * Implementation of {@link RoadmapDataPort} for Phases 0-2. Starts from the seed, mutates in
+ * memory and persists the graph in localStorage — survives a refresh without a backend.
+ * Returns copies (`structuredClone`) so no component mutates the internal state.
  */
 @Injectable()
 export class InMemoryRoadmapAdapter extends RoadmapDataPort {
-  private roadmap: Roadmap = this.cargar();
-  private readonly alumnos: Alumno[] = alumnosSeed();
+  private roadmap: Roadmap = this.load();
+  private readonly students: Student[] = studentsSeed();
 
-  getRoadmap(cursoCohorteId: string): Observable<Roadmap> {
-    this.roadmap = this.cargar();
-    if (cursoCohorteId !== this.roadmap.cursoCohorteId) {
-      return throwError(() => new Error(`No hay roadmap mock para ${cursoCohorteId}`));
+  getRoadmap(courseCohortId: string): Observable<Roadmap> {
+    this.roadmap = this.load();
+    if (courseCohortId !== this.roadmap.courseCohortId) {
+      return throwError(() => new Error(`No hay roadmap mock para ${courseCohortId}`));
     }
     return of(structuredClone(this.roadmap));
   }
 
-  addUnidad(cursoCohorteId: string, dto: NuevaUnidad): Observable<Unidad> {
-    const orden = this.roadmap.unidades.length + 1;
-    const unidad: Unidad = {
-      id: `u${orden}-${Date.now().toString(36)}`,
-      nombre: dto.nombre,
-      umbralXpDesbloqueo: dto.umbralXpDesbloqueo,
-      orden,
-      actividades: [],
-      bioma: dto.bioma,
+  addSection(courseCohortId: string, dto: NewSection): Observable<Section> {
+    const order = this.roadmap.sections.length + 1;
+    const section: Section = {
+      id: `u${order}-${Date.now().toString(36)}`,
+      name: dto.name,
+      xpThreshold: dto.xpThreshold,
+      order,
+      activities: [],
+      biome: dto.biome,
     };
-    this.roadmap.unidades.push(unidad);
-    this.guardar();
-    return of(structuredClone(unidad));
+    this.roadmap.sections.push(section);
+    this.save();
+    return of(structuredClone(section));
   }
 
-  updateUnidad(_cc: string, unidadId: string, dto: NuevaUnidad): Observable<Unidad> {
-    const unidad = this.unidad(unidadId);
-    if (!unidad) return throwError(() => new RoadmapApiError(`No existe la unidad ${unidadId}`, 404));
-    unidad.nombre = dto.nombre.trim();
-    unidad.umbralXpDesbloqueo = Math.max(0, Math.trunc(dto.umbralXpDesbloqueo));
-    unidad.bioma = dto.bioma;
-    this.guardar();
-    return of(structuredClone(unidad));
+  updateSection(_cc: string, sectionId: string, dto: NewSection): Observable<Section> {
+    const section = this.section(sectionId);
+    if (!section) return throwError(() => new RoadmapApiError(`No existe la unidad ${sectionId}`, 404));
+    section.name = dto.name.trim();
+    section.xpThreshold = Math.max(0, Math.trunc(dto.xpThreshold));
+    section.biome = dto.biome;
+    this.save();
+    return of(structuredClone(section));
   }
 
-  removeUnidad(_cursoCohorteId: string, unidadId: string): Observable<void> {
-    // Baja en cascada: también las conexiones que tocan a sus nodos (RF-NFR-01, 400/404 del
-    // openapi para secciones — acá se refleja como limpieza del grafo en el mock).
-    const idsNodos = new Set(this.unidad(unidadId)?.actividades.map((a) => a.id) ?? []);
-    this.roadmap.unidades = this.roadmap.unidades.filter((u) => u.id !== unidadId);
-    this.roadmap.conexiones = this.roadmap.conexiones.filter(
-      (c) => !idsNodos.has(c.nodoOrigenId) && !idsNodos.has(c.nodoDestinoId),
+  removeSection(_courseCohortId: string, sectionId: string): Observable<void> {
+    // Cascading removal: also the connections touching its nodes (RF-NFR-01, 400/404 of the
+    // openapi for sections — here it is reflected as graph cleanup in the mock).
+    const nodeIds = new Set(this.section(sectionId)?.activities.map((a) => a.id) ?? []);
+    this.roadmap.sections = this.roadmap.sections.filter((u) => u.id !== sectionId);
+    this.roadmap.connections = this.roadmap.connections.filter(
+      (c) => !nodeIds.has(c.nodeOriginId) && !nodeIds.has(c.nodeDestinationId),
     );
-    this.guardar();
+    this.save();
     return of(void 0);
   }
 
-  moverUnidad(_cc: string, unidadId: string, direccion: 'arriba' | 'abajo'): Observable<void> {
-    const arr = this.roadmap.unidades;
-    const i = arr.findIndex((u) => u.id === unidadId);
-    const j = direccion === 'arriba' ? i - 1 : i + 1;
+  moveSection(_cc: string, sectionId: string, direction: 'arriba' | 'abajo'): Observable<void> {
+    const arr = this.roadmap.sections;
+    const i = arr.findIndex((u) => u.id === sectionId);
+    const j = direction === 'arriba' ? i - 1 : i + 1;
     if (i < 0 || j < 0 || j >= arr.length) return of(void 0);
     [arr[i], arr[j]] = [arr[j], arr[i]];
-    arr.forEach((u, idx) => (u.orden = idx + 1));
-    this.guardar();
+    arr.forEach((u, idx) => (u.order = idx + 1));
+    this.save();
     return of(void 0);
   }
 
-  addActividad(_cc: string, unidadId: string, dto: NuevaActividad): Observable<Actividad> {
-    const unidad = this.unidad(unidadId);
-    if (!unidad) return throwError(() => new RoadmapApiError(`No existe la unidad ${unidadId}`, 404));
-    const actividad: Actividad = {
-      id: `${unidadId}-a${Date.now().toString(36)}`,
-      ...this.normalizar(dto),
-      ...posicionDefault(unidad.actividades.length),
+  addActivity(_cc: string, sectionId: string, dto: NewActivity): Observable<Activity> {
+    const section = this.section(sectionId);
+    if (!section) return throwError(() => new RoadmapApiError(`No existe la unidad ${sectionId}`, 404));
+    const activity: Activity = {
+      id: `${sectionId}-a${Date.now().toString(36)}`,
+      ...this.normalize(dto),
+      ...positionDefault(section.activities.length),
     };
-    unidad.actividades.push(actividad);
-    this.guardar();
-    return of(structuredClone(actividad));
+    section.activities.push(activity);
+    this.save();
+    return of(structuredClone(activity));
   }
 
-  updateActividad(_cc: string, unidadId: string, actividadId: string, dto: NuevaActividad): Observable<Actividad> {
-    const unidad = this.unidad(unidadId);
-    const actividad = unidad?.actividades.find((a) => a.id === actividadId);
-    if (!unidad || !actividad) return throwError(() => new RoadmapApiError(`No existe la actividad ${actividadId}`, 404));
-    Object.assign(actividad, { id: actividad.id, ...this.normalizar(dto, actividad) });
-    this.guardar();
-    return of(structuredClone(actividad));
+  updateActivity(_cc: string, sectionId: string, activityId: string, dto: NewActivity): Observable<Activity> {
+    const section = this.section(sectionId);
+    const activity = section?.activities.find((a) => a.id === activityId);
+    if (!section || !activity) return throwError(() => new RoadmapApiError(`No existe la actividad ${activityId}`, 404));
+    Object.assign(activity, { id: activity.id, ...this.normalize(dto, activity) });
+    this.save();
+    return of(structuredClone(activity));
   }
 
-  removeActividad(_cc: string, unidadId: string, actividadId: string): Observable<void> {
-    const unidad = this.unidad(unidadId);
-    if (unidad) {
-      unidad.actividades = unidad.actividades.filter((a) => a.id !== actividadId);
-      // Baja lógica del nodo → también las conexiones que lo tocan (espejo del DELETE /nodos/{id}).
-      this.roadmap.conexiones = this.roadmap.conexiones.filter(
-        (c) => c.nodoOrigenId !== actividadId && c.nodoDestinoId !== actividadId,
+  removeActivity(_cc: string, sectionId: string, activityId: string): Observable<void> {
+    const section = this.section(sectionId);
+    if (section) {
+      section.activities = section.activities.filter((a) => a.id !== activityId);
+      // Logical removal of the node → also the connections touching it (mirrors DELETE /nodos/{id}).
+      this.roadmap.connections = this.roadmap.connections.filter(
+        (c) => c.nodeOriginId !== activityId && c.nodeDestinationId !== activityId,
       );
-      this.guardar();
+      this.save();
     }
     return of(void 0);
   }
 
-  moverActividad(_cc: string, unidadId: string, actividadId: string, direccion: 'arriba' | 'abajo'): Observable<void> {
-    const unidad = this.unidad(unidadId);
-    if (!unidad) return of(void 0);
-    const i = unidad.actividades.findIndex((a) => a.id === actividadId);
-    const j = direccion === 'arriba' ? i - 1 : i + 1;
-    if (i < 0 || j < 0 || j >= unidad.actividades.length) return of(void 0);
-    const arr = unidad.actividades;
+  moveActivity(_cc: string, sectionId: string, activityId: string, direction: 'arriba' | 'abajo'): Observable<void> {
+    const section = this.section(sectionId);
+    if (!section) return of(void 0);
+    const i = section.activities.findIndex((a) => a.id === activityId);
+    const j = direction === 'arriba' ? i - 1 : i + 1;
+    if (i < 0 || j < 0 || j >= section.activities.length) return of(void 0);
+    const arr = section.activities;
     [arr[i], arr[j]] = [arr[j], arr[i]];
-    this.guardar();
+    this.save();
     return of(void 0);
   }
 
-  moverNodo(_cc: string, unidadId: string, actividadId: string, x: number, y: number): Observable<void> {
-    const actividad = this.unidad(unidadId)?.actividades.find((a) => a.id === actividadId);
-    if (!actividad) return throwError(() => new RoadmapApiError(`No existe el nodo ${actividadId}`, 404));
-    actividad.posicionX = x;
-    actividad.posicionY = y;
-    this.guardar();
+  moveNode(_cc: string, sectionId: string, activityId: string, x: number, y: number): Observable<void> {
+    const activity = this.section(sectionId)?.activities.find((a) => a.id === activityId);
+    if (!activity) return throwError(() => new RoadmapApiError(`No existe el nodo ${activityId}`, 404));
+    activity.positionX = x;
+    activity.positionY = y;
+    this.save();
     return of(void 0);
   }
 
-  addConexion(_cc: string, nodoOrigenId: string, nodoDestinoId: string): Observable<Conexion> {
-    if (nodoOrigenId === nodoDestinoId) {
+  addConnection(_cc: string, nodeOriginId: string, nodeDestinationId: string): Observable<Connection> {
+    if (nodeOriginId === nodeDestinationId) {
       return throwError(() => new RoadmapApiError('Un nodo no puede ser prerequisito de sí mismo', 400));
     }
-    if (!this.nodo(nodoOrigenId) || !this.nodo(nodoDestinoId)) {
+    if (!this.node(nodeOriginId) || !this.node(nodeDestinationId)) {
       return throwError(() => new RoadmapApiError('El nodo no existe en este roadmap', 404));
     }
-    const yaExiste = this.roadmap.conexiones.some(
-      (c) => c.nodoOrigenId === nodoOrigenId && c.nodoDestinoId === nodoDestinoId,
+    const alreadyExists = this.roadmap.connections.some(
+      (c) => c.nodeOriginId === nodeOriginId && c.nodeDestinationId === nodeDestinationId,
     );
-    if (yaExiste) {
+    if (alreadyExists) {
       return throwError(() => new RoadmapApiError('Ya existe esa conexión', 409));
     }
-    if (this.creariaCiclo(nodoOrigenId, nodoDestinoId)) {
+    if (this.wouldCreateCycle(nodeOriginId, nodeDestinationId)) {
       return throwError(() => new RoadmapApiError('Esa conexión cerraría un ciclo de prerequisitos', 400));
     }
-    const conexion: Conexion = { id: `cx-${Date.now().toString(36)}`, nodoOrigenId, nodoDestinoId };
-    this.roadmap.conexiones.push(conexion);
-    this.guardar();
-    return of(structuredClone(conexion));
+    const connection: Connection = { id: `cx-${Date.now().toString(36)}`, nodeOriginId, nodeDestinationId };
+    this.roadmap.connections.push(connection);
+    this.save();
+    return of(structuredClone(connection));
   }
 
-  removeConexion(_cc: string, conexionId: string): Observable<void> {
-    this.roadmap.conexiones = this.roadmap.conexiones.filter((c) => c.id !== conexionId);
-    this.guardar();
+  removeConnection(_cc: string, connectionId: string): Observable<void> {
+    this.roadmap.connections = this.roadmap.connections.filter((c) => c.id !== connectionId);
+    this.save();
     return of(void 0);
   }
 
-  private readonly progresoSubject = new BehaviorSubject<Progreso>(this.cargarProgreso('alu-01'));
+  private readonly subjectProgress = new BehaviorSubject<Progress>(this.loadProgress('alu-01'));
 
-  getProgreso(alumnoId: string, _cursoCohorteId: string): Observable<Progreso> {
-    if (alumnoId === 'alu-01') {
-      return this.progresoSubject.asObservable();
+  getProgress(studentId: string, _courseCohortId: string): Observable<Progress> {
+    if (studentId === 'alu-01') {
+      return this.subjectProgress.asObservable();
     }
-    return of(structuredClone(this.cargarProgreso(alumnoId)));
+    return of(structuredClone(this.loadProgress(studentId)));
   }
 
-  registrarProgreso(
-    alumnoId: string,
-    _cursoCohorteId: string,
-    xpGanado: number,
-    nodoId?: string,
-    vidas?: number,
-  ): Observable<Progreso> {
-    const p = this.cargarProgreso(alumnoId);
-    p.xpTotal += Math.max(0, xpGanado);
-    if (typeof vidas === 'number') {
-      p.vidasVigentes = Math.max(0, Math.min(3, vidas));
+  registerProgress(
+    studentId: string,
+    _courseCohortId: string,
+    earnedXp: number,
+    nodeId?: string,
+    lives?: number,
+  ): Observable<Progress> {
+    const p = this.loadProgress(studentId);
+    p.xpTotal += Math.max(0, earnedXp);
+    if (typeof lives === 'number') {
+      p.currentLives = Math.max(0, Math.min(3, lives));
     }
-    if (nodoId) {
-      const n = p.nodos.find((item) => item.nodoId === nodoId);
+    if (nodeId) {
+      const n = p.nodes.find((item) => item.nodeId === nodeId);
       if (n) {
-        n.estado = 'completado';
+        n.status = 'completado';
       } else {
-        p.nodos.push({ nodoId, estado: 'completado' });
+        p.nodes.push({ nodeId, status: 'completado' });
       }
     }
-    this.guardarProgreso(alumnoId, p);
-    if (alumnoId === 'alu-01') {
-      this.progresoSubject.next(structuredClone(p));
+    this.saveProgress(studentId, p);
+    if (studentId === 'alu-01') {
+      this.subjectProgress.next(structuredClone(p));
     }
     return of(structuredClone(p));
   }
 
-  marcarContenidoLeido(alumnoId: string, cursoCohorteId: string, nodoId: string): Observable<Progreso> {
-    if (cursoCohorteId !== this.roadmap.cursoCohorteId) {
+  markContentRead(studentId: string, courseCohortId: string, nodeId: string): Observable<Progress> {
+    if (courseCohortId !== this.roadmap.courseCohortId) {
       return throwError(() => new RoadmapApiError('No existe el curso-cohorte', 404));
     }
-    const actividad = this.nodo(nodoId);
-    if (!actividad || actividad.tipo !== 'teoria') {
+    const activity = this.node(nodeId);
+    if (!activity || activity.type !== 'teoria') {
       return throwError(() => new RoadmapApiError('El nodo no es contenido teórico', 400));
     }
-    const p = this.cargarProgreso(alumnoId);
-    const estado = p.nodos.find((item) => item.nodoId === nodoId)?.estado;
-    if (estado === 'bloqueado') {
+    const p = this.loadProgress(studentId);
+    const status = p.nodes.find((item) => item.nodeId === nodeId)?.status;
+    if (status === 'bloqueado') {
       return throwError(() => new RoadmapApiError('La unidad todavía no está desbloqueada', 403));
     }
-    p.lecturasContenido ??= [];
-    if (!p.lecturasContenido.some((lectura) => lectura.nodoId === nodoId)) {
-      p.lecturasContenido.push({ nodoId, registradoEn: new Date().toISOString() });
+    p.readingsContent ??= [];
+    if (!p.readingsContent.some((reading) => reading.nodeId === nodeId)) {
+      p.readingsContent.push({ nodeId, registeredIn: new Date().toISOString() });
     }
-    const progresoNodo = p.nodos.find((item) => item.nodoId === nodoId);
-    if (progresoNodo) progresoNodo.estado = 'completado';
-    else p.nodos.push({ nodoId, estado: 'completado' });
-    this.guardarProgreso(alumnoId, p);
-    if (alumnoId === 'alu-01') this.progresoSubject.next(structuredClone(p));
+    const nodeProgress = p.nodes.find((item) => item.nodeId === nodeId);
+    if (nodeProgress) nodeProgress.status = 'completado';
+    else p.nodes.push({ nodeId, status: 'completado' });
+    this.saveProgress(studentId, p);
+    if (studentId === 'alu-01') this.subjectProgress.next(structuredClone(p));
     return of(structuredClone(p));
   }
 
-  getAlumnos(_cursoCohorteId: string): Observable<Alumno[]> {
-    return of(structuredClone(this.alumnos));
+  getStudents(_courseCohortId: string): Observable<Student[]> {
+    return of(structuredClone(this.students));
   }
 
-  private unidad(unidadId: string): Unidad | undefined {
-    return this.roadmap.unidades.find((u) => u.id === unidadId);
+  private section(sectionId: string): Section | undefined {
+    return this.roadmap.sections.find((u) => u.id === sectionId);
   }
 
   /**
-   * Deja solo los campos que corresponden al tipo: cualquier desafío (teórico, práctico o
-   * boss) lleva dificultad y un `desafioId` (stub — en producción lo referencia el Motor de
-   * Desafíos, T03); 'hito' y 'teoria' no, porque no se evalúan. 'teoria' en cambio lleva
-   * `recursoUrl`/`recursoTipo` (link externo al material). La descripción es libre para
-   * cualquier tipo — si el profesor la deja vacía, el mapa del alumno usa
-   * `descripcionPorDefecto()`.
+   * Keeps only the fields that correspond to the type: any challenge (theoretical, practical or
+   * boss) carries difficulty and a `challengeId` (stub — in production the Challenge
+   * Engine references it, T03); 'hito' and 'teoria' do not, because they are not evaluated. 'teoria' instead carries
+   * `resourceUrl`/`resourceType` (external link to the material). The description is free for
+   * any type — if the teacher leaves it empty, the student's map uses
+   * `defaultDescription()`.
    */
-  private normalizar(dto: NuevaActividad, previa?: Actividad): Omit<Actividad, 'id' | 'posicionX' | 'posicionY'> {
-    const esTeoria = dto.tipo === 'teoria';
-    const esDesafio = dto.tipo !== 'hito' && !esTeoria;
+  private normalize(dto: NewActivity, previous?: Activity): Omit<Activity, 'id' | 'positionX' | 'positionY'> {
+    const isTheory = dto.type === 'teoria';
+    const isChallenge = dto.type !== 'hito' && !isTheory;
     return {
-      nombre: dto.nombre.trim(),
-      tipo: dto.tipo,
-      esObligatorio: dto.esObligatorio,
-      reintentosPermitidos: esDesafio ? Math.max(0, Math.min(3, dto.reintentosPermitidos)) : 0,
-      desafioId: esDesafio ? (previa?.desafioId ?? `desafio-ext-${Date.now().toString(36)}`) : undefined,
-      descripcion: dto.descripcion?.trim() || undefined,
-      dificultad: esDesafio ? (dto.dificultad ?? 'BASICO') : undefined,
-      recursoUrl: esTeoria ? dto.recursoUrl?.trim() || undefined : undefined,
-      recursoTipo: esTeoria ? (dto.recursoTipo ?? 'pdf') : undefined,
+      name: dto.name.trim(),
+      type: dto.type,
+      isMandatory: dto.isMandatory,
+      allowedRetries: isChallenge ? Math.max(0, Math.min(3, dto.allowedRetries)) : 0,
+      challengeId: isChallenge ? (previous?.challengeId ?? `desafio-ext-${Date.now().toString(36)}`) : undefined,
+      description: dto.description?.trim() || undefined,
+      difficulty: isChallenge ? (dto.difficulty ?? 'BASICO') : undefined,
+      resourceUrl: isTheory ? dto.resourceUrl?.trim() || undefined : undefined,
+      resourceType: isTheory ? (dto.resourceType ?? 'pdf') : undefined,
     };
   }
 
-  private nodo(actividadId: string): Actividad | undefined {
-    for (const u of this.roadmap.unidades) {
-      const a = u.actividades.find((x) => x.id === actividadId);
+  private node(activityId: string): Activity | undefined {
+    for (const u of this.roadmap.sections) {
+      const a = u.activities.find((x) => x.id === activityId);
       if (a) return a;
     }
     return undefined;
   }
 
   /**
-   * ¿Conectar origen→destino cerraría un ciclo? Sí, si destino ya puede alcanzar a origen
-   * por las conexiones existentes (DFS) — feedback preventivo en el front antes del 400
-   * del backend (`DetectorCiclos`), ver prompt del editor gráfico.
+   * Would connecting origin→destination close a cycle? Yes, if destination can already reach origin
+   * through the existing connections (DFS) — preventive feedback in the front before the backend's
+   * 400 (`DetectorCiclos`), see the graphic editor prompt.
    */
-  private creariaCiclo(origenId: string, destinoId: string): boolean {
-    const visitados = new Set<string>();
-    const pila = [destinoId];
-    while (pila.length > 0) {
-      const actual = pila.pop()!;
-      if (actual === origenId) return true;
-      if (visitados.has(actual)) continue;
-      visitados.add(actual);
-      for (const c of this.roadmap.conexiones) {
-        if (c.nodoOrigenId === actual) pila.push(c.nodoDestinoId);
+  private wouldCreateCycle(originId: string, destinationId: string): boolean {
+    const visited = new Set<string>();
+    const stack = [destinationId];
+    while (stack.length > 0) {
+      const current = stack.pop()!;
+      if (current === originId) return true;
+      if (visited.has(current)) continue;
+      visited.add(current);
+      for (const c of this.roadmap.connections) {
+        if (c.nodeOriginId === current) stack.push(c.nodeDestinationId);
       }
     }
     return false;
   }
 
-  private cargar(): Roadmap {
+  private load(): Roadmap {
     try {
       const raw = localStorage.getItem(LS_KEY);
-      if (raw) return this.migrar(JSON.parse(raw) as Roadmap);
+      if (raw) return this.migrate(JSON.parse(raw) as Roadmap);
     } catch {
-      /* localStorage no disponible o corrupto — se cae al seed */
+      /* localStorage unavailable or corrupt — fall back to the seed */
     }
     const seed = roadmapSeed();
-    this.persistir(seed);
+    this.persist(seed);
     return seed;
   }
 
   /**
-   * Compatibilidad con roadmaps guardados antes de este editor: sin `conexiones` y con
-   * nodos sin `posicionX`/`posicionY`. Les asigna la grilla default y persiste, así la
-   * migración corre una sola vez (checklist: "nodos viejos → posición default no solapada").
+   * Compatibility with roadmaps saved before this editor: without `connections` and with
+   * nodes without `positionX`/`positionY`. Assigns them the default grid and persists, so the
+   * migration runs only once (checklist: "old nodes → non-overlapping default position").
    */
-  private migrar(rm: Roadmap): Roadmap {
-    rm.conexiones ??= [];
-    let cambio = false;
-    for (const u of rm.unidades) {
-      u.actividades.forEach((a, i) => {
-        if (typeof a.posicionX !== 'number' || typeof a.posicionY !== 'number') {
-          Object.assign(a, posicionDefault(i));
-          cambio = true;
+  private migrate(rm: Roadmap): Roadmap {
+    rm.connections ??= [];
+    let change = false;
+    for (const u of rm.sections) {
+      u.activities.forEach((a, i) => {
+        if (typeof a.positionX !== 'number' || typeof a.positionY !== 'number') {
+          Object.assign(a, positionDefault(i));
+          change = true;
         }
       });
     }
-    if (cambio) this.persistir(rm);
+    if (change) this.persist(rm);
     return rm;
   }
 
-  private cargarProgreso(alumnoId: string): Progreso {
+  private loadProgress(studentId: string): Progress {
     try {
-      const raw = localStorage.getItem(`${PROGRESO_LS_KEY}-${alumnoId}`);
+      const raw = localStorage.getItem(`${PROGRESS_LS_KEY}-${studentId}`);
       if (raw) {
-        const progreso = JSON.parse(raw) as Progreso;
-        progreso.lecturasContenido ??= [];
-        return progreso;
+        const progress = JSON.parse(raw) as Progress;
+        progress.readingsContent ??= [];
+        return progress;
       }
     } catch {
       /* ignore */
     }
-    const progreso = progresoSeed(alumnoId);
-    progreso.lecturasContenido ??= [];
-    return progreso;
+    const progress = seedProgress(studentId);
+    progress.readingsContent ??= [];
+    return progress;
   }
 
-  private guardarProgreso(alumnoId: string, p: Progreso): void {
+  private saveProgress(studentId: string, p: Progress): void {
     try {
-      localStorage.setItem(`${PROGRESO_LS_KEY}-${alumnoId}`, JSON.stringify(p));
+      localStorage.setItem(`${PROGRESS_LS_KEY}-${studentId}`, JSON.stringify(p));
     } catch {
-      /* modo incógnito / storage lleno */
+      /* incognito mode / storage full */
     }
   }
 
-  private guardar(): void {
-    this.persistir(this.roadmap);
+  private save(): void {
+    this.persist(this.roadmap);
   }
 
-  private persistir(rm: Roadmap): void {
+  private persist(rm: Roadmap): void {
     try {
       localStorage.setItem(LS_KEY, JSON.stringify(rm));
     } catch {
-      /* modo incógnito / storage lleno — el mock sigue en memoria */
+      /* incognito mode / storage full — the mock keeps working in memory */
     }
   }
 }

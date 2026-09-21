@@ -7,12 +7,12 @@ const scene = (overrides: Partial<TutorialScene> = {}): TutorialScene => ({
   destinations: [destination()], ...overrides,
 });
 
-describe('Tutorial de primeros pasos', () => {
+describe('First steps tutorial', () => {
   let tutorial: TutorialState;
   beforeEach(() => { localStorage.clear(); tutorial = new TutorialState(localStorage); });
   afterEach(() => { tutorial.dispose(); localStorage.clear(); vi.useRealTimers(); });
 
-  it('espera al mapa, personaje y datos; no inicia sin desafíos accesibles', () => {
+  it('waits for the map, character and data; does not start without accessible challenges', () => {
     tutorial.receiveScene(scene({ ready: false }));
     expect(tutorial.status()).toBe('pendiente');
     tutorial.receiveScene(scene({ destinations: [] }));
@@ -25,7 +25,7 @@ describe('Tutorial de primeros pasos', () => {
     expect(tutorial.helpEmpty()).toBe(false);
   });
 
-  it('avanza por movimiento confirmado y entrada, termina solo al abrir un desafío válido', () => {
+  it('advances on confirmed movement and entry, finishes only on opening a valid challenge', () => {
     tutorial.receiveScene(scene());
     tutorial.moved(0);
     expect(tutorial.step()).toBe(2);
@@ -38,13 +38,13 @@ describe('Tutorial de primeros pasos', () => {
     expect(tutorial.celebration()).toBe(false);
   });
 
-  it('acepta acciones fuera de orden sin exigir repetirlas', () => {
+  it('accepts out-of-order actions without requiring them to be repeated', () => {
     tutorial.receiveScene(scene());
     tutorial.opened('u1', 'a1');
     expect(tutorial.status()).toBe('completado');
   });
 
-  it('prefiere pendientes por orden, pero sigue la unidad elegida por el alumno', () => {
+  it('prefers pending ones in order, but follows the section chosen by the student', () => {
     const destinations = [destination('u1', 'a1', true), destination('u2', 'a2'), destination('u3', 'a3')];
     tutorial.receiveScene(scene({ destinations }));
     expect(tutorial.destination()?.unitId).toBe('u2');
@@ -53,7 +53,7 @@ describe('Tutorial de primeros pasos', () => {
     expect(tutorial.step()).toBe(3);
   });
 
-  it('permite practicar con desafíos completados y reorienta al regresar a la ciudad', () => {
+  it('allows practicing with completed challenges and reorients on returning to the city', () => {
     tutorial.receiveScene(scene({ zone: 'u1', destinations: [destination('u1', 'a1', true)] }));
     expect(tutorial.step()).toBe(3);
     expect(tutorial.destination()?.activityId).toBe('a1');
@@ -61,7 +61,7 @@ describe('Tutorial de primeros pasos', () => {
     expect(tutorial.step()).toBe(2);
   });
 
-  it('adapta destino tras reconstruir el mapa y suspende la selección mientras carga', () => {
+  it('adapts the destination after rebuilding the map and suspends the selection while loading', () => {
     tutorial.receiveScene(scene({ zone: 'u1' }));
     tutorial.receiveScene(scene({ ready: false }));
     expect(tutorial.destination()).toBeNull();
@@ -70,7 +70,7 @@ describe('Tutorial de primeros pasos', () => {
     expect(tutorial.destination()?.unitId).toBe('u2');
   });
 
-  it('no avanza por mensajes de movimiento atrasados o durante una pausa', () => {
+  it('does not advance on stale movement messages or during a pause', () => {
     tutorial.receiveScene(scene());
     tutorial.restart();
     tutorial.moved(0);
@@ -83,7 +83,7 @@ describe('Tutorial de primeros pasos', () => {
     expect(tutorial.step()).toBe(2);
   });
 
-  it('recuerda omisión y finalización, y permite repetir sin borrar progreso académico', () => {
+  it('remembers skipping and finishing, and allows repeating without erasing academic progress', () => {
     localStorage.setItem('academic-progress', 'unchanged');
     tutorial.receiveScene(scene());
     tutorial.skip();
@@ -99,14 +99,14 @@ describe('Tutorial de primeros pasos', () => {
     expect(localStorage.getItem('academic-progress')).toBe('unchanged');
   });
 
-  it('retoma el paso guardado y vuelve a entrada si la recarga deja al alumno en la ciudad', () => {
+  it('resumes the saved step and goes back to entry if the reload leaves the student in the city', () => {
     tutorial.receiveScene(scene({ zone: 'u1' }));
     tutorial = new TutorialState(localStorage);
     tutorial.receiveScene(scene());
     expect(tutorial.step()).toBe(2);
   });
 
-  it('muestra la celebración al cerrar y la retira luego de cuatro segundos', () => {
+  it('shows the celebration on closing and removes it after four seconds', () => {
     vi.useFakeTimers();
     tutorial.receiveScene(scene()); tutorial.opened('u1', 'a1');
     tutorial.closedChallenge();
@@ -115,7 +115,7 @@ describe('Tutorial de primeros pasos', () => {
     expect(tutorial.celebration()).toBe(false);
   });
 
-  it('tolera almacenamiento corrupto o denegado', () => {
+  it('tolerates corrupt or denied storage', () => {
     localStorage.setItem(TUTORIAL_KEY, '{invalid');
     expect(new TutorialState(localStorage).status()).toBe('pendiente');
     tutorial = new TutorialState({ getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); } });
@@ -123,7 +123,7 @@ describe('Tutorial de primeros pasos', () => {
     expect(tutorial.status()).toBe('omitido');
   });
 
-  it('rechaza snapshots malformados', () => {
+  it('rejects malformed snapshots', () => {
     expect(isTutorialScene(scene())).toBe(true);
     expect(isTutorialScene({ ...scene(), destinations: [{ unitId: 'u1' }] })).toBe(false);
     expect(isTutorialScene({ ...scene(), busy: 'false' })).toBe(false);

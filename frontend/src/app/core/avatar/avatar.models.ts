@@ -1,19 +1,19 @@
 /**
- * Avatar del alumno (05-design-system.md §4, `ui-avatar`). Es el personaje que recorre
- * el mapa 2.5D y el tablero interno de la unidad, así que su configuración vive en
- * `core/` y no dentro de una feature: la consumen el HUD, el mapa, el tablero y el ranking.
+ * Student avatar (05-design-system.md §4, `ui-avatar`). It is the character that walks
+ * the 2.5D map and the section's inner board, so its configuration lives in
+ * `core/` and not inside a feature: the HUD, the map, the board and the ranking consume it.
  *
- * Cada opción se identifica por `id` estable — lo que se persiste (y lo que en Fase 3
- * viajará al backend de Identidad) son los ids, nunca los hex. Así un retoque de paleta
- * no invalida los avatares ya guardados.
+ * Each option is identified by a stable `id` — what is persisted (and what will travel to the
+ * Identity backend in Phase 3) are the ids, never the hex values. That way a palette tweak
+ * does not invalidate already saved avatars.
  *
- * El género cambia la silueta del sprite y el peinado sugerido de RESET, pero no filtra el
- * catálogo: toda opción está disponible para los tres.
+ * Gender changes the sprite silhouette and RESET's suggested hairstyle, but it does not filter
+ * the catalog: every option is available for all three.
  */
 
-export type IdGenero = 'mujer' | 'varon' | 'indefinido';
-export type IdPiel = 'clara' | 'media' | 'trigueña' | 'oscura' | 'violeta' | 'rosa';
-export type IdPelo =
+export type GenderId = 'mujer' | 'varon' | 'indefinido';
+export type SkinId = 'clara' | 'media' | 'trigueña' | 'oscura' | 'violeta' | 'rosa';
+export type HairId =
   | 'corto'
   | 'largo'
   | 'cresta'
@@ -22,9 +22,9 @@ export type IdPelo =
   | 'rodete'
   | 'coleta'
   | 'despeinado';
-export type IdBarba = 'ninguna' | 'barba' | 'bigote' | 'candado';
-export type IdPrenda = 'traje' | 'hoodie' | 'remera' | 'camisa' | 'campera';
-export type IdEmblema =
+export type BeardId = 'ninguna' | 'barba' | 'bigote' | 'candado';
+export type GarmentId = 'traje' | 'hoodie' | 'remera' | 'camisa' | 'campera';
+export type EmblemId =
   | 'ninguno'
   | 'cuadro'
   | 'tag'
@@ -33,7 +33,7 @@ export type IdEmblema =
   | 'lambda'
   | 'punto-y-coma'
   | 'hash';
-export type IdAccesorio =
+export type AccessoryId =
   | 'ninguno'
   | 'visor'
   | 'gorra'
@@ -42,8 +42,8 @@ export type IdAccesorio =
   | 'beanie'
   | 'gorra-atras'
   | 'headset';
-export type IdAnteojos = 'ninguno' | 'marco-grueso' | 'redondos' | 'sol' | 'codigo';
-export type IdObjeto = 'ninguno' | 'laptop' | 'cafe' | 'mate' | 'teclado';
+export type GlassesId = 'ninguno' | 'marco-grueso' | 'redondos' | 'sol' | 'codigo';
+export type ObjectId = 'ninguno' | 'laptop' | 'cafe' | 'mate' | 'teclado';
 export type IdColor =
   | 'rosa'
   | 'violeta'
@@ -60,290 +60,290 @@ export type IdColor =
   | 'grafito';
 
 export interface AvatarConfig {
-  genero: IdGenero;
-  piel: IdPiel;
-  pelo: IdPelo;
-  colorPelo: IdColor;
-  /** Se pinta con `colorPelo`. */
-  barba: IdBarba;
-  prenda: IdPrenda;
-  colorRopa: IdColor;
-  emblema: IdEmblema;
-  accesorio: IdAccesorio;
-  colorAccesorio: IdColor;
-  /** Colores fijos: no tienen campo de color propio. */
-  anteojos: IdAnteojos;
-  /** Colores fijos: no tienen campo de color propio. */
-  objeto: IdObjeto;
+  gender: GenderId;
+  skin: SkinId;
+  hair: HairId;
+  hairColor: IdColor;
+  /** Painted with `hairColor`. */
+  beard: BeardId;
+  garment: GarmentId;
+  clothesColor: IdColor;
+  emblem: EmblemId;
+  accessory: AccessoryId;
+  accessoryColor: IdColor;
+  /** Fixed colors: they have no color field of their own. */
+  glasses: GlassesId;
+  /** Fixed colors: they have no color field of their own. */
+  object: ObjectId;
 }
 
 /**
- * Lo que puede venir de localStorage: una config de cualquier versión del catálogo, con
- * ids que quizás ya no existen. `colorTraje` es el nombre viejo de `colorRopa`.
+ * What can come from localStorage: a config from any version of the catalog, with
+ * ids that may no longer exist. `suitColor` is the old name of `clothesColor`.
  */
-export type AvatarGuardado = Partial<Record<keyof AvatarConfig | 'colorTraje', unknown>>;
+export type SavedAvatar = Partial<Record<keyof AvatarConfig | 'suitColor', unknown>>;
 
-/** Una opción de color: base + su sombra ya calculada (el SVG no puede mezclar). */
-export interface OpcionColor {
+/** A color option: base + its precomputed shadow (the SVG cannot blend). */
+export interface ColorOption {
   id: IdColor;
-  nombre: string;
+  name: string;
   base: string;
-  sombra: string;
+  shadow: string;
 }
 
-export interface OpcionPiel {
-  id: IdPiel;
-  nombre: string;
+export interface SkinOption {
+  id: SkinId;
+  name: string;
   base: string;
-  sombra: string;
+  shadow: string;
 }
 
-export interface Opcion<T extends string> {
+export interface OptionItem<T extends string> {
   id: T;
-  nombre: string;
+  name: string;
 }
 
-/** El editor muestra el emblema con su glifo, no con un nombre. */
-export interface OpcionEmblema extends Opcion<IdEmblema> {
-  glifo: string;
+/** The editor shows the emblem with its glyph, not with a name. */
+export interface EmblemOption extends OptionItem<EmblemId> {
+  glyph: string;
 }
 
-export const GENEROS: readonly Opcion<IdGenero>[] = [
-  { id: 'mujer', nombre: 'Mujer' },
-  { id: 'varon', nombre: 'Varón' },
-  { id: 'indefinido', nombre: 'Indefinido' },
+export const GENDERS: readonly OptionItem<GenderId>[] = [
+  { id: 'mujer', name: 'Mujer' },
+  { id: 'varon', name: 'Varón' },
+  { id: 'indefinido', name: 'Indefinido' },
 ];
 
 /**
- * Los 4 swatches de `Fotos_y_conceptos/paleta.jpg` más blanco hueso y un rosa pastel
- * derivado.
+ * The 4 swatches of `Fotos_y_conceptos/paleta.jpg` plus bone white and a derived pastel
+ * pink.
  */
-export const COLORES_MARCA: readonly OpcionColor[] = [
-  { id: 'rosa', nombre: 'Rosa fuego', base: '#FF2758', sombra: '#B3123A' },
-  { id: 'violeta', nombre: 'Violeta eléctrico', base: '#8B3DF5', sombra: '#5D1BAF' },
-  { id: 'violeta-profundo', nombre: 'Violeta profundo', base: '#6B21C9', sombra: '#43127F' },
-  { id: 'hueso', nombre: 'Hueso', base: '#F3EAFF', sombra: '#B9A6D6' },
-  { id: 'noche', nombre: 'Noche', base: '#2D164A', sombra: '#190236' },
-  { id: 'rosa-pastel', nombre: 'Rosa pastel', base: '#FF7BA0', sombra: '#C94A70' },
+export const MARK_COLORS: readonly ColorOption[] = [
+  { id: 'rosa', name: 'Rosa fuego', base: '#FF2758', shadow: '#B3123A' },
+  { id: 'violeta', name: 'Violeta eléctrico', base: '#8B3DF5', shadow: '#5D1BAF' },
+  { id: 'violeta-profundo', name: 'Violeta profundo', base: '#6B21C9', shadow: '#43127F' },
+  { id: 'hueso', name: 'Hueso', base: '#F3EAFF', shadow: '#B9A6D6' },
+  { id: 'noche', name: 'Noche', base: '#2D164A', shadow: '#190236' },
+  { id: 'rosa-pastel', name: 'Rosa pastel', base: '#FF7BA0', shadow: '#C94A70' },
 ];
 
-const NEGRO: OpcionColor = { id: 'negro', nombre: 'Negro', base: '#1E1726', sombra: '#0B0710' };
+const BLACK: ColorOption = { id: 'negro', name: 'Negro', base: '#1E1726', shadow: '#0B0710' };
 
 /**
- * Colores naturales de pelo: quedan por fuera de la paleta de marca por la misma razón que
- * los tonos naturales de piel — un pelo de persona no puede limitarse a 6 hex de marca.
+ * Natural hair colors: left out of the brand palette for the same reason as
+ * natural skin tones — a person's hair cannot be limited to 6 brand hex values.
  */
-export const COLORES_PELO_NATURALES: readonly OpcionColor[] = [
-  NEGRO,
-  { id: 'castaño', nombre: 'Castaño', base: '#6B4226', sombra: '#452815' },
-  { id: 'rubio', nombre: 'Rubio', base: '#E6C27A', sombra: '#B38F45' },
-  { id: 'pelirrojo', nombre: 'Pelirrojo', base: '#C2502A', sombra: '#853316' },
-  { id: 'canoso', nombre: 'Canoso', base: '#CFCAD6', sombra: '#948DA0' },
+export const NATURAL_HAIR_COLORS: readonly ColorOption[] = [
+  BLACK,
+  { id: 'castaño', name: 'Castaño', base: '#6B4226', shadow: '#452815' },
+  { id: 'rubio', name: 'Rubio', base: '#E6C27A', shadow: '#B38F45' },
+  { id: 'pelirrojo', name: 'Pelirrojo', base: '#C2502A', shadow: '#853316' },
+  { id: 'canoso', name: 'Canoso', base: '#CFCAD6', shadow: '#948DA0' },
 ];
 
-/** Colores "de programador" para ropa y accesorios: hoodie negro, gris grafito, verde terminal. */
-const COLORES_DEV: readonly OpcionColor[] = [
-  { id: 'verde-terminal', nombre: 'Verde terminal', base: '#2BD46A', sombra: '#16883F' },
-  { id: 'grafito', nombre: 'Grafito', base: '#4B4A57', sombra: '#2B2A35' },
-  NEGRO,
+/** "Programmer" colors for clothes and accessories: black hoodie, graphite gray, terminal green. */
+const DEV_COLORS: readonly ColorOption[] = [
+  { id: 'verde-terminal', name: 'Verde terminal', base: '#2BD46A', shadow: '#16883F' },
+  { id: 'grafito', name: 'Grafito', base: '#4B4A57', shadow: '#2B2A35' },
+  BLACK,
 ];
 
-export const COLORES_PELO: readonly OpcionColor[] = [...COLORES_PELO_NATURALES, ...COLORES_MARCA];
-export const COLORES_ROPA: readonly OpcionColor[] = [...COLORES_MARCA, ...COLORES_DEV];
+export const HAIR_COLORS: readonly ColorOption[] = [...NATURAL_HAIR_COLORS, ...MARK_COLORS];
+export const CLOTHES_COLORS: readonly ColorOption[] = [...MARK_COLORS, ...DEV_COLORS];
 
-/** Registro único de colores (ids únicos): de acá resuelve `colorPorId`. */
-export const COLORES: readonly OpcionColor[] = [
-  ...COLORES_MARCA,
-  ...COLORES_PELO_NATURALES,
-  ...COLORES_DEV.filter((c) => c !== NEGRO),
+/** Single color registry (unique ids): `colorById` resolves from here. */
+export const COLORS: readonly ColorOption[] = [
+  ...MARK_COLORS,
+  ...NATURAL_HAIR_COLORS,
+  ...DEV_COLORS.filter((c) => c !== BLACK),
 ];
 
 /**
- * Tonos de piel: cuatro naturales (que quedan por fuera de la paleta a propósito — un
- * avatar de persona no puede limitarse a 4 hex de marca) más dos estilizados de la
- * paleta, para quien prefiera un personaje totalmente brandeado.
+ * Skin tones: four natural ones (deliberately left out of the palette — a person's
+ * avatar cannot be limited to 4 brand hex values) plus two stylized ones from the
+ * palette, for anyone who prefers a fully branded character.
  */
-export const PIELES: readonly OpcionPiel[] = [
-  { id: 'clara', nombre: 'Clara', base: '#F6D8C4', sombra: '#D9AE93' },
-  { id: 'media', nombre: 'Media', base: '#D9A98B', sombra: '#B07F63' },
-  { id: 'trigueña', nombre: 'Trigueña', base: '#A9714F', sombra: '#7E4E33' },
-  { id: 'oscura', nombre: 'Oscura', base: '#6E4630', sombra: '#4A2C1C' },
-  { id: 'violeta', nombre: 'Violeta', base: '#B77BF7', sombra: '#8B3DF5' },
-  { id: 'rosa', nombre: 'Rosa', base: '#FF9DB8', sombra: '#FF2758' },
+export const SKINS: readonly SkinOption[] = [
+  { id: 'clara', name: 'Clara', base: '#F6D8C4', shadow: '#D9AE93' },
+  { id: 'media', name: 'Media', base: '#D9A98B', shadow: '#B07F63' },
+  { id: 'trigueña', name: 'Trigueña', base: '#A9714F', shadow: '#7E4E33' },
+  { id: 'oscura', name: 'Oscura', base: '#6E4630', shadow: '#4A2C1C' },
+  { id: 'violeta', name: 'Violeta', base: '#B77BF7', shadow: '#8B3DF5' },
+  { id: 'rosa', name: 'Rosa', base: '#FF9DB8', shadow: '#FF2758' },
 ];
 
-export const PELOS: readonly Opcion<IdPelo>[] = [
-  { id: 'corto', nombre: 'Corto' },
-  { id: 'largo', nombre: 'Largo' },
-  { id: 'cresta', nombre: 'Cresta' },
-  { id: 'rapado', nombre: 'Rapado' },
-  { id: 'afro', nombre: 'Afro' },
-  { id: 'rodete', nombre: 'Rodete' },
-  { id: 'coleta', nombre: 'Coleta' },
-  { id: 'despeinado', nombre: 'Despeinado' },
+export const HAIRSTYLES: readonly OptionItem<HairId>[] = [
+  { id: 'corto', name: 'Corto' },
+  { id: 'largo', name: 'Largo' },
+  { id: 'cresta', name: 'Cresta' },
+  { id: 'rapado', name: 'Rapado' },
+  { id: 'afro', name: 'Afro' },
+  { id: 'rodete', name: 'Rodete' },
+  { id: 'coleta', name: 'Coleta' },
+  { id: 'despeinado', name: 'Despeinado' },
 ];
 
-export const BARBAS: readonly Opcion<IdBarba>[] = [
-  { id: 'ninguna', nombre: 'Sin barba' },
-  { id: 'barba', nombre: 'Barba' },
-  { id: 'bigote', nombre: 'Bigote' },
-  { id: 'candado', nombre: 'Candado' },
+export const BEARDS: readonly OptionItem<BeardId>[] = [
+  { id: 'ninguna', name: 'Sin barba' },
+  { id: 'barba', name: 'Barba' },
+  { id: 'bigote', name: 'Bigote' },
+  { id: 'candado', name: 'Candado' },
 ];
 
-export const PRENDAS: readonly Opcion<IdPrenda>[] = [
-  { id: 'traje', nombre: 'Traje' },
-  { id: 'hoodie', nombre: 'Hoodie' },
-  { id: 'remera', nombre: 'Remera' },
-  { id: 'camisa', nombre: 'Camisa y corbata' },
-  { id: 'campera', nombre: 'Campera' },
+export const GARMENTS: readonly OptionItem<GarmentId>[] = [
+  { id: 'traje', name: 'Traje' },
+  { id: 'hoodie', name: 'Hoodie' },
+  { id: 'remera', name: 'Remera' },
+  { id: 'camisa', name: 'Camisa y corbata' },
+  { id: 'campera', name: 'Campera' },
 ];
 
-export const EMBLEMAS: readonly OpcionEmblema[] = [
-  { id: 'ninguno', nombre: 'Sin emblema', glifo: '∅' },
-  { id: 'cuadro', nombre: 'Cuadro', glifo: '■' },
-  { id: 'tag', nombre: 'Etiqueta', glifo: '</>' },
-  { id: 'llaves', nombre: 'Llaves', glifo: '{}' },
-  { id: 'prompt', nombre: 'Prompt', glifo: '>_' },
-  { id: 'lambda', nombre: 'Lambda', glifo: 'λ' },
-  { id: 'punto-y-coma', nombre: 'Punto y coma', glifo: ';' },
-  { id: 'hash', nombre: 'Numeral', glifo: '#' },
+export const EMBLEMS: readonly EmblemOption[] = [
+  { id: 'ninguno', name: 'Sin emblema', glyph: '∅' },
+  { id: 'cuadro', name: 'Cuadro', glyph: '■' },
+  { id: 'tag', name: 'Etiqueta', glyph: '</>' },
+  { id: 'llaves', name: 'Llaves', glyph: '{}' },
+  { id: 'prompt', name: 'Prompt', glyph: '>_' },
+  { id: 'lambda', name: 'Lambda', glyph: 'λ' },
+  { id: 'punto-y-coma', name: 'Punto y coma', glyph: ';' },
+  { id: 'hash', name: 'Numeral', glyph: '#' },
 ];
 
-export const ACCESORIOS: readonly Opcion<IdAccesorio>[] = [
-  { id: 'ninguno', nombre: 'Sin accesorio' },
-  { id: 'visor', nombre: 'Visor' },
-  { id: 'gorra', nombre: 'Gorra' },
-  { id: 'gorra-atras', nombre: 'Gorra hacia atrás' },
-  { id: 'beanie', nombre: 'Beanie' },
-  { id: 'corona', nombre: 'Corona' },
-  { id: 'auriculares', nombre: 'Auriculares' },
-  { id: 'headset', nombre: 'Headset' },
+export const ACCESSORIES: readonly OptionItem<AccessoryId>[] = [
+  { id: 'ninguno', name: 'Sin accesorio' },
+  { id: 'visor', name: 'Visor' },
+  { id: 'gorra', name: 'Gorra' },
+  { id: 'gorra-atras', name: 'Gorra hacia atrás' },
+  { id: 'beanie', name: 'Beanie' },
+  { id: 'corona', name: 'Corona' },
+  { id: 'auriculares', name: 'Auriculares' },
+  { id: 'headset', name: 'Headset' },
 ];
 
-export const ANTEOJOS: readonly Opcion<IdAnteojos>[] = [
-  { id: 'ninguno', nombre: 'Sin anteojos' },
-  { id: 'marco-grueso', nombre: 'Marco grueso' },
-  { id: 'redondos', nombre: 'Redondos' },
-  { id: 'sol', nombre: 'De sol' },
-  { id: 'codigo', nombre: 'Con código' },
+export const GLASSES: readonly OptionItem<GlassesId>[] = [
+  { id: 'ninguno', name: 'Sin anteojos' },
+  { id: 'marco-grueso', name: 'Marco grueso' },
+  { id: 'redondos', name: 'Redondos' },
+  { id: 'sol', name: 'De sol' },
+  { id: 'codigo', name: 'Con código' },
 ];
 
-export const OBJETOS: readonly Opcion<IdObjeto>[] = [
-  { id: 'ninguno', nombre: 'Manos libres' },
-  { id: 'laptop', nombre: 'Laptop' },
-  { id: 'cafe', nombre: 'Café' },
-  { id: 'mate', nombre: 'Mate' },
-  { id: 'teclado', nombre: 'Teclado' },
+export const OBJECTS: readonly OptionItem<ObjectId>[] = [
+  { id: 'ninguno', name: 'Manos libres' },
+  { id: 'laptop', name: 'Laptop' },
+  { id: 'cafe', name: 'Café' },
+  { id: 'mate', name: 'Mate' },
+  { id: 'teclado', name: 'Teclado' },
 ];
 
-type Catalogo<K extends keyof AvatarConfig> = readonly { id: AvatarConfig[K] }[];
+type Catalog<K extends keyof AvatarConfig> = readonly { id: AvatarConfig[K] }[];
 
 /**
- * Qué ids son válidos para cada campo. Es la única fuente de verdad: la usan la migración
- * (`sanearAvatar`), el sorteo del editor y los avatares mock del ranking. El tipo mapeado
- * obliga a que un campo nuevo de `AvatarConfig` traiga su catálogo.
+ * Which ids are valid for each field. It is the single source of truth: the migration
+ * (`sanitizeAvatar`), the editor's shuffle and the ranking's mock avatars use it. The mapped
+ * type forces a new `AvatarConfig` field to come with its catalog.
  */
-export const OPCIONES_POR_CAMPO: { readonly [K in keyof AvatarConfig]: Catalogo<K> } = {
-  genero: GENEROS,
-  piel: PIELES,
-  pelo: PELOS,
-  colorPelo: COLORES_PELO,
-  barba: BARBAS,
-  prenda: PRENDAS,
-  colorRopa: COLORES_ROPA,
-  emblema: EMBLEMAS,
-  accesorio: ACCESORIOS,
-  colorAccesorio: COLORES_ROPA,
-  anteojos: ANTEOJOS,
-  objeto: OBJETOS,
+export const OPTIONS_BY_FIELD: { readonly [K in keyof AvatarConfig]: Catalog<K> } = {
+  gender: GENDERS,
+  skin: SKINS,
+  hair: HAIRSTYLES,
+  hairColor: HAIR_COLORS,
+  beard: BEARDS,
+  garment: GARMENTS,
+  clothesColor: CLOTHES_COLORS,
+  emblem: EMBLEMS,
+  accessory: ACCESSORIES,
+  accessoryColor: CLOTHES_COLORS,
+  glasses: GLASSES,
+  object: OBJECTS,
 };
 
-const PELO_SUGERIDO: Record<IdGenero, IdPelo> = {
+const SUGGESTED_HAIR: Record<GenderId, HairId> = {
   mujer: 'largo',
   varon: 'corto',
   indefinido: 'despeinado',
 };
 
-/** Valores sugeridos para un género: los usa RESET y el primer ingreso (indefinido). */
-export function avatarPorDefecto(genero: IdGenero): AvatarConfig {
+/** Suggested values for a gender: used by RESET and the first login (undefined). */
+export function defaultAvatar(gender: GenderId): AvatarConfig {
   return {
-    genero,
-    piel: 'media',
-    pelo: PELO_SUGERIDO[genero],
-    colorPelo: 'castaño',
-    barba: 'ninguna',
-    prenda: 'hoodie',
-    colorRopa: 'violeta',
-    emblema: 'tag',
-    accesorio: 'ninguno',
-    colorAccesorio: 'rosa',
-    anteojos: 'ninguno',
-    objeto: 'ninguno',
+    gender,
+    skin: 'media',
+    hair: SUGGESTED_HAIR[gender],
+    hairColor: 'castaño',
+    beard: 'ninguna',
+    garment: 'hoodie',
+    clothesColor: 'violeta',
+    emblem: 'tag',
+    accessory: 'ninguno',
+    accessoryColor: 'rosa',
+    glasses: 'ninguno',
+    object: 'ninguno',
   };
 }
 
-/** Arma una config eligiendo un id por campo, de su propio catálogo. */
-export function armarAvatar(
-  elegir: <K extends keyof AvatarConfig>(campo: K, opciones: Catalogo<K>) => AvatarConfig[K],
+/** Builds a config by choosing one id per field, from its own catalog. */
+export function assembleAvatar(
+  choose: <K extends keyof AvatarConfig>(field: K, options: Catalog<K>) => AvatarConfig[K],
 ): AvatarConfig {
   const config = {} as Record<keyof AvatarConfig, string>;
-  for (const campo of Object.keys(OPCIONES_POR_CAMPO) as (keyof AvatarConfig)[]) {
-    config[campo] = elegir(campo, OPCIONES_POR_CAMPO[campo]);
+  for (const field of Object.keys(OPTIONS_BY_FIELD) as (keyof AvatarConfig)[]) {
+    config[field] = choose(field, OPTIONS_BY_FIELD[field]);
   }
   return config as AvatarConfig;
 }
 
-export function colorPorId(id: IdColor): OpcionColor {
-  return COLORES.find((c) => c.id === id) ?? COLORES[0];
+export function colorById(id: IdColor): ColorOption {
+  return COLORS.find((c) => c.id === id) ?? COLORS[0];
 }
 
-export function pielPorId(id: IdPiel): OpcionPiel {
-  return PIELES.find((p) => p.id === id) ?? PIELES[1];
+export function skinById(id: SkinId): SkinOption {
+  return SKINS.find((p) => p.id === id) ?? SKINS[1];
 }
 
 /**
- * Convierte lo guardado en una config válida. Dos casos distintos a propósito:
- * - campo **ausente** = el avatar se guardó antes de que ese campo existiera → look
- *   clásico (traje + cuadro), para que quien ya tenía avatar lo siga viendo igual;
- * - id **presente pero desconocido** (o de una lista que no le corresponde, como un verde
- *   terminal en el pelo) → default de su género.
+ * Converts what was saved into a valid config. Two deliberately different cases:
+ * - **missing** field = the avatar was saved before that field existed → classic
+ *   look (suit + frame), so anyone who already had an avatar keeps seeing it the same;
+ * - **present but unknown** id (or from a list that does not apply, such as a terminal
+ *   green in the hair) → default of its gender.
  */
-export function sanearAvatar(v: AvatarGuardado | null | undefined): AvatarConfig {
-  if (!v || typeof v !== 'object') return avatarPorDefecto('indefinido');
+export function sanitizeAvatar(v: SavedAvatar | null | undefined): AvatarConfig {
+  if (!v || typeof v !== 'object') return defaultAvatar('indefinido');
 
-  const valido = <K extends keyof AvatarConfig>(campo: K, x: unknown, fb: AvatarConfig[K]) =>
-    OPCIONES_POR_CAMPO[campo].some((o) => o.id === x) ? (x as AvatarConfig[K]) : fb;
+  const valid = <K extends keyof AvatarConfig>(field: K, x: unknown, fb: AvatarConfig[K]) =>
+    OPTIONS_BY_FIELD[field].some((o) => o.id === x) ? (x as AvatarConfig[K]) : fb;
 
-  const genero = valido('genero', v.genero, 'indefinido');
-  const d = avatarPorDefecto(genero);
-  const conLegado = <K extends 'prenda' | 'emblema'>(campo: K, clasico: AvatarConfig[K]) =>
-    v[campo] === undefined ? clasico : valido(campo, v[campo], d[campo]);
+  const gender = valid('gender', v.gender, 'indefinido');
+  const d = defaultAvatar(gender);
+  const withLegacy = <K extends 'garment' | 'emblem'>(field: K, classic: AvatarConfig[K]) =>
+    v[field] === undefined ? classic : valid(field, v[field], d[field]);
 
   return {
-    genero,
-    piel: valido('piel', v.piel, d.piel),
-    pelo: valido('pelo', v.pelo, d.pelo),
-    colorPelo: valido('colorPelo', v.colorPelo, d.colorPelo),
-    barba: valido('barba', v.barba, d.barba),
-    prenda: conLegado('prenda', 'traje'),
-    colorRopa: valido('colorRopa', v.colorRopa ?? v.colorTraje, d.colorRopa),
-    emblema: conLegado('emblema', 'cuadro'),
-    accesorio: valido('accesorio', v.accesorio, d.accesorio),
-    colorAccesorio: valido('colorAccesorio', v.colorAccesorio, d.colorAccesorio),
-    anteojos: valido('anteojos', v.anteojos, d.anteojos),
-    objeto: valido('objeto', v.objeto, d.objeto),
+    gender,
+    skin: valid('skin', v.skin, d.skin),
+    hair: valid('hair', v.hair, d.hair),
+    hairColor: valid('hairColor', v.hairColor, d.hairColor),
+    beard: valid('beard', v.beard, d.beard),
+    garment: withLegacy('garment', 'traje'),
+    clothesColor: valid('clothesColor', v.clothesColor ?? v.suitColor, d.clothesColor),
+    emblem: withLegacy('emblem', 'cuadro'),
+    accessory: valid('accessory', v.accessory, d.accessory),
+    accessoryColor: valid('accessoryColor', v.accessoryColor, d.accessoryColor),
+    glasses: valid('glasses', v.glasses, d.glasses),
+    object: valid('object', v.object, d.object),
   };
 }
 
 /**
- * La corbata de la camisa ocupa el centro del pecho y la laptop va sostenida delante: en
- * ambos casos el emblema no se dibuja (el editor lo avisa).
+ * The shirt tie takes the center of the chest and the laptop is held in front: in
+ * both cases the emblem is not drawn (the editor warns about it).
  */
-export function emblemaVisible(a: AvatarConfig): boolean {
-  return a.emblema !== 'ninguno' && a.prenda !== 'camisa' && a.objeto !== 'laptop';
+export function emblemVisible(a: AvatarConfig): boolean {
+  return a.emblem !== 'ninguno' && a.garment !== 'camisa' && a.object !== 'laptop';
 }
 
-/** El visor tapa los ojos: con visor, los anteojos no se dibujan (el editor lo avisa). */
-export function anteojosVisibles(a: AvatarConfig): boolean {
-  return a.anteojos !== 'ninguno' && a.accesorio !== 'visor';
+/** The visor covers the eyes: with a visor, glasses are not drawn (the editor warns about it). */
+export function visibleGlasses(a: AvatarConfig): boolean {
+  return a.glasses !== 'ninguno' && a.accessory !== 'visor';
 }

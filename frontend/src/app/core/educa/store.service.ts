@@ -1,12 +1,12 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import type { Anexo, Asignatura, Modulo, TipoAnexo, Unidad as EducaUnidad } from './models';
-import { educaBiomeToMundo3d } from './models';
+import type { Attachment, Subject, Module, AttachmentType, Section as EducaSection } from './models';
+import { educaBiomeToWorld3d } from './models';
 import { StorageService } from './storage.service';
 import { RoadmapStore } from '../data/roadmap.store';
 import { SyncChannelService } from './sync-channel.service';
-import { CURSO_SEED_ID } from '../../mocks/seed';
-import type { Actividad, Conexion, Roadmap, Unidad as PlatformUnidad } from '../data/roadmap.models';
-import type { Bioma } from '../data/biomas';
+import { COURSE_SEED_ID } from '../../mocks/seed';
+import type { Activity, Connection, Roadmap, Section as PlatformSection } from '../data/roadmap.models';
+import type { Biome } from '../data/biomes';
 
 const uid = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -18,10 +18,10 @@ function move<T>(arr: T[], from: number, to: number): T[] {
   const c = [...arr];
   const [x] = c.splice(from, 1);
   c.splice(to, 0, x);
-  return c.map((item, i) => ({ ...(item as object), orden: i }) as T);
+  return c.map((item, i) => ({ ...(item as object), order: i }) as T);
 }
 
-const ROADMAP_LS_KEY = 'roadmap-mock-v2';
+const ROADMAP_LS_KEY = 'roadmap-mock-v3';
 
 @Injectable({ providedIn: 'root' })
 export class StoreService {
@@ -29,31 +29,31 @@ export class StoreService {
   private roadmapStore = inject(RoadmapStore);
   private syncChannel = inject(SyncChannelService);
 
-  readonly current = signal<Asignatura | null>(null);
+  readonly current = signal<Subject | null>(null);
   readonly counts = computed(() => {
     const a = this.current();
-    if (!a) return { unidades: 0, modulos: 0, anexos: 0 };
-    const modulos = a.unidades.reduce((n, u) => n + u.modulos.length, 0);
-    const anexos = a.unidades.reduce(
-      (n, u) => n + u.modulos.reduce((m, x) => m + x.anexos.length, 0),
+    if (!a) return { sections: 0, modules: 0, attachments: 0 };
+    const modules = a.sections.reduce((n, u) => n + u.modules.length, 0);
+    const attachments = a.sections.reduce(
+      (n, u) => n + u.modules.reduce((m, x) => m + x.attachments.length, 0),
       0,
     );
-    return { unidades: a.unidades.length, modulos, anexos };
+    return { sections: a.sections.length, modules, attachments };
   });
 
-  listAll(): Asignatura[] {
+  listAll(): Subject[] {
     return this.storage.list();
   }
 
-  create(nombre: string, descripcion: string): Asignatura {
+  create(name: string, description: string): Subject {
     const now = new Date().toISOString();
-    const a: Asignatura = {
+    const a: Subject = {
       id: uid(),
-      nombre: nombre.trim() || 'Sin título',
-      descripcion,
-      unidades: [],
-      fechaCreacion: now,
-      fechaModificacion: now,
+      name: name.trim() || 'Sin título',
+      description,
+      sections: [],
+      creationDate: now,
+      modificationDate: now,
     };
     this.storage.save(a);
     this.current.set(a);
@@ -79,37 +79,37 @@ export class StoreService {
     });
   }
 
-  rename(nombre: string, descripcion: string): void {
-    this.update((a) => ({ ...a, nombre, descripcion }));
+  rename(name: string, description: string): void {
+    this.update((a) => ({ ...a, name, description }));
   }
 
-  // — Unidades —
-  addUnidad(titulo: string): void {
+  // — Sections —
+  addSection(title: string): void {
     this.update((a) => ({
       ...a,
-      unidades: [
-        ...a.unidades,
+      sections: [
+        ...a.sections,
         {
           id: uid(),
-          titulo,
-          descripcion: '',
-          orden: a.unidades.length,
-          modulos: [],
-          bioma: 'pradera',
+          title,
+          description: '',
+          order: a.sections.length,
+          modules: [],
+          biome: 'pradera',
           color: '#6366f1',
         },
       ],
     }));
   }
 
-  editUnidad(id: string, patch: Partial<EducaUnidad>): void {
+  editSection(id: string, patch: Partial<EducaSection>): void {
     this.update((a) => ({
       ...a,
-      unidades: a.unidades.map((u) => (u.id === id ? { ...u, ...patch } : u)),
+      sections: a.sections.map((u) => (u.id === id ? { ...u, ...patch } : u)),
     }));
   }
 
-  removeUnidad(id: string): void {
+  removeSection(id: string): void {
     const a = this.current();
     if (a) {
       this.syncChannel.broadcast({
@@ -119,32 +119,32 @@ export class StoreService {
         timestamp: Date.now(),
       });
     }
-    this.update((a) => ({ ...a, unidades: a.unidades.filter((u) => u.id !== id) }));
+    this.update((a) => ({ ...a, sections: a.sections.filter((u) => u.id !== id) }));
   }
 
-  moveUnidad(id: string, dir: -1 | 1): void {
+  moveSection(id: string, dir: -1 | 1): void {
     this.update((a) => {
-      const i = a.unidades.findIndex((u) => u.id === id);
-      return { ...a, unidades: move(a.unidades, i, i + dir) };
+      const i = a.sections.findIndex((u) => u.id === id);
+      return { ...a, sections: move(a.sections, i, i + dir) };
     });
   }
 
-  // — Módulos —
-  addModulo(unidadId: string, titulo: string): void {
+  // — Modules —
+  addModule(sectionId: string, title: string): void {
     this.update((a) => ({
       ...a,
-      unidades: a.unidades.map((u) =>
-        u.id === unidadId
+      sections: a.sections.map((u) =>
+        u.id === sectionId
           ? {
               ...u,
-              modulos: [
-                ...u.modulos,
+              modules: [
+                ...u.modules,
                 {
                   id: uid(),
-                  titulo,
-                  descripcion: '',
-                  orden: u.modulos.length,
-                  anexos: [],
+                  title,
+                  description: '',
+                  order: u.modules.length,
+                  attachments: [],
                 },
               ],
             }
@@ -153,48 +153,48 @@ export class StoreService {
     }));
   }
 
-  editModulo(unidadId: string, moduloId: string, patch: Partial<Modulo>): void {
+  editModule(sectionId: string, moduleId: string, patch: Partial<Module>): void {
     this.update((a) => ({
       ...a,
-      unidades: a.unidades.map((u) =>
-        u.id === unidadId
-          ? { ...u, modulos: u.modulos.map((m) => (m.id === moduloId ? { ...m, ...patch } : m)) }
+      sections: a.sections.map((u) =>
+        u.id === sectionId
+          ? { ...u, modules: u.modules.map((m) => (m.id === moduleId ? { ...m, ...patch } : m)) }
           : u,
       ),
     }));
   }
 
-  removeModulo(unidadId: string, moduloId: string): void {
+  removeModule(sectionId: string, moduleId: string): void {
     this.update((a) => ({
       ...a,
-      unidades: a.unidades.map((u) =>
-        u.id === unidadId ? { ...u, modulos: u.modulos.filter((m) => m.id !== moduloId) } : u,
+      sections: a.sections.map((u) =>
+        u.id === sectionId ? { ...u, modules: u.modules.filter((m) => m.id !== moduleId) } : u,
       ),
     }));
   }
 
-  moveModulo(unidadId: string, moduloId: string, dir: -1 | 1): void {
+  moveModule(sectionId: string, moduleId: string, dir: -1 | 1): void {
     this.update((a) => ({
       ...a,
-      unidades: a.unidades.map((u) => {
-        if (u.id !== unidadId) return u;
-        const i = u.modulos.findIndex((m) => m.id === moduloId);
-        return { ...u, modulos: move(u.modulos, i, i + dir) };
+      sections: a.sections.map((u) => {
+        if (u.id !== sectionId) return u;
+        const i = u.modules.findIndex((m) => m.id === moduleId);
+        return { ...u, modules: move(u.modules, i, i + dir) };
       }),
     }));
   }
 
-  // — Anexos —
-  addAnexo(unidadId: string, moduloId: string, titulo: string, tipo: TipoAnexo = 'documento'): void {
-    const anx: Anexo = { id: uid(), titulo, tipo };
+  // — Appendices —
+  addAttachment(sectionId: string, moduleId: string, title: string, type: AttachmentType = 'documento'): void {
+    const anx: Attachment = { id: uid(), title, type };
     this.update((a) => ({
       ...a,
-      unidades: a.unidades.map((u) =>
-        u.id === unidadId
+      sections: a.sections.map((u) =>
+        u.id === sectionId
           ? {
               ...u,
-              modulos: u.modulos.map((m) =>
-                m.id === moduloId ? { ...m, anexos: [...m.anexos, anx] } : m,
+              modules: u.modules.map((m) =>
+                m.id === moduleId ? { ...m, attachments: [...m.attachments, anx] } : m,
               ),
             }
           : u,
@@ -202,16 +202,16 @@ export class StoreService {
     }));
   }
 
-  editAnexo(unidadId: string, moduloId: string, anexoId: string, patch: Partial<Anexo>): void {
+  editAttachment(sectionId: string, moduleId: string, attachmentId: string, patch: Partial<Attachment>): void {
     this.update((a) => ({
       ...a,
-      unidades: a.unidades.map((u) =>
-        u.id === unidadId
+      sections: a.sections.map((u) =>
+        u.id === sectionId
           ? {
               ...u,
-              modulos: u.modulos.map((m) =>
-                m.id === moduloId
-                  ? { ...m, anexos: m.anexos.map((x) => (x.id === anexoId ? { ...x, ...patch } : x)) }
+              modules: u.modules.map((m) =>
+                m.id === moduleId
+                  ? { ...m, attachments: m.attachments.map((x) => (x.id === attachmentId ? { ...x, ...patch } : x)) }
                   : m,
               ),
             }
@@ -220,15 +220,15 @@ export class StoreService {
     }));
   }
 
-  removeAnexo(unidadId: string, moduloId: string, anexoId: string): void {
+  removeAttachment(sectionId: string, moduleId: string, attachmentId: string): void {
     this.update((a) => ({
       ...a,
-      unidades: a.unidades.map((u) =>
-        u.id === unidadId
+      sections: a.sections.map((u) =>
+        u.id === sectionId
           ? {
               ...u,
-              modulos: u.modulos.map((m) =>
-                m.id === moduloId ? { ...m, anexos: m.anexos.filter((x) => x.id !== anexoId) } : m,
+              modules: u.modules.map((m) =>
+                m.id === moduleId ? { ...m, attachments: m.attachments.filter((x) => x.id !== attachmentId) } : m,
               ),
             }
           : u,
@@ -236,7 +236,7 @@ export class StoreService {
     }));
   }
 
-  private update(fn: (a: Asignatura) => Asignatura): void {
+  private update(fn: (a: Subject) => Subject): void {
     const a = this.current();
     if (!a) return;
     const next = fn(a);
@@ -255,72 +255,72 @@ export class StoreService {
   }
 
   /**
-   * Sincroniza la asignatura activa con el Roadmap del alumno.
-   * Transforma las Unidades, Módulos y Anexos de Educa al formato de islas y actividades 3D.
+   * Synchronizes the active subject with the student's Roadmap.
+   * Transforms Educa's Sections, Modules and Attachments into the 3D islands and activities format.
    */
-  private syncToRoadmap(asignatura: Asignatura): void {
-    const platformUnidades: PlatformUnidad[] = [];
-    const conexiones: Conexion[] = [];
+  private syncToRoadmap(subject: Subject): void {
+    const platformSections: PlatformSection[] = [];
+    const connections: Connection[] = [];
 
-    asignatura.unidades.forEach((u, uIdx) => {
-      const bioma3d = educaBiomeToMundo3d(u.bioma) as Bioma;
-      const actividades: Actividad[] = [];
+    subject.sections.forEach((u, uIdx) => {
+      const biome3d = educaBiomeToWorld3d(u.biome) as Biome;
+      const activities: Activity[] = [];
 
       let actIndex = 0;
-      for (const m of u.modulos) {
-        for (const anx of m.anexos) {
-          const esEjercicio = anx.tipo === 'ejercicio';
+      for (const m of u.modules) {
+        for (const anx of m.attachments) {
+          const isExercise = anx.type === 'ejercicio';
           const actId = `${u.id}-${anx.id}`;
-          actividades.push({
+          activities.push({
             id: actId,
-            nombre: anx.titulo,
-            tipo: esEjercicio ? 'desafio-practico' : 'teoria',
-            esObligatorio: esEjercicio,
-            reintentosPermitidos: esEjercicio ? 2 : 0,
-            posicionX: 100 + (actIndex % 4) * 170,
-            posicionY: 100 + Math.floor(actIndex / 4) * 150,
-            desafioId: esEjercicio ? `desafio-${anx.id}` : undefined,
-            descripcion:
-              anx.descripcion ||
-              (esEjercicio
+            name: anx.title,
+            type: isExercise ? 'desafio-practico' : 'teoria',
+            isMandatory: isExercise,
+            allowedRetries: isExercise ? 2 : 0,
+            positionX: 100 + (actIndex % 4) * 170,
+            positionY: 100 + Math.floor(actIndex / 4) * 150,
+            challengeId: isExercise ? `desafio-${anx.id}` : undefined,
+            description:
+              anx.description ||
+              (isExercise
                 ? 'Completa este desafío para ganar experiencia.'
                 : 'Material de consulta teórico.'),
-            dificultad: esEjercicio ? 'BASICO' : undefined,
-            recursoUrl: anx.url,
-            recursoTipo: anx.tipo === 'video' ? 'video' : 'pdf',
+            difficulty: isExercise ? 'BASICO' : undefined,
+            resourceUrl: anx.url,
+            resourceType: anx.type === 'video' ? 'video' : 'pdf',
           });
 
           if (actIndex > 0) {
-            conexiones.push({
+            connections.push({
               id: `cx-${u.id}-${actIndex}`,
-              nodoOrigenId: actividades[actIndex - 1].id,
-              nodoDestinoId: actId,
+              nodeOriginId: activities[actIndex - 1].id,
+              nodeDestinationId: actId,
             });
           }
           actIndex++;
         }
       }
 
-      platformUnidades.push({
+      platformSections.push({
         id: u.id,
-        nombre: u.titulo,
-        orden: uIdx + 1,
-        umbralXpDesbloqueo: uIdx * 200,
-        bioma: bioma3d,
-        actividades,
+        name: u.title,
+        order: uIdx + 1,
+        xpThreshold: uIdx * 200,
+        biome: biome3d,
+        activities,
       });
     });
 
     const rm: Roadmap = {
-      cursoCohorteId: CURSO_SEED_ID,
-      nombre: asignatura.nombre,
-      unidades: platformUnidades,
-      conexiones,
+      courseCohortId: COURSE_SEED_ID,
+      name: subject.name,
+      sections: platformSections,
+      connections,
     };
 
     try {
       localStorage.setItem(ROADMAP_LS_KEY, JSON.stringify(rm));
-      this.roadmapStore.recargar();
+      this.roadmapStore.reload();
     } catch {
       /* ignore */
     }

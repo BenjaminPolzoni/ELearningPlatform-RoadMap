@@ -1,8 +1,8 @@
 import { PixelGrid } from '../../shared/pixel-icon';
 
-// Librería genérica del selector de íconos del alta de insignias — separada a propósito de
-// badge-icons.ts (pixel-grids.md: "para que el profesor arme insignias nuevas sin pisar el
-// significado de las 15 [14] del catálogo fijo"). No mezclar los dos registries.
+// Generic library of the icon picker in badge creation — deliberately separate from
+// badge-icons.ts (pixel-grids.md: "so the teacher can build new badges without stepping on the
+// meaning of the 15 [14] of the fixed catalog"). Do not mix the two registries.
 
 const NEUTRAL = 'var(--color-neutral)';
 const PRIMARY = 'var(--color-primary)';
@@ -13,7 +13,7 @@ const CONTENT = 'var(--color-base-content)';
 export interface GenericIcon {
   grid: PixelGrid;
   colors: Record<number, string>;
-  /** true = pixel-grids.md lo marca "rehacer" — se ofrece igual en el picker, etiquetado. */
+  /** true = pixel-grids.md marks it "redo" — still offered in the picker, labeled. */
   needsRework: boolean;
 }
 

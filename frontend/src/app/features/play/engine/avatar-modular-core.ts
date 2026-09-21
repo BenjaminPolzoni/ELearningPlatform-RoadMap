@@ -2,13 +2,13 @@ import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 /**
- * Núcleo geométrico del personaje modular (port tipado de
- * `public/mundo-3d/avatar-modular-core.js` — nombres y lógica idénticos para
- * trazabilidad; solo agrega tipos).
+ * Geometric core of the modular character (typed port of
+ * `public/mundo-3d/avatar-modular-core.js` — identical names and logic for
+ * traceability; it only adds types).
  *
- * Extrae cara/pelo/barba/pantalón/calzado de los GLB de clases KayKit
- * (`Assets/CharacterV2/Characters/gltf/`) y los re-enlaza (`remapSkinnedMesh`)
- * al esqueleto del modelo base.
+ * Extracts face/hair/beard/pants/footwear from the KayKit class GLBs
+ * (`Assets/CharacterV2/Characters/gltf/`) and re-binds them (`remapSkinnedMesh`)
+ * to the base model's skeleton.
  */
 
 export const faceGeomCache = new Map<string, THREE.BufferGeometry>();
@@ -16,7 +16,7 @@ export const hairGeomCache = new Map<string, THREE.BufferGeometry>();
 export const beardGeomCache = new Map<string, THREE.BufferGeometry>();
 export const legSplitCache = new Map<string, { pantsGeom: THREE.BufferGeometry; shoesGeom: THREE.BufferGeometry }>();
 
-export type CargarClase = (clase: string) => Promise<GLTF | null>;
+export type LoadCharacterClass = (characterClass: string) => Promise<GLTF | null>;
 
 interface FaceArgs {
   avgX: number;
@@ -25,8 +25,8 @@ interface FaceArgs {
   isSkin: boolean;
   isEye: boolean;
   isFaceFeature: boolean;
-  isBandaBaja: boolean;
-  isLado: boolean;
+  isBandLow: boolean;
+  isSide: boolean;
   keepBeard: boolean;
   isBeard: boolean;
 }
@@ -43,14 +43,14 @@ interface MeshStrategy {
 }
 
 const mageFace = (a: FaceArgs): boolean => {
-  const isTrasOreja =
+  const isAfterEar =
     Math.abs(a.avgX) >= 0.28 &&
     Math.abs(a.avgX) <= 0.365 &&
     a.avgY >= 1.44 &&
     a.avgY <= 1.65 &&
     a.avgZ >= -0.25 &&
     a.avgZ <= -0.02;
-  return a.isSkin || a.isEye || a.isFaceFeature || a.isBandaBaja || a.isLado || isTrasOreja || (a.keepBeard && a.isBeard);
+  return a.isSkin || a.isEye || a.isFaceFeature || a.isBandLow || a.isSide || isAfterEar || (a.keepBeard && a.isBeard);
 };
 
 function magePostProcess(faceGeom: THREE.BufferGeometry): void {
@@ -79,28 +79,28 @@ function magePostProcess(faceGeom: THREE.BufferGeometry): void {
   faceGeom.computeBoundingSphere();
 }
 
-const caraHumana = (a: FaceArgs): boolean =>
-  a.isSkin || a.isEye || a.isFaceFeature || a.isBandaBaja || a.isLado || (a.keepBeard && a.isBeard);
+const humanFace = (a: FaceArgs): boolean =>
+  a.isSkin || a.isEye || a.isFaceFeature || a.isBandLow || a.isSide || (a.keepBeard && a.isBeard);
 
-const caraBarbaro = (a: FaceArgs): boolean =>
-  a.isEye || a.isFaceFeature || a.isBandaBaja || a.isLado || (a.keepBeard && a.isBeard) ||
+const faceBarbarian = (a: FaceArgs): boolean =>
+  a.isEye || a.isFaceFeature || a.isBandLow || a.isSide || (a.keepBeard && a.isBeard) ||
   (a.isSkin && a.avgY < 1.8 && a.avgZ >= 0.2 && Math.abs(a.avgX) <= 0.349);
 
-const peloBarbaro = (
+const hairBarbarian = (
   avgX: number, avgY: number, avgZ: number, isSkin: boolean, isEye: boolean, isFaceFeature: boolean, isBeard: boolean,
 ): boolean =>
   !isEye && !isFaceFeature && !isBeard &&
   !(isSkin && avgY < 1.8 && avgZ >= 0.2 && Math.abs(avgX) <= 0.349);
 
 export const CharacterMeshStrategies: Record<string, MeshStrategy> = {
-  Barbarian: { isFace: caraBarbaro, isHair: peloBarbaro, hairScale: 1.09, hairDy: -0.03 },
-  Mage: { isFace: mageFace, isHair: peloBarbaro, postProcessFace: magePostProcess, hairScale: 1.04, hairDy: 0 },
-  Rogue: { isFace: mageFace, isHair: peloBarbaro, postProcessFace: magePostProcess, hairScale: 1.04, hairDy: 0 },
-  Knight: { isFace: caraHumana, isHair: peloBarbaro, hairScale: 1.04, hairDy: 0 },
-  Ranger: { isFace: caraHumana, isHair: peloBarbaro, hairScale: 1.04, hairDy: 0 },
+  Barbarian: { isFace: faceBarbarian, isHair: hairBarbarian, hairScale: 1.09, hairDy: -0.03 },
+  Mage: { isFace: mageFace, isHair: hairBarbarian, postProcessFace: magePostProcess, hairScale: 1.04, hairDy: 0 },
+  Rogue: { isFace: mageFace, isHair: hairBarbarian, postProcessFace: magePostProcess, hairScale: 1.04, hairDy: 0 },
+  Knight: { isFace: humanFace, isHair: hairBarbarian, hairScale: 1.04, hairDy: 0 },
+  Ranger: { isFace: humanFace, isHair: hairBarbarian, hairScale: 1.04, hairDy: 0 },
 };
 
-/** Determina si el nombre de una malla corresponde a una cabeza base o accesorio de cabeza. */
+/** Determines whether a mesh name corresponds to a base head or a head accessory. */
 export function isHeadMesh(name: string | undefined): boolean {
   if (!name) return false;
   return (
@@ -117,7 +117,7 @@ export function isHeadMesh(name: string | undefined): boolean {
   );
 }
 
-/** Reasigna los pesos e índices óseos de un SkinnedMesh para que use el esqueleto de destino. */
+/** Reassigns the bone weights and indices of a SkinnedMesh so it uses the target skeleton. */
 export function remapSkinnedMesh(mesh: THREE.SkinnedMesh, targetSkeleton: THREE.Skeleton): THREE.SkinnedMesh {
   const cloned = mesh.clone();
   cloned.geometry = mesh.geometry.clone();
@@ -141,7 +141,7 @@ export function remapSkinnedMesh(mesh: THREE.SkinnedMesh, targetSkeleton: THREE.
   return cloned;
 }
 
-/** Separa la geometría de una pierna en pantalón y calzado según cutoffY. */
+/** Splits a leg's geometry into pants and footwear according to cutoffY. */
 export function splitLegGeometry(
   mesh: THREE.SkinnedMesh, cutoffY = 0.15,
 ): { pantsGeom: THREE.BufferGeometry; shoesGeom: THREE.BufferGeometry } {
@@ -175,7 +175,7 @@ export function splitLegGeometry(
   return result;
 }
 
-/** Aplica tinte personalizado al calzado manteniendo la suela clara. */
+/** Applies a custom tint to the footwear while keeping the light sole. */
 export function applyShoesTint(shoesMesh: THREE.SkinnedMesh, colorHex: string): void {
   if (!shoesMesh || !shoesMesh.geometry || !colorHex) return;
   shoesMesh.material = (shoesMesh.material as THREE.Material).clone() as THREE.Material;
@@ -223,7 +223,7 @@ interface TriAvg {
   avgV: number;
 }
 
-function* cadaTriangulo(mesh: THREE.SkinnedMesh): Generator<TriAvg> {
+function* eachTriangle(mesh: THREE.SkinnedMesh): Generator<TriAvg> {
   const geom = mesh.geometry;
   const pos = geom.attributes['position'] as THREE.BufferAttribute;
   const uv = geom.attributes['uv'] as THREE.BufferAttribute;
@@ -244,39 +244,39 @@ function* cadaTriangulo(mesh: THREE.SkinnedMesh): Generator<TriAvg> {
   }
 }
 
-const esPiel = (t: TriAvg): boolean => t.avgU < 0.13 && t.avgU >= 0.01 && t.avgV <= 0.25;
-const esOjo = (t: TriAvg): boolean =>
+const isSkinTriangle = (t: TriAvg): boolean => t.avgU < 0.13 && t.avgU >= 0.01 && t.avgV <= 0.25;
+const isEyeTriangle = (t: TriAvg): boolean =>
   t.avgU >= 0.25 && t.avgU <= 0.36 && t.avgV <= 0.22 && t.avgY < 1.75 && t.avgZ > 0.25;
-const esRasgo = (t: TriAvg): boolean =>
+const isTrait = (t: TriAvg): boolean =>
   Math.abs(t.avgX) <= 0.349 && t.avgY >= 1.5 && t.avgY <= 1.83 && t.avgZ >= 0.26;
 
-/** Extrae la geometría de la cara para un cabezal humano. */
+/** Extracts the face geometry for a human head. */
 export function extractFaceGeometry(
   sourceHeadMesh: THREE.SkinnedMesh, headClass: string,
-  keepBeard = false, sinFlequillo = false, estiraFrente = false,
+  keepBeard = false, withoutBangs = false, stretchesFront = false,
 ): THREE.BufferGeometry {
-  const cacheKey = `${headClass}_${keepBeard}_${sinFlequillo}_${estiraFrente}`;
+  const cacheKey = `${headClass}_${keepBeard}_${withoutBangs}_${stretchesFront}`;
   const hit = faceGeomCache.get(cacheKey);
   if (hit) return hit;
 
   const faceIndices: number[] = [];
   const strategy = CharacterMeshStrategies[headClass] ?? CharacterMeshStrategies['Knight'];
 
-  for (const t of cadaTriangulo(sourceHeadMesh)) {
-    const isSkin = esPiel(t);
-    const isEye = esOjo(t);
-    const isFaceFeature = esRasgo(t);
+  for (const t of eachTriangle(sourceHeadMesh)) {
+    const isSkin = isSkinTriangle(t);
+    const isEye = isEyeTriangle(t);
+    const isFaceFeature = isTrait(t);
     let isBeard = false;
     if (headClass === 'Barbarian') isBeard = t.avgY < 1.54 && t.avgZ > 0.0 && !isSkin && !isEye;
     else if (headClass === 'Ranger') isBeard = t.avgY < 1.52 && t.avgZ > 0.1 && !isSkin && !isEye;
-    const isBandaBaja = isSkin && t.avgY < 1.52 && t.avgY >= 1.2;
-    const isLado = isSkin && t.avgY < 1.75 && t.avgY >= 1.4 && Math.abs(t.avgX) > 0.3;
+    const isBandLow = isSkin && t.avgY < 1.52 && t.avgY >= 1.2;
+    const isSide = isSkin && t.avgY < 1.75 && t.avgY >= 1.4 && Math.abs(t.avgX) > 0.3;
 
     let isFace = strategy.isFace({
       avgX: t.avgX, avgY: t.avgY, avgZ: t.avgZ, isSkin, isEye, isFaceFeature,
-      isBandaBaja, isLado, keepBeard, isBeard,
+      isBandLow, isSide, keepBeard, isBeard,
     });
-    if (sinFlequillo && isFaceFeature && !isSkin && !isEye &&
+    if (withoutBangs && isFaceFeature && !isSkin && !isEye &&
       t.avgU >= 0.13 && t.avgU < 0.25 && t.avgV <= 0.25 && !(keepBeard && isBeard)) {
       isFace = false;
     }
@@ -286,7 +286,7 @@ export function extractFaceGeometry(
   const faceGeom = sourceHeadMesh.geometry.clone();
   faceGeom.setIndex(faceIndices);
 
-  if (estiraFrente) {
+  if (stretchesFront) {
     const fPos = faceGeom.attributes['position'] as THREE.BufferAttribute;
     const fUv = faceGeom.attributes['uv'] as THREE.BufferAttribute;
     for (let i = 0; i < fPos.count; i++) {
@@ -309,25 +309,25 @@ export function extractFaceGeometry(
   return faceGeom;
 }
 
-/** Extrae la geometría del cabello de un cabezal donante. */
+/** Extracts the hair geometry from a donor head. */
 export function extractHairGeometry(
-  sourceHeadMesh: THREE.SkinnedMesh, hairClass: string, recortaCejas = false,
+  sourceHeadMesh: THREE.SkinnedMesh, hairClass: string, cropsEyebrows = false,
 ): THREE.BufferGeometry {
-  const cacheKey = `${hairClass}_${recortaCejas}`;
+  const cacheKey = `${hairClass}_${cropsEyebrows}`;
   const hit = hairGeomCache.get(cacheKey);
   if (hit) return hit;
 
   const hairIndices: number[] = [];
-  for (const t of cadaTriangulo(sourceHeadMesh)) {
-    const isSkin = esPiel(t);
-    const isEye = esOjo(t);
-    const isFaceFeature = esRasgo(t);
+  for (const t of eachTriangle(sourceHeadMesh)) {
+    const isSkin = isSkinTriangle(t);
+    const isEye = isEyeTriangle(t);
+    const isFaceFeature = isTrait(t);
     let isBeard = false;
     if (hairClass === 'Barbarian') isBeard = t.avgY < 1.54 && t.avgZ > 0.0 && !isSkin && !isEye;
     else if (hairClass === 'Ranger') isBeard = t.avgY < 1.52 && t.avgZ > 0.1 && !isSkin && !isEye;
     const isHairUV = t.avgU >= 0.13 && t.avgU < 0.25 && t.avgV <= 0.25;
     let isHair = !isSkin && !isEye && (!isFaceFeature || isHairUV) && !isBeard;
-    if (recortaCejas && hairClass !== 'Barbarian' && isHairUV &&
+    if (cropsEyebrows && hairClass !== 'Barbarian' && isHairUV &&
       Math.abs(t.avgX) <= 0.24 && t.avgY >= 1.68 && t.avgY <= 1.83 && t.avgZ >= 0.33) {
       isHair = false;
     }
@@ -345,15 +345,15 @@ export function extractHairGeometry(
   return hairGeom;
 }
 
-/** Extrae la geometría de la barba (Bárbaro o Arquero). */
+/** Extracts the beard geometry (Barbarian or Archer). */
 export function extractBeardGeometry(sourceHeadMesh: THREE.SkinnedMesh, beardType: string): THREE.BufferGeometry {
   const hit = beardGeomCache.get(beardType);
   if (hit) return hit;
 
   const beardIndices: number[] = [];
-  for (const t of cadaTriangulo(sourceHeadMesh)) {
-    const isSkin = esPiel(t);
-    const isEye = esOjo(t);
+  for (const t of eachTriangle(sourceHeadMesh)) {
+    const isSkin = isSkinTriangle(t);
+    const isEye = isEyeTriangle(t);
     let isBeard = false;
     if (beardType === 'long') isBeard = t.avgY < 1.54 && t.avgZ > 0.0 && !isSkin && !isEye;
     else if (beardType === 'short') isBeard = t.avgY < 1.52 && t.avgZ > 0.1 && !isSkin && !isEye;
@@ -366,7 +366,7 @@ export function extractBeardGeometry(sourceHeadMesh: THREE.SkinnedMesh, beardTyp
   return beardGeom;
 }
 
-function tiñe(material: THREE.Material, colorHex: string): void {
+function tints(material: THREE.Material, colorHex: string): void {
   const mat = material as THREE.MeshStandardMaterial;
   mat.color.set(colorHex);
   if (colorHex.toLowerCase() !== '#ffffff' && mat.emissive) {
@@ -375,10 +375,10 @@ function tiñe(material: THREE.Material, colorHex: string): void {
   }
 }
 
-/** Monta el cabello modular sobre el personaje. */
+/** Mounts the modular hair on the character. */
 export async function mountHair(
-  getGLTF: CargarClase, targetRig: THREE.Object3D, targetSkin: THREE.SkinnedMesh,
-  hairType: string, headClass: string, caraSinFlequillo: boolean, hairColor: string,
+  getGLTF: LoadCharacterClass, targetRig: THREE.Object3D, targetSkin: THREE.SkinnedMesh,
+  hairType: string, headClass: string, faceWithoutBangs: boolean, hairColor: string,
 ): Promise<void> {
   if (!hairType || hairType === 'default') return;
   const hairClassMap: Record<string, string> = {
@@ -391,22 +391,22 @@ export async function mountHair(
   const origHead = srcGltf?.scene.getObjectByName(`${srcClass}_Head`) as THREE.SkinnedMesh | undefined;
   if (!srcGltf || !origHead) return;
 
-  const esForaneo = srcClass !== 'Barbarian' && srcClass !== headClass;
+  const isForeign = srcClass !== 'Barbarian' && srcClass !== headClass;
   const hairGeom = extractHairGeometry(origHead, srcClass, false);
   const hMesh = origHead.clone();
-  hMesh.geometry = esForaneo ? hairGeom.clone() : hairGeom;
+  hMesh.geometry = isForeign ? hairGeom.clone() : hairGeom;
 
-  if (esForaneo) {
+  if (isForeign) {
     const strategy = CharacterMeshStrategies[headClass] ?? CharacterMeshStrategies['Knight'];
-    const sPelo = strategy.hairScale;
-    const dyPelo = strategy.hairDy;
+    const sHair = strategy.hairScale;
+    const dyHair = strategy.hairDy;
     const pPos = hMesh.geometry.attributes['position'] as THREE.BufferAttribute;
     for (let i = 0; i < pPos.count; i++) {
       pPos.setXYZ(
         i,
-        pPos.getX(i) * sPelo,
-        dyPelo + 1.68 + (pPos.getY(i) - 1.68) * sPelo,
-        0.04 + (pPos.getZ(i) - 0.04) * sPelo,
+        pPos.getX(i) * sHair,
+        dyHair + 1.68 + (pPos.getY(i) - 1.68) * sHair,
+        0.04 + (pPos.getZ(i) - 0.04) * sHair,
       );
     }
     pPos.needsUpdate = true;
@@ -419,24 +419,24 @@ export async function mountHair(
     hMesh.material = (targetSkin.material as THREE.Material).clone();
   } else {
     hMesh.material = (origHead.material as THREE.Material).clone();
-    if (hairColor) tiñe(hMesh.material, hairColor);
+    if (hairColor) tints(hMesh.material, hairColor);
   }
   const mat = hMesh.material as THREE.MeshStandardMaterial;
   mat.polygonOffset = true;
   mat.polygonOffsetFactor = -1.0;
   mat.polygonOffsetUnits = -1.0;
 
-  // ponytail: el parámetro caraSinFlequillo hoy no altera el recorte (recortaCejas=false
-  // como en el original); se conserva la firma para paridad con avatar-modular-core.js.
-  void caraSinFlequillo;
+  // ponytail: the faceWithoutBangs parameter does not currently alter the crop (cropsEyebrows=false
+  // as in the original); the signature is kept for parity with avatar-modular-core.js.
+  void faceWithoutBangs;
   const remappedHair = remapSkinnedMesh(hMesh, targetSkin.skeleton);
   remappedHair.name = 'modular_hair';
   targetRig.add(remappedHair);
 }
 
-/** Monta la barba modular sobre el personaje. */
+/** Mounts the modular beard on the character. */
 export async function mountBeard(
-  getGLTF: CargarClase, targetRig: THREE.Object3D, targetSkin: THREE.SkinnedMesh,
+  getGLTF: LoadCharacterClass, targetRig: THREE.Object3D, targetSkin: THREE.SkinnedMesh,
   beardType: string, beardColor: string,
 ): Promise<void> {
   if (!beardType || beardType === 'none') return;
@@ -448,7 +448,7 @@ export async function mountBeard(
   const bMesh = origHead.clone();
   bMesh.geometry = extractBeardGeometry(origHead, beardType);
   bMesh.material = (origHead.material as THREE.Material).clone();
-  if (beardColor) tiñe(bMesh.material, beardColor);
+  if (beardColor) tints(bMesh.material, beardColor);
   const mat = bMesh.material as THREE.MeshStandardMaterial;
   mat.polygonOffset = true;
   mat.polygonOffsetFactor = -1.0;
@@ -459,9 +459,9 @@ export async function mountBeard(
   targetRig.add(remappedBeard);
 }
 
-/** Monta el tapaboca del Encapuchado como cosmético universal. */
+/** Mounts the Hooded character's face covering as a universal cosmetic. */
 export async function mountMask(
-  getGLTF: CargarClase, targetRig: THREE.Object3D, targetSkin: THREE.SkinnedMesh, maskColor: string,
+  getGLTF: LoadCharacterClass, targetRig: THREE.Object3D, targetSkin: THREE.SkinnedMesh, maskColor: string,
 ): Promise<void> {
   const srcGltf = await getGLTF('Rogue_Hooded');
   const origMask = srcGltf?.scene.getObjectByName('RogueHooded_Mask') as THREE.SkinnedMesh | undefined;
@@ -470,9 +470,9 @@ export async function mountMask(
   mMesh.material = (origMask.material as THREE.Material).clone();
   if (maskColor) {
     try {
-      tiñe(mMesh.material, maskColor);
+      tints(mMesh.material, maskColor);
     } catch {
-      /* ignorar si color inválido */
+      /* ignore if invalid color */
     }
   }
   const mat = mMesh.material as THREE.MeshStandardMaterial;
@@ -484,11 +484,11 @@ export async function mountMask(
   targetRig.add(remappedMask);
 }
 
-/** Factory: funciones de montaje enlazadas al cargador GLTF del entorno. */
-export function createAvatarMounter(getGLTF: CargarClase): {
+/** Factory: mounting functions bound to the environment's GLTF loader. */
+export function createAvatarMounter(getGLTF: LoadCharacterClass): {
   mountHair(
     targetRig: THREE.Object3D, targetSkin: THREE.SkinnedMesh,
-    hairType: string, headClass: string, caraSinFlequillo: boolean, hairColor: string,
+    hairType: string, headClass: string, faceWithoutBangs: boolean, hairColor: string,
   ): Promise<void>;
   mountBeard(
     targetRig: THREE.Object3D, targetSkin: THREE.SkinnedMesh, beardType: string, beardColor: string,
@@ -498,8 +498,8 @@ export function createAvatarMounter(getGLTF: CargarClase): {
   ): Promise<void>;
 } {
   return {
-    mountHair: (targetRig, targetSkin, hairType, headClass, caraSinFlequillo, hairColor) =>
-      mountHair(getGLTF, targetRig, targetSkin, hairType, headClass, caraSinFlequillo, hairColor),
+    mountHair: (targetRig, targetSkin, hairType, headClass, faceWithoutBangs, hairColor) =>
+      mountHair(getGLTF, targetRig, targetSkin, hairType, headClass, faceWithoutBangs, hairColor),
     mountBeard: (targetRig, targetSkin, beardType, beardColor) =>
       mountBeard(getGLTF, targetRig, targetSkin, beardType, beardColor),
     mountMask: (targetRig, targetSkin, maskColor) =>

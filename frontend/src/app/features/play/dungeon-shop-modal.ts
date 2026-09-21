@@ -19,76 +19,76 @@ import type { Avatar } from './world-gen';
 export interface ShopPropItem {
   id: string;
   emoji: string;
-  nombre: string;
-  tipo: 'Arma' | 'Defensa' | 'Consumible' | 'Reliquia' | 'Cosmético';
-  precio: number;
+  name: string;
+  type: 'Arma' | 'Defensa' | 'Consumible' | 'Reliquia' | 'Cosmético';
+  price: number;
   desc: string;
-  dialogo: string;
+  dialog: string;
 }
 
 export const SHOP_ITEMS: ShopPropItem[] = [
   {
     id: 'pocion',
     emoji: '🧪',
-    nombre: 'Elixir de Sabiduría',
-    tipo: 'Consumible',
-    precio: 15,
+    name: 'Elixir de Sabiduría',
+    type: 'Consumible',
+    price: 15,
     desc: 'Brebaje destilado de hierbas silvestres que expande tu agilidad mental.',
-    dialogo: 'Destilada con bayas de la montaña... sabe a fresa y agudiza tus reflejos.',
+    dialog: 'Destilada con bayas de la montaña... sabe a fresa y agudiza tus reflejos.',
   },
   {
     id: 'espada',
     emoji: '🗡️',
-    nombre: 'Espada de Acero',
-    tipo: 'Arma',
-    precio: 30,
+    name: 'Espada de Acero',
+    type: 'Arma',
+    price: 30,
     desc: 'Hoja forjada a mano para encarar desafíos en las torres con determinación.',
-    dialogo: 'Una espada confiable y equilibrada. Nunca salgas a explorar sin una.',
+    dialog: 'Una espada confiable y equilibrada. Nunca salgas a explorar sin una.',
   },
   {
     id: 'escudo',
     emoji: '🛡️',
-    nombre: 'Escudo Heráldico',
-    tipo: 'Defensa',
-    precio: 25,
+    name: 'Escudo Heráldico',
+    type: 'Defensa',
+    price: 25,
     desc: 'Reforzado con borde de hierro y heráldica de la orden de exploradores.',
-    dialogo: 'Un buen escudo te salvará más de una vez en terreno hostil.',
+    dialog: 'Un buen escudo te salvará más de una vez en terreno hostil.',
   },
   {
     id: 'llave',
     emoji: '🗝️',
-    nombre: 'Llave de Cerrajería',
-    tipo: 'Reliquia',
-    precio: 40,
+    name: 'Llave de Cerrajería',
+    type: 'Reliquia',
+    price: 40,
     desc: 'Forjada en latón antiguo para abrir cofres sellados en los anexos.',
-    dialogo: 'Ningún cerrojo se resiste a una llave templada en fuego de forja.',
+    dialog: 'Ningún cerrojo se resiste a una llave templada en fuego de forja.',
   },
   {
     id: 'mapa',
     emoji: '📜',
-    nombre: 'Mapa Náutico Antiguo',
-    tipo: 'Reliquia',
-    precio: 50,
+    name: 'Mapa Náutico Antiguo',
+    type: 'Reliquia',
+    price: 50,
     desc: 'Pergamino con corrientes marítimas y rutas secretas de las islas.',
-    dialogo: 'Ah, el mapa secreto de los navegantes... te mostrará corrientes ocultas.',
+    dialog: 'Ah, el mapa secreto de los navegantes... te mostrará corrientes ocultas.',
   },
   {
     id: 'brujula',
     emoji: '🧭',
-    nombre: 'Brújula de Cristal',
-    tipo: 'Reliquia',
-    precio: 35,
+    name: 'Brújula de Cristal',
+    type: 'Reliquia',
+    price: 35,
     desc: 'Su aguja imantada siempre apunta hacia el conocimiento inexplorado.',
-    dialogo: 'No apunta al norte magnético, sino a lo que más deseas aprender.',
+    dialog: 'No apunta al norte magnético, sino a lo que más deseas aprender.',
   },
   {
     id: 'capa',
     emoji: '👑',
-    nombre: 'Capa de Erudito',
-    tipo: 'Cosmético',
-    precio: 80,
+    name: 'Capa de Erudito',
+    type: 'Cosmético',
+    price: 80,
     desc: 'Tejido dorado de la corte que distingue a los estudiantes más dedicados.',
-    dialogo: '¡Una prenda digna de la realeza académica! Te verás imponente.',
+    dialog: '¡Una prenda digna de la realeza académica! Te verás imponente.',
   },
 ];
 
@@ -104,15 +104,15 @@ export const SHOP_ITEMS: ShopPropItem[] = [
       aria-modal="true"
       aria-label="Bazar del Calabozo">
       
-      <!-- Canvas 3D Three.js de la sala diorama -->
+      <!-- Three.js 3D canvas of the diorama room -->
       <canvas #shopCanvas class="absolute inset-0 w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
 
-      <!-- Viñeta sutil en los bordes para profundidad estética -->
+      <!-- Subtle vignette on the edges for aesthetic depth -->
       <div class="pointer-events-none absolute inset-0 bg-radial from-transparent via-transparent to-black/60"></div>
 
-      <!-- Cabecera Superior: Cartela de Fantasía + Monedas + Salir -->
+      <!-- Top header: Fantasy cartouche + Coins + Exit -->
       <header class="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 sm:p-6 pointer-events-auto">
-        <!-- Indicador de control WASD / Ayuda de movimiento -->
+        <!-- WASD control indicator / Movement help -->
         <div class="flex items-center gap-2 rounded-xl bg-black/75 border border-white/20 px-3.5 py-1.5 backdrop-blur-md shadow-xl text-white">
           <span class="text-sm">🎮</span>
           <span class="text-[10px] sm:text-xs font-mono font-medium text-gray-200">
@@ -125,7 +125,7 @@ export const SHOP_ITEMS: ShopPropItem[] = [
           }
         </div>
 
-        <!-- Cartela Central Estilo Fantasía Medieval -->
+        <!-- Central cartouche, Medieval Fantasy style -->
         <div class="relative flex items-center gap-3 px-6 sm:px-8 py-2 sm:py-2.5 rounded-2xl bg-gradient-to-r from-[#211538]/95 via-[#2b1b46]/95 to-[#211538]/95 border-2 border-[#caa462]/90 shadow-2xl backdrop-blur-md text-[#f5e6c8]">
           <span class="text-base sm:text-xl filter drop-shadow">⚔️</span>
           <h1 class="text-sm sm:text-lg font-serif font-extrabold tracking-widest uppercase text-[#fdf6e2] drop-shadow-md">
@@ -134,7 +134,7 @@ export const SHOP_ITEMS: ShopPropItem[] = [
           <span class="text-base sm:text-xl filter drop-shadow">⚔️</span>
         </div>
 
-        <!-- Monedas y Botón Salir -->
+        <!-- Coins and Exit button -->
         <div class="flex items-center gap-2.5 sm:gap-3">
           <div class="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-950/80 to-black/80 border-2 border-amber-400/80 px-3.5 py-1.5 shadow-xl backdrop-blur-md">
             <span class="text-lg sm:text-xl">🪙</span>
@@ -144,7 +144,7 @@ export const SHOP_ITEMS: ShopPropItem[] = [
           </div>
 
           <button
-            (click)="iniciarSalida()"
+            (click)="startExit()"
             class="btn btn-sm btn-error btn-outline rounded-xl ui-font text-[9px] sm:text-[10px] shadow-lg backdrop-blur-md font-bold"
             title="Salir al exterior [Esc]">
             ✕ SALIR <kbd class="hidden sm:inline-block kbd kbd-xs bg-black/40 text-[8px]">ESC</kbd>
@@ -152,7 +152,7 @@ export const SHOP_ITEMS: ShopPropItem[] = [
         </div>
       </header>
 
-      <!-- Diálogo Interactivo Flotante del Mercader (Izquierda) -->
+      <!-- Floating interactive dialog of the Merchant (Left) -->
       <div class="absolute top-20 sm:top-24 left-4 sm:left-6 z-20 max-w-xs sm:max-w-sm pointer-events-auto">
         <div class="relative rounded-2xl bg-[#1c122e]/90 border-2 border-amber-500/60 backdrop-blur-md p-3 sm:p-3.5 text-white shadow-2xl">
           <div class="flex items-start gap-3">
@@ -176,11 +176,11 @@ export const SHOP_ITEMS: ShopPropItem[] = [
         </div>
       </div>
 
-      <!-- Prompt de interacción cuando el jugador camina hacia el mostrador -->
+      <!-- Interaction prompt when the player walks toward the counter -->
       @if (nearCounter() && !shopOpen()) {
         <aside class="absolute left-1/2 bottom-20 -translate-x-1/2 z-30 pointer-events-auto animate-bounce">
           <button
-            (click)="hablarConMercader()"
+            (click)="talkWithMerchant()"
             class="flex items-center gap-2.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold px-5 py-2.5 text-xs shadow-2xl border-2 border-yellow-200 transition-transform active:scale-95">
             <span class="text-base">💬</span>
             <span>Hablar con Mercader Bran [E / Espacio]</span>
@@ -188,7 +188,7 @@ export const SHOP_ITEMS: ShopPropItem[] = [
         </aside>
       }
 
-      <!-- Detalle Flotante del Ítem Seleccionado -->
+      <!-- Floating detail of the Selected Item -->
       @if (selectedItem(); as sel) {
         <div class="absolute bottom-28 sm:bottom-32 left-1/2 -translate-x-1/2 z-30 w-80 sm:w-96 pointer-events-auto animate-in fade-in zoom-in-95 duration-150">
           <div class="rounded-2xl bg-[#1c122e]/95 border-2 border-amber-400/80 backdrop-blur-md p-4 text-white shadow-2xl">
@@ -198,8 +198,8 @@ export const SHOP_ITEMS: ShopPropItem[] = [
                   {{ sel.emoji }}
                 </span>
                 <div>
-                  <h3 class="text-sm font-bold text-amber-300 title-font">{{ sel.nombre }}</h3>
-                  <span class="badge badge-warning badge-xs font-mono text-[8px]">{{ sel.tipo }}</span>
+                  <h3 class="text-sm font-bold text-amber-300 title-font">{{ sel.name }}</h3>
+                  <span class="badge badge-warning badge-xs font-mono text-[8px]">{{ sel.type }}</span>
                 </div>
               </div>
               <button (click)="selectedItem.set(null)" class="btn btn-ghost btn-xs btn-circle text-gray-400 hover:text-white">✕</button>
@@ -211,17 +211,17 @@ export const SHOP_ITEMS: ShopPropItem[] = [
 
             <div class="flex items-center justify-between gap-3 pt-2 border-t border-white/10">
               <span class="text-sm font-bold font-mono text-warning">
-                🪙 {{ sel.precio }} Monedas
+                🪙 {{ sel.price }} Monedas
               </span>
 
-              @if (esComprado(sel.id)) {
+              @if (isBought(sel.id)) {
                 <span class="btn btn-sm btn-disabled text-success text-xs font-bold">
                   ✅ Ya lo tienes
                 </span>
               } @else {
                 <button
-                  (click)="comprarItem(sel)"
-                  [disabled]="coins() < sel.precio"
+                  (click)="buyItem(sel)"
+                  [disabled]="coins() < sel.price"
                   class="btn btn-sm bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-extrabold border-none text-xs shadow-lg disabled:opacity-40">
                   Comprar 🛒
                 </button>
@@ -231,13 +231,13 @@ export const SHOP_ITEMS: ShopPropItem[] = [
         </div>
       }
 
-      <!-- Vitrina Inferior: Se abre SOLO cuando se habla con el mercader -->
+      <!-- Bottom showcase: opens ONLY when talking to the merchant -->
       @if (shopOpen()) {
         <footer class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 pointer-events-auto animate-in slide-in-from-bottom-6 duration-200">
           <div class="flex flex-col items-center gap-2">
             <div class="flex items-center justify-between w-full px-2 text-[10px] text-amber-300/80 font-mono font-bold">
               <span>ARTÍCULOS A LA VENTA</span>
-              <button (click)="cerrarCatalogo()" class="text-gray-400 hover:text-white underline cursor-pointer">
+              <button (click)="closeCatalog()" class="text-gray-400 hover:text-white underline cursor-pointer">
                 ✕ Ocultar lista [Esc]
               </button>
             </div>
@@ -245,31 +245,31 @@ export const SHOP_ITEMS: ShopPropItem[] = [
             <div class="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-2xl bg-[#1b102f]/95 border-2 border-[#caa462]/60 backdrop-blur-xl shadow-2xl">
               @for (item of items; track item.id) {
                 <button
-                  (click)="seleccionarItem(item)"
+                  (click)="selectItem(item)"
                   (mouseenter)="onItemHover(item)"
                   (mouseleave)="onItemLeave()"
                   class="relative w-12 h-12 sm:w-14 sm:h-14 rounded-xl border-2 transition-all duration-200 flex flex-col items-center justify-center group"
-                  [class.bg-white/5]="!esComprado(item.id) && selectedItem()?.id !== item.id"
-                  [class.border-white/20]="!esComprado(item.id) && selectedItem()?.id !== item.id"
-                  [class.hover:border-amber-400]="!esComprado(item.id)"
+                  [class.bg-white/5]="!isBought(item.id) && selectedItem()?.id !== item.id"
+                  [class.border-white/20]="!isBought(item.id) && selectedItem()?.id !== item.id"
+                  [class.hover:border-amber-400]="!isBought(item.id)"
                   [class.hover:scale-110]="true"
                   [class.bg-amber-500/20]="selectedItem()?.id === item.id"
                   [class.border-amber-400]="selectedItem()?.id === item.id"
-                  [class.bg-emerald-950/40]="esComprado(item.id)"
-                  [class.border-emerald-500/60]="esComprado(item.id)"
-                  [title]="item.nombre + ' (' + item.precio + ' monedas)'">
+                  [class.bg-emerald-950/40]="isBought(item.id)"
+                  [class.border-emerald-500/60]="isBought(item.id)"
+                  [title]="item.name + ' (' + item.price + ' monedas)'">
 
                   <span class="text-2xl sm:text-3xl filter drop-shadow group-hover:scale-110 transition-transform">
                     {{ item.emoji }}
                   </span>
 
-                  @if (esComprado(item.id)) {
+                  @if (isBought(item.id)) {
                     <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 text-slate-950 text-[9px] flex items-center justify-center font-bold">
                       ✓
                     </span>
                   } @else {
                     <span class="absolute -bottom-1 text-[8px] font-mono font-bold text-amber-300 bg-black/80 px-1 rounded border border-amber-400/40">
-                      {{ item.precio }}
+                      {{ item.price }}
                     </span>
                   }
                 </button>
@@ -279,7 +279,7 @@ export const SHOP_ITEMS: ShopPropItem[] = [
         </footer>
       }
 
-      <!-- Pantalla Cinemática de Transición (Entrada y Salida) -->
+      <!-- Cinematic Transition Screen (Entry and Exit) -->
       @if (transitioning()) {
         <div
           class="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center bg-[#130a21] transition-opacity duration-700 ease-in-out"
@@ -309,21 +309,21 @@ export class DungeonShopModalComponent implements AfterViewInit, OnDestroy {
 
   coins = model.required<number>();
   owned = model.required<string[]>();
-  cerrar = output<void>();
+  close = output<void>();
 
   readonly items = SHOP_ITEMS;
 
-  // Estado del catálogo: SOLO visible tras hablar con el mercader
+  // Catalog state: ONLY visible after talking to the merchant
   shopOpen = signal(false);
   nearCounter = signal(false);
   selectedItem = signal<ShopPropItem | null>(null);
 
-  // Estados de transición cinemática
+  // Cinematic transition states
   transitioning = signal(true);
   transitionOpaque = signal(true);
   transitionText = signal('Entrando al Bazar del Calabozo...');
 
-  // Diálogo dinámico del mercader
+  // Dynamic merchant dialog
   vendorMessage = signal(
     '¡Bienvenido a mi bazar, forastero! Camina hacia el mostrador para ver qué reliquias tengo para ti.',
   );
@@ -335,7 +335,7 @@ export class DungeonShopModalComponent implements AfterViewInit, OnDestroy {
     } else if (this.shopOpen()) {
       this.shopOpen.set(false);
     } else {
-      this.iniciarSalida();
+      this.startExit();
     }
   }
 
@@ -348,9 +348,9 @@ export class DungeonShopModalComponent implements AfterViewInit, OnDestroy {
   async ngAfterViewInit(): Promise<void> {
     const canvas = this.canvasRef().nativeElement;
 
-    // Obtener el avatar personalizado del usuario
+    // Get the user's customized avatar
     let avatarSpec: Avatar | AvatarBuild = 'Knight';
-    const config = this.avatarModular.leer();
+    const config = this.avatarModular.read();
     if (config) {
       try {
         avatarSpec = await this.avatarModular.buildAvatar(config);
@@ -363,7 +363,7 @@ export class DungeonShopModalComponent implements AfterViewInit, OnDestroy {
       canvas,
       {
         onVendorClick: () => {
-          this.hablarConMercader();
+          this.talkWithMerchant();
         },
         onNearCounter: (isNear: boolean) => {
           this.nearCounter.set(isNear);
@@ -372,7 +372,7 @@ export class DungeonShopModalComponent implements AfterViewInit, OnDestroy {
               '¡Te escucho, noble viajero! Pulsa [E] o habla conmigo para ver mis mercancías.',
             );
           } else {
-            // Si el jugador se aleja del mostrador, cerramos el catálogo
+            // If the player moves away from the counter, we close the catalog
             this.shopOpen.set(false);
             this.selectedItem.set(null);
             this.vendorMessage.set(
@@ -384,10 +384,10 @@ export class DungeonShopModalComponent implements AfterViewInit, OnDestroy {
       avatarSpec,
     );
 
-    // Sonido de apertura
+    // Opening sound
     this.audio.playUnlock();
 
-    // Desvanecer cortina de transición
+    // Fade out the transition curtain
     setTimeout(() => {
       this.transitionOpaque.set(false);
       setTimeout(() => {
@@ -396,7 +396,7 @@ export class DungeonShopModalComponent implements AfterViewInit, OnDestroy {
     }, 400);
   }
 
-  hablarConMercader(): void {
+  talkWithMerchant(): void {
     this.shop3d.triggerVendorReaction();
     this.audio.playClick();
     this.shopOpen.set(true);
@@ -405,28 +405,28 @@ export class DungeonShopModalComponent implements AfterViewInit, OnDestroy {
     );
   }
 
-  cerrarCatalogo(): void {
+  closeCatalog(): void {
     this.shopOpen.set(false);
     this.selectedItem.set(null);
   }
 
-  esComprado(id: string): boolean {
+  isBought(id: string): boolean {
     return this.owned().includes(id);
   }
 
-  seleccionarItem(item: ShopPropItem): void {
+  selectItem(item: ShopPropItem): void {
     this.audio.playClick();
     this.selectedItem.set(item);
-    this.vendorMessage.set(item.dialogo);
+    this.vendorMessage.set(item.dialog);
     this.shop3d.triggerVendorReaction();
   }
 
   onItemHover(item: ShopPropItem): void {
     if (this.selectedItem()?.id === item.id) return;
-    if (this.esComprado(item.id)) {
-      this.vendorMessage.set(`Ese ${item.nombre} ya es tuyo. Es una pieza magnífica.`);
+    if (this.isBought(item.id)) {
+      this.vendorMessage.set(`Ese ${item.name} ya es tuyo. Es una pieza magnífica.`);
     } else {
-      this.vendorMessage.set(item.dialogo);
+      this.vendorMessage.set(item.dialog);
     }
   }
 
@@ -443,29 +443,29 @@ export class DungeonShopModalComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  comprarItem(item: ShopPropItem): void {
-    if (this.coins() < item.precio || this.esComprado(item.id)) {
+  buyItem(item: ShopPropItem): void {
+    if (this.coins() < item.price || this.isBought(item.id)) {
       this.vendorMessage.set('No tienes suficientes monedas para esa pieza, aventurero.');
       return;
     }
 
-    const nuevasMonedas = this.coins() - item.precio;
-    this.coins.set(nuevasMonedas);
+    const newCoins = this.coins() - item.price;
+    this.coins.set(newCoins);
     this.owned.update((arr) => [...arr, item.id]);
 
     this.audio.playCoin();
     this.shop3d.triggerVendorReaction();
-    this.vendorMessage.set(`¡Trato hecho! El ${item.nombre} ahora es tuyo. ¡Que te sea de gran valor!`);
+    this.vendorMessage.set(`¡Trato hecho! El ${item.name} ahora es tuyo. ¡Que te sea de gran valor!`);
   }
 
-  iniciarSalida(): void {
+  startExit(): void {
     this.transitionText.set('Saliendo al exterior...');
     this.transitioning.set(true);
     setTimeout(() => {
       this.transitionOpaque.set(true);
       setTimeout(() => {
         this.shop3d.destroy();
-        this.cerrar.emit();
+        this.close.emit();
       }, 650);
     }, 20);
   }

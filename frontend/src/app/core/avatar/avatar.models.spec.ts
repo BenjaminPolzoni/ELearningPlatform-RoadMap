@@ -1,154 +1,154 @@
 import {
-  ACCESORIOS,
-  ANTEOJOS,
-  anteojosVisibles,
-  avatarPorDefecto,
-  BARBAS,
-  COLORES,
-  COLORES_PELO,
-  COLORES_ROPA,
-  emblemaVisible,
-  EMBLEMAS,
-  GENEROS,
-  IdGenero,
-  OBJETOS,
-  PELOS,
-  PIELES,
-  PRENDAS,
-  sanearAvatar,
+  ACCESSORIES,
+  GLASSES,
+  visibleGlasses,
+  defaultAvatar,
+  BEARDS,
+  COLORS,
+  HAIR_COLORS,
+  CLOTHES_COLORS,
+  emblemVisible,
+  EMBLEMS,
+  GENDERS,
+  GenderId,
+  OBJECTS,
+  HAIRSTYLES,
+  SKINS,
+  GARMENTS,
+  sanitizeAvatar,
 } from './avatar.models';
 
-const GENEROS_IDS: IdGenero[] = ['mujer', 'varon', 'indefinido'];
+const GENDERS_IDS: GenderId[] = ['mujer', 'varon', 'indefinido'];
 
-describe('avatarPorDefecto', () => {
-  it.each(GENEROS_IDS)('el default de %s pasa por sanearAvatar sin cambios', (g) => {
-    expect(sanearAvatar(avatarPorDefecto(g))).toEqual(avatarPorDefecto(g));
+describe('defaultAvatar', () => {
+  it.each(GENDERS_IDS)('el default de %s pasa por sanearAvatar sin cambios', (g) => {
+    expect(sanitizeAvatar(defaultAvatar(g))).toEqual(defaultAvatar(g));
   });
 
-  it('los géneros solo difieren en el peinado sugerido', () => {
-    expect(avatarPorDefecto('mujer').pelo).toBe('largo');
-    expect(avatarPorDefecto('varon').pelo).toBe('corto');
-    expect(avatarPorDefecto('indefinido').pelo).toBe('despeinado');
-    const sinPelo = (g: IdGenero) => ({ ...avatarPorDefecto(g), genero: null, pelo: null });
-    expect(sinPelo('mujer')).toEqual(sinPelo('varon'));
-    expect(sinPelo('varon')).toEqual(sinPelo('indefinido'));
+  it('genders differ only in the suggested hairstyle', () => {
+    expect(defaultAvatar('mujer').hair).toBe('largo');
+    expect(defaultAvatar('varon').hair).toBe('corto');
+    expect(defaultAvatar('indefinido').hair).toBe('despeinado');
+    const withoutHair = (g: GenderId) => ({ ...defaultAvatar(g), gender: null, hair: null });
+    expect(withoutHair('mujer')).toEqual(withoutHair('varon'));
+    expect(withoutHair('varon')).toEqual(withoutHair('indefinido'));
   });
 });
 
-describe('sanearAvatar', () => {
-  it('sin nada guardado devuelve el default de indefinido', () => {
-    expect(sanearAvatar(null)).toEqual(avatarPorDefecto('indefinido'));
-    expect(sanearAvatar(undefined)).toEqual(avatarPorDefecto('indefinido'));
+describe('sanitizeAvatar', () => {
+  it('with nothing saved it returns the default for undefined', () => {
+    expect(sanitizeAvatar(null)).toEqual(defaultAvatar('indefinido'));
+    expect(sanitizeAvatar(undefined)).toEqual(defaultAvatar('indefinido'));
   });
 
-  it('migra un avatar de la versión anterior al look clásico', () => {
-    const viejo = {
-      piel: 'oscura',
-      pelo: 'afro',
-      colorPelo: 'noche',
-      colorTraje: 'violeta',
-      accesorio: 'gorra',
-      colorAccesorio: 'rosa',
+  it('migrates an avatar from the previous version to the classic look', () => {
+    const old = {
+      skin: 'oscura',
+      hair: 'afro',
+      hairColor: 'noche',
+      suitColor: 'violeta',
+      accessory: 'gorra',
+      accessoryColor: 'rosa',
     };
-    expect(sanearAvatar(viejo)).toEqual({
-      genero: 'indefinido',
-      piel: 'oscura',
-      pelo: 'afro',
-      colorPelo: 'noche',
-      barba: 'ninguna',
-      prenda: 'traje',
-      colorRopa: 'violeta',
-      emblema: 'cuadro',
-      accesorio: 'gorra',
-      colorAccesorio: 'rosa',
-      anteojos: 'ninguno',
-      objeto: 'ninguno',
+    expect(sanitizeAvatar(old)).toEqual({
+      gender: 'indefinido',
+      skin: 'oscura',
+      hair: 'afro',
+      hairColor: 'noche',
+      beard: 'ninguna',
+      garment: 'traje',
+      clothesColor: 'violeta',
+      emblem: 'cuadro',
+      accessory: 'gorra',
+      accessoryColor: 'rosa',
+      glasses: 'ninguno',
+      object: 'ninguno',
     });
   });
 
-  it('un id desconocido vuelve al default de su género', () => {
-    const a = sanearAvatar({
-      ...avatarPorDefecto('mujer'),
-      pelo: 'mohicano',
-      prenda: 'smoking',
-      emblema: '???',
-      objeto: 'tostadora',
+  it('an unknown id falls back to the default of its gender', () => {
+    const a = sanitizeAvatar({
+      ...defaultAvatar('mujer'),
+      hair: 'mohicano',
+      garment: 'smoking',
+      emblem: '???',
+      object: 'tostadora',
     });
-    expect(a.genero).toBe('mujer');
-    expect(a.pelo).toBe('largo');
-    expect(a.prenda).toBe('hoodie');
-    expect(a.emblema).toBe('tag');
-    expect(a.objeto).toBe('ninguno');
+    expect(a.gender).toBe('mujer');
+    expect(a.hair).toBe('largo');
+    expect(a.garment).toBe('hoodie');
+    expect(a.emblem).toBe('tag');
+    expect(a.object).toBe('ninguno');
   });
 
-  it('un género desconocido cae en indefinido', () => {
-    expect(sanearAvatar({ ...avatarPorDefecto('varon'), genero: 'robot' }).genero).toBe('indefinido');
+  it('an unknown gender falls back to undefined', () => {
+    expect(sanitizeAvatar({ ...defaultAvatar('varon'), gender: 'robot' }).gender).toBe('indefinido');
   });
 
-  it('descarta un color que existe pero no corresponde a esa parte', () => {
-    const a = sanearAvatar({
-      ...avatarPorDefecto('varon'),
-      colorPelo: 'verde-terminal',
-      colorRopa: 'rubio',
-      colorAccesorio: 'castaño',
+  it('discards a color that exists but does not belong to that part', () => {
+    const a = sanitizeAvatar({
+      ...defaultAvatar('varon'),
+      hairColor: 'verde-terminal',
+      clothesColor: 'rubio',
+      accessoryColor: 'castaño',
     });
-    expect(a.colorPelo).toBe('castaño');
-    expect(a.colorRopa).toBe('violeta');
-    expect(a.colorAccesorio).toBe('rosa');
+    expect(a.hairColor).toBe('castaño');
+    expect(a.clothesColor).toBe('violeta');
+    expect(a.accessoryColor).toBe('rosa');
   });
 
-  it('colorRopa tiene prioridad sobre el colorTraje legado', () => {
-    const a = sanearAvatar({ ...avatarPorDefecto('varon'), colorRopa: 'grafito', colorTraje: 'rosa' });
-    expect(a.colorRopa).toBe('grafito');
+  it('clothesColor takes priority over the legacy suitColor', () => {
+    const a = sanitizeAvatar({ ...defaultAvatar('varon'), clothesColor: 'grafito', suitColor: 'rosa' });
+    expect(a.clothesColor).toBe('grafito');
   });
 });
 
-describe('catálogo', () => {
-  it('el registro de colores no repite ids', () => {
-    const ids = COLORES.map((c) => c.id);
+describe('catalog', () => {
+  it('the color registry does not repeat ids', () => {
+    const ids = COLORS.map((c) => c.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('todo color de pelo y de ropa está en el registro', () => {
-    for (const c of [...COLORES_PELO, ...COLORES_ROPA]) expect(COLORES).toContain(c);
+  it('every hair and clothes color is in the registry', () => {
+    for (const c of [...HAIR_COLORS, ...CLOTHES_COLORS]) expect(COLORS).toContain(c);
   });
 
-  it('pelo y ropa comparten el mismo negro', () => {
-    expect(COLORES_PELO.find((c) => c.id === 'negro')).toBe(COLORES_ROPA.find((c) => c.id === 'negro'));
+  it('hair and clothes share the same black', () => {
+    expect(HAIR_COLORS.find((c) => c.id === 'negro')).toBe(CLOTHES_COLORS.find((c) => c.id === 'negro'));
   });
 
-  it('ningún catálogo repite ids', () => {
-    for (const lista of [GENEROS, PIELES, PELOS, BARBAS, PRENDAS, EMBLEMAS, ACCESORIOS, ANTEOJOS, OBJETOS]) {
-      const ids = lista.map((o) => o.id);
+  it('no catalog repeats ids', () => {
+    for (const list of [GENDERS, SKINS, HAIRSTYLES, BEARDS, GARMENTS, EMBLEMS, ACCESSORIES, GLASSES, OBJECTS]) {
+      const ids = list.map((o) => o.id);
       expect(new Set(ids).size).toBe(ids.length);
     }
   });
 });
 
-describe('emblemaVisible', () => {
-  const base = avatarPorDefecto('indefinido');
+describe('emblemVisible', () => {
+  const base = defaultAvatar('indefinido');
 
-  it('se ve sobre las prendas que dejan el pecho libre', () => {
-    expect(emblemaVisible({ ...base, prenda: 'hoodie' })).toBe(true);
-    expect(emblemaVisible({ ...base, prenda: 'campera' })).toBe(true);
+  it('it is visible over garments that leave the chest free', () => {
+    expect(emblemVisible({ ...base, garment: 'hoodie' })).toBe(true);
+    expect(emblemVisible({ ...base, garment: 'campera' })).toBe(true);
   });
 
-  it('se oculta sin emblema, con la corbata de la camisa o con la laptop delante', () => {
-    expect(emblemaVisible({ ...base, emblema: 'ninguno' })).toBe(false);
-    expect(emblemaVisible({ ...base, prenda: 'camisa' })).toBe(false);
-    expect(emblemaVisible({ ...base, objeto: 'laptop' })).toBe(false);
+  it('it is hidden without an emblem, with the shirt tie or with the laptop in front', () => {
+    expect(emblemVisible({ ...base, emblem: 'ninguno' })).toBe(false);
+    expect(emblemVisible({ ...base, garment: 'camisa' })).toBe(false);
+    expect(emblemVisible({ ...base, object: 'laptop' })).toBe(false);
   });
 });
 
-describe('anteojosVisibles', () => {
-  const base = avatarPorDefecto('indefinido');
+describe('visibleGlasses', () => {
+  const base = defaultAvatar('indefinido');
 
-  it('se ven con cualquier accesorio salvo el visor, que ya tapa los ojos', () => {
-    expect(anteojosVisibles({ ...base, anteojos: 'codigo', accesorio: 'beanie' })).toBe(true);
-    expect(anteojosVisibles({ ...base, anteojos: 'codigo', accesorio: 'visor' })).toBe(false);
+  it('they are visible with any accessory except the visor, which already covers the eyes', () => {
+    expect(visibleGlasses({ ...base, glasses: 'codigo', accessory: 'beanie' })).toBe(true);
+    expect(visibleGlasses({ ...base, glasses: 'codigo', accessory: 'visor' })).toBe(false);
   });
 
-  it('sin anteojos no hay nada que ver', () => {
-    expect(anteojosVisibles({ ...base, anteojos: 'ninguno' })).toBe(false);
+  it('without glasses there is nothing to see', () => {
+    expect(visibleGlasses({ ...base, glasses: 'ninguno' })).toBe(false);
   });
 });

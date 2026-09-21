@@ -15,14 +15,14 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { AuthMockService } from '../../core/auth/auth-mock.service';
 import { RoadmapStore } from '../../core/data/roadmap.store';
 import { StoreService } from '../../core/educa/store.service';
-import { CURSO_SEED_ID } from '../../mocks/seed';
-import { descripcionPorDefecto, Unidad, XP_POR_DIFICULTAD } from '../../core/data/roadmap.models';
+import { COURSE_SEED_ID } from '../../mocks/seed';
+import { defaultDescription, Section, XP_BY_DIFFICULTY } from '../../core/data/roadmap.models';
 import { RankingPanel } from '../ranking/ranking-panel';
-import { toEmbedUrl } from './recurso-embed.util';
+import { toEmbedUrl } from './resource-embed.util';
 import { TutorialCard } from './tutorial/tutorial-card';
 import { isTutorialScene, TutorialState } from './tutorial/tutorial-state';
 import {
-  BIOMA_A_WORLD_THEME,
+  BIOME_TO_WORLD_THEME,
   GeneratedWorld,
   generateVerticalWorld,
   QuestionData,
@@ -31,18 +31,19 @@ import {
 } from './vertical-world.engine';
 
 /**
- * Contrato de mensajes que manda la escena Three.js al host vía
- * `window.parent.postMessage` cuando el jugador toca un nodo de desafío jugable en
- * su isla 3D (el teletransporte ciudad↔isla lo maneja el propio mundo 3D; ya no hace
- * falta navegar de ruta para eso).
+ * Contract of the messages the Three.js scene sends to the host via
+ * `window.parent.postMessage` when the player touches a playable challenge node on
+ * their 3D island (the city↔island teleport is handled by the 3D world itself; it is no longer
+ * necessary to navigate to another route for that).
  */
-interface MensajeEnterActivity {
+interface MessageEnterActivity {
   type: 'enterActivity';
   unitId: string;
+  /** Wire name fixed by `public/mundo-3d/index.html`. */
   actividadId: string;
 }
 
-function esMensajeEnterActivity(data: unknown): data is MensajeEnterActivity {
+function isMessageEnterActivity(data: unknown): data is MessageEnterActivity {
   return (
     !!data &&
     typeof data === 'object' &&
@@ -53,14 +54,14 @@ function esMensajeEnterActivity(data: unknown): data is MensajeEnterActivity {
 }
 
 /**
- * Mensaje para navegar al mapa hexagonal de Educa correspondiente a la unidad.
+ * Message to navigate to the Educa hexagonal map corresponding to the section.
  */
-interface MensajeOpenUnitPlay {
+interface MessageOpenUnitPlay {
   type: 'openUnitPlay';
   unitId: string;
 }
 
-function esMensajeOpenUnitPlay(data: unknown): data is MensajeOpenUnitPlay {
+function isMessageOpenUnitPlay(data: unknown): data is MessageOpenUnitPlay {
   return (
     !!data &&
     typeof data === 'object' &&
@@ -70,42 +71,42 @@ function esMensajeOpenUnitPlay(data: unknown): data is MensajeOpenUnitPlay {
 }
 
 /**
- * Mensaje que manda la escena Three.js cuando el jugador toca "Ver Ranking" cerca
- * del podio holográfico que está junto al Trofeo (ver `buildRankingPodium` en
- * index.html) — el mundo 3D no sabe nada del ranking en sí, solo avisa que hay que
- * mostrarlo; Angular ya tiene el `RankingPanel` completo (mismo componente que usa
- * el mapa 2D) y lo monta como overlay sobre el iframe.
+ * Message the Three.js scene sends when the player touches "Ver Ranking" near
+ * the holographic podium next to the Trophy (see `buildRankingPodium` in
+ * index.html) — the 3D world knows nothing about the ranking itself, it only signals that it has to be
+ * shown; Angular already has the full `RankingPanel` (same component used by
+ * the 2D map) and mounts it as an overlay over the iframe.
  */
-function esMensajeOpenRanking(data: unknown): data is { type: 'openRanking' } {
+function isMessageOpenRanking(data: unknown): data is { type: 'openRanking' } {
   return !!data && typeof data === 'object' && (data as { type?: unknown }).type === 'openRanking';
 }
 
 /**
- * Mensaje que manda la escena Three.js cuando el jugador entra al Templo del hub
- * (ver `Estructuras/Temple-dec.glb` en index.html) — abre la pestaña de material
- * teórico (mock estático hasta que se conecte el servicio de contenidos).
+ * Message the Three.js scene sends when the player enters the hub's Temple
+ * (see `Estructuras/Temple-dec.glb` in index.html) — opens the theory material
+ * tab (static mock until the content service is connected).
  */
-function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales' } {
+function isMessageOpenMaterials(data: unknown): data is { type: 'openMateriales' } {
   return !!data && typeof data === 'object' && (data as { type?: unknown }).type === 'openMateriales';
 }
 
 @Component({
-  selector: 'app-mundo-3d',
+  selector: 'app-world-3d',
   standalone: true,
   imports: [RouterLink, RankingPanel, TutorialCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="mundo-3d">
       <div class="acciones-rol">
-        @if (auth.rol() === 'PROFESOR') {
+        @if (auth.role() === 'PROFESOR') {
           <a routerLink="/profesor" class="btn-volver" title="Volver al editor del curso">← Editor</a>
         }
-        <a class="cambiar-rol" (click)="cambiarRol()">⏻ Cambiar rol</a>
+        <a class="cambiar-rol" (click)="changeRole()">⏻ Cambiar rol</a>
       </div>
       <iframe
         #frame
         title="Mundo 3D"
-        [src]="mundo3dUrl"
+        [src]="world3dUrl"
         allow="autoplay; fullscreen; gamepad; pointer-lock"
         allowfullscreen
         (load)="onFrameLoad()"
@@ -146,10 +147,10 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
           (click)="restartTutorial()"><span aria-hidden="true">?</span> Ayuda</button>
       }
 
-      <!-- MODAL DE ACTIVIDAD Y PREGUNTAS (Quiz interactivo) — mismo componente visual
-           que el mapa 2D (unidad-mapa.ts), reusado como overlay encima del iframe 3D
-           persistente: tocar un nodo de desafío en la isla 3D abre esto en vez de
-           navegar a otra ruta. -->
+      <!-- ACTIVITY AND QUESTIONS MODAL (Interactive quiz) — same visual component
+           as the 2D map (section-map.ts), reused as an overlay on top of the persistent
+           3D iframe: tapping a challenge node on the 3D island opens this instead of
+           navigating to another route. -->
       @if (activeChallenge(); as c) {
         <div class="modal modal-open backdrop-blur-md z-50">
           <div class="modal-box max-w-xl border-4 border-primary bg-[#1C1E2B] p-6 text-white shadow-2xl chaflan">
@@ -179,22 +180,22 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
 
             <div class="my-4">
               @if (c.type === 'teoria') {
-                <!-- Nodo de contenido teórico: material embebido (PDF/video/PPT vía link
-                     externo), sin quiz — leer/ver alcanza para continuar. -->
+                <!-- Theory content node: embedded material (PDF/video/PPT via external
+                     link), no quiz — reading/watching is enough to continue. -->
                 <p class="text-sm text-[#E0E2EC] opacity-90 mb-3">{{ c.description }}</p>
                 <div class="rounded-lg overflow-hidden border border-white/10 bg-black/30" style="aspect-ratio: 16/9">
                   <iframe [src]="embedUrl(c)" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
                 </div>
-                <a [href]="c.recursoUrl" target="_blank" rel="noopener" class="link link-primary text-xs mt-2 inline-block">
+                <a [href]="c.resourceUrl" target="_blank" rel="noopener" class="link link-primary text-xs mt-2 inline-block">
                   Abrir en pestaña nueva ↗
                 </a>
               } @else if (!isQuizResolved()) {
                 <p class="text-base text-[#F3EAFF] leading-relaxed mb-4">
-                  {{ currentQuestion(c).pregunta }}
+                  {{ currentQuestion(c).question }}
                 </p>
 
                 <div class="flex flex-col gap-2.5" role="group" aria-label="Opciones de respuesta">
-                  @for (opt of currentQuestion(c).opciones; track $index) {
+                  @for (opt of currentQuestion(c).options; track $index) {
                     <button
                       type="button"
                       class="flex items-center justify-between rounded-lg border-2 p-3 text-left transition-all text-sm"
@@ -235,7 +236,7 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
                     {{ c.id === activeWorld()?.mainCount ? '¡HAS LLEGADO A LA META!' : '¡Excelente trabajo explorador!' }}
                   </h3>
                   <p class="mt-3 text-sm text-[#E0E2EC] max-w-md opacity-90">
-                    {{ currentQuestion(c).explicacion }}
+                    {{ currentQuestion(c).explanation }}
                   </p>
 
                   <div class="mt-5 flex items-center gap-4 rounded-xl border border-primary/40 bg-black/40 px-5 py-2.5">
@@ -286,11 +287,11 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
         </div>
       }
 
-      <!-- PANEL DE RANKING — mismo componente que usa el mapa 2D (mapa.ts), reusado
-           como overlay encima del iframe 3D: tocar "Ver Ranking" en el podio junto
-           al Trofeo abre esto en vez de una pantalla aparte. -->
+      <!-- RANKING PANEL — same component used by the 2D map (map.ts), reused
+           as an overlay on top of the 3D iframe: tapping "Ver Ranking" on the podium next
+           to the Trophy opens this instead of a separate screen. -->
       @if (rankingOpen()) {
-        <app-ranking-panel (cerrar)="rankingOpen.set(false)" />
+        <app-ranking-panel (close)="rankingOpen.set(false)" />
       }
     </div>
   `,
@@ -352,7 +353,7 @@ function esMensajeOpenMateriales(data: unknown): data is { type: 'openMateriales
     }
   `,
 })
-export class Mundo3d implements OnInit, OnDestroy {
+export class World3d implements OnInit, OnDestroy {
   protected readonly savingProgress = signal(false);
   protected readonly saveError = signal<string | null>(null);
   protected readonly rewardNotice = signal<{ xp: number; unitCompleted: boolean; unitName: string } | null>(null);
@@ -371,7 +372,7 @@ export class Mundo3d implements OnInit, OnDestroy {
   protected readonly tutorial = new TutorialState((() => {
     try { return window.localStorage; } catch { return undefined; }
   })());
-  protected readonly tutorialAvailable = computed(() => this.auth.rol() === 'ALUMNO' &&
+  protected readonly tutorialAvailable = computed(() => this.auth.role() === 'ALUMNO' &&
     !!this.tutorial.scene()?.ready && !this.tutorial.scene()?.busy && !this.activeChallenge() && !this.rankingOpen() && !this.rewardNotice());
   protected readonly tutorialVisible = computed(() => this.tutorialAvailable() &&
     this.tutorial.status() === 'activo' && !!this.tutorial.destination());
@@ -393,48 +394,48 @@ export class Mundo3d implements OnInit, OnDestroy {
   protected skipTutorial(): void { this.tutorial.skip(); this.focusWorld(); }
   protected restartTutorial(): void { this.tutorial.restart(); this.focusWorld(); }
 
-  // Herramienta de exploración 3D (Three.js) que trajo el equipo de 3D — ver 3D/city_generator.html.
-  // Se sirve como asset estático en frontend/public/mundo-3d/ (copia manual por ahora).
-  protected readonly mundo3dUrl: SafeResourceUrl =
+  // 3D exploration tool (Three.js) brought by the 3D team — see 3D/city_generator.html.
+  // Served as a static asset in frontend/public/mundo-3d/ (manual copy for now).
+  protected readonly world3dUrl: SafeResourceUrl =
     this.sanitizer.bypassSecurityTrustResourceUrl('mundo-3d/index.html');
 
-  private readonly onMensaje = (evento: MessageEvent): void => {
-    // El mundo embebido es el único emisor autorizado, también para sus acciones previas.
+  private readonly onMessage = (event: MessageEvent): void => {
+    // The embedded world is the only authorized sender, also for its earlier actions.
     const frameWin = this.frame()?.nativeElement?.contentWindow;
-    if (frameWin && evento.source !== frameWin) return;
-    if (evento.origin !== window.location.origin && evento.origin !== 'null' && evento.origin !== '') {
-      if (!evento.origin.startsWith('http://localhost') && !evento.origin.startsWith('http://127.0.0.1')) return;
+    if (frameWin && event.source !== frameWin) return;
+    if (event.origin !== window.location.origin && event.origin !== 'null' && event.origin !== '') {
+      if (!event.origin.startsWith('http://localhost') && !event.origin.startsWith('http://127.0.0.1')) return;
     }
-    if (evento.data?.type === 'celebrationStarted' && evento.data.id === this.pendingReward?.id) {
+    if (event.data?.type === 'celebrationStarted' && event.data.id === this.pendingReward?.id) {
       this.showReward();
       return;
     }
-    if (isTutorialScene(evento.data)) {
-      if (this.auth.rol() === 'ALUMNO') this.tutorial.receiveScene(evento.data);
+    if (isTutorialScene(event.data)) {
+      if (this.auth.role() === 'ALUMNO') this.tutorial.receiveScene(event.data);
       return;
     }
-    if (evento.data?.type === 'tutorialMoved' && Number.isInteger(evento.data.attempt)) {
-      if (this.tutorialVisible()) this.tutorial.moved(evento.data.attempt);
+    if (event.data?.type === 'tutorialMoved' && Number.isInteger(event.data.attempt)) {
+      if (this.tutorialVisible()) this.tutorial.moved(event.data.attempt);
       return;
     }
-    if (esMensajeEnterActivity(evento.data)) {
-      this.abrirDesafio(evento.data.unitId, evento.data.actividadId);
-    } else if (esMensajeOpenRanking(evento.data)) {
+    if (isMessageEnterActivity(event.data)) {
+      this.openChallenge(event.data.unitId, event.data.actividadId);
+    } else if (isMessageOpenRanking(event.data)) {
       this.rankingOpen.set(true);
-    } else if (esMensajeOpenMateriales(evento.data)) {
+    } else if (isMessageOpenMaterials(event.data)) {
       this.router.navigate(['/alumno/materiales']);
-    } else if (esMensajeOpenUnitPlay(evento.data)) {
-      console.log('[Mundo3D Host] Procesando openUnitPlay:', evento.data);
+    } else if (isMessageOpenUnitPlay(event.data)) {
+      console.log('[World3D Host] Processing openUnitPlay:', event.data);
       const course = this.educaStore.current() ?? this.educaStore.listAll()[0];
-      const courseId = course?.id ?? CURSO_SEED_ID;
-      console.log('[Mundo3D Host] Navegando a /play:', courseId, evento.data.unitId);
+      const courseId = course?.id ?? COURSE_SEED_ID;
+      console.log('[World3D Host] Navigating to /play:', courseId, event.data.unitId);
       this.router
-        .navigate(['/play', courseId, evento.data.unitId])
+        .navigate(['/play', courseId, event.data.unitId])
         .catch(() => false)
         .then((success) => {
-          console.log('[Mundo3D Host] Router navigate resultado:', success);
+          console.log('[World3D Host] Router navigate result:', success);
           if (!success) {
-            this.router.navigate(['/alumno/play', evento.data.unitId]).catch(() => false);
+            this.router.navigate(['/alumno/play', event.data.unitId]).catch(() => false);
           }
         });
     }
@@ -443,88 +444,90 @@ export class Mundo3d implements OnInit, OnDestroy {
   protected readonly rankingOpen = signal(false);
 
   ngOnInit(): void {
-    // La ruta trae el id de la asignatura (/alumno/curso/:id): se abre en el
-    // StoreService para sincronizar el roadmap que muestra este mundo.
+    // The route carries the subject id (/alumno/curso/:id): it is opened in the
+    // StoreService to sync the roadmap that this world shows.
     const id = this.route.snapshot.paramMap.get('id');
     if (id) this.educaStore.open(id);
-    window.addEventListener('message', this.onMensaje);
+    window.addEventListener('message', this.onMessage);
   }
 
   ngOnDestroy(): void {
     this.destroyed = true;
     clearTimeout(this.rewardTimer);
     clearTimeout(this.rewardFallback);
-    window.removeEventListener('message', this.onMensaje);
+    window.removeEventListener('message', this.onMessage);
     this.tutorial.dispose();
   }
 
-  protected cambiarRol(): void {
-    this.auth.salir();
+  protected changeRole(): void {
+    this.auth.exit();
     this.router.navigate(['/login']);
   }
 
-  // Contador, no boolean: un iframe sin `src` todavía dispara un `load` "fantasma"
-  // sobre `about:blank` ANTES de que Angular termine de aplicar el binding `[src]`
-  // (que navega recién en el próximo ciclo de detección de cambios). Con un boolean,
-  // ese primer load ponía `cargado=true` y el `effect` mandaba el mensaje a esa
-  // ventana fantasma que estaba por descartarse; cuando el iframe real terminaba de
-  // cargar y disparaba SU propio `load`, `cargado` ya era `true` → la señal no
-  // cambiaba de valor → el `effect` nunca se volvía a ejecutar → el mundo 3D real
-  // jamás recibía las unidades/XP/vidas (se quedaba con los valores por defecto).
-  private readonly cargas = signal(0);
+  // Counter, not a boolean: an iframe without a `src` yet fires a "phantom" `load`
+  // on `about:blank` BEFORE Angular finishes applying the `[src]` binding
+  // (which only navigates on the next change detection cycle). With a boolean,
+  // that first load set `loaded=true` and the `effect` sent the message to that phantom
+  // window that was about to be discarded; when the real iframe finished
+  // loading and fired ITS own `load`, `loaded` was already `true` → the signal did not
+  // change value → the `effect` never ran again → the real 3D world
+  // never received the sections/XP/lives (it kept the default values).
+  private readonly loads = signal(0);
 
   protected onFrameLoad(): void {
     this.tutorial.scene.set(null);
-    this.cargas.update((n) => n + 1);
+    this.loads.update((n) => n + 1);
   }
 
   /**
-   * Le manda al visor las unidades reales del curso (id, nombre, orden, bioma, si ya
-   * está resuelta, y sus actividades con estado de completado) más el xp/vidas
-   * vigentes del alumno — alimenta tanto la ficha del explorador como las islas de
-   * desafíos 3D (una por unidad, ver `buildChallengeIsland` en index.html). Un
-   * `effect` en vez de un solo envío al `load` del iframe: así la ciudad/islas se
-   * actualizan solas apenas el alumno completa un desafío (ver `onCompleteActivity`
-   * más abajo, que llama a `store.sumarProgreso` y dispara este mismo effect de nuevo).
+   * Sends the viewer the course's real sections (id, name, order, biome, whether it is already
+   * solved, and its activities with completion status) plus the student's current
+   * xp/lives — it feeds both the explorer's card and the 3D challenge
+   * islands (one per section, see `buildChallengeIsland` in index.html). An
+   * `effect` instead of a single send on the iframe's `load`: this way the city/islands
+   * update by themselves as soon as the student completes a challenge (see `onCompleteActivity`
+   * below, which calls `store.addProgress` and triggers this same effect again).
    */
-  private readonly sincronizarEstado = effect(() => {
-    if (this.cargas() === 0) return;
+  private readonly syncStatus = effect(() => {
+    if (this.loads() === 0) return;
     const contentWindow = this.frame()?.nativeElement.contentWindow;
     if (!contentWindow) return;
 
-    const progreso = this.store.progreso();
-    const completados = new Set(
-      (progreso?.nodos ?? []).filter((n) => n.estado === 'completado').map((n) => n.nodoId),
+    const progress = this.store.progress();
+    const completed = new Set(
+      (progress?.nodes ?? []).filter((n) => n.status === 'completado').map((n) => n.nodeId),
     );
-    // Misma definición de "unidad resuelta" que el mapa 2D (mapa.ts `islas`): solo mira
-    // las actividades obligatorias, así una "Práctica libre" opcional sin hacer no la traba.
-    const unidades = [...this.store.unidades()].sort((a, b) => a.orden - b.orden).map((u) => {
-      const obligatorias = u.actividades.filter((a) => a.esObligatorio);
-      const resuelta = obligatorias.length > 0 && obligatorias.every((a) => completados.has(a.id));
-      // Actividades viejas (de antes de que el editor pidiera dificultad al crearlas)
-      // pueden no tenerla guardada — tratarlas como BASICO en vez de 0 XP, así no
-      // quedan invisibles para el cálculo de progreso de la unidad.
-      const xpDe = (a: (typeof u.actividades)[number]) => a.tipo === 'teoria' ? 0 : XP_POR_DIFICULTAD[a.dificultad ?? 'BASICO'];
-      // XP de ESTA unidad (no el total del alumno): cuánto ganó de sus desafíos vs. cuánto
-      // ganaría completando todos — es lo que muestra la ficha para la unidad en curso.
-      const xpUnidad = u.actividades.filter((a) => completados.has(a.id)).reduce((sum, a) => sum + xpDe(a), 0);
-      const xpUnidadMax = u.actividades.reduce((sum, a) => sum + xpDe(a), 0);
+    // Same definition of "solved section" as the 2D map (map.ts `islands`): it only looks at
+    // the mandatory activities, so an optional "Free practice" left undone does not block it.
+    const sections = [...this.store.sections()].sort((a, b) => a.order - b.order).map((u) => {
+      const mandatory = u.activities.filter((a) => a.isMandatory);
+      const solved = mandatory.length > 0 && mandatory.every((a) => completed.has(a.id));
+      // Old activities (from before the editor asked for difficulty when creating them)
+      // may not have it saved — treat them as BASICO instead of 0 XP, so they do not
+      // become invisible to the section's progress calculation.
+      const xpFor = (a: (typeof u.activities)[number]) => a.type === 'teoria' ? 0 : XP_BY_DIFFICULTY[a.difficulty ?? 'BASICO'];
+      // XP of THIS section (not the student's total): how much they earned from its challenges vs. how much
+      // they would earn by completing all of them — it is what the card shows for the section in progress.
+      const xpSection = u.activities.filter((a) => completed.has(a.id)).reduce((sum, a) => sum + xpFor(a), 0);
+      const xpSectionMax = u.activities.reduce((sum, a) => sum + xpFor(a), 0);
+      // Wire format: the field names are the contract with `public/mundo-3d/index.html`
+      // (Spanish, owned by the 3D team) — do not rename them here.
       return {
         id: u.id,
-        nombre: u.nombre,
-        orden: u.orden,
-        bioma: u.bioma,
-        resuelta,
-        umbralXpDesbloqueo: u.umbralXpDesbloqueo,
-        xpUnidad,
-        xpUnidadMax,
-        actividades: u.actividades.map((a) => ({
+        nombre: u.name,
+        orden: u.order,
+        bioma: u.biome,
+        resuelta: solved,
+        umbralXpDesbloqueo: u.xpThreshold,
+        xpUnidad: xpSection,
+        xpUnidadMax: xpSectionMax,
+        actividades: u.activities.map((a) => ({
           id: a.id,
-          nombre: a.nombre,
-          tipo: a.tipo,
-          dificultad: a.dificultad,
-          descripcion: a.descripcion,
-          completada: completados.has(a.id),
+          nombre: a.name,
+          tipo: a.type,
+          dificultad: a.difficulty,
+          descripcion: a.description,
+          completada: completed.has(a.id),
         })),
       };
     });
@@ -532,20 +535,20 @@ export class Mundo3d implements OnInit, OnDestroy {
     contentWindow.postMessage(
       {
         type: 'setUnidades',
-        unidades,
-        xpTotal: progreso?.xpTotal ?? 0,
-        vidasVigentes: progreso?.vidasVigentes ?? 3,
-        // Racha mockeada igual que en mapa.ts (`rachaDias = signal(10)`, sin mecánica
-        // todavía) — alimenta el billboard dinámico del hub 3D hasta que haya cálculo real.
+        unidades: sections,
+        xpTotal: progress?.xpTotal ?? 0,
+        vidasVigentes: progress?.currentLives ?? 3,
+        // Mocked streak same as in map.ts (`streakDays = signal(10)`, no mechanics
+        // yet) — it feeds the dynamic billboard of the 3D hub until there is a real calculation.
         rachaDias: 10,
       },
       window.location.origin,
     );
   });
 
-  // Desafíos y Actividad Interactiva (isla 3D) — mismo modelo de datos e interacción
-  // que unidad-mapa.ts (mapa 2D), portado como overlay sobre el iframe persistente en
-  // vez de una ruta separada.
+  // Challenges and Interactive Activity (3D island) — same data model and interaction
+  // as section-map.ts (2D map), ported as an overlay over the persistent iframe instead
+  // of a separate route.
   protected readonly activeUnitId = signal<string | null>(null);
   protected readonly activeWorld = signal<GeneratedWorld | null>(null);
   protected readonly activeChallenge = signal<VerticalChallenge | null>(null);
@@ -553,70 +556,70 @@ export class Mundo3d implements OnInit, OnDestroy {
   protected readonly isQuizResolved = signal<boolean>(false);
   protected readonly quizFeedback = signal<string | null>(null);
   protected readonly soundEnabled = signal<boolean>(true);
-  private readonly localVidas = signal<number>(3);
+  private readonly localLives = signal<number>(3);
 
-  protected readonly vidas = computed(() => this.store.progreso()?.vidasVigentes ?? this.localVidas());
+  protected readonly lives = computed(() => this.store.progress()?.currentLives ?? this.localLives());
 
-  // Misma heurística de theme que unidad-mapa.ts: prioriza el bioma elegido por el
-  // profesor y cae a nombre/orden para unidades viejas sin bioma o con uno sin tema 2D.
-  private resolverTheme(u: Unidad): WorldTheme {
-    if (u.bioma) {
-      const temaDeBioma = BIOMA_A_WORLD_THEME[u.bioma];
-      if (temaDeBioma) return temaDeBioma;
+  // Same theme heuristic as section-map.ts: prioritizes the biome chosen by the
+  // teacher and falls back to name/order for old sections with no biome or with one with no 2D theme.
+  private resolveTheme(u: Section): WorldTheme {
+    if (u.biome) {
+      const themeOfBiome = BIOME_TO_WORLD_THEME[u.biome];
+      if (themeOfBiome) return themeOfBiome;
     }
-    const nombre = u.nombre.toLowerCase();
-    if (nombre.includes('desierto') || nombre.includes('fundamento') || u.orden === 1) return 'desert';
-    if (nombre.includes('selva') || nombre.includes('control') || u.orden === 2) return 'jungle';
-    if (nombre.includes('castillo') || (nombre.includes('funcion') && !nombre.includes('concurrencia')) || u.orden === 3)
+    const name = u.name.toLowerCase();
+    if (name.includes('desierto') || name.includes('fundamento') || u.order === 1) return 'desert';
+    if (name.includes('selva') || name.includes('control') || u.order === 2) return 'jungle';
+    if (name.includes('castillo') || (name.includes('funcion') && !name.includes('concurrencia')) || u.order === 3)
       return 'castle';
     if (
-      nombre.includes('nieve') ||
-      nombre.includes('montaña') ||
-      nombre.includes('taiga') ||
-      nombre.includes('estructura de datos') ||
-      u.orden === 4
+      name.includes('nieve') ||
+      name.includes('montaña') ||
+      name.includes('taiga') ||
+      name.includes('estructura de datos') ||
+      u.order === 4
     )
       return 'snow';
     if (
-      nombre.includes('nether') ||
-      nombre.includes('lava') ||
-      nombre.includes('concurrencia') ||
-      nombre.includes('redes') ||
-      u.orden === 5
+      name.includes('nether') ||
+      name.includes('lava') ||
+      name.includes('concurrencia') ||
+      name.includes('redes') ||
+      u.order === 5
     )
       return 'nether';
-    if (nombre.includes('espacio') || nombre.includes('orbital') || nombre.includes('planeta')) return 'space';
-    return (['desert', 'jungle', 'castle', 'snow', 'nether', 'space'] as const)[(u.orden - 1) % 6];
+    if (name.includes('espacio') || name.includes('orbital') || name.includes('planeta')) return 'space';
+    return (['desert', 'jungle', 'castle', 'snow', 'nether', 'space'] as const)[(u.order - 1) % 6];
   }
 
-  private abrirDesafio(unitId: string, actividadId: string): void {
-    const u = this.store.unidadPorId(unitId);
+  private openChallenge(unitId: string, activityId: string): void {
+    const u = this.store.sectionById(unitId);
     if (!u) return;
 
-    const theme = this.resolverTheme(u);
-    const baseChallenges: VerticalChallenge[] = u.actividades.map((act, i) => ({
+    const theme = this.resolveTheme(u);
+    const baseChallenges: VerticalChallenge[] = u.activities.map((act, i) => ({
       id: i + 1,
-      actividadId: act.id,
-      title: act.nombre,
-      type: act.tipo,
-      difficulty: act.dificultad || 'BASICO',
+      activityId: act.id,
+      title: act.name,
+      type: act.type,
+      difficulty: act.difficulty || 'BASICO',
       minutes: 8,
-      // 'teoria' no se evalúa: no otorga XP (ver mismo criterio en unidad-mapa.ts).
-      xp: act.tipo === 'teoria' ? 0 : XP_POR_DIFICULTAD[act.dificultad ?? 'BASICO'],
-      description: act.descripcion || descripcionPorDefecto(act.tipo),
-      recursoUrl: act.recursoUrl,
-      recursoTipo: act.recursoTipo,
+      // 'teoria' is not evaluated: it grants no XP (see the same criterion in section-map.ts).
+      xp: act.type === 'teoria' ? 0 : XP_BY_DIFFICULTY[act.difficulty ?? 'BASICO'],
+      description: act.description || defaultDescription(act.type),
+      resourceUrl: act.resourceUrl,
+      resourceType: act.resourceType,
       x: 50,
       y: 50,
     }));
     const world = generateVerticalWorld(theme, baseChallenges);
-    const challenge = world.challenges.find((c) => c.actividadId === actividadId);
+    const challenge = world.challenges.find((c) => c.activityId === activityId);
     if (!challenge) return;
 
     this.activeUnitId.set(unitId);
     this.activeWorld.set(world);
     this.openActivity(challenge);
-    this.tutorial.opened(unitId, actividadId);
+    this.tutorial.opened(unitId, activityId);
   }
 
   protected openActivity(c: VerticalChallenge): void {
@@ -637,24 +640,24 @@ export class Mundo3d implements OnInit, OnDestroy {
   }
 
   protected isCompleted(c: VerticalChallenge): boolean {
-    if (!c.actividadId) return false;
-    return (this.store.progreso()?.nodos ?? []).some((n) => n.nodoId === c.actividadId && n.estado === 'completado');
+    if (!c.activityId) return false;
+    return (this.store.progress()?.nodes ?? []).some((n) => n.nodeId === c.activityId && n.status === 'completado');
   }
 
   protected currentQuestion(c: VerticalChallenge): QuestionData {
     return (
       this.activeWorld()?.questions[c.id] ?? {
-        pregunta: '¿Cuál es el propósito principal de esta actividad?',
-        opciones: ['Aprender y validar los conceptos', 'Saltar al final sin responder', 'Ninguna de las anteriores'],
-        correcta: 0,
-        explicacion: '¡Excelente! Resolver las actividades te permite progresar y subir de nivel.',
+        question: '¿Cuál es el propósito principal de esta actividad?',
+        options: ['Aprender y validar los conceptos', 'Saltar al final sin responder', 'Ninguna de las anteriores'],
+        correct: 0,
+        explanation: '¡Excelente! Resolver las actividades te permite progresar y subir de nivel.',
       }
     );
   }
 
-  /** URL embebible del material de un nodo 'teoria' (ver recurso-embed.util.ts). */
+  /** Embeddable URL of the material of a 'teoria' node (see resource-embed.util.ts). */
   protected embedUrl(c: VerticalChallenge): SafeResourceUrl {
-    const url = toEmbedUrl(c.recursoTipo ?? 'pdf', c.recursoUrl ?? '');
+    const url = toEmbedUrl(c.resourceType ?? 'pdf', c.resourceUrl ?? '');
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
@@ -663,18 +666,18 @@ export class Mundo3d implements OnInit, OnDestroy {
     if (ans === null) return;
     const q = this.currentQuestion(c);
 
-    if (ans === q.correcta) {
+    if (ans === q.correct) {
       this.isQuizResolved.set(true);
       this.quizFeedback.set(null);
       this.playAudioTone(true);
     } else {
       this.playAudioTone(false);
       if (!this.isCompleted(c) && !c.recovery) {
-        this.localVidas.update((v) => Math.max(0, v - 1));
-        this.store.sumarProgreso(0, undefined, this.localVidas());
+        this.localLives.update((v) => Math.max(0, v - 1));
+        this.store.addProgress(0, undefined, this.localLives());
       }
       this.quizFeedback.set(
-        this.vidas() === 0 && !c.recovery
+        this.lives() === 0 && !c.recovery
           ? '¡Te has quedado sin vidas! Ve al nodo de recuperación para recargar tus corazones.'
           : 'Respuesta incorrecta. Revisa la consigna y vuelve a intentarlo.',
       );
@@ -686,22 +689,22 @@ export class Mundo3d implements OnInit, OnDestroy {
     const wasAlreadyCompleted = this.isCompleted(c);
     if (wasAlreadyCompleted && !c.recovery) { this.closeActivity(); return; }
     const unitId = this.activeUnitId();
-    const unit = unitId ? this.store.unidadPorId(unitId) : undefined;
-    const previous = this.store.progreso();
+    const unit = unitId ? this.store.sectionById(unitId) : undefined;
+    const previous = this.store.progress();
     const previousXp = previous?.xpTotal ?? 0;
-    const required = unit?.actividades.filter(a => a.esObligatorio) ?? [];
-    const wasResolved = required.length > 0 && required.every(a => previous?.nodos.some(n => n.nodoId === a.id && n.estado === 'completado'));
+    const required = unit?.activities.filter(a => a.isMandatory) ?? [];
+    const wasResolved = required.length > 0 && required.every(a => previous?.nodes.some(n => n.nodeId === a.id && n.status === 'completado'));
     this.savingProgress.set(true);
     this.saveError.set(null);
-    this.store.sumarProgreso(wasAlreadyCompleted ? 0 : c.xp, c.actividadId, c.recovery ? 3 : this.localVidas(), confirmed => {
+    this.store.addProgress(wasAlreadyCompleted ? 0 : c.xp, c.activityId, c.recovery ? 3 : this.localLives(), confirmed => {
       if (this.destroyed) return;
       this.savingProgress.set(false);
-      if (c.recovery) this.localVidas.set(3);
-      if (!c.recovery && c.type !== 'teoria' && unitId && c.actividadId &&
-          confirmed.nodos.some(n => n.nodoId === c.actividadId && n.estado === 'completado')) {
-        this.pendingReward = { type: 'celebrateProgress', id: crypto.randomUUID(), unitId, activityId: c.actividadId,
-          xp: Math.max(0, confirmed.xpTotal - previousXp), unitName: unit?.nombre ?? '',
-          unitCompleted: !wasResolved && required.length > 0 && required.every(a => confirmed.nodos.some(n => n.nodoId === a.id && n.estado === 'completado')) };
+      if (c.recovery) this.localLives.set(3);
+      if (!c.recovery && c.type !== 'teoria' && unitId && c.activityId &&
+          confirmed.nodes.some(n => n.nodeId === c.activityId && n.status === 'completado')) {
+        this.pendingReward = { type: 'celebrateProgress', id: crypto.randomUUID(), unitId, activityId: c.activityId,
+          xp: Math.max(0, confirmed.xpTotal - previousXp), unitName: unit?.name ?? '',
+          unitCompleted: !wasResolved && required.length > 0 && required.every(a => confirmed.nodes.some(n => n.nodeId === a.id && n.status === 'completado')) };
         this.sendTutorial(this.pendingReward);
         // A missing scene must never hide a successfully saved reward.
         clearTimeout(this.rewardFallback);
@@ -713,9 +716,9 @@ export class Mundo3d implements OnInit, OnDestroy {
       this.savingProgress.set(false);
       this.saveError.set('No se pudo guardar. Intentá continuar nuevamente.');
     });
-    // El `effect` `sincronizarEstado` ya se dispara solo (store.progreso() cambió con
-    // sumarProgreso) y le manda a la isla 3D el estado de actividades actualizado —
-    // no hace falta un mensaje aparte para refrescar el nodo recién completado.
+    // The `syncStatus` `effect` already fires by itself (store.progress() changed with
+    // addProgress) and sends the 3D island the updated activity state —
+    // no separate message is needed to refresh the node just completed.
   }
 
   private showReward(): void {
@@ -730,7 +733,7 @@ export class Mundo3d implements OnInit, OnDestroy {
     }, 2500);
   }
 
-  // Efectos de Sonido Web Audio — igual que unidad-mapa.ts.
+  // Web Audio Sound Effects — same as section-map.ts.
   private playAudioTone(success: boolean): void {
     if (!this.soundEnabled()) return;
     try {

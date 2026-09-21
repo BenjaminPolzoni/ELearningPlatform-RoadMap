@@ -1,60 +1,60 @@
 import { Injectable } from '@angular/core';
-import type { Asignatura } from './models';
+import type { Subject } from './models';
 
-import { CURSO_SEED_ID } from '../../mocks/seed';
+import { COURSE_SEED_ID } from '../../mocks/seed';
 
-const KEY = 'educa.asignaturas.v1';
+const KEY = 'educa.asignaturas.v2';
 
-function initialSeed(): Asignatura[] {
+function initialSeed(): Subject[] {
   const now = new Date().toISOString();
   return [
     {
-      id: CURSO_SEED_ID,
-      nombre: 'Introducción a la Programación',
-      descripcion: 'Curso fundamental de algoritmos, lógica y estructuras con desafíos gamificados.',
-      fechaCreacion: now,
-      fechaModificacion: now,
-      unidades: [
+      id: COURSE_SEED_ID,
+      name: 'Introducción a la Programación',
+      description: 'Curso fundamental de algoritmos, lógica y estructuras con desafíos gamificados.',
+      creationDate: now,
+      modificationDate: now,
+      sections: [
         {
           id: 'u1-fundamentos',
-          titulo: 'Fundamentos de Algoritmos',
-          descripcion: 'Variables, tipos de datos y operadores lógicos.',
-          orden: 0,
+          title: 'Fundamentos de Algoritmos',
+          description: 'Variables, tipos de datos y operadores lógicos.',
+          order: 0,
           color: '#f59e0b',
-          bioma: 'desierto',
-          modulos: [
+          biome: 'desierto',
+          modules: [
             {
               id: 'm1-variables',
-              titulo: 'Variables y Constantes',
-              descripcion: 'Asignación de memoria y tipos primitivos.',
-              orden: 0,
-              anexos: [
+              title: 'Variables y Constantes',
+              description: 'Asignación de memoria y tipos primitivos.',
+              order: 0,
+              attachments: [
                 {
                   id: 'a1-doc-tipos',
-                  titulo: 'Guía de Tipos Primitivos',
-                  tipo: 'documento',
-                  descripcion: 'Conceptos teóricos sobre enteros, flotantes y booleanos.',
+                  title: 'Guía de Tipos Primitivos',
+                  type: 'documento',
+                  description: 'Conceptos teóricos sobre enteros, flotantes y booleanos.',
                   url: 'https://developer.mozilla.org',
                 },
                 {
                   id: 'a2-ej-variables',
-                  titulo: 'Desafío: Declaración de Variables',
-                  tipo: 'ejercicio',
-                  descripcion: 'Valida tu comprensión de declaración y ámbito de variables.',
+                  title: 'Desafío: Declaración de Variables',
+                  type: 'ejercicio',
+                  description: 'Valida tu comprensión de declaración y ámbito de variables.',
                 },
               ],
             },
             {
               id: 'm2-operadores',
-              titulo: 'Operadores y Expresiones',
-              descripcion: 'Aritmética y lógica booleana.',
-              orden: 1,
-              anexos: [
+              title: 'Operadores y Expresiones',
+              description: 'Aritmética y lógica booleana.',
+              order: 1,
+              attachments: [
                 {
                   id: 'a3-ej-expresiones',
-                  titulo: 'Desafío: Evaluación de Expresiones',
-                  tipo: 'ejercicio',
-                  descripcion: 'Resuelve las operaciones respetando la precedencia.',
+                  title: 'Desafío: Evaluación de Expresiones',
+                  type: 'ejercicio',
+                  description: 'Resuelve las operaciones respetando la precedencia.',
                 },
               ],
             },
@@ -62,44 +62,44 @@ function initialSeed(): Asignatura[] {
         },
         {
           id: 'u2-control',
-          titulo: 'Estructuras de Control',
-          descripcion: 'Condicionales if/else y bucles while/for.',
-          orden: 1,
+          title: 'Estructuras de Control',
+          description: 'Condicionales if/else y bucles while/for.',
+          order: 1,
           color: '#10b981',
-          bioma: 'pradera',
-          modulos: [
+          biome: 'pradera',
+          modules: [
             {
               id: 'm3-condicionales',
-              titulo: 'Bifurcaciones Condicionales',
-              descripcion: 'Toma de decisiones lógicas.',
-              orden: 0,
-              anexos: [
+              title: 'Bifurcaciones Condicionales',
+              description: 'Toma de decisiones lógicas.',
+              order: 0,
+              attachments: [
                 {
                   id: 'a4-vid-condicionales',
-                  titulo: 'Video Explicativo: If/Else en Acción',
-                  tipo: 'video',
-                  descripcion: 'Demostración práctica de bifurcaciones.',
+                  title: 'Video Explicativo: If/Else en Acción',
+                  type: 'video',
+                  description: 'Demostración práctica de bifurcaciones.',
                   url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
                 },
                 {
                   id: 'a5-ej-condicionales',
-                  titulo: 'Desafío: Rutas Lógicas',
-                  tipo: 'ejercicio',
-                  descripcion: 'Determina qué rama del código se ejecuta según la condición.',
+                  title: 'Desafío: Rutas Lógicas',
+                  type: 'ejercicio',
+                  description: 'Determina qué rama del código se ejecuta según la condición.',
                 },
               ],
             },
             {
               id: 'm4-bucles',
-              titulo: 'Iteraciones y Bucles',
-              descripcion: 'Repetición controlada de instrucciones.',
-              orden: 1,
-              anexos: [
+              title: 'Iteraciones y Bucles',
+              description: 'Repetición controlada de instrucciones.',
+              order: 1,
+              attachments: [
                 {
                   id: 'a6-ej-bucles',
-                  titulo: 'Desafío: Contador de Ciclos',
-                  tipo: 'ejercicio',
-                  descripcion: 'Predice el número exacto de iteraciones.',
+                  title: 'Desafío: Contador de Ciclos',
+                  type: 'ejercicio',
+                  description: 'Predice el número exacto de iteraciones.',
                 },
               ],
             },
@@ -107,30 +107,30 @@ function initialSeed(): Asignatura[] {
         },
         {
           id: 'u3-funciones',
-          titulo: 'Funciones y Modularización',
-          descripcion: 'Parámetros, retorno y reutilización de código.',
-          orden: 2,
+          title: 'Funciones y Modularización',
+          description: 'Parámetros, retorno y reutilización de código.',
+          order: 2,
           color: '#6366f1',
-          bioma: 'pradera',
-          modulos: [
+          biome: 'pradera',
+          modules: [
             {
               id: 'm5-modularizacion',
-              titulo: 'Diseño Modular',
-              descripcion: 'Descomposición en subproblemas.',
-              orden: 0,
-              anexos: [
+              title: 'Diseño Modular',
+              description: 'Descomposición en subproblemas.',
+              order: 0,
+              attachments: [
                 {
                   id: 'a7-doc-funciones',
-                  titulo: 'Apunte: Funciones Puras e Impuras',
-                  tipo: 'documento',
-                  descripcion: 'Buenas prácticas en el paso de argumentos.',
+                  title: 'Apunte: Funciones Puras e Impuras',
+                  type: 'documento',
+                  description: 'Buenas prácticas en el paso de argumentos.',
                   url: 'https://developer.mozilla.org',
                 },
                 {
                   id: 'a8-ej-funciones',
-                  titulo: 'Desafío: Retorno de Valores',
-                  tipo: 'ejercicio',
-                  descripcion: 'Identifica el output producido por la invocación.',
+                  title: 'Desafío: Retorno de Valores',
+                  type: 'ejercicio',
+                  description: 'Identifica el output producido por la invocación.',
                 },
               ],
             },
@@ -138,23 +138,23 @@ function initialSeed(): Asignatura[] {
         },
         {
           id: 'u4-estructuras',
-          titulo: 'Estructuras de Datos',
-          descripcion: 'Arreglos, listas y colecciones.',
-          orden: 3,
+          title: 'Estructuras de Datos',
+          description: 'Arreglos, listas y colecciones.',
+          order: 3,
           color: '#06b6d4',
-          bioma: 'nieve',
-          modulos: [
+          biome: 'nieve',
+          modules: [
             {
               id: 'm6-arreglos',
-              titulo: 'Arreglos Unidimensionales',
-              descripcion: 'Indexación y recorrido de vectores.',
-              orden: 0,
-              anexos: [
+              title: 'Arreglos Unidimensionales',
+              description: 'Indexación y recorrido de vectores.',
+              order: 0,
+              attachments: [
                 {
                   id: 'a9-ej-arreglos',
-                  titulo: 'Desafío: Búsqueda en Arreglos',
-                  tipo: 'ejercicio',
-                  descripcion: 'Encuentra el elemento deseado en el arreglo.',
+                  title: 'Desafío: Búsqueda en Arreglos',
+                  type: 'ejercicio',
+                  description: 'Encuentra el elemento deseado en el arreglo.',
                 },
               ],
             },
@@ -167,7 +167,7 @@ function initialSeed(): Asignatura[] {
 
 @Injectable({ providedIn: 'root' })
 export class StorageService {
-  list(): Asignatura[] {
+  list(): Subject[] {
     try {
       const raw = localStorage.getItem(KEY);
       if (!raw) {
@@ -175,7 +175,7 @@ export class StorageService {
         localStorage.setItem(KEY, JSON.stringify(seed));
         return seed;
       }
-      const parsed = JSON.parse(raw) as Asignatura[];
+      const parsed = JSON.parse(raw) as Subject[];
       if (!Array.isArray(parsed) || parsed.length === 0) {
         const seed = initialSeed();
         localStorage.setItem(KEY, JSON.stringify(seed));
@@ -187,13 +187,13 @@ export class StorageService {
     }
   }
 
-  load(id: string): Asignatura | null {
+  load(id: string): Subject | null {
     return this.list().find((a) => a.id === id) ?? null;
   }
 
-  save(a: Asignatura): void {
+  save(a: Subject): void {
     const all = this.list().filter((x) => x.id !== a.id);
-    all.push({ ...a, fechaModificacion: new Date().toISOString() });
+    all.push({ ...a, modificationDate: new Date().toISOString() });
     try {
       localStorage.setItem(KEY, JSON.stringify(all));
     } catch {

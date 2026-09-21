@@ -1,33 +1,33 @@
-// Tipos del grafo y del progreso — espejo del contrato (docs/openapi/ms-roadmap.yaml)
-// pero solo con lo que el mock necesita en Fases 0-2. El `HttpRoadmapAdapter` de Fase 3
-// generará los suyos desde el OpenAPI.
+// Graph and progress types — mirror of the contract (docs/openapi/ms-roadmap.yaml)
+// but only with what the mock needs in Phases 0-2. The Phase 3 `HttpRoadmapAdapter`
+// will generate its own from the OpenAPI.
 
-import { Bioma } from './biomas';
+import { Biome } from './biomes';
 
-export type EstadoNodo = 'bloqueado' | 'habilitado' | 'completado' | 'fallado';
-// 'teoria' es material de lectura (PDF/video/PPT vía link externo, ver `recursoUrl` en
-// `Actividad`), sin evaluación ni XP — pensado para ir como primer nodo de la unidad,
-// antes del desafío que evalúa ese contenido. El resto son desafíos evaluados, ya sea
-// teórico o práctico (la modalidad va en el propio tipo, como en el contrato real — ver
-// docs/openapi/ms-roadmap.yaml, Nodo.tipo). `boss` e `hito` siguen siendo tipos aparte
-// (no seleccionables desde el editor por ahora).
-export type TipoNodo = 'teoria' | 'desafio-teorico' | 'desafio-practico' | 'boss' | 'hito';
+export type NodeStatus = 'bloqueado' | 'habilitado' | 'completado' | 'fallado';
+// 'teoria' is reading material (PDF/video/PPT via external link, see `resourceUrl` in
+// `Activity`), without evaluation or XP — meant to be the first node of the section,
+// before the challenge that evaluates that content. The rest are evaluated challenges, either
+// theoretical or practical (the modality is in the type itself, as in the real contract — see
+// docs/openapi/ms-roadmap.yaml, Nodo.tipo). `boss` and `hito` remain separate types
+// (not selectable from the editor for now).
+export type NodeType = 'teoria' | 'desafio-teorico' | 'desafio-practico' | 'boss' | 'hito';
 
-// Tipo de recurso externo que carga el profesor para un nodo 'teoria' — el proyecto no
-// tiene backend de subida de archivos, así que el "contenido" es siempre un link (YouTube,
-// Google Drive, OneDrive, etc.), nunca un archivo propio.
-export type TipoRecursoTeoria = 'pdf' | 'video' | 'ppt';
+// Type of external resource the teacher uploads for a 'teoria' node — the project has no
+// file-upload backend, so the "content" is always a link (YouTube,
+// Google Drive, OneDrive, etc.), never a file of its own.
+export type ResourceTheoryType = 'pdf' | 'video' | 'ppt';
 
-// PAR-01: XP base por dificultad (100 / 250 / 500). Espejo de Dificultad del backend.
-export type Dificultad = 'BASICO' | 'MEDIO' | 'AVANZADO';
-// Única fuente de verdad del XP por dificultad — la usan tanto el editor (para mostrarle
-// al profesor cuánto va a valer el desafío) como el mapa del alumno (para otorgarlo real).
-export const XP_POR_DIFICULTAD: Record<Dificultad, number> = { BASICO: 100, MEDIO: 250, AVANZADO: 500 };
+// PAR-01: base XP by difficulty (100 / 250 / 500). Mirror of the backend's Difficulty.
+export type Difficulty = 'BASICO' | 'MEDIO' | 'AVANZADO';
+// Single source of truth for XP by difficulty — used both by the editor (to show the
+// teacher how much the challenge will be worth) and by the student's map (to actually award it).
+export const XP_BY_DIFFICULTY: Record<Difficulty, number> = { BASICO: 100, MEDIO: 250, AVANZADO: 500 };
 
-// Descripción que ve el alumno en el mapa cuando el profesor deja el campo vacío — el
-// editor la muestra como placeholder para que sepa qué va a salir si no escribe la suya.
-export function descripcionPorDefecto(tipo: TipoNodo): string {
-  switch (tipo) {
+// Description the student sees on the map when the teacher leaves the field empty — the
+// editor shows it as a placeholder so they know what will come out if they do not write their own.
+export function defaultDescription(type: NodeType): string {
+  switch (type) {
     case 'teoria':
       return 'Revisá el material antes de encarar el desafío de la unidad.';
     case 'desafio-teorico':
@@ -41,95 +41,95 @@ export function descripcionPorDefecto(tipo: TipoNodo): string {
   }
 }
 
-export interface Actividad {
+export interface Activity {
   id: string;
-  nombre: string;
-  tipo: TipoNodo;
-  esObligatorio: boolean;
-  reintentosPermitidos: number; // 0-3 (RF-DES-07)
-  desafioId?: string;
-  descripcion?: string;
-  // Se evalúa y otorga XP (todo tipo salvo 'hito' y 'teoria').
-  dificultad?: Dificultad;
-  // Solo para tipo 'teoria': link externo al material (PDF/video/PPT) y su tipo, para
-  // saber cómo embeberlo en el mapa del alumno (ver recurso-embed.util.ts).
-  recursoUrl?: string;
-  recursoTipo?: TipoRecursoTeoria;
-  // Posición del nodo en el editor gráfico del profesor (05-design-system.md §5/§6). El
-  // adapter le asigna un default no solapado al crearla; el profesor la reubica arrastrando.
-  posicionX: number;
-  posicionY: number;
+  name: string;
+  type: NodeType;
+  isMandatory: boolean;
+  allowedRetries: number; // 0-3 (RF-DES-07)
+  challengeId?: string;
+  description?: string;
+  // Evaluated and awards XP (every type except 'hito' and 'teoria').
+  difficulty?: Difficulty;
+  // Only for type 'teoria': external link to the material (PDF/video/PPT) and its type, to
+  // know how to embed it in the student's map (see resource-embed.util.ts).
+  resourceUrl?: string;
+  resourceType?: ResourceTheoryType;
+  // Position of the node in the teacher's graphic editor (05-design-system.md §5/§6). The
+  // adapter assigns it a non-overlapping default on creation; the teacher relocates it by dragging.
+  positionX: number;
+  positionY: number;
 }
 
-/** Alta/edición de actividad desde el editor del profesor (Fase 2). */
-export interface NuevaActividad {
-  nombre: string;
-  tipo: TipoNodo;
-  esObligatorio: boolean;
-  reintentosPermitidos: number;
-  descripcion?: string;
-  dificultad?: Dificultad;
-  recursoUrl?: string;
-  recursoTipo?: TipoRecursoTeoria;
+/** Creation/edition of an activity from the teacher's editor (Phase 2). */
+export interface NewActivity {
+  name: string;
+  type: NodeType;
+  isMandatory: boolean;
+  allowedRetries: number;
+  description?: string;
+  difficulty?: Difficulty;
+  resourceUrl?: string;
+  resourceType?: ResourceTheoryType;
 }
 
-export interface Unidad {
+export interface Section {
   id: string;
-  nombre: string;
-  umbralXpDesbloqueo: number;
-  orden: number;
-  actividades: Actividad[];
-  // Ambientación visual (mapa 2D y mundo 3D). Opcional: unidades creadas antes de este
-  // campo caen al tema por heurística de nombre/orden (ver unidad-mapa.ts).
-  bioma?: Bioma;
+  name: string;
+  xpThreshold: number;
+  order: number;
+  activities: Activity[];
+  // Visual setting (2D map and 3D world). Optional: sections created before this
+  // field fall back to the theme by a name/order heuristic (see section-map.ts).
+  biome?: Biome;
 }
 
 export interface Roadmap {
-  cursoCohorteId: string;
-  nombre: string;
-  unidades: Unidad[];
-  // Prerequisitos entre nodos (grafo de conexiones, RF-CUR editor gráfico). Se mantiene
-  // como DAG: el adapter rechaza auto-lazo, ciclo y duplicado — espejo de POST /conexiones.
-  conexiones: Conexion[];
+  courseCohortId: string;
+  name: string;
+  sections: Section[];
+  // Prerequisites between nodes (connection graph, RF-CUR graphic editor). Kept
+  // as a DAG: the adapter rejects self-loops, cycles and duplicates — mirrors POST /conexiones.
+  connections: Connection[];
 }
 
-export interface NuevaUnidad {
-  nombre: string;
-  umbralXpDesbloqueo: number;
-  bioma?: Bioma;
+export interface NewSection {
+  name: string;
+  xpThreshold: number;
+  biome?: Biome;
 }
 
-/** Prerequisito: no se puede entrar a `nodoDestinoId` sin completar `nodoOrigenId`. */
-export interface Conexion {
+/** Prerequisite: `nodeDestinationId` cannot be entered without completing `nodeOriginId`. */
+export interface Connection {
   id: string;
-  nodoOrigenId: string;
-  nodoDestinoId: string;
+  nodeOriginId: string;
+  nodeDestinationId: string;
 }
 
-export interface ProgresoNodo {
-  nodoId: string;
-  estado: EstadoNodo;
+export interface NodeProgress {
+  nodeId: string;
+  status: NodeStatus;
 }
 
-export interface Progreso {
-  alumnoId: string;
-  cursoCohorteId: string;
+export interface Progress {
+  studentId: string;
+  courseCohortId: string;
   xpTotal: number;
-  vidasVigentes: number; // PAR-12: máx 3
-  nodos: ProgresoNodo[];
-  /** Movimientos append-only del mock para marcar contenido teórico como leído. */
-  lecturasContenido?: LecturaContenido[];
+  currentLives: number; // PAR-12: max 3
+  nodes: NodeProgress[];
+  /** Append-only movements of the mock to mark theory content as read. */
+  readingsContent?: ReadingContent[];
 }
 
-export interface LecturaContenido {
-  nodoId: string;
-  registradoEn: string;
+export interface ReadingContent {
+  nodeId: string;
+  registeredIn: string;
 }
 
-// En producción esto lo consolida el BFF desde Identidad — acá viene del seed (stub).
-export interface Alumno {
+// In production the BFF consolidates this from Identity — here it comes from the seed (stub).
+export interface Student {
   id: string;
-  nombre: string;
-  apellido: string;
-  legajo: string;
+  name: string;
+  lastName: string;
+  fileNumber: string;
 }

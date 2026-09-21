@@ -1,47 +1,47 @@
 import { describe, expect, it } from 'vitest';
-import { leerConfigModular, MODULAR_CONFIG_KEY, sanearConfigModular } from './avatar-config';
+import { readConfigModular, MODULAR_CONFIG_KEY, sanitizeConfigModular } from './avatar-config';
 
-describe('sanearConfigModular', () => {
-  it('clase inválida cae a Knight', () => {
-    expect(sanearConfigModular({ characterClass: 'Ninja' }).characterClass).toBe('Knight');
+describe('sanitizeConfigModular', () => {
+  it('invalid class falls back to Knight', () => {
+    expect(sanitizeConfigModular({ characterClass: 'Ninja' }).characterClass).toBe('Knight');
   });
 
-  it('migra Rogue_Hooded a Rogue conservando el torso', () => {
-    const c = sanearConfigModular({ characterClass: 'Rogue_Hooded', headStyle: 'Rogue_Hooded' });
+  it('migrates Rogue_Hooded to Rogue keeping the torso', () => {
+    const c = sanitizeConfigModular({ characterClass: 'Rogue_Hooded', headStyle: 'Rogue_Hooded' });
     expect(c.characterClass).toBe('Rogue');
     expect(c.headStyle).toBe('Rogue');
     expect(c.topStyle).toBe('Rogue_Hooded');
   });
 
-  it('barba ausente queda none; la explícita se conserva', () => {
-    // Igual que la ciudad: el default 'none' es truthy y no se reemplaza por clase.
-    expect(sanearConfigModular({ characterClass: 'Barbarian' }).beardStyle).toBe('none');
-    expect(sanearConfigModular({ characterClass: 'Barbarian', beardStyle: 'long' }).beardStyle).toBe('long');
-    expect(sanearConfigModular({ characterClass: 'Mage' }).beardStyle).toBe('none');
+  it('missing beard stays none; the explicit one is kept', () => {
+    // Same as the city: the 'none' default is truthy and is not replaced by class.
+    expect(sanitizeConfigModular({ characterClass: 'Barbarian' }).beardStyle).toBe('none');
+    expect(sanitizeConfigModular({ characterClass: 'Barbarian', beardStyle: 'long' }).beardStyle).toBe('long');
+    expect(sanitizeConfigModular({ characterClass: 'Mage' }).beardStyle).toBe('none');
   });
 
-  it('escudos en mano se sueltan y spellbook pasa a teclado', () => {
-    const c = sanearConfigModular({ rightHandItem: 'shield_round.gltf', leftHandItem: 'spellbook_open' });
+  it('shields in hand are dropped and spellbook moves to keyboard', () => {
+    const c = sanitizeConfigModular({ rightHandItem: 'shield_round.gltf', leftHandItem: 'spellbook_open' });
     expect(c.rightHandItem).toBe('none');
     expect(c.leftHandItem).toBe('keyboard_gamer');
   });
 
-  it('órbita estelar legada migra a id + color', () => {
-    const c = sanearConfigModular({ headItem: 'star_orbit_blue' });
+  it('legacy stellar orbit migrates to id + color', () => {
+    const c = sanitizeConfigModular({ headItem: 'star_orbit_blue' });
     expect(c.headItem).toBe('star_orbit');
     expect(c.starOrbitColor).toBe('blue');
   });
 });
 
-describe('leerConfigModular', () => {
-  it('null si el alumno aún no creó su personaje', () => {
+describe('readConfigModular', () => {
+  it('null if the student has not created their character yet', () => {
     localStorage.removeItem(MODULAR_CONFIG_KEY);
-    expect(leerConfigModular()).toBeNull();
+    expect(readConfigModular()).toBeNull();
   });
 
-  it('sanea lo guardado por la ciudad', () => {
+  it('sanitizes what was saved by the city', () => {
     localStorage.setItem(MODULAR_CONFIG_KEY, JSON.stringify({ characterClass: 'Mage', pet: 'owl' }));
-    const c = leerConfigModular();
+    const c = readConfigModular();
     expect(c?.characterClass).toBe('Mage');
     expect(c?.pet).toBe('owl');
     expect(c?.topStyle).toBe('Knight');

@@ -1,20 +1,20 @@
 import { Injectable, signal } from '@angular/core';
 
-export type TipoFeedback = 'ok' | 'error';
+export type FeedbackType = 'ok' | 'error';
 
 export interface Feedback {
   id: number;
-  tipo: TipoFeedback;
-  mensaje: string;
+  type: FeedbackType;
+  message: string;
 }
 
-const DURACION_MS = 3200;
+const DURATION_MS = 3200;
 
 /**
- * Feedback explícito de guardado para la vista del profesor (05-design-system.md §6/§7):
- * "nada de autoguardado invisible" — cada alta/edición/baja dispara un mensaje breve que
- * se autodescarta. Vive en `core/` (no en `shared/ui`, co-mantenido con Notificaciones/G2)
- * porque es un detalle de UX propio del editor del roadmap, no un componente de dominio.
+ * Explicit save feedback for the teacher's view (05-design-system.md §6/§7):
+ * "no invisible autosave" — every create/edit/remove triggers a brief message that
+ * dismisses itself. It lives in `core/` (not in `shared/ui`, co-maintained with Notifications/G2)
+ * because it is a UX detail specific to the roadmap editor, not a domain component.
  */
 @Injectable({ providedIn: 'root' })
 export class SaveFeedbackService {
@@ -22,21 +22,21 @@ export class SaveFeedbackService {
   readonly items = this._items.asReadonly();
   private seq = 0;
 
-  ok(mensaje = 'Guardado ✓'): void {
-    this.emitir('ok', mensaje);
+  ok(message = 'Guardado ✓'): void {
+    this.emit('ok', message);
   }
 
-  error(mensaje = 'Error al guardar'): void {
-    this.emitir('error', mensaje);
+  error(message = 'Error al guardar'): void {
+    this.emit('error', message);
   }
 
   dismiss(id: number): void {
     this._items.update((arr) => arr.filter((f) => f.id !== id));
   }
 
-  private emitir(tipo: TipoFeedback, mensaje: string): void {
+  private emit(type: FeedbackType, message: string): void {
     const id = ++this.seq;
-    this._items.update((arr) => [...arr, { id, tipo, mensaje }]);
-    setTimeout(() => this.dismiss(id), DURACION_MS);
+    this._items.update((arr) => [...arr, { id, type, message }]);
+    setTimeout(() => this.dismiss(id), DURATION_MS);
   }
 }

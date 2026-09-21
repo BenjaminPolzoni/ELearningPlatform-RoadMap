@@ -1,27 +1,27 @@
 import { Observable } from 'rxjs';
 
 /**
- * Puerta de datos del Banco (Tema 08) — monedas, vidas y XP que el alumno posee.
- * En producción esto lo resuelve el BFF; en Fases 0-2 el mock en memoria con
- * caché y degradación a indisponible si el "servicio" falla.
+ * Data gateway for the Bank (Topic 08) — coins, lives and XP the student owns.
+ * In production the BFF resolves this; in Phases 0-2 an in-memory mock with
+ * cache and degradation to unavailable if the "service" fails.
  *
- * Flujo: el frontend llama a estos métodos; el adapter decide si la fuente
- * está disponible (cache válida / servicio arriba) o degrada gracefully.
+ * Flow: the frontend calls these methods; the adapter decides whether the source
+ * is available (valid cache / service up) or degrades gracefully.
  */
-export abstract class BancoDataPort {
-  /** Saldo actual de monedas del alumno en un curso-cohorte. */
-  abstract getMonedas(alumnoId: string, cursoCohorteId: string): Observable<number>;
+export abstract class BankDataPort {
+  /** Current coin balance of the student in a course-cohort. */
+  abstract getCoins(studentId: string, courseCohortId: string): Observable<number>;
 
-  /** XP total consolidado del alumno (la fuente de verdad es el Banco, no el front). */
-  abstract getXP(alumnoId: string, cursoCohorteId: string): Observable<number>;
+  /** Consolidated total XP of the student (the source of truth is the Bank, not the front). */
+  abstract getXP(studentId: string, courseCohortId: string): Observable<number>;
 
-  /** Vidas vigentes del alumno (máx PAR-12 = 3). */
-  abstract getVidas(alumnoId: string, cursoCohorteId: string): Observable<number>;
+  /** Current lives of the student (max PAR-12 = 3). */
+  abstract getLives(studentId: string, courseCohortId: string): Observable<number>;
 
-  /** Compra de vida: descuenta monedas (PAR-06: 300) y devuelve 1 vida. */
-  abstract comprarVida(
-    alumnoId: string,
-    cursoCohorteId: string,
-    costoMonedas: number,
-  ): Observable<{ exito: boolean; nuevoSaldo: number; nuevasVidas: number; razon?: string }>;
+  /** Life purchase: deducts coins (PAR-06: 300) and returns 1 life. */
+  abstract buyLife(
+    studentId: string,
+    courseCohortId: string,
+    costCoins: number,
+  ): Observable<{ success: boolean; newBalance: number; newLives: number; reason?: string }>;
 }

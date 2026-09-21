@@ -1,19 +1,19 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RoadmapDataPort } from './roadmap-data.port';
-import { NuevaActividad, NuevaUnidad, Progreso, Roadmap, Unidad } from './roadmap.models';
-import { CURSO_SEED_ID } from '../../mocks/seed';
+import { NewActivity, NewSection, Progress, Roadmap, Section } from './roadmap.models';
+import { COURSE_SEED_ID } from '../../mocks/seed';
 import { SaveFeedbackService } from '../services/save-feedback.service';
 import { SyncChannelService } from '../educa/sync-channel.service';
 
 /**
- * Estado del grafo compartido entre el editor (PROFESOR) y el mapa (ALUMNO): al agregar
- * o quitar una unidad en el editor, el mapa se actualiza solo — es el vertical slice de
- * Fase 1 ("agrego unidad → aparece la isla"). Toda mutación va por el `RoadmapDataPort`,
- * así el swap a HTTP de Fase 3 no toca esto.
+ * Graph state shared between the editor (PROFESOR) and the map (ALUMNO): when adding
+ * or removing a section in the editor, the map updates itself — it is the Phase 1 vertical
+ * slice ("I add a section → the island appears"). Every mutation goes through the `RoadmapDataPort`,
+ * so the Phase 3 swap to HTTP does not touch this.
  *
- * Cada mutación reporta al `SaveFeedbackService` (05 §6: "nada de autoguardado invisible")
- * — es el único lugar donde se llama al puerto, así ninguna pantalla se olvida del feedback.
+ * Each mutation reports to `SaveFeedbackService` (05 §6: "no invisible autosave")
+ * — it is the only place that calls the port, so no screen forgets the feedback.
  */
 @Injectable({ providedIn: 'root' })
 export class RoadmapStore {
@@ -23,22 +23,22 @@ export class RoadmapStore {
 
   private readonly _roadmap = signal<Roadmap | null>(null);
   readonly roadmap = this._roadmap.asReadonly();
-  readonly unidades = computed(() => this._roadmap()?.unidades ?? []);
-  readonly conexiones = computed(() => this._roadmap()?.conexiones ?? []);
-  readonly progreso = toSignal(this.port.getProgreso('alu-01', CURSO_SEED_ID));
+  readonly sections = computed(() => this._roadmap()?.sections ?? []);
+  readonly connections = computed(() => this._roadmap()?.connections ?? []);
+  readonly progress = toSignal(this.port.getProgress('alu-01', COURSE_SEED_ID));
 
   constructor() {
-    this.recargar();
+    this.reload();
     this.syncChannel?.events$.subscribe((msg) => {
       if (msg.type === 'roadmap_updated') {
-        this.recargar();
+        this.reload();
       }
     });
   }
 
-  sumarProgreso(xpGanado: number, nodoId?: string, vidas?: number,
-    onOk: (progreso: Progreso) => void = () => {}, onError: () => void = () => {}): void {
-    this.port.registrarProgreso('alu-01', CURSO_SEED_ID, xpGanado, nodoId, vidas).subscribe({
+  addProgress(earnedXp: number, nodeId?: string, lives?: number,
+    onOk: (progress: Progress) => void = () => {}, onError: () => void = () => {}): void {
+    this.port.registerProgress('alu-01', COURSE_SEED_ID, earnedXp, nodeId, lives).subscribe({
       next: onOk,
       error: () => {
         this.feedback.error('No se pudo guardar el progreso. Intentá nuevamente.');
@@ -47,150 +47,150 @@ export class RoadmapStore {
     });
   }
 
-  marcarContenidoLeido(nodoId: string, onOk: () => void = () => {}): void {
-    this.port.marcarContenidoLeido('alu-01', CURSO_SEED_ID, nodoId).subscribe({
+  markContentRead(nodeId: string, onOk: () => void = () => {}): void {
+    this.port.markContentRead('alu-01', COURSE_SEED_ID, nodeId).subscribe({
       next: () => {
         this.feedback.ok('Lectura registrada ✓');
         onOk();
       },
-      error: (err) => this.feedback.error(this.mensaje(err, 'No se pudo registrar la lectura')),
+      error: (err) => this.feedback.error(this.message(err, 'No se pudo registrar la lectura')),
     });
   }
 
-  recargar(): void {
-    this.port.getRoadmap(CURSO_SEED_ID).subscribe((r) => this._roadmap.set(r));
+  reload(): void {
+    this.port.getRoadmap(COURSE_SEED_ID).subscribe((r) => this._roadmap.set(r));
   }
 
   /**
-   * `onOk` cierra el formulario que disparó la mutación — solo cuando el guardado se
-   * confirmó. Así un error deja el formulario abierto con lo que el profesor tipeó, en vez
-   * de descartarlo (05 §6: "no perder el cambio del usuario en el formulario/canvas").
+   * `onOk` closes the form that triggered the mutation — only when the save was
+   * confirmed. That way an error leaves the form open with what the teacher typed, instead
+   * of discarding it (05 §6: "do not lose the user's change in the form/canvas").
    */
-  agregarUnidad(dto: NuevaUnidad, onOk: () => void = () => {}): void {
-    this.port.addUnidad(CURSO_SEED_ID, dto).subscribe({
+  addSection(dto: NewSection, onOk: () => void = () => {}): void {
+    this.port.addSection(COURSE_SEED_ID, dto).subscribe({
       next: () => {
-        this.recargar();
+        this.reload();
         this.feedback.ok('Unidad agregada ✓');
         onOk();
       },
-      error: (err) => this.feedback.error(this.mensaje(err, 'No se pudo agregar la unidad')),
+      error: (err) => this.feedback.error(this.message(err, 'No se pudo agregar la unidad')),
     });
   }
 
-  editarUnidad(unidadId: string, dto: NuevaUnidad, onOk: () => void = () => {}): void {
-    this.port.updateUnidad(CURSO_SEED_ID, unidadId, dto).subscribe({
+  editSection(sectionId: string, dto: NewSection, onOk: () => void = () => {}): void {
+    this.port.updateSection(COURSE_SEED_ID, sectionId, dto).subscribe({
       next: () => {
-        this.recargar();
+        this.reload();
         this.feedback.ok('Unidad guardada ✓');
         onOk();
       },
-      error: (err) => this.feedback.error(this.mensaje(err, 'No se pudo guardar la unidad')),
+      error: (err) => this.feedback.error(this.message(err, 'No se pudo guardar la unidad')),
     });
   }
 
-  quitarUnidad(unidadId: string): void {
-    this.port.removeUnidad(CURSO_SEED_ID, unidadId).subscribe({
+  removeSection(sectionId: string): void {
+    this.port.removeSection(COURSE_SEED_ID, sectionId).subscribe({
       next: () => {
-        this.recargar();
+        this.reload();
         this.feedback.ok('Unidad eliminada ✓');
       },
-      error: (err) => this.feedback.error(this.mensaje(err, 'No se pudo eliminar la unidad')),
+      error: (err) => this.feedback.error(this.message(err, 'No se pudo eliminar la unidad')),
     });
   }
 
-  moverUnidad(unidadId: string, direccion: 'arriba' | 'abajo'): void {
-    this.port.moverUnidad(CURSO_SEED_ID, unidadId, direccion).subscribe({
+  moveSection(sectionId: string, direction: 'arriba' | 'abajo'): void {
+    this.port.moveSection(COURSE_SEED_ID, sectionId, direction).subscribe({
       next: () => {
-        this.recargar();
+        this.reload();
         this.feedback.ok('Orden guardado ✓');
       },
-      error: (err) => this.feedback.error(this.mensaje(err, 'No se pudo reordenar la unidad')),
+      error: (err) => this.feedback.error(this.message(err, 'No se pudo reordenar la unidad')),
     });
   }
 
-  unidadPorId(unidadId: string): Unidad | undefined {
-    return this.unidades().find((u) => u.id === unidadId);
+  sectionById(sectionId: string): Section | undefined {
+    return this.sections().find((u) => u.id === sectionId);
   }
 
-  agregarActividad(unidadId: string, dto: NuevaActividad, onOk: () => void = () => {}): void {
-    this.port.addActividad(CURSO_SEED_ID, unidadId, dto).subscribe({
+  addActivity(sectionId: string, dto: NewActivity, onOk: () => void = () => {}): void {
+    this.port.addActivity(COURSE_SEED_ID, sectionId, dto).subscribe({
       next: () => {
-        this.recargar();
+        this.reload();
         this.feedback.ok('Contenido agregado ✓');
         onOk();
       },
-      error: (err) => this.feedback.error(this.mensaje(err, 'No se pudo agregar el contenido')),
+      error: (err) => this.feedback.error(this.message(err, 'No se pudo agregar el contenido')),
     });
   }
 
-  editarActividad(unidadId: string, actividadId: string, dto: NuevaActividad, onOk: () => void = () => {}): void {
-    this.port.updateActividad(CURSO_SEED_ID, unidadId, actividadId, dto).subscribe({
+  editActivity(sectionId: string, activityId: string, dto: NewActivity, onOk: () => void = () => {}): void {
+    this.port.updateActivity(COURSE_SEED_ID, sectionId, activityId, dto).subscribe({
       next: () => {
-        this.recargar();
+        this.reload();
         this.feedback.ok('Contenido guardado ✓');
         onOk();
       },
-      error: (err) => this.feedback.error(this.mensaje(err, 'No se pudo guardar el contenido')),
+      error: (err) => this.feedback.error(this.message(err, 'No se pudo guardar el contenido')),
     });
   }
 
-  quitarActividad(unidadId: string, actividadId: string): void {
-    this.port.removeActividad(CURSO_SEED_ID, unidadId, actividadId).subscribe({
+  removeActivity(sectionId: string, activityId: string): void {
+    this.port.removeActivity(COURSE_SEED_ID, sectionId, activityId).subscribe({
       next: () => {
-        this.recargar();
+        this.reload();
         this.feedback.ok('Contenido eliminado ✓');
       },
-      error: (err) => this.feedback.error(this.mensaje(err, 'No se pudo eliminar el contenido')),
+      error: (err) => this.feedback.error(this.message(err, 'No se pudo eliminar el contenido')),
     });
   }
 
-  moverActividad(unidadId: string, actividadId: string, direccion: 'arriba' | 'abajo'): void {
-    this.port.moverActividad(CURSO_SEED_ID, unidadId, actividadId, direccion).subscribe({
+  moveActivity(sectionId: string, activityId: string, direction: 'arriba' | 'abajo'): void {
+    this.port.moveActivity(COURSE_SEED_ID, sectionId, activityId, direction).subscribe({
       next: () => {
-        this.recargar();
+        this.reload();
         this.feedback.ok('Orden guardado ✓');
       },
-      error: (err) => this.feedback.error(this.mensaje(err, 'No se pudo reordenar el contenido')),
+      error: (err) => this.feedback.error(this.message(err, 'No se pudo reordenar el contenido')),
     });
   }
 
   /**
-   * Reubica un nodo en el editor gráfico. No hace falta esperar `recargar()` para que el
-   * drag se sienta sólido: el canvas ya mantiene su propia posición local mientras arrastra
-   * y solo la descarta cuando el store confirma que se guardó.
+   * Relocates a node in the graphic editor. There is no need to wait for `reload()` for the
+   * drag to feel solid: the canvas already keeps its own local position while dragging
+   * and only discards it when the store confirms it was saved.
    */
-  moverNodo(unidadId: string, actividadId: string, x: number, y: number, onOk: () => void = () => {}): void {
-    this.port.moverNodo(CURSO_SEED_ID, unidadId, actividadId, x, y).subscribe({
+  moveNode(sectionId: string, activityId: string, x: number, y: number, onOk: () => void = () => {}): void {
+    this.port.moveNode(COURSE_SEED_ID, sectionId, activityId, x, y).subscribe({
       next: () => {
-        this.recargar();
+        this.reload();
         this.feedback.ok('Posición guardada ✓');
         onOk();
       },
-      error: (err) => this.feedback.error(this.mensaje(err, 'No se pudo guardar la posición')),
+      error: (err) => this.feedback.error(this.message(err, 'No se pudo guardar la posición')),
     });
   }
 
-  agregarConexion(nodoOrigenId: string, nodoDestinoId: string): void {
-    this.port.addConexion(CURSO_SEED_ID, nodoOrigenId, nodoDestinoId).subscribe({
+  addConnection(nodeOriginId: string, nodeDestinationId: string): void {
+    this.port.addConnection(COURSE_SEED_ID, nodeOriginId, nodeDestinationId).subscribe({
       next: () => {
-        this.recargar();
+        this.reload();
         this.feedback.ok('Conexión creada ✓');
       },
-      error: (err) => this.feedback.error(this.mensaje(err, 'No se pudo crear la conexión')),
+      error: (err) => this.feedback.error(this.message(err, 'No se pudo crear la conexión')),
     });
   }
 
-  quitarConexion(conexionId: string): void {
-    this.port.removeConexion(CURSO_SEED_ID, conexionId).subscribe({
+  removeConnection(connectionId: string): void {
+    this.port.removeConnection(COURSE_SEED_ID, connectionId).subscribe({
       next: () => {
-        this.recargar();
+        this.reload();
         this.feedback.ok('Conexión eliminada ✓');
       },
-      error: (err) => this.feedback.error(this.mensaje(err, 'No se pudo eliminar la conexión')),
+      error: (err) => this.feedback.error(this.message(err, 'No se pudo eliminar la conexión')),
     });
   }
 
-  private mensaje(err: unknown, fallback: string): string {
+  private message(err: unknown, fallback: string): string {
     return err instanceof Error && err.message ? err.message : fallback;
   }
 }

@@ -3,7 +3,7 @@ import { ActivatedRoute, provideRouter } from '@angular/router';
 import { PlayComponent } from './play.component';
 import { StoreService } from '../../core/educa/store.service';
 import { World3dService } from './engine/world-3d.service';
-import { CURSO_SEED_ID } from '../../mocks/seed';
+import { COURSE_SEED_ID } from '../../mocks/seed';
 import { RoadmapDataPort } from '../../core/data/roadmap-data.port';
 import { InMemoryRoadmapAdapter } from '../../core/data/in-memory-roadmap.adapter';
 import { vi } from 'vitest';
@@ -15,7 +15,7 @@ describe('PlayComponent', () => {
   });
   afterEach(() => localStorage.clear());
 
-  it('resuelve unidad por ID y configura el bioma y título sin faltantes', async () => {
+  it('resolves section by ID and configures the biome and title without missing values', async () => {
     const mockWorld3d = {
       init: vi.fn().mockResolvedValue(undefined),
       applyTheme: vi.fn(),
@@ -34,7 +34,7 @@ describe('PlayComponent', () => {
           useValue: {
             snapshot: {
               paramMap: {
-                get: (key: string) => (key === 'id' ? CURSO_SEED_ID : key === 'unidadId' ? 'u1-fundamentos' : null),
+                get: (key: string) => (key === 'id' ? COURSE_SEED_ID : key === 'unidadId' ? 'u1-fundamentos' : null),
               },
             },
           },
@@ -57,7 +57,7 @@ describe('PlayComponent', () => {
     expect(mockWorld3d.init).toHaveBeenCalled();
   });
 
-  it('resuelve unidad por índice numérico (u1) si el id no es id exacto', async () => {
+  it('resolves section by numeric index (u1) if the id is not an exact id', async () => {
     const mockWorld3d = {
       init: vi.fn().mockResolvedValue(undefined),
       applyTheme: vi.fn(),
@@ -76,7 +76,7 @@ describe('PlayComponent', () => {
           useValue: {
             snapshot: {
               paramMap: {
-                get: (key: string) => (key === 'id' ? CURSO_SEED_ID : key === 'unidadId' ? 'u2' : null),
+                get: (key: string) => (key === 'id' ? COURSE_SEED_ID : key === 'unidadId' ? 'u2' : null),
               },
             },
           },
@@ -99,7 +99,7 @@ describe('PlayComponent', () => {
     expect(mockWorld3d.init).toHaveBeenCalled();
   });
 
-  it('el regreso del mundo apunta a Mis clases, no a la ciudad 3D', async () => {
+  it('the way back from the world points to My courses, not to the 3D city', async () => {
     const mockWorld3d = {
       init: vi.fn().mockResolvedValue(undefined),
       applyTheme: vi.fn(),
@@ -118,7 +118,7 @@ describe('PlayComponent', () => {
           useValue: {
             snapshot: {
               paramMap: {
-                get: (key: string) => (key === 'id' ? CURSO_SEED_ID : key === 'unidadId' ? 'u1-fundamentos' : null),
+                get: (key: string) => (key === 'id' ? COURSE_SEED_ID : key === 'unidadId' ? 'u1-fundamentos' : null),
               },
             },
           },
@@ -136,20 +136,20 @@ describe('PlayComponent', () => {
     fixture.detectChanges();
 
     const html = fixture.nativeElement as HTMLElement;
-    const regresos = [...html.querySelectorAll('a[href="/alumno"]')];
-    expect(regresos.length).toBeGreaterThan(0);
-    expect(regresos.some((a) => a.textContent?.includes('Mis clases'))).toBe(true);
+    const returns = [...html.querySelectorAll('a[href="/alumno"]')];
+    expect(returns.length).toBeGreaterThan(0);
+    expect(returns.some((a) => a.textContent?.includes('Mis clases'))).toBe(true);
     expect(html.textContent).not.toContain('Ciudad 3D');
   });
 
-  it('conmuta los efectos visuales al hacer clic en el botón FX', async () => {
+  it('toggles the visual effects when clicking the FX button', async () => {
     const mockWorld3d = {
       init: vi.fn().mockResolvedValue(undefined),
       applyTheme: vi.fn(),
       setEffectsEnabled: vi.fn(),
       destroy: vi.fn(),
       dispose: vi.fn(),
-      alternarVista: vi.fn().mockReturnValue('primera'),
+      toggleView: vi.fn().mockReturnValue('primera'),
     };
 
     await TestBed.configureTestingModule({
@@ -162,7 +162,7 @@ describe('PlayComponent', () => {
           useValue: {
             snapshot: {
               paramMap: {
-                get: (key: string) => (key === 'id' ? CURSO_SEED_ID : key === 'unidadId' ? 'u1-fundamentos' : null),
+                get: (key: string) => (key === 'id' ? COURSE_SEED_ID : key === 'unidadId' ? 'u1-fundamentos' : null),
               },
             },
           },
@@ -194,7 +194,7 @@ describe('PlayComponent', () => {
     expect(fxBtn?.textContent).toContain('FX: OFF');
     expect(mockWorld3d.setEffectsEnabled).toHaveBeenCalledWith(false);
 
-    // Volver a activar
+    // Reactivate
     fxBtn?.click();
     fixture.detectChanges();
 

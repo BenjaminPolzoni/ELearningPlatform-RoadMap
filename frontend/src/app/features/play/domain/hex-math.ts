@@ -3,14 +3,14 @@ export interface TileRef {
   r: number;
 }
 
-// Vecinos axiales (pointy-topped) en orden angular (0°, 60°, 120°, 180°, 240°, 300°)
+// Axial neighbors (pointy-topped) in angular order (0°, 60°, 120°, 180°, 240°, 300°)
 export const NB: ReadonlyArray<readonly [number, number]> = [
-  [1, 0],   // 0: Este (0°)
-  [1, -1],  // 1: Noreste (60°)
-  [0, -1],  // 2: Noroeste (120°)
-  [-1, 0],  // 3: Oeste (180°)
-  [-1, 1],  // 4: Suroeste (240°)
-  [0, 1],   // 5: Sureste (300°)
+  [1, 0],   // 0: East (0°)
+  [1, -1],  // 1: Northeast (60°)
+  [0, -1],  // 2: Northwest (120°)
+  [-1, 0],  // 3: West (180°)
+  [-1, 1],  // 4: Southwest (240°)
+  [0, 1],   // 5: Southeast (300°)
 ];
 
 export const key = (q: number, r: number): string => `${q},${r}`;
@@ -21,11 +21,11 @@ export const dist = (q: number, r: number): number =>
 export const dd = (a: TileRef, b: TileRef): number =>
   dist(a.q - b.q, a.r - b.r);
 
-// Rumbo nominal: rotY que apunta el modelo al rumbo axial (dq, dr)
+// Nominal heading: rotY that points the model to the axial heading (dq, dr)
 export const rotFor = (dq: number, dr: number): number =>
   -Math.atan2(1.7325 * dr, 2 * (dq + dr / 2));
 
-// Curva ancha hex_road_B: salidas del modelo a 180° y 300° (compatibilidad)
+// Wide curve hex_road_B: model exits at 180° and 300° (compatibility)
 export const curveRot = (
   a: readonly [number, number],
   b: readonly [number, number],
@@ -38,7 +38,7 @@ export const curveRot = (
   return norm(TAU - base);
 };
 
-// Orientación de la fachada del edificio para mirar hacia su camino / puerta
+// Orientation of the building's facade to face its road / door
 export const faceDoor = (bq: number, br: number, dq: number, dr: number): number => {
   const bx = bq + br / 2;
   const bz = br * 0.866;
@@ -47,7 +47,7 @@ export const faceDoor = (bq: number, br: number, dq: number, dr: number): number
   return Math.atan2(dx - bx, dz - bz);
 };
 
-// Generador pseudo-aleatorio determinista (PRNG mulberry32)
+// Deterministic pseudo-random generator (PRNG mulberry32)
 export function hash(s: string): number {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) {

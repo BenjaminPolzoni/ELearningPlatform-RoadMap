@@ -43,44 +43,44 @@ describe('BuilderComponent (Educa)', () => {
     localStorage.clear();
   });
 
-  it('se inicializa y abre la asignatura de seed', () => {
+  it('initializes and opens the seed subject', () => {
     expect(component).toBeTruthy();
     expect(store.current()).toBeTruthy();
-    expect(store.current()?.unidades.length).toBeGreaterThan(0);
+    expect(store.current()?.sections.length).toBeGreaterThan(0);
   });
 
-  it('el host scrollea puertas adentro (el shell recorta con overflow hidden)', () => {
-    // RF-NFR-05: el shell (app.css :host + app.html main) es 100vh/98vh con
-    // overflow hidden. Si el host no acota su altura con scroll propio, una
-    // asignatura con muchas unidades queda recortada e inalcanzable.
+  it('the host scrolls internally (the shell clips with overflow hidden)', () => {
+    // RF-NFR-05: the shell (app.css :host + app.html main) is 100vh/98vh with
+    // overflow hidden. If the host does not bound its height with its own scroll, a
+    // subject with many sections gets clipped and unreachable.
     const host = fixture.nativeElement as HTMLElement;
     expect(host.classList.contains('h-full')).toBe(true);
     expect(host.classList.contains('overflow-y-auto')).toBe(true);
   });
 
-  it('agrega una nueva unidad y permite editar su bioma', () => {
-    component.addUnidad('Unidad Glacial');
-    const u = store.current()!.unidades.find((x) => x.titulo === 'Unidad Glacial');
+  it('adds a new section and allows editing its biome', () => {
+    component.addSection('Unidad Glacial');
+    const u = store.current()!.sections.find((x) => x.title === 'Unidad Glacial');
     expect(u).toBeTruthy();
 
-    component.editUnidad(u!.id, u!.titulo, 'Zona fría', '#06b6d4', 'nieve');
+    component.editSection(u!.id, u!.title, 'Zona fría', '#06b6d4', 'nieve');
     expect(component.editing()).toBeTruthy();
 
     component.onSave({
-      titulo: 'Unidad Glacial Actualizada',
-      descripcion: 'Zona fría con nieve',
+      title: 'Unidad Glacial Actualizada',
+      description: 'Zona fría con nieve',
       color: '#06b6d4',
-      bioma: 'nieve',
+      biome: 'nieve',
     });
 
-    const uGuardada = store.current()!.unidades.find((x) => x.id === u!.id);
-    expect(uGuardada?.titulo).toBe('Unidad Glacial Actualizada');
-    expect(uGuardada?.bioma).toBe('nieve');
+    const savedU = store.current()!.sections.find((x) => x.id === u!.id);
+    expect(savedU?.title).toBe('Unidad Glacial Actualizada');
+    expect(savedU?.biome).toBe('nieve');
 
-    // Verifica que el bioma 'nieve' fue proyectado al Roadmap 3D
-    const rm = JSON.parse(localStorage.getItem('roadmap-mock-v2')!);
-    const u3d = rm.unidades.find((x: any) => x.nombre === 'Unidad Glacial Actualizada');
+    // Verifies that the 'nieve' biome was projected to the 3D Roadmap
+    const rm = JSON.parse(localStorage.getItem('roadmap-mock-v3')!);
+    const u3d = rm.sections.find((x: any) => x.name === 'Unidad Glacial Actualizada');
     expect(u3d).toBeTruthy();
-    expect(u3d.bioma).toBe('Nieve');
+    expect(u3d.biome).toBe('Nieve');
   });
 });

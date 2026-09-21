@@ -22,48 +22,48 @@ describe('AvatarEditor', () => {
 
   afterEach(() => localStorage.clear());
 
-  const boton = (texto: string) =>
-    [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === texto);
-  const click = (texto: string) => {
-    const b = boton(texto);
-    expect(b, `botón "${texto}"`).toBeTruthy();
+  const button = (text: string) =>
+    [...el.querySelectorAll('button')].find((b) => b.textContent?.trim() === text);
+  const click = (text: string) => {
+    const b = button(text);
+    expect(b, `botón "${text}"`).toBeTruthy();
     b!.click();
     fixture.detectChanges();
   };
   const panel = () => el.querySelector('[role="tabpanel"]')?.textContent ?? '';
 
-  it('arranca en la pestaña CUERPO con tono de piel', () => {
-    expect(boton('CUERPO')!.getAttribute('aria-selected')).toBe('true');
+  it('starts on the CUERPO tab with skin tone', () => {
+    expect(button('CUERPO')!.getAttribute('aria-selected')).toBe('true');
     expect(panel()).toContain('TONO DE PIEL');
     expect(panel()).not.toContain('GÉNERO');
   });
 
-  it('cambiar de pestaña muestra solo sus secciones', () => {
+  it('switching tabs shows only its sections', () => {
     click('ROPA');
-    expect(boton('ROPA')!.getAttribute('aria-selected')).toBe('true');
-    expect(boton('CUERPO')!.getAttribute('aria-selected')).toBe('false');
+    expect(button('ROPA')!.getAttribute('aria-selected')).toBe('true');
+    expect(button('CUERPO')!.getAttribute('aria-selected')).toBe('false');
     expect(panel()).toContain('PRENDA');
 
     click('EQUIPO');
     expect(panel()).toContain('OBJETO EN MANO');
   });
 
-  it('mantiene el género indefinido por defecto', () => {
-    expect(srv.avatar().genero).toBe('indefinido');
+  it('keeps the gender undefined by default', () => {
+    expect(srv.avatar().gender).toBe('indefinido');
   });
 
-  it('avisa cuando la camisa o la laptop tapan el emblema', () => {
+  it('warns when the shirt or the laptop cover the emblem', () => {
     click('ROPA');
     expect(panel()).not.toContain('TAPA EL EMBLEMA');
     click('Camisa y corbata');
     expect(panel()).toContain('LA CORBATA DE LA CAMISA TAPA EL EMBLEMA');
     click('Hoodie');
-    srv.set('objeto', 'laptop');
+    srv.set('object', 'laptop');
     fixture.detectChanges();
     expect(panel()).toContain('LA LAPTOP TAPA EL EMBLEMA');
   });
 
-  it('avisa cuando el visor tapa los anteojos', () => {
+  it('warns when the visor covers the glasses', () => {
     click('ACCESORIOS');
     click('Con código');
     expect(panel()).not.toContain('EL VISOR TAPA LOS ANTEOJOS');
@@ -71,10 +71,10 @@ describe('AvatarEditor', () => {
     expect(panel()).toContain('EL VISOR TAPA LOS ANTEOJOS');
   });
 
-  it('RESET reinicia manteniendo género indefinido', () => {
-    srv.set('objeto', 'mate');
+  it('RESET restarts keeping the gender undefined', () => {
+    srv.set('object', 'mate');
     click('RESET');
-    expect(srv.avatar().genero).toBe('indefinido');
-    expect(srv.avatar().objeto).toBe('ninguno');
+    expect(srv.avatar().gender).toBe('indefinido');
+    expect(srv.avatar().object).toBe('ninguno');
   });
 });

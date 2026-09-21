@@ -1,29 +1,29 @@
 import { effect, Injectable, signal } from '@angular/core';
 
-export type Tema = 'arcade-dark' | 'arcade-light';
+export type Theme = 'arcade-dark' | 'arcade-light';
 export type EnvironmentTheme = 'tabletop' | 'arcade';
 
 const LS_KEY = 'mock-tema';
 const ENV_STORAGE_KEY = 'educa_theme_env';
 const EFFECTS_KEY = 'educa_effects_on';
 
-/** Toggle de tema arcade (05-design-system.md §2). Escribe `data-theme` en `<html>`. */
+/** Arcade theme toggle (05-design-system.md §2). Writes `data-theme` on `<html>`. */
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
-  private readonly _tema = signal<Tema>(this.leer());
-  readonly tema = this._tema.asReadonly();
+  private readonly _theme = signal<Theme>(this.read());
+  readonly theme = this._theme.asReadonly();
 
   readonly environment = signal<EnvironmentTheme>('tabletop');
   readonly effects = signal<boolean>(true);
 
   constructor() {
     effect(() => {
-      const t = this._tema();
+      const t = this._theme();
       document.documentElement.dataset['theme'] = t;
       try {
         localStorage.setItem(LS_KEY, t);
       } catch {
-        /* ignorar */
+        /* ignore */
       }
     });
 
@@ -36,13 +36,13 @@ export class ThemeService {
         const fx = localStorage.getItem(EFFECTS_KEY);
         if (fx === '0') this.effects.set(false);
       } catch {
-        /* ignorar */
+        /* ignore */
       }
     }
   }
 
   toggle(): void {
-    this._tema.set(this._tema() === 'arcade-dark' ? 'arcade-light' : 'arcade-dark');
+    this._theme.set(this._theme() === 'arcade-dark' ? 'arcade-light' : 'arcade-dark');
   }
 
   setEnvironment(theme: EnvironmentTheme): void {
@@ -75,7 +75,7 @@ export class ThemeService {
     return next;
   }
 
-  private leer(): Tema {
+  private read(): Theme {
     try {
       return localStorage.getItem(LS_KEY) === 'arcade-light' ? 'arcade-light' : 'arcade-dark';
     } catch {

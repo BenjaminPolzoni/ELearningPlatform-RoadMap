@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { SaveFeedbackService } from '../../core/services/save-feedback.service';
 
 /**
- * Pila de toasts de guardado (05 §6/§7). Se monta una vez por pantalla del profesor
- * (editor / unidad-editor) con posición fija, así queda visible sin importar el scroll.
+ * Stack of save toasts (05 §6/§7). Mounted once per teacher screen
+ * (editor / section-editor) with fixed position, so it stays visible regardless of scroll.
  */
 @Component({
   selector: 'app-save-feedback-toast',
@@ -13,11 +13,11 @@ import { SaveFeedbackService } from '../../core/services/save-feedback.service';
     @for (f of feedback.items(); track f.id) {
       <div
         class="alert chaflan border-2 py-2 px-3 text-sm"
-        [class.alert-success]="f.tipo === 'ok'"
-        [class.alert-error]="f.tipo === 'error'"
+        [class.alert-success]="f.type === 'ok'"
+        [class.alert-error]="f.type === 'error'"
         role="status"
       >
-        <span>{{ f.mensaje }}</span>
+        <span>{{ f.message }}</span>
         <button
           type="button"
           class="btn btn-ghost btn-xs"

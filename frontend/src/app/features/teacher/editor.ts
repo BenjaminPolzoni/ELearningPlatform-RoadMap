@@ -2,23 +2,23 @@ import { Component, computed, ElementRef, HostListener, inject, signal, viewChil
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { RoadmapStore } from '../../core/data/roadmap.store';
-import { Unidad } from '../../core/data/roadmap.models';
-import { BIOMA_DEFAULT, BIOMAS, Bioma } from '../../core/data/biomas';
+import { Section } from '../../core/data/roadmap.models';
+import { BIOME_DEFAULT, BIOMES, Biome } from '../../core/data/biomes';
 import { ConfirmButton } from './confirm-button';
 import { SaveFeedbackToast } from './save-feedback-toast';
 
 /**
- * Editor de curso (E1). Página del curso estilo Moodle: las unidades se apilan en columna,
- * lineal hacia abajo, cada una enlazando a su contenido. "Ver como alumno" lleva al mapa
- * real (`RoadmapStore` compartido) — no hay preview aparte, así se ve exactamente lo mismo
- * que va a ver el alumno, no una aproximación.
+ * Course editor (E1). Moodle-style course page: the sections are stacked in a column,
+ * linear downwards, each one linking to its content. "View as student" leads to the real
+ * map (shared `RoadmapStore`) — there is no separate preview, so it looks exactly the same
+ * as what the student will see, not an approximation.
  */
 @Component({
   selector: 'app-editor',
   imports: [FormsModule, RouterLink, ConfirmButton, SaveFeedbackToast],
-  // El shell raíz (app.html) recorta el <router-outlet> a un cuadro fijo sin scroll (pensado
-  // para el mapa arcade del alumno) — esta vista sí necesita scrollear, así que scrollea
-  // puertas adentro en vez de depender del documento.
+  // The root shell (app.html) clips the <router-outlet> to a fixed frame without scroll (designed
+  // for the student's arcade map) — this view does need to scroll, so it scrolls
+  // internally instead of relying on the document.
   host: { class: 'block w-full h-full overflow-y-auto p-6' },
   template: `
     <div class="max-w-3xl mx-auto w-full">
@@ -37,37 +37,37 @@ import { SaveFeedbackToast } from './save-feedback-toast';
         </div>
       </div>
 
-      <!-- ── Unidades en columna, lineal hacia abajo (Moodle) ──────── -->
+      <!-- ── Sections in a column, linear downwards (Moodle) ──────── -->
       <ol class="flex flex-col gap-3 mb-6">
-        @for (u of store.unidades(); track u.id; let idx = $index; let last = $last) {
-          <li class="card bg-base-200 border-2" [class.border-primary]="editandoId() === u.id" [class.border-base-300]="editandoId() !== u.id">
-            @if (editandoId() === u.id) {
-              <form class="card-body p-4 flex-row flex-wrap items-end gap-3" (submit)="guardarEdicion($event, u.id)">
+        @for (u of store.sections(); track u.id; let idx = $index; let last = $last) {
+          <li class="card bg-base-200 border-2" [class.border-primary]="editingId() === u.id" [class.border-base-300]="editingId() !== u.id">
+            @if (editingId() === u.id) {
+              <form class="card-body p-4 flex-row flex-wrap items-end gap-3" (submit)="saveEdit($event, u.id)">
                 <label class="form-control flex-1 min-w-52">
                   <span class="label-text ui-font">Nombre</span>
                   <input class="input input-bordered input-sm" name="nombreEdit" required
-                    [ngModel]="nombreEdit()" (ngModelChange)="nombreEdit.set($event)" />
+                    [ngModel]="nameEdit()" (ngModelChange)="nameEdit.set($event)" />
                 </label>
                 <label class="form-control">
                   <span class="label-text ui-font">Umbral XP</span>
                   <input class="input input-bordered input-sm w-28 tabular" type="number" min="0" name="umbralEdit"
-                    [ngModel]="umbralEdit()" (ngModelChange)="umbralEdit.set($event)" />
+                    [ngModel]="thresholdEdit()" (ngModelChange)="thresholdEdit.set($event)" />
                 </label>
                 <div class="form-control w-full">
                   <span class="label-text ui-font">Bioma</span>
                   <div class="flex gap-1 flex-wrap">
-                    @for (b of biomas; track b.id) {
+                    @for (b of biomes; track b.id) {
                       <button type="button" class="btn btn-xs"
-                        [class.btn-primary]="biomaEdit() === b.id"
-                        [class.btn-outline]="biomaEdit() !== b.id"
-                        [disabled]="!b.disponible"
-                        [title]="b.disponible ? b.label : b.label + ' — Próximamente'"
-                        (click)="biomaEdit.set(b.id)">
-                        {{ b.icon }} {{ b.label }}@if (!b.disponible) { <span class="opacity-60"> · pronto</span> }
+                        [class.btn-primary]="biomeEdit() === b.id"
+                        [class.btn-outline]="biomeEdit() !== b.id"
+                        [disabled]="!b.available"
+                        [title]="b.available ? b.label : b.label + ' — Próximamente'"
+                        (click)="biomeEdit.set(b.id)">
+                        {{ b.icon }} {{ b.label }}@if (!b.available) { <span class="opacity-60"> · pronto</span> }
                       </button>
                     }
                   </div>
-                  @if (previewBiomaEdit(); as pb) {
+                  @if (previewBiomeEdit(); as pb) {
                     <div class="mt-2">
                       <span class="label-text ui-font opacity-70 text-[10px]">Vista previa del mapa</span>
                       @if (pb.previewImage) {
@@ -81,36 +81,36 @@ import { SaveFeedbackToast } from './save-feedback-toast';
                     </div>
                   }
                 </div>
-                <button class="btn btn-sm btn-primary" type="submit" [disabled]="!nombreEdit().trim()">Guardar</button>
-                <button class="btn btn-sm btn-ghost" type="button" (click)="cancelarEdicion()">Cancelar</button>
+                <button class="btn btn-sm btn-primary" type="submit" [disabled]="!nameEdit().trim()">Guardar</button>
+                <button class="btn btn-sm btn-ghost" type="button" (click)="cancelEdit()">Cancelar</button>
               </form>
             } @else {
               <div class="card-body p-4 flex-row items-center gap-4">
                 <span class="grid place-items-center w-8 h-8 rounded-full bg-base-300 ui-font tabular shrink-0">
-                  {{ u.orden }}
+                  {{ u.order }}
                 </span>
                 <div class="min-w-0 flex-1">
-                  <a [routerLink]="['/profesor/unidad', u.id]" class="link link-primary font-bold">{{ u.nombre }}</a>
+                  <a [routerLink]="['/profesor/unidad', u.id]" class="link link-primary font-bold">{{ u.name }}</a>
                   <div class="text-xs opacity-70">
-                    se abre con {{ u.umbralXpDesbloqueo }} XP · {{ u.actividades.length }} contenidos
-                    @if (u.actividades.length === 0) {
+                    se abre con {{ u.xpThreshold }} XP · {{ u.activities.length }} contenidos
+                    @if (u.activities.length === 0) {
                       <span class="badge badge-warning badge-xs ml-1" title="RF-CUR-07">vacía</span>
                     }
                   </div>
                 </div>
                 <div class="flex flex-col gap-1 shrink-0">
-                  <button class="btn btn-xs btn-ghost" (click)="mover(u.id, 'arriba')" [disabled]="idx === 0" title="subir">↑</button>
-                  <button class="btn btn-xs btn-ghost" (click)="mover(u.id, 'abajo')" [disabled]="last" title="bajar">↓</button>
+                  <button class="btn btn-xs btn-ghost" (click)="move(u.id, 'arriba')" [disabled]="idx === 0" title="subir">↑</button>
+                  <button class="btn btn-xs btn-ghost" (click)="move(u.id, 'abajo')" [disabled]="last" title="bajar">↓</button>
                 </div>
                 <a [routerLink]="['/profesor/unidad', u.id]" class="btn btn-sm btn-outline btn-primary shrink-0">
                   Contenido →
                 </a>
-                <button class="btn btn-sm btn-outline shrink-0" (click)="editar(u)" title="editar nombre y umbral">Editar</button>
+                <button class="btn btn-sm btn-outline shrink-0" (click)="edit(u)" title="editar nombre y umbral">Editar</button>
                 <app-confirm-button
                   class="shrink-0"
                   btnClass="btn btn-sm btn-ghost btn-square text-error"
                   title="quitar unidad"
-                  (confirmado)="store.quitarUnidad(u.id)"
+                  (confirmed)="store.removeSection(u.id)"
                 />
               </div>
             }
@@ -120,16 +120,16 @@ import { SaveFeedbackToast } from './save-feedback-toast';
         }
       </ol>
 
-      <!-- ── Alta de unidad, al final de la columna ────────────────── -->
-      @if (mostrarForm()) {
-        <form class="card bg-base-200 border-2 border-primary mb-8" (submit)="agregar($event)">
+      <!-- ── Add section, at the end of the column ────────────────── -->
+      @if (showForm()) {
+        <form class="card bg-base-200 border-2 border-primary mb-8" (submit)="add($event)">
           <div class="card-body p-4 flex-row flex-wrap items-end gap-3">
             <label class="form-control flex-1 min-w-52">
               <span class="label-text ui-font">Nombre de la unidad</span>
               <input
-                #nombreInput
+                #nameInput
                 class="input input-bordered input-sm" name="nombre" required
-                [ngModel]="nombre()" (ngModelChange)="nombre.set($event)"
+                [ngModel]="name()" (ngModelChange)="name.set($event)"
               />
             </label>
             <label class="form-control">
@@ -137,24 +137,24 @@ import { SaveFeedbackToast } from './save-feedback-toast';
               <input
                 class="input input-bordered input-sm w-28 tabular"
                 type="number" min="0" name="umbral"
-                [ngModel]="umbral()" (ngModelChange)="umbral.set($event)"
+                [ngModel]="threshold()" (ngModelChange)="threshold.set($event)"
               />
             </label>
             <div class="form-control w-full">
               <span class="label-text ui-font">Bioma</span>
               <div class="flex gap-1 flex-wrap">
-                @for (b of biomas; track b.id) {
+                @for (b of biomes; track b.id) {
                   <button type="button" class="btn btn-xs"
-                    [class.btn-primary]="bioma() === b.id"
-                    [class.btn-outline]="bioma() !== b.id"
-                    [disabled]="!b.disponible"
-                    [title]="b.disponible ? b.label : b.label + ' — Próximamente'"
-                    (click)="bioma.set(b.id)">
-                    {{ b.icon }} {{ b.label }}@if (!b.disponible) { <span class="opacity-60"> · pronto</span> }
+                    [class.btn-primary]="biome() === b.id"
+                    [class.btn-outline]="biome() !== b.id"
+                    [disabled]="!b.available"
+                    [title]="b.available ? b.label : b.label + ' — Próximamente'"
+                    (click)="biome.set(b.id)">
+                    {{ b.icon }} {{ b.label }}@if (!b.available) { <span class="opacity-60"> · pronto</span> }
                   </button>
                 }
               </div>
-              @if (previewBioma(); as pb) {
+              @if (previewBiome(); as pb) {
                 <div class="mt-2">
                   <span class="label-text ui-font opacity-70 text-[10px]">Vista previa del mapa</span>
                   @if (pb.previewImage) {
@@ -168,14 +168,14 @@ import { SaveFeedbackToast } from './save-feedback-toast';
                 </div>
               }
             </div>
-            <button class="btn btn-sm btn-primary" type="submit" [disabled]="!nombre().trim()">agregar</button>
-            <button class="btn btn-sm btn-ghost" type="button" (click)="mostrarForm.set(false)">cancelar</button>
+            <button class="btn btn-sm btn-primary" type="submit" [disabled]="!name().trim()">agregar</button>
+            <button class="btn btn-sm btn-ghost" type="button" (click)="showForm.set(false)">cancelar</button>
           </div>
         </form>
       } @else {
         <button
           class="btn btn-outline btn-primary w-full border-dashed mb-8"
-          (click)="abrirForm()"
+          (click)="openForm()"
           title="Atajo: Alt+U"
         >
           ＋ Agregar unidad <kbd class="kbd kbd-xs ml-2">Alt</kbd>+<kbd class="kbd kbd-xs">U</kbd>
@@ -188,74 +188,74 @@ import { SaveFeedbackToast } from './save-feedback-toast';
 })
 export class Editor {
   protected readonly store = inject(RoadmapStore);
-  private readonly nombreInputRef = viewChild<ElementRef<HTMLInputElement>>('nombreInput');
+  private readonly nameInputRef = viewChild<ElementRef<HTMLInputElement>>('nombreInput');
 
-  protected readonly biomas = BIOMAS;
+  protected readonly biomes = BIOMES;
 
-  protected readonly mostrarForm = signal(false);
-  protected readonly nombre = signal('');
-  protected readonly umbral = signal(0);
-  protected readonly bioma = signal<Bioma>(BIOMA_DEFAULT);
-  protected readonly previewBioma = computed(() => this.biomas.find((b) => b.id === this.bioma()));
+  protected readonly showForm = signal(false);
+  protected readonly name = signal('');
+  protected readonly threshold = signal(0);
+  protected readonly biome = signal<Biome>(BIOME_DEFAULT);
+  protected readonly previewBiome = computed(() => this.biomes.find((b) => b.id === this.biome()));
 
-  protected readonly editandoId = signal<string | null>(null);
-  protected readonly nombreEdit = signal('');
-  protected readonly umbralEdit = signal(0);
-  protected readonly biomaEdit = signal<Bioma>(BIOMA_DEFAULT);
-  protected readonly previewBiomaEdit = computed(() => this.biomas.find((b) => b.id === this.biomaEdit()));
+  protected readonly editingId = signal<string | null>(null);
+  protected readonly nameEdit = signal('');
+  protected readonly thresholdEdit = signal(0);
+  protected readonly biomeEdit = signal<Biome>(BIOME_DEFAULT);
+  protected readonly previewBiomeEdit = computed(() => this.biomes.find((b) => b.id === this.biomeEdit()));
 
-  /** Alt+U: agregar unidad, desde cualquier lugar de la pantalla (05 §7: atajos descubribles). */
+  /** Alt+U: add section, from anywhere on the screen (05 §7: discoverable shortcuts). */
   @HostListener('document:keydown', ['$event'])
   protected onKeydown(ev: KeyboardEvent): void {
     if (ev.altKey && !ev.ctrlKey && !ev.metaKey && ev.key.toLowerCase() === 'u') {
       ev.preventDefault();
-      this.abrirForm();
+      this.openForm();
     }
   }
 
-  protected abrirForm(): void {
-    this.mostrarForm.set(true);
-    setTimeout(() => this.nombreInputRef()?.nativeElement.focus());
+  protected openForm(): void {
+    this.showForm.set(true);
+    setTimeout(() => this.nameInputRef()?.nativeElement.focus());
   }
 
-  protected agregar(e: Event): void {
+  protected add(e: Event): void {
     e.preventDefault();
-    const nombre = this.nombre().trim();
-    if (!nombre) return;
-    this.store.agregarUnidad(
-      { nombre, umbralXpDesbloqueo: Number(this.umbral()) || 0, bioma: this.bioma() },
+    const name = this.name().trim();
+    if (!name) return;
+    this.store.addSection(
+      { name, xpThreshold: Number(this.threshold()) || 0, biome: this.biome() },
       () => {
-        this.nombre.set('');
-        this.umbral.set(0);
-        this.bioma.set(BIOMA_DEFAULT);
-        this.mostrarForm.set(false);
+        this.name.set('');
+        this.threshold.set(0);
+        this.biome.set(BIOME_DEFAULT);
+        this.showForm.set(false);
       },
     );
   }
 
-  protected mover(unidadId: string, direccion: 'arriba' | 'abajo'): void {
-    this.store.moverUnidad(unidadId, direccion);
+  protected move(sectionId: string, direction: 'arriba' | 'abajo'): void {
+    this.store.moveSection(sectionId, direction);
   }
 
-  protected editar(u: Unidad): void {
-    this.editandoId.set(u.id);
-    this.nombreEdit.set(u.nombre);
-    this.umbralEdit.set(u.umbralXpDesbloqueo);
-    this.biomaEdit.set(u.bioma ?? BIOMA_DEFAULT);
+  protected edit(u: Section): void {
+    this.editingId.set(u.id);
+    this.nameEdit.set(u.name);
+    this.thresholdEdit.set(u.xpThreshold);
+    this.biomeEdit.set(u.biome ?? BIOME_DEFAULT);
   }
 
-  protected cancelarEdicion(): void {
-    this.editandoId.set(null);
+  protected cancelEdit(): void {
+    this.editingId.set(null);
   }
 
-  protected guardarEdicion(e: Event, unidadId: string): void {
+  protected saveEdit(e: Event, sectionId: string): void {
     e.preventDefault();
-    const nombre = this.nombreEdit().trim();
-    if (!nombre) return;
-    this.store.editarUnidad(
-      unidadId,
-      { nombre, umbralXpDesbloqueo: Number(this.umbralEdit()) || 0, bioma: this.biomaEdit() },
-      () => this.editandoId.set(null),
+    const name = this.nameEdit().trim();
+    if (!name) return;
+    this.store.editSection(
+      sectionId,
+      { name, xpThreshold: Number(this.thresholdEdit()) || 0, biome: this.biomeEdit() },
+      () => this.editingId.set(null),
     );
   }
 }

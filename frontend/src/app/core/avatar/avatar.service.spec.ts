@@ -1,49 +1,49 @@
 import { TestBed } from '@angular/core/testing';
-import { avatarPorDefecto, sanearAvatar } from './avatar.models';
+import { defaultAvatar, sanitizeAvatar } from './avatar.models';
 import { AvatarService } from './avatar.service';
 
 describe('AvatarService', () => {
   beforeEach(() => localStorage.clear());
   afterEach(() => localStorage.clear());
 
-  it('sin nada guardado arranca con el default de indefinido', () => {
-    expect(TestBed.inject(AvatarService).avatar()).toEqual(avatarPorDefecto('indefinido'));
+  it('with nothing saved it starts with the default for undefined', () => {
+    expect(TestBed.inject(AvatarService).avatar()).toEqual(defaultAvatar('indefinido'));
   });
 
-  it('migra el avatar guardado con la versión anterior sin cambiarle el look', () => {
+  it('migrates the avatar saved with the previous version without changing its look', () => {
     localStorage.setItem(
       'mock-avatar',
       JSON.stringify({
-        piel: 'clara',
-        pelo: 'cresta',
-        colorPelo: 'rosa',
-        colorTraje: 'noche',
-        accesorio: 'visor',
-        colorAccesorio: 'violeta',
+        skin: 'clara',
+        hair: 'cresta',
+        hairColor: 'rosa',
+        suitColor: 'noche',
+        accessory: 'visor',
+        accessoryColor: 'violeta',
       }),
     );
     const a = TestBed.inject(AvatarService).avatar();
-    expect(a.genero).toBe('indefinido');
-    expect(a.prenda).toBe('traje');
-    expect(a.emblema).toBe('cuadro');
-    expect(a.colorRopa).toBe('noche');
-    expect(a.pelo).toBe('cresta');
+    expect(a.gender).toBe('indefinido');
+    expect(a.garment).toBe('traje');
+    expect(a.emblem).toBe('cuadro');
+    expect(a.clothesColor).toBe('noche');
+    expect(a.hair).toBe('cresta');
   });
 
-  it('RESET vuelve a los valores sugeridos pero conserva el género', () => {
+  it('RESET goes back to the suggested values but keeps the gender', () => {
     const srv = TestBed.inject(AvatarService);
-    srv.set('genero', 'mujer');
-    srv.set('pelo', 'afro');
-    srv.set('objeto', 'mate');
-    srv.reiniciar();
-    expect(srv.avatar()).toEqual(avatarPorDefecto('mujer'));
+    srv.set('gender', 'mujer');
+    srv.set('hair', 'afro');
+    srv.set('object', 'mate');
+    srv.reset();
+    expect(srv.avatar()).toEqual(defaultAvatar('mujer'));
   });
 
-  it('AL AZAR siempre produce una config válida y completa', () => {
+  it('RANDOM always produces a valid and complete config', () => {
     const srv = TestBed.inject(AvatarService);
     for (let i = 0; i < 50; i++) {
-      srv.aleatorio();
-      expect(sanearAvatar(srv.avatar())).toEqual(srv.avatar());
+      srv.random();
+      expect(sanitizeAvatar(srv.avatar())).toEqual(srv.avatar());
     }
   });
 });

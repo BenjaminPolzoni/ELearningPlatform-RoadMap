@@ -1,54 +1,54 @@
 import { Observable } from 'rxjs';
-import { Actividad, Alumno, Conexion, NuevaActividad, NuevaUnidad, Progreso, Roadmap, Unidad } from './roadmap.models';
+import { Activity, Student, Connection, NewActivity, NewSection, Progress, Roadmap, Section } from './roadmap.models';
 
 /**
- * Puerta única de datos del front (01-arquitectura-y-stack.md §4). Ningún componente
- * llama a `HttpClient` directo: todo pasa por acá. Dos implementaciones intercambiables
- * con una línea en `app.config.ts`:
- *   - `InMemoryRoadmapAdapter` (Fases 0-2): lee el seed, muta en memoria, persiste en
- *     localStorage. Simula el JSON ya consolidado que devolvería el BFF.
- *   - `HttpRoadmapAdapter` (Fase 3): pega contra el BFF real.
+ * Single data gateway of the front (01-arquitectura-y-stack.md §4). No component
+ * calls `HttpClient` directly: everything goes through here. Two interchangeable implementations
+ * with one line in `app.config.ts`:
+ *   - `InMemoryRoadmapAdapter` (Phases 0-2): reads the seed, mutates in memory, persists in
+ *     localStorage. Simulates the already consolidated JSON the BFF would return.
+ *   - `HttpRoadmapAdapter` (Phase 3): hits the real BFF.
  */
 export abstract class RoadmapDataPort {
-  abstract getRoadmap(cursoCohorteId: string): Observable<Roadmap>;
-  abstract addUnidad(cursoCohorteId: string, dto: NuevaUnidad): Observable<Unidad>;
-  abstract updateUnidad(cursoCohorteId: string, unidadId: string, dto: NuevaUnidad): Observable<Unidad>;
-  abstract removeUnidad(cursoCohorteId: string, unidadId: string): Observable<void>;
-  /** Reordena una unidad una posición arriba/abajo (mismo patrón que moverActividad). */
-  abstract moverUnidad(cursoCohorteId: string, unidadId: string, direccion: 'arriba' | 'abajo'): Observable<void>;
+  abstract getRoadmap(courseCohortId: string): Observable<Roadmap>;
+  abstract addSection(courseCohortId: string, dto: NewSection): Observable<Section>;
+  abstract updateSection(courseCohortId: string, sectionId: string, dto: NewSection): Observable<Section>;
+  abstract removeSection(courseCohortId: string, sectionId: string): Observable<void>;
+  /** Moves a section one position up/down (same pattern as moveActivity). */
+  abstract moveSection(courseCohortId: string, sectionId: string, direction: 'arriba' | 'abajo'): Observable<void>;
 
-  // Actividades dentro de una unidad (Fase 2 — editor tipo Moodle).
-  abstract addActividad(cursoCohorteId: string, unidadId: string, dto: NuevaActividad): Observable<Actividad>;
-  abstract updateActividad(
-    cursoCohorteId: string,
-    unidadId: string,
-    actividadId: string,
-    dto: NuevaActividad,
-  ): Observable<Actividad>;
-  abstract removeActividad(cursoCohorteId: string, unidadId: string, actividadId: string): Observable<void>;
-  /** Reordena una actividad una posición arriba/abajo (movimiento lineal, 05 §5). */
-  abstract moverActividad(
-    cursoCohorteId: string,
-    unidadId: string,
-    actividadId: string,
-    direccion: 'arriba' | 'abajo',
+  // Activities within a section (Phase 2 — Moodle-style editor).
+  abstract addActivity(courseCohortId: string, sectionId: string, dto: NewActivity): Observable<Activity>;
+  abstract updateActivity(
+    courseCohortId: string,
+    sectionId: string,
+    activityId: string,
+    dto: NewActivity,
+  ): Observable<Activity>;
+  abstract removeActivity(courseCohortId: string, sectionId: string, activityId: string): Observable<void>;
+  /** Moves an activity one position up/down (linear movement, 05 §5). */
+  abstract moveActivity(
+    courseCohortId: string,
+    sectionId: string,
+    activityId: string,
+    direction: 'arriba' | 'abajo',
   ): Observable<void>;
 
-  /** Reubica un nodo en el editor gráfico (posicion_x/posicion_y, 05 §5/§6). */
-  abstract moverNodo(cursoCohorteId: string, unidadId: string, actividadId: string, x: number, y: number): Observable<void>;
+  /** Relocates a node in the graphic editor (posicion_x/posicion_y, 05 §5/§6). */
+  abstract moveNode(courseCohortId: string, sectionId: string, activityId: string, x: number, y: number): Observable<void>;
 
-  // Conexiones (prerequisitos) entre nodos — espejo de POST/DELETE /conexiones.
-  abstract addConexion(cursoCohorteId: string, nodoOrigenId: string, nodoDestinoId: string): Observable<Conexion>;
-  abstract removeConexion(cursoCohorteId: string, conexionId: string): Observable<void>;
+  // Connections (prerequisites) between nodes — mirrors POST/DELETE /conexiones.
+  abstract addConnection(courseCohortId: string, nodeOriginId: string, nodeDestinationId: string): Observable<Connection>;
+  abstract removeConnection(courseCohortId: string, connectionId: string): Observable<void>;
 
-  abstract getProgreso(alumnoId: string, cursoCohorteId: string): Observable<Progreso>;
-  abstract registrarProgreso(
-    alumnoId: string,
-    cursoCohorteId: string,
-    xpGanado: number,
-    nodoId?: string,
-    vidas?: number,
-  ): Observable<Progreso>;
-  abstract marcarContenidoLeido(alumnoId: string, cursoCohorteId: string, nodoId: string): Observable<Progreso>;
-  abstract getAlumnos(cursoCohorteId: string): Observable<Alumno[]>;
+  abstract getProgress(studentId: string, courseCohortId: string): Observable<Progress>;
+  abstract registerProgress(
+    studentId: string,
+    courseCohortId: string,
+    earnedXp: number,
+    nodeId?: string,
+    lives?: number,
+  ): Observable<Progress>;
+  abstract markContentRead(studentId: string, courseCohortId: string, nodeId: string): Observable<Progress>;
+  abstract getStudents(courseCohortId: string): Observable<Student[]>;
 }

@@ -16,20 +16,20 @@ import { StoreService } from '../../core/educa/store.service';
 import { SyncChannelService } from '../../core/educa/sync-channel.service';
 import { VisitService } from '../../core/educa/visit.service';
 import { ThemeService } from '../../core/theme.service';
-import { CURSO_SEED_ID } from '../../mocks/seed';
+import { COURSE_SEED_ID } from '../../mocks/seed';
 import {
-  ANEXO_EMOJI,
-  genUnidadWorld,
-  type AnexoMarker,
+  ATTACHMENT_EMOJI,
+  genSectionWorld,
+  type AttachmentMarker,
   type Avatar,
   type Biome,
-  type ModuloPlaced,
+  type ModulePlaced,
   type WorldLayout,
 } from './world-gen';
 import { genQuestion, type Question } from './math';
 import { World3dService } from './engine/world-3d.service';
 import { AudioService } from './engine/audio.service';
-import type { Vista } from './engine/camera-controller';
+import type { View } from './engine/camera-controller';
 import { AvatarModularService, type AvatarBuild } from './engine/avatar-modular.service';
 
 const LOREM =
@@ -38,8 +38,8 @@ const LOREM =
 interface ShopItem {
   id: string;
   emoji: string;
-  nombre: string;
-  precio: number;
+  name: string;
+  price: number;
   desc: string;
 }
 
@@ -67,25 +67,25 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
           @if (aid()) {
             <a [routerLink]="['/play', aid()]" class="btn btn-xs btn-ghost ui-font text-[8px]">Mundos</a>
           }
-          <strong class="truncate text-accent font-bold">{{ biomaEmoji() }} {{ title() }}</strong>
+          <strong class="truncate text-accent font-bold">{{ biomeEmoji() }} {{ title() }}</strong>
           <span class="rounded-full bg-green-600/80 px-2 py-0.5 text-xs font-mono">⭐ {{ visitedIds().length }}/{{ total() }}</span>
           <span class="rounded-full bg-amber-500/80 px-2 py-0.5 text-xs font-mono">🪙 {{ coins() }}</span>
           <span class="flex-1"></span>
-          @if (avatarNombre()) {
-            <span class="rounded-full bg-violet-600/80 px-2 py-0.5 text-xs font-mono" title="Tu personaje creado en la ciudad">🧍 {{ avatarNombre() }}</span>
+          @if (avatarName()) {
+            <span class="rounded-full bg-violet-600/80 px-2 py-0.5 text-xs font-mono" title="Tu personaje creado en la ciudad">🧍 {{ avatarName() }}</span>
           }
-          <button (click)="alternarVista()" class="btn btn-xs btn-outline btn-info ui-font text-[8px]"
+          <button (click)="toggleView()" class="btn btn-xs btn-outline btn-info ui-font text-[8px]"
             title="Cambiar cámara (V): Tercera → Primera → Libre">
-            🎥 {{ vista() === 'tercera' ? '3ª' : vista() === 'primera' ? '1ª' : 'Libre' }}
+            🎥 {{ view() === 'tercera' ? '3ª' : view() === 'primera' ? '1ª' : 'Libre' }}
           </button>
-          <button (click)="alternarEfectos()" class="btn btn-xs btn-outline ui-font text-[8px]"
+          <button (click)="toggleEffects()" class="btn btn-xs btn-outline ui-font text-[8px]"
             [class.btn-success]="theme.effects()"
             [class.btn-warning]="!theme.effects()"
             [title]="theme.effects() ? 'Desactivar efectos visuales (clima, volcanes, fauna) [X]' : 'Activar efectos visuales (clima, volcanes, fauna) [X]'">
             ✨ {{ theme.effects() ? 'FX: ON' : 'FX: OFF' }}
           </button>
         </div>
-        <p class="absolute bottom-2 left-2 rounded bg-black/50 px-2 py-1 text-xs text-white/80 ui-font text-[8px]">{{ ayuda() }} · arrastrar cámara · rueda zoom</p>
+        <p class="absolute bottom-2 left-2 rounded bg-black/50 px-2 py-1 text-xs text-white/80 ui-font text-[8px]">{{ hint() }} · arrastrar cámara · rueda zoom</p>
 
         @if (atCastle()) {
           <aside class="absolute right-2 top-16 w-72 rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-center text-white shadow-2xl chaflan" aria-live="polite">
@@ -102,9 +102,9 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
           </aside>
         } @else if (reading(); as rd) {
           <aside class="absolute bottom-2 right-2 top-16 flex w-80 flex-col rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-white shadow-2xl chaflan" aria-live="polite">
-            <p class="text-3xl">{{ emoji(rd.tipo) }}</p>
-            <h2 class="mt-1 font-bold text-primary title-font">{{ rd.titulo }}</h2>
-            <div class="mt-2 flex-1 overflow-y-auto text-sm leading-relaxed text-gray-300">{{ textoLectura(rd) }}</div>
+            <p class="text-3xl">{{ emoji(rd.type) }}</p>
+            <h2 class="mt-1 font-bold text-primary title-font">{{ rd.title }}</h2>
+            <div class="mt-2 flex-1 overflow-y-auto text-sm leading-relaxed text-gray-300">{{ textReading(rd) }}</div>
             @if (rd.url) {
               <a [href]="rd.url" target="_blank" rel="noopener" class="mt-2 text-sm text-primary underline">Abrir recurso 🔗</a>
             }
@@ -113,11 +113,11 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
         } @else if (challenge(); as ch) {
           <aside class="absolute right-2 top-16 w-72 rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-center text-white shadow-2xl chaflan" aria-live="polite">
             <p class="text-3xl">🗼</p>
-            <h2 class="mt-1 font-bold text-primary title-font">Desafío: {{ ch.titulo }}</h2>
+            <h2 class="mt-1 font-bold text-primary title-font">Desafío: {{ ch.title }}</h2>
             @if (question(); as q) {
-              <p class="mt-2 text-2xl font-bold font-mono text-accent">{{ q.texto }}</p>
+              <p class="mt-2 text-2xl font-bold font-mono text-accent">{{ q.text }}</p>
               <div class="mt-3 grid grid-cols-2 gap-2">
-                @for (o of q.opciones; track o) {
+                @for (o of q.options; track o) {
                   <button (click)="answer(o)" class="btn btn-sm btn-outline btn-primary font-mono text-base">{{ o }}</button>
                 }
               </div>
@@ -127,9 +127,9 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
           </aside>
         } @else if (near(); as m) {
           <aside class="absolute right-2 top-16 w-72 rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-white shadow-2xl chaflan" aria-live="polite">
-            <p class="text-3xl">{{ emoji(m.tipo) }}</p>
-            <h2 class="mt-1 font-bold text-primary title-font">{{ m.titulo }}</h2>
-            @if (isVisited(m.anexoId)) {
+            <p class="text-3xl">{{ emoji(m.type) }}</p>
+            <h2 class="mt-1 font-bold text-primary title-font">{{ m.title }}</h2>
+            @if (isVisited(m.attachmentId)) {
               <p class="mt-1 text-sm font-medium text-success">✅ Ya leído</p>
               <button (click)="startReading(m)" class="mt-2 btn btn-sm btn-secondary w-full ui-font text-[8px]">Releer 🔁</button>
             } @else {
@@ -138,14 +138,14 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
           </aside>
         } @else if (nearTower(); as t) {
           <aside class="absolute right-2 top-16 w-72 rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-center text-white shadow-2xl chaflan" aria-live="polite">
-            <p class="text-3xl">{{ towerPassed(t.moduloId) ? '✅' : '🗼' }}</p>
-            <h2 class="mt-1 font-bold text-primary title-font">{{ t.titulo }}</h2>
-            @if (!towerPassed(t.moduloId)) {
-              @if (canChallenge(t.moduloId)) {
+            <p class="text-3xl">{{ towerPassed(t.moduleId) ? '✅' : '🗼' }}</p>
+            <h2 class="mt-1 font-bold text-primary title-font">{{ t.title }}</h2>
+            @if (!towerPassed(t.moduleId)) {
+              @if (canChallenge(t.moduleId)) {
                 <button (click)="openChallenge(t)" class="mt-2 btn btn-sm btn-primary w-full ui-font text-[8px]">Desafío ⚔️</button>
               } @else {
                 <button disabled class="mt-2 btn btn-sm btn-disabled w-full ui-font text-[8px]">🔒 Desafío ⚔️</button>
-                <p class="mt-1 text-xs text-gray-400">📦 Lee los cofres {{ anexosRead(t.moduloId).done }}/{{ anexosRead(t.moduloId).total }} primero</p>
+                <p class="mt-1 text-xs text-gray-400">📦 Lee los cofres {{ attachmentsRead(t.moduleId).done }}/{{ attachmentsRead(t.moduleId).total }} primero</p>
               }
             } @else {
               <p class="text-sm text-success font-medium">Torre superada ✅</p>
@@ -172,7 +172,7 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
           <app-dungeon-shop-modal
             [(coins)]="coins"
             [(owned)]="owned"
-            (cerrar)="closeShop()" />
+            (close)="closeShop()" />
         }
 
         @if (toast()) {
@@ -214,43 +214,43 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
   loading = signal(true);
   pct = signal(0);
   error = signal('');
-  near = signal<AnexoMarker | null>(null);
-  nearTower = signal<ModuloPlaced | null>(null);
-  nearMarket = signal<ModuloPlaced | null>(null);
+  near = signal<AttachmentMarker | null>(null);
+  nearTower = signal<ModulePlaced | null>(null);
+  nearMarket = signal<ModulePlaced | null>(null);
   inShop = signal(false);
   coins = signal(100);
   owned = signal<string[]>([]);
   shop: ShopItem[] = [
-    { id: 'espada', emoji: '🗡️', nombre: 'Espada de madera', precio: 30, desc: 'Para practicar desafíos' },
-    { id: 'escudo', emoji: '🛡️', nombre: 'Escudo', precio: 25, desc: 'Protección mock' },
-    { id: 'pocion', emoji: '🧪', nombre: 'Poción', precio: 15, desc: 'Sabe a fresa (demo)' },
-    { id: 'mapa', emoji: '🗺️', nombre: 'Mapa del tesoro', precio: 50, desc: 'No lleva a ningún lado (demo)' },
+    { id: 'espada', emoji: '🗡️', name: 'Espada de madera', price: 30, desc: 'Para practicar desafíos' },
+    { id: 'escudo', emoji: '🛡️', name: 'Escudo', price: 25, desc: 'Protección mock' },
+    { id: 'pocion', emoji: '🧪', name: 'Poción', price: 15, desc: 'Sabe a fresa (demo)' },
+    { id: 'mapa', emoji: '🗺️', name: 'Mapa del tesoro', price: 50, desc: 'No lleva a ningún lado (demo)' },
   ];
-  reading = signal<AnexoMarker | null>(null);
-  challenge = signal<ModuloPlaced | null>(null);
+  reading = signal<AttachmentMarker | null>(null);
+  challenge = signal<ModulePlaced | null>(null);
   question = signal<Question | null>(null);
   wrongMsg = signal('');
   toast = signal<string | null>(null);
   atCastle = signal(false);
   visitedIds = signal<string[]>([]);
   passedIds = signal<string[]>([]);
-  /** Clase del personaje creado en la ciudad (insignia informativa, sin selector). */
-  avatarNombre = signal('');
-  /** Vista de cámara: libre (orbital), tercera (detrás) o primera (ojos). */
-  vista = signal<Vista>('libre');
-  /** Ayuda de movimiento según la vista (en 3ª A/D giran, no strafean). */
-  ayuda = computed(() =>
-    this.vista() === 'tercera'
+  /** Class of the character created in the city (informative badge, no selector). */
+  avatarName = signal('');
+  /** Camera view: free (orbital), third (behind) or first (eyes). */
+  view = signal<View>('libre');
+  /** Movement help according to the view (in 3rd person A/D turn, they do not strafe). */
+  hint = computed(() =>
+    this.view() === 'tercera'
       ? 'W/S avanzar · A/D girar · Shift correr · V cámara · X efectos · entra en las 🏠'
       : 'WASD/flechas moverse · Shift correr · V cámara · X efectos · entra en las 🏠',
   );
-  bioma = signal<Biome>('pradera');
-  biomaEmoji = computed(() =>
-    this.bioma() === 'desierto' ? '🏜️' : this.bioma() === 'nieve' ? '❄️' : this.bioma() === 'lava' ? '🌋' : '🌿',
+  biome = signal<Biome>('pradera');
+  biomeEmoji = computed(() =>
+    this.biome() === 'desierto' ? '🏜️' : this.biome() === 'nieve' ? '❄️' : this.biome() === 'lava' ? '🌋' : '🌿',
   );
-  total = computed(() => this.layout?.anexos.length ?? 0);
-  emoji = (t: AnexoMarker['tipo']): string => ANEXO_EMOJI[t];
-  textoLectura = (m: AnexoMarker): string => m.descripcion?.trim() || LOREM;
+  total = computed(() => this.layout?.attachments.length ?? 0);
+  emoji = (t: AttachmentMarker['type']): string => ATTACHMENT_EMOJI[t];
+  textReading = (m: AttachmentMarker): string => m.description?.trim() || LOREM;
 
   private layout: WorldLayout | null = null;
   private prevUnlocked = -1;
@@ -267,15 +267,15 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
       this.world3d.setEffectsEnabled(this.theme.effects());
     });
 
-    // Escuchar eventos en tiempo real (eliminación o edición de la unidad)
+    // Listen to real-time events (removal or edition of the section)
     this.syncSub = this.syncChannel.events$.subscribe((msg) => {
       if (msg.type === 'unit_deleted') {
         if (msg.courseId === this.aid() && msg.unitId === this.activeUnitId()) {
-          this.manejarUnidadEliminada();
+          this.handleDeletedSection();
         }
       } else if (msg.type === 'course_updated') {
         if (msg.courseId === this.aid()) {
-          this.manejarCursoActualizado();
+          this.handleCourseUpdated();
         }
       }
     });
@@ -283,22 +283,22 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
 
   async ngAfterViewInit(): Promise<void> {
     let id = this.route.snapshot.paramMap.get('id') ?? '';
-    let unidadId = this.route.snapshot.paramMap.get('unidadId') ?? '';
-    if (!unidadId && id) {
-      unidadId = id;
+    let sectionId = this.route.snapshot.paramMap.get('unidadId') ?? '';
+    if (!sectionId && id) {
+      sectionId = id;
       id = '';
     }
     if (!id) {
       const all = this.store.listAll();
-      const found = all.find((c) => c.unidades.some((u) => u.id === unidadId));
-      id = found ? found.id : (this.store.current()?.id || CURSO_SEED_ID);
+      const found = all.find((c) => c.sections.some((u) => u.id === sectionId));
+      id = found ? found.id : (this.store.current()?.id || COURSE_SEED_ID);
     }
     this.aid.set(id);
     this.store.open(id);
-    let u = this.store.current()?.unidades.find((x) => x.id === unidadId);
+    let u = this.store.current()?.sections.find((x) => x.id === sectionId);
     if (!u) {
       for (const course of this.store.listAll()) {
-        const foundU = course.unidades.find((x) => x.id === unidadId);
+        const foundU = course.sections.find((x) => x.id === sectionId);
         if (foundU) {
           id = course.id;
           this.aid.set(id);
@@ -309,28 +309,28 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
       }
     }
     if (!u) {
-      const currentUnits = this.store.current()?.unidades ?? [];
-      const num = parseInt(unidadId.replace(/\D/g, ''), 10);
+      const currentUnits = this.store.current()?.sections ?? [];
+      const num = parseInt(sectionId.replace(/\D/g, ''), 10);
       if (!isNaN(num) && num >= 1 && num <= currentUnits.length) {
         u = currentUnits[num - 1];
       } else {
-        u = currentUnits.find((x) => x.id.startsWith(unidadId) || unidadId.startsWith(x.id)) ?? currentUnits[0];
+        u = currentUnits.find((x) => x.id.startsWith(sectionId) || sectionId.startsWith(x.id)) ?? currentUnits[0];
       }
     }
     if (!u) {
       const all = this.store.listAll();
       const fallbackCourse = all[0];
-      if (fallbackCourse && fallbackCourse.unidades.length > 0) {
+      if (fallbackCourse && fallbackCourse.sections.length > 0) {
         id = fallbackCourse.id;
         this.aid.set(id);
         this.store.open(id);
-        const num = parseInt(unidadId.replace(/\D/g, ''), 10);
-        if (!isNaN(num) && num >= 1 && num <= fallbackCourse.unidades.length) {
-          u = fallbackCourse.unidades[num - 1];
+        const num = parseInt(sectionId.replace(/\D/g, ''), 10);
+        if (!isNaN(num) && num >= 1 && num <= fallbackCourse.sections.length) {
+          u = fallbackCourse.sections[num - 1];
         } else {
           u =
-            fallbackCourse.unidades.find((x) => x.id.startsWith(unidadId) || unidadId.startsWith(x.id)) ??
-            fallbackCourse.unidades[0];
+            fallbackCourse.sections.find((x) => x.id.startsWith(sectionId) || sectionId.startsWith(x.id)) ??
+            fallbackCourse.sections[0];
         }
       }
     }
@@ -339,19 +339,19 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
       return;
     }
     this.activeUnitId.set(u.id);
-    this.title.set(u.titulo);
-    this.layout = genUnidadWorld(u, id);
-    this.bioma.set(this.layout.bioma ?? 'pradera');
+    this.title.set(u.title);
+    this.layout = genSectionWorld(u, id);
+    this.biome.set(this.layout.biome ?? 'pradera');
     this.visitedIds.set(this.visits.list(id));
     this.passedIds.set(this.visits.passed(id));
 
-    // Personaje creado en la ciudad (config modular); sin config, Knight legado.
+    // Character created in the city (modular config); without config, legacy Knight.
     let avatarSpec: Avatar | AvatarBuild = 'Knight';
-    const guardado = this.avatarModular.leer();
-    if (guardado) {
-      this.avatarNombre.set(guardado.characterClass);
+    const saved = this.avatarModular.read();
+    if (saved) {
+      this.avatarName.set(saved.characterClass);
       try {
-        avatarSpec = await this.avatarModular.buildAvatar(guardado);
+        avatarSpec = await this.avatarModular.buildAvatar(saved);
       } catch {
         avatarSpec = 'Knight';
       }
@@ -364,7 +364,7 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
         avatarSpec,
         {
           onProgress: (p) => this.pct.set(p),
-          onNearAnexo: (anexo) => this.near.set(anexo),
+          onNearAttachment: (attachment) => this.near.set(attachment),
           onNearTower: (tower) => this.nearTower.set(tower),
           onNearMarket: (market) => this.nearMarket.set(market),
           onAtCastle: (atCastle) => {
@@ -392,26 +392,26 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
     window.location.reload();
   }
 
-  /** Conmuta cámara primera/tercera persona (también con la tecla V). */
-  protected alternarVista(): void {
-    this.vista.set(this.world3d.alternarVista());
+  /** Toggles first/third person camera (also with the V key). */
+  protected toggleView(): void {
+    this.view.set(this.world3d.toggleView());
   }
 
-  /** Conmuta efectos visuales (clima, volcanes, fauna) y actualiza el motor 3D. */
-  protected alternarEfectos(): void {
+  /** Toggles visual effects (weather, volcanoes, fauna) and updates the 3D engine. */
+  protected toggleEffects(): void {
     const next = this.theme.toggleEffects();
     this.world3d.setEffectsEnabled(next);
     this.showToast(next ? '✨ Efectos activados' : '⏸️ Efectos desactivados');
   }
 
   @HostListener('document:keydown', ['$event'])
-  protected onTeclaVista(e: KeyboardEvent): void {
+  protected onKeyDown(e: KeyboardEvent): void {
     const tag = (e.target as HTMLElement | null)?.tagName;
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
     if (e.key === 'v' || e.key === 'V') {
-      this.alternarVista();
+      this.toggleView();
     } else if (e.key === 'x' || e.key === 'X') {
-      this.alternarEfectos();
+      this.toggleEffects();
     } else if (
       (e.key === 'e' || e.key === 'E' || e.key === 'Enter') &&
       this.nearMarket() &&
@@ -425,43 +425,43 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
   }
 
   towerIds(): string[] {
-    return (this.layout?.modulos ?? []).filter((m) => !m.moduloId.startsWith('__')).map((m) => m.moduloId);
+    return (this.layout?.modules ?? []).filter((m) => !m.moduleId.startsWith('__')).map((m) => m.moduleId);
   }
 
-  towerPassed(moduloId: string): boolean {
-    return this.passedIds().includes(moduloId);
+  towerPassed(moduleId: string): boolean {
+    return this.passedIds().includes(moduleId);
   }
 
-  isVisited(anexoId: string): boolean {
-    return this.visitedIds().includes(anexoId);
+  isVisited(attachmentId: string): boolean {
+    return this.visitedIds().includes(attachmentId);
   }
 
-  private moduloComplete(moduloId: string): boolean {
+  private moduleComplete(moduleId: string): boolean {
     const done = new Set(this.visitedIds());
-    const mine = (this.layout?.anexos ?? []).filter((x) => x.moduloId === moduloId);
-    return this.towerPassed(moduloId) && mine.every((x) => done.has(x.anexoId));
+    const mine = (this.layout?.attachments ?? []).filter((x) => x.moduleId === moduleId);
+    return this.towerPassed(moduleId) && mine.every((x) => done.has(x.attachmentId));
   }
 
-  anexosRead(moduloId: string): { done: number; total: number } {
+  attachmentsRead(moduleId: string): { done: number; total: number } {
     const done = new Set(this.visitedIds());
-    const mine = (this.layout?.anexos ?? []).filter((x) => x.moduloId === moduloId);
-    return { done: mine.filter((x) => done.has(x.anexoId)).length, total: mine.length };
+    const mine = (this.layout?.attachments ?? []).filter((x) => x.moduleId === moduleId);
+    return { done: mine.filter((x) => done.has(x.attachmentId)).length, total: mine.length };
   }
 
-  canChallenge(moduloId: string): boolean {
-    const r = this.anexosRead(moduloId);
+  canChallenge(moduleId: string): boolean {
+    const r = this.attachmentsRead(moduleId);
     return r.total === 0 || r.done >= r.total;
   }
 
   allComplete(): boolean {
-    return this.towerIds().every((id) => this.moduloComplete(id));
+    return this.towerIds().every((id) => this.moduleComplete(id));
   }
 
   unlockedCount(): number {
     const ids = this.towerIds();
     let n = 0;
     for (let i = 0; i < ids.length; i++) {
-      if (i === 0 || this.moduloComplete(ids[i - 1])) n++;
+      if (i === 0 || this.moduleComplete(ids[i - 1])) n++;
       else break;
     }
     return n;
@@ -470,9 +470,9 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
   isOpenGroup(key: string): boolean {
     if (key === '__start') return true;
     const ids = this.towerIds();
-    if (key === '__end') return ids.every((id) => this.moduloComplete(id));
+    if (key === '__end') return ids.every((id) => this.moduleComplete(id));
     const i = ids.indexOf(key);
-    return i === 0 || (i > 0 && this.moduloComplete(ids[i - 1]));
+    return i === 0 || (i > 0 && this.moduleComplete(ids[i - 1]));
   }
 
   private showToast(msg: string): void {
@@ -481,7 +481,7 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
     this.toastTimer = window.setTimeout(() => this.toast.set(null), 3000);
   }
 
-  private checkNewTramoDespejado(): void {
+  private checkNewClearSegment(): void {
     const n = this.unlockedCount();
     if (this.prevUnlocked >= 0 && n > this.prevUnlocked) {
       this.showToast('🌫️ ¡Nuevo tramo despejado!');
@@ -490,7 +490,7 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
     this.prevUnlocked = n;
   }
 
-  startReading(m: AnexoMarker): void {
+  startReading(m: AttachmentMarker): void {
     this.audio.playClick();
     this.reading.set(m);
     this.challenge.set(null);
@@ -499,48 +499,48 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
 
   finishReading(): void {
     const m = this.reading();
-    if (m && !this.visitedIds().includes(m.anexoId)) {
-      this.visitedIds.set(this.visits.mark(this.aid(), m.anexoId));
+    if (m && !this.visitedIds().includes(m.attachmentId)) {
+      this.visitedIds.set(this.visits.mark(this.aid(), m.attachmentId));
       this.audio.playUnlock();
-      if (!this.towerPassed(m.moduloId) && this.canChallenge(m.moduloId)) {
+      if (!this.towerPassed(m.moduleId) && this.canChallenge(m.moduleId)) {
         this.showToast('⚔️ ¡Torre desbloqueada!');
       }
     }
     this.reading.set(null);
     this.world3d.finishReading();
-    this.checkNewTramoDespejado();
+    this.checkNewClearSegment();
     this.maybeCelebrate();
   }
 
-  openChallenge(t: ModuloPlaced, practice = false): void {
+  openChallenge(t: ModulePlaced, practice = false): void {
     this.audio.playClick();
-    if (!practice && !this.canChallenge(t.moduloId)) {
-      const r = this.anexosRead(t.moduloId);
+    if (!practice && !this.canChallenge(t.moduleId)) {
+      const r = this.attachmentsRead(t.moduleId);
       this.showToast(`🔒 Lee los cofres ${r.done}/${r.total} primero`);
       return;
     }
     this.challenge.set(t);
     this.wrongMsg.set('');
-    this.question.set(genQuestion(`${this.aid()}:${t.moduloId}`));
+    this.question.set(genQuestion(`${this.aid()}:${t.moduleId}`));
   }
 
   answer(n: number): void {
     const q = this.question();
     const t = this.challenge();
     if (!q || !t) return;
-    if (n === q.respuesta) {
-      if (this.towerPassed(t.moduloId)) {
+    if (n === q.answer) {
+      if (this.towerPassed(t.moduleId)) {
         this.challenge.set(null);
         this.audio.playUnlock();
         this.showToast('✅ ¡Correcto! (práctica)');
         return;
       }
-      this.passedIds.set(this.visits.pass(this.aid(), t.moduloId));
+      this.passedIds.set(this.visits.pass(this.aid(), t.moduleId));
       this.challenge.set(null);
       this.audio.playUnlock();
       this.showToast('✅ ¡Torre superada!');
       this.world3d.refreshVisibility();
-      this.checkNewTramoDespejado();
+      this.checkNewClearSegment();
       this.maybeCelebrate();
     } else {
       this.wrongMsg.set('❌ Esa no es.');
@@ -557,11 +557,11 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
 
   buy(id: string): void {
     const item = this.shop.find((x) => x.id === id);
-    if (!item || this.owned().includes(id) || this.coins() < item.precio) return;
-    this.coins.set(this.coins() - item.precio);
+    if (!item || this.owned().includes(id) || this.coins() < item.price) return;
+    this.coins.set(this.coins() - item.price);
     this.owned.set([...this.owned(), id]);
     this.audio.playCoin();
-    this.showToast(`🛒 ¡${item.nombre} comprado! (demo)`);
+    this.showToast(`🛒 ¡${item.name} comprado! (demo)`);
   }
 
   openShop(): void {
@@ -575,23 +575,23 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
     this.world3d.finishReading();
   }
 
-  private manejarUnidadEliminada(): void {
+  private handleDeletedSection(): void {
     this.showToast('⚠️ Esta unidad fue eliminada por el profesor');
     setTimeout(() => {
       this.router.navigate(['/play', this.aid()]);
     }, 1400);
   }
 
-  private manejarCursoActualizado(): void {
+  private handleCourseUpdated(): void {
     this.store.open(this.aid());
-    const u = this.store.current()?.unidades.find((x) => x.id === this.activeUnitId());
+    const u = this.store.current()?.sections.find((x) => x.id === this.activeUnitId());
     if (!u) {
-      this.manejarUnidadEliminada();
+      this.handleDeletedSection();
       return;
     }
-    if (this.title() !== u.titulo) {
-      this.title.set(u.titulo);
-      this.showToast(`📝 Unidad actualizada: ${u.titulo}`);
+    if (this.title() !== u.title) {
+      this.title.set(u.title);
+      this.showToast(`📝 Unidad actualizada: ${u.title}`);
     }
   }
 

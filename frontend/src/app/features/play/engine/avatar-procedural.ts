@@ -1,18 +1,18 @@
 import * as THREE from 'three';
 
 /**
- * Modelos procedurales del personaje (port de `public/mundo-3d/avatar-preview.html`).
+ * Procedural models of the character (port of `public/mundo-3d/avatar-preview.html`).
  *
- * Todo lo que el editor de la ciudad genera con geometría en vez de GLTF: mochila,
- * accesorios de cabeza, objetos de mano, teclado, mascotas. Sin dependencias de
- * Angular: reciben lo que necesitan por parámetro para seguir testeables.
+ * Everything the city editor generates with geometry instead of GLTF: backpack,
+ * head accessories, hand objects, keyboard, pets. No Angular dependencies:
+ * they receive what they need by parameter to stay testable.
  */
 
 export type RgbTick = (time: number) => void;
 export type AnimTick = (time: number, delta: number) => void;
 
-/** Carga perezosa de un accesorio GLTF (estrellas, flores, pollo, cubo). */
-export type CargarEscena = (archivo: string) => Promise<THREE.Group | null>;
+/** Lazy load of a GLTF accessory (stars, flowers, chicken, cube). */
+export type LoadScene = (file: string) => Promise<THREE.Group | null>;
 
 function hex(color: string, fb: number): number {
   const n = parseInt(color.replace('#', '0x'), 16);
@@ -23,7 +23,7 @@ function std(color: number, roughness = 0.5, metalness = 0): THREE.MeshStandardM
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
 }
 
-// — Espalda —
+// — Back —
 
 export function createBackpack(color = '#2563eb'): THREE.Group {
   const group = new THREE.Group();
@@ -198,7 +198,7 @@ export function createGiantUSB(): THREE.Group {
   return group;
 }
 
-// — Cabeza —
+// — Head —
 
 export function createGamerHeadphones(): THREE.Group {
   const group = new THREE.Group();
@@ -327,7 +327,7 @@ export function createPropellerHat(): THREE.Group {
   return group;
 }
 
-export function createStarOrbit(color: string, cargar: CargarEscena): THREE.Group {
+export function createStarOrbit(color: string, load: LoadScene): THREE.Group {
   const group = new THREE.Group();
   group.name = 'star_orbit_' + color;
   const COUNT = 7;
@@ -353,7 +353,7 @@ export function createStarOrbit(color: string, cargar: CargarEscena): THREE.Grou
     }
   }) satisfies RgbTick;
 
-  cargar('star_' + color + '.gltf').then((scene) => {
+  load('star_' + color + '.gltf').then((scene) => {
     if (!scene) return;
     scene.traverse((c) => {
       if ((c as THREE.Mesh).isMesh) c.castShadow = true;
@@ -368,7 +368,7 @@ export function createStarOrbit(color: string, cargar: CargarEscena): THREE.Grou
   return group;
 }
 
-export function createFlowerAntennae(cargar: CargarEscena): THREE.Group {
+export function createFlowerAntennae(load: LoadScene): THREE.Group {
   const group = new THREE.Group();
   group.name = 'flower_antennae';
   const files = ['flax_flower_A.gltf', 'flax_flower_B.gltf'];
@@ -381,7 +381,7 @@ export function createFlowerAntennae(cargar: CargarEscena): THREE.Group {
   }) satisfies RgbTick;
 
   files.forEach((file, i) => {
-    cargar(file).then((scene) => {
+    load(file).then((scene) => {
       if (!scene || group.children.length >= files.length) return;
       const f = scene.clone(true);
       f.scale.setScalar(0.35);
@@ -462,7 +462,7 @@ export function createGamerGlasses(): THREE.Group {
   return group;
 }
 
-// — Manos —
+// — Hands —
 
 export function createGamingMouse(): THREE.Group {
   const group = new THREE.Group();
@@ -538,7 +538,7 @@ export function createMate(): THREE.Group {
   group.name = 'mate_argentino';
   const gourdMat = std(0x451a03, 0.6);
   const metalMat = std(0xe2e8f0, 0.15, 0.95);
-  const yerbaMat = std(0x365314, 0.9);
+  const herbMat = std(0x365314, 0.9);
 
   const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.22, 16), gourdMat);
   cup.position.set(0, 0.02, 0);
@@ -549,19 +549,19 @@ export function createMate(): THREE.Group {
   bottom.position.set(0, -0.07, 0);
   group.add(bottom);
 
-  const virola = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.04, 16), metalMat);
-  virola.position.set(0, 0.12, 0);
-  group.add(virola);
+  const ferrule = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.04, 16), metalMat);
+  ferrule.position.set(0, 0.12, 0);
+  group.add(ferrule);
 
-  const yerba = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.02, 16), yerbaMat);
-  yerba.position.set(0, 0.11, 0);
-  group.add(yerba);
+  const herb = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.02, 16), herbMat);
+  herb.position.set(0, 0.11, 0);
+  group.add(herb);
 
-  const bombilla = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.32, 8), metalMat);
-  bombilla.rotation.x = -0.35;
-  bombilla.rotation.z = 0.15;
-  bombilla.position.set(-0.02, 0.2, 0.03);
-  group.add(bombilla);
+  const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.32, 8), metalMat);
+  straw.rotation.x = -0.35;
+  straw.rotation.z = 0.15;
+  straw.position.set(-0.02, 0.2, 0.03);
+  group.add(straw);
 
   const spout = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.04, 0.012), metalMat);
   spout.rotation.x = -0.35;
@@ -647,7 +647,7 @@ export function createPokeball(): THREE.Group {
   return group;
 }
 
-// — Mascotas —
+// — Pets —
 
 export function createFlyingDrone(): THREE.Group {
   const group = new THREE.Group();
@@ -680,9 +680,9 @@ export function createFlyingDrone(): THREE.Group {
     arm.position.set(x * 0.5, y, z * 0.5);
     group.add(arm);
 
-    const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.03, 12), bodyMat);
-    motor.position.set(x, y + 0.01, z);
-    group.add(motor);
+    const engine = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.03, 12), bodyMat);
+    engine.position.set(x, y + 0.01, z);
+    group.add(engine);
 
     const led = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 8), i % 2 === 0 ? ledG : ledR);
     led.position.set(x, y - 0.015, z);
@@ -1009,13 +1009,13 @@ export function createFlyingGhost(): THREE.Group {
   return group;
 }
 
-/** Gallina terrestre en espacio de mundo (no hija del jugador): sigue con correa. */
-export function createGroundChicken(cargar: CargarEscena, variant = 'A'): THREE.Group {
+/** Ground hen in world space (not a child of the player): follows on a leash. */
+export function createGroundChicken(load: LoadScene, variant = 'A'): THREE.Group {
   const group = new THREE.Group();
   group.name = 'chicken_' + variant;
   group.userData['isGroundPet'] = true;
   const file = variant === 'B' ? 'chicken_plushie_B.gltf' : 'chicken_plushie_A.gltf';
-  cargar(file).then((scene) => {
+  load(file).then((scene) => {
     if (!scene || group.children.length) return;
     const c = scene.clone(true);
     c.scale.setScalar(0.2);

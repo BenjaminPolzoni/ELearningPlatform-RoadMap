@@ -1,24 +1,24 @@
 import { Component, computed, HostListener, inject, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RankingDataPort } from '../../core/data/ranking-data.port';
-import { FilaRanking, FilaRankingAnon } from '../../core/data/ranking.models';
-import { CURSO_SEED_ID } from '../../mocks/seed';
-import { RankingTablaAlumno } from './ranking-tabla-alumno';
-import { RankingTablaStaff } from './ranking-tabla-staff';
-import { RankingDetalle } from './ranking-detalle';
+import { RankingRow, RankingAnonRow } from '../../core/data/ranking.models';
+import { COURSE_SEED_ID } from '../../mocks/seed';
+import { StudentRankingTable } from './student-ranking-table';
+import { StaffRankingTable } from './staff-ranking-table';
+import { RankingDetail } from './ranking-detail';
 
 /**
- * Gabinete arcade del ranking (E8). Pide la vista al `RankingDataPort` y muestra la que
- * corresponda al rol de la sesión (el adapter ya la recortó — acá no se filtra nada):
- *  - ALUMNO  → lista unificada anonimizada, fila propia y cortes P90/P10 (RF-RNK-03).
- *  - PROFESOR/ADMIN → tabla identificada completa para auditar el cierre (RF-RNK-10).
- * Click en una fila abre el detalle con la visibilidad que ya trae esa fila (RF-RNK-07).
+ * Arcade cabinet of the ranking (E8). Asks the `RankingDataPort` for the view and shows the one that
+ * corresponds to the session role (the adapter already trimmed it — nothing is filtered here):
+ *  - ALUMNO  → unified anonymized list, own row and P90/P10 cutoffs (RF-RNK-03).
+ *  - PROFESOR/ADMIN → full identified table to audit the closing (RF-RNK-10).
+ * Clicking a row opens the detail with the visibility that row already carries (RF-RNK-07).
  */
 @Component({
   selector: 'app-ranking-panel',
-  imports: [RankingTablaAlumno, RankingTablaStaff, RankingDetalle],
+  imports: [StudentRankingTable, StaffRankingTable, RankingDetail],
   template: `
-    <div class="rk-backdrop" (click)="cerrar.emit()">
+    <div class="rk-backdrop" (click)="close.emit()">
       <aside
         class="rk-cabinet"
         role="dialog"
@@ -28,18 +28,18 @@ import { RankingDetalle } from './ranking-detalle';
       >
         <span class="rk-cabinet__scanlines" aria-hidden="true"></span>
 
-        @if (!seleccion()) {
+        @if (!selection()) {
           <button
             class="rk-close"
-            (click)="cerrar.emit()"
+            (click)="close.emit()"
             aria-label="Cerrar (ESC)"
             title="Cerrar (ESC)"
           ></button>
         }
 
-        @if (seleccion()) {
+        @if (selection()) {
           <header class="rk-marquee rk-marquee--back">
-            <button class="rk-chip rk-marquee__back" (click)="seleccion.set(null)">VOLVER</button>
+            <button class="rk-chip rk-marquee__back" (click)="selection.set(null)">VOLVER</button>
             <span class="rk-marquee__word">INFO</span>
           </header>
         } @else {
@@ -50,20 +50,20 @@ import { RankingDetalle } from './ranking-detalle';
         }
 
         <div class="rk-screen">
-          @if (cargando()) {
+          @if (loading()) {
             <p
               class="console-font rk-neon-success"
               style="text-align:center;font-size:1.4rem;letter-spacing:0.2em;padding:3rem 0"
             >
               CONECTANDO<span class="rk-blink">…</span>
             </p>
-          } @else if (vista(); as v) {
-            @if (seleccion(); as sel) {
-              <app-ranking-detalle [fila]="sel" [total]="totalInscriptos()" />
-            } @else if (v.rol === 'ALUMNO') {
-              <app-ranking-tabla-alumno [vista]="v" (seleccionar)="seleccion.set($event)" />
+          } @else if (view(); as v) {
+            @if (selection(); as sel) {
+              <app-ranking-detail [row]="sel" [total]="totalEnrolled()" />
+            } @else if (v.role === 'ALUMNO') {
+              <app-ranking-table-student [view]="v" (select)="selection.set($event)" />
             } @else {
-              <app-ranking-tabla-staff [vista]="v" (seleccionar)="seleccion.set($event)" />
+              <app-ranking-table-staff [view]="v" (select)="selection.set($event)" />
             }
           } @else {
             <p
@@ -77,13 +77,13 @@ import { RankingDetalle } from './ranking-detalle';
 
         <footer class="rk-deck">
           <span class="rk-joystick" aria-hidden="true"></span>
-          @if (!seleccion() && vistaAlumnoConYo(); as yo) {
+          @if (!selection() && viewStudentWithYo(); as yo) {
             <button
               class="rk-deck__text rk-deck__text--btn rk-neon-success"
-              (click)="irAMiPuesto()"
+              (click)="scrollToMyRow()"
               title="Ir a tu fila en la lista"
             >
-              &#9654; IR A TU POSICIÓN · {{ pad(yo.posicion) }}/{{ totalInscriptos() }}
+              &#9654; IR A TU POSICIÓN · {{ pad(yo.position) }}/{{ totalEnrolled() }}
             </button>
           } @else {
             <span class="rk-deck__text rk-neon-success">INSERT COIN · PRESS START</span>
@@ -92,7 +92,7 @@ import { RankingDetalle } from './ranking-detalle';
             <span class="rk-btn-round rk-btn-round--a" aria-hidden="true"></span>
             <button
               class="rk-btn-round rk-btn-round--b"
-              (click)="cerrar.emit()"
+              (click)="close.emit()"
               aria-label="Cerrar"
               title="Cerrar"
             ></button>
@@ -118,44 +118,44 @@ import { RankingDetalle } from './ranking-detalle';
   `,
 })
 export class RankingPanel {
-  readonly cerrar = output<void>();
+  readonly close = output<void>();
 
   private readonly data = inject(RankingDataPort);
 
-  protected readonly vista = toSignal(this.data.getRanking(CURSO_SEED_ID));
-  protected readonly cargando = computed(() => this.vista() === undefined);
-  protected readonly seleccion = signal<FilaRanking | FilaRankingAnon | null>(null);
+  protected readonly view = toSignal(this.data.getRanking(COURSE_SEED_ID));
+  protected readonly loading = computed(() => this.view() === undefined);
+  protected readonly selection = signal<RankingRow | RankingAnonRow | null>(null);
 
-  /** Fila propia del alumno si la sesión es ALUMNO y está en la cohorte; si no, `null`. */
-  protected readonly vistaAlumnoConYo = computed(() => {
-    const v = this.vista();
-    return v && v.rol === 'ALUMNO' ? v.yo : null;
+  /** The student's own row if the session is ALUMNO and is in the cohort; otherwise `null`. */
+  protected readonly viewStudentWithYo = computed(() => {
+    const v = this.view();
+    return v && v.role === 'ALUMNO' ? v.yo : null;
   });
-  protected readonly totalInscriptos = computed(() => this.vista()?.totalInscriptos ?? 0);
+  protected readonly totalEnrolled = computed(() => this.view()?.totalEnrolled ?? 0);
 
   protected pad(n: number): string {
     return String(n).padStart(2, '0');
   }
 
-  /** Lleva el scroll de la pantalla a la fila propia del alumno (id `rk-yo-row`). */
-  protected irAMiPuesto(): void {
+  /** Scrolls the screen to the student's own row (id `rk-yo-row`). */
+  protected scrollToMyRow(): void {
     const ir = () =>
       document.getElementById('rk-yo-row')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    if (this.seleccion()) {
-      this.seleccion.set(null); // volver a la tabla si veníamos del detalle
+    if (this.selection()) {
+      this.selection.set(null); // go back to the table if we came from the detail
       setTimeout(ir, 60);
     } else {
       ir();
     }
   }
 
-  /** Escape: desde el detalle vuelve a la tabla; desde la tabla cierra. */
+  /** Escape: from the detail it goes back to the table; from the table it closes. */
   @HostListener('document:keydown.escape')
   protected onEscape(): void {
-    if (this.seleccion()) {
-      this.seleccion.set(null);
+    if (this.selection()) {
+      this.selection.set(null);
     } else {
-      this.cerrar.emit();
+      this.close.emit();
     }
   }
 }

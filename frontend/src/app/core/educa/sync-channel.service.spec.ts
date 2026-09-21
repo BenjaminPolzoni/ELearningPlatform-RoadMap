@@ -13,11 +13,11 @@ describe('SyncChannelService', () => {
     service.destroy();
   });
 
-  it('se crea correctamente', () => {
+  it('is created correctly', () => {
     expect(service).toBeTruthy();
   });
 
-  it('permite emitir mensajes por el canal sin lanzar excepciones', () => {
+  it('allows emitting messages through the channel without throwing exceptions', () => {
     const msg: SyncMessage = {
       type: 'course_updated',
       courseId: 'curso-123',

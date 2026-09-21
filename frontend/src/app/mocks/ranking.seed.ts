@@ -1,220 +1,220 @@
-// Fixture de la cohorte para el ranking (Fases 0-2). Se arma sobre `alumnosSeed()` para
-// que los 12 alumnos, sus nombres y legajos sean LOS MISMOS que ve el resto de la app
+// Cohort fixture for the ranking (Phases 0-2). It is built on top of `studentsSeed()` so
+// that the 12 students, their names and file numbers are THE SAME ones the rest of the app sees
 // (02-modelo-de-datos.md §"El seed no es descartable: es el fixture con el que se prueba
-// el ranking"). Números fijos y deterministas — el ranking no debe "bailar" entre cargas.
+// el ranking"). Fixed and deterministic numbers — the ranking must not "dance" between loads.
 //
-// AVATAR: mismo `AvatarConfig` que usa el resto de la plataforma (HUD, mapa, "Mi
-// personaje"), no una imagen aparte. El alumno logueado ve su avatar real (AvatarService);
-// el resto de la cohorte recibe una combinación determinística por alumno — nunca cambia
-// entre cargas y nunca dos alumnos comparten exactamente el mismo look.
+// AVATAR: same `AvatarConfig` used by the rest of the platform (HUD, map, "My
+// character"), not a separate image. The logged-in student sees their real avatar (AvatarService);
+// the rest of the cohort gets a deterministic combination per student — it never changes
+// between loads and no two students ever share exactly the same look.
 
-import { armarAvatar, AvatarConfig } from '../core/avatar/avatar.models';
-import { FilaRanking } from '../core/data/ranking.models';
-import { ordenarCohorte, percentilDe, zonaDe } from '../domain/ranking/ranking.reglas';
-import { alumnosSeed } from './seed';
+import { assembleAvatar, AvatarConfig } from '../core/avatar/avatar.models';
+import { RankingRow } from '../core/data/ranking.models';
+import { sortCohort, percentileOf, zoneOf } from '../domain/ranking/ranking.rules';
+import { studentsSeed } from './seed';
 
-/** Alumno logueado en el mock (coincide con `features/alumno/mapa.ts`). */
-export const ALUMNO_ACTUAL_ID = 'alu-01';
+/** Logged-in student in the mock (matches `features/student/map.ts`). */
+export const CURRENT_STUDENT_ID = 'alu-01';
 
-/** Combinación de avatar determinística por `seed` — mismo catálogo que el editor de avatar. */
+/** Deterministic avatar combination by `seed` — same catalog as the avatar editor. */
 export function avatarConfigMock(seed: string): AvatarConfig {
-  // Un hash por campo: con 12 campos, repartir los 32 bits de un único hash a 3 bits por
-  // campo ya no alcanza (los últimos campos saldrían siempre del mismo resto).
+  // One hash per field: with 12 fields, splitting the 32 bits of a single hash at 3 bits per
+  // field is no longer enough (the last fields would always come out of the same remainder).
   const hash = (s: string): number => {
     let h = 0;
     for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
     return h;
   };
-  return armarAvatar((campo, opciones) => opciones[hash(`${seed}:${campo}`) % opciones.length].id);
+  return assembleAvatar((field, options) => options[hash(`${seed}:${field}`) % options.length].id);
 }
 
 /**
- * Datos crudos por alumno (12 filas). Pensado para ejercitar las reglas:
- *  - alu-02 lidera limpio → candidato a promoción (RF-RNK-05).
- *  - alu-03 está en zona alta pero con una vida perdida → NO candidato.
- *  - alu-01 (el usuario logueado) va a mitad de tabla.
- *  - los últimos arrastran obligatorios sin cerrar → riesgo de regularidad (RF-RNK-06).
+ * Raw data per student (12 rows). Designed to exercise the rules:
+ *  - alu-02 leads cleanly → promotion candidate (RF-RNK-05).
+ *  - alu-03 is in the high zone but with one lost life → NOT a candidate.
+ *  - alu-01 (the logged-in user) is mid-table.
+ *  - the last ones carry unfinished mandatory items → regularity risk (RF-RNK-06).
  */
-interface Crudo {
+interface Raw {
   id: string;
   xpTotal: number;
-  nivelNodo: number;
-  insignias: number;
-  vidas: number;
-  monedas: number;
-  vidasPerdidasHistorico: number;
-  ejerciciosCompletados: number;
-  obligatoriosAprobadosPct: number;
+  nodeLevel: number;
+  badges: number;
+  lives: number;
+  coins: number;
+  lostLives: number;
+  completedExercises: number;
+  mandatoryPassedPct: number;
 }
 
-const CRUDOS: Crudo[] = [
+const RAW: Raw[] = [
   {
     id: 'alu-02',
     xpTotal: 4820,
-    nivelNodo: 18,
-    insignias: 9,
-    vidas: 3,
-    monedas: 5400,
-    vidasPerdidasHistorico: 0,
-    ejerciciosCompletados: 46,
-    obligatoriosAprobadosPct: 100,
+    nodeLevel: 18,
+    badges: 9,
+    lives: 3,
+    coins: 5400,
+    lostLives: 0,
+    completedExercises: 46,
+    mandatoryPassedPct: 100,
   },
   {
     id: 'alu-05',
     xpTotal: 4310,
-    nivelNodo: 16,
-    insignias: 7,
-    vidas: 3,
-    monedas: 4700,
-    vidasPerdidasHistorico: 0,
-    ejerciciosCompletados: 41,
-    obligatoriosAprobadosPct: 100,
+    nodeLevel: 16,
+    badges: 7,
+    lives: 3,
+    coins: 4700,
+    lostLives: 0,
+    completedExercises: 41,
+    mandatoryPassedPct: 100,
   },
   {
     id: 'alu-03',
     xpTotal: 4180,
-    nivelNodo: 16,
-    insignias: 8,
-    vidas: 2,
-    monedas: 4300,
-    vidasPerdidasHistorico: 1,
-    ejerciciosCompletados: 40,
-    obligatoriosAprobadosPct: 95,
+    nodeLevel: 16,
+    badges: 8,
+    lives: 2,
+    coins: 4300,
+    lostLives: 1,
+    completedExercises: 40,
+    mandatoryPassedPct: 95,
   },
   {
     id: 'alu-09',
     xpTotal: 3600,
-    nivelNodo: 14,
-    insignias: 6,
-    vidas: 3,
-    monedas: 3800,
-    vidasPerdidasHistorico: 0,
-    ejerciciosCompletados: 35,
-    obligatoriosAprobadosPct: 92,
+    nodeLevel: 14,
+    badges: 6,
+    lives: 3,
+    coins: 3800,
+    lostLives: 0,
+    completedExercises: 35,
+    mandatoryPassedPct: 92,
   },
   {
     id: 'alu-07',
     xpTotal: 3255,
-    nivelNodo: 13,
-    insignias: 5,
-    vidas: 2,
-    monedas: 3300,
-    vidasPerdidasHistorico: 1,
-    ejerciciosCompletados: 32,
-    obligatoriosAprobadosPct: 88,
+    nodeLevel: 13,
+    badges: 5,
+    lives: 2,
+    coins: 3300,
+    lostLives: 1,
+    completedExercises: 32,
+    mandatoryPassedPct: 88,
   },
   {
     id: 'alu-01',
     xpTotal: 2980,
-    nivelNodo: 12,
-    insignias: 5,
-    vidas: 3,
-    monedas: 3050,
-    vidasPerdidasHistorico: 0,
-    ejerciciosCompletados: 29,
-    obligatoriosAprobadosPct: 84,
+    nodeLevel: 12,
+    badges: 5,
+    lives: 3,
+    coins: 3050,
+    lostLives: 0,
+    completedExercises: 29,
+    mandatoryPassedPct: 84,
   },
   {
     id: 'alu-11',
     xpTotal: 2740,
-    nivelNodo: 11,
-    insignias: 4,
-    vidas: 2,
-    monedas: 2600,
-    vidasPerdidasHistorico: 1,
-    ejerciciosCompletados: 27,
-    obligatoriosAprobadosPct: 80,
+    nodeLevel: 11,
+    badges: 4,
+    lives: 2,
+    coins: 2600,
+    lostLives: 1,
+    completedExercises: 27,
+    mandatoryPassedPct: 80,
   },
   {
     id: 'alu-04',
     xpTotal: 2390,
-    nivelNodo: 10,
-    insignias: 4,
-    vidas: 2,
-    monedas: 2200,
-    vidasPerdidasHistorico: 2,
-    ejerciciosCompletados: 24,
-    obligatoriosAprobadosPct: 72,
+    nodeLevel: 10,
+    badges: 4,
+    lives: 2,
+    coins: 2200,
+    lostLives: 2,
+    completedExercises: 24,
+    mandatoryPassedPct: 72,
   },
   {
     id: 'alu-08',
     xpTotal: 2015,
-    nivelNodo: 9,
-    insignias: 3,
-    vidas: 1,
-    monedas: 1750,
-    vidasPerdidasHistorico: 2,
-    ejerciciosCompletados: 20,
-    obligatoriosAprobadosPct: 65,
+    nodeLevel: 9,
+    badges: 3,
+    lives: 1,
+    coins: 1750,
+    lostLives: 2,
+    completedExercises: 20,
+    mandatoryPassedPct: 65,
   },
   {
     id: 'alu-12',
     xpTotal: 1580,
-    nivelNodo: 7,
-    insignias: 2,
-    vidas: 1,
-    monedas: 1200,
-    vidasPerdidasHistorico: 3,
-    ejerciciosCompletados: 16,
-    obligatoriosAprobadosPct: 55,
+    nodeLevel: 7,
+    badges: 2,
+    lives: 1,
+    coins: 1200,
+    lostLives: 3,
+    completedExercises: 16,
+    mandatoryPassedPct: 55,
   },
   {
     id: 'alu-06',
     xpTotal: 1240,
-    nivelNodo: 6,
-    insignias: 2,
-    vidas: 1,
-    monedas: 900,
-    vidasPerdidasHistorico: 3,
-    ejerciciosCompletados: 12,
-    obligatoriosAprobadosPct: 48,
+    nodeLevel: 6,
+    badges: 2,
+    lives: 1,
+    coins: 900,
+    lostLives: 3,
+    completedExercises: 12,
+    mandatoryPassedPct: 48,
   },
   {
     id: 'alu-10',
     xpTotal: 820,
-    nivelNodo: 4,
-    insignias: 1,
-    vidas: 0,
-    monedas: 400,
-    vidasPerdidasHistorico: 3,
-    ejerciciosCompletados: 8,
-    obligatoriosAprobadosPct: 33,
+    nodeLevel: 4,
+    badges: 1,
+    lives: 0,
+    coins: 400,
+    lostLives: 3,
+    completedExercises: 8,
+    mandatoryPassedPct: 33,
   },
 ];
 
 /**
- * Cohorte completa, YA ordenada y con `posicion` / `percentil` / `zona` resueltos por las
- * reglas de dominio. Es lo que el BFF entregaría consolidado; el adapter la recorta por rol.
+ * Full cohort, ALREADY sorted and with `position` / `percentile` / `zone` resolved by the
+ * domain rules. It is what the BFF would deliver consolidated; the adapter trims it by role.
  */
-export function cohorteMock(): FilaRanking[] {
-  const alumnos = new Map(alumnosSeed().map((a) => [a.id, a]));
-  const total = CRUDOS.length;
+export function cohortMock(): RankingRow[] {
+  const students = new Map(studentsSeed().map((a) => [a.id, a]));
+  const total = RAW.length;
 
-  const sinPosicion: FilaRanking[] = CRUDOS.map((c) => {
-    const a = alumnos.get(c.id)!;
+  const withoutPosition: RankingRow[] = RAW.map((c) => {
+    const a = students.get(c.id)!;
     return {
-      alumnoId: a.id,
-      posicion: 0, // lo fija ordenarCohorte
-      nombre: a.nombre,
-      apellido: a.apellido,
-      legajo: a.legajo,
+      studentId: a.id,
+      position: 0, // set by sortCohort
+      name: a.name,
+      lastName: a.lastName,
+      fileNumber: a.fileNumber,
       avatar: avatarConfigMock(a.id),
       xpTotal: c.xpTotal,
-      nivelNodo: c.nivelNodo,
-      percentil: 0,
-      zona: 'ninguna',
-      insignias: c.insignias,
-      vidas: c.vidas,
-      monedas: c.monedas,
-      vidasPerdidasHistorico: c.vidasPerdidasHistorico,
-      ejerciciosCompletados: c.ejerciciosCompletados,
-      obligatoriosAprobadosPct: c.obligatoriosAprobadosPct,
+      nodeLevel: c.nodeLevel,
+      percentile: 0,
+      zone: 'ninguna',
+      badges: c.badges,
+      lives: c.lives,
+      coins: c.coins,
+      lostLives: c.lostLives,
+      completedExercises: c.completedExercises,
+      mandatoryPassedPct: c.mandatoryPassedPct,
     };
   });
 
-  return ordenarCohorte(sinPosicion).map((fila) => ({
-    ...fila,
-    percentil: percentilDe(fila.posicion, total),
-    zona: zonaDe(fila.posicion, total),
+  return sortCohort(withoutPosition).map((row) => ({
+    ...row,
+    percentile: percentileOf(row.position, total),
+    zone: zoneOf(row.position, total),
   }));
 }

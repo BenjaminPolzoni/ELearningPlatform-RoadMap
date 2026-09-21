@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RoadmapStore } from '../../core/data/roadmap.store';
-import { Actividad, TipoNodo, Unidad } from '../../core/data/roadmap.models';
+import { Activity, NodeType, Section } from '../../core/data/roadmap.models';
 
 const VIEW_W = 420;
 const NODE_W = 260;
@@ -9,7 +9,7 @@ const GAP = 40;
 const PAD_Y = 28;
 const BTN = 22;
 
-const GLIFO: Record<TipoNodo, string> = {
+const GLYPH: Record<NodeType, string> = {
   teoria: '▤',
   'desafio-teorico': '◇',
   'desafio-practico': '◆',
@@ -17,7 +17,7 @@ const GLIFO: Record<TipoNodo, string> = {
   hito: '❖',
 };
 
-const ETIQUETA_TIPO: Record<TipoNodo, string> = {
+const TYPE_LABEL: Record<NodeType, string> = {
   teoria: 'Contenido teórico',
   'desafio-teorico': 'Desafío teórico',
   'desafio-practico': 'Desafío práctico',
@@ -25,24 +25,24 @@ const ETIQUETA_TIPO: Record<TipoNodo, string> = {
   hito: 'Hito',
 };
 
-interface NodoFila {
-  a: Actividad;
+interface NodeRow {
+  a: Activity;
   y: number;
-  primero: boolean;
-  ultimo: boolean;
+  first: boolean;
+  last: boolean;
 }
 
 /**
- * Vista previa del camino de una unidad: los desafíos en el mismo orden en que los recorre
- * el alumno — de ABAJO hacia arriba, como el mapa vertical real (unidad-mapa.ts): el primer
- * desafío queda al pie y se va subiendo hacia la meta. Nada de posiciones libres ni
- * conexiones de prerequisito dibujadas a mano (eso se sacó, confundía más de lo que
- * ayudaba). Lo único que el profesor puede cambiar acá es el orden, con ▲▼ — mismo
- * `moverActividad` que ya usan las flechas ↑ ↓ de la lista de "Contenido"
- * (unidad-editor.ts), nada más que con una vista de camino en vez de una lista plana.
+ * Preview of a section's path: the challenges in the same order the student goes through
+ * them — from BOTTOM to TOP, like the real vertical map (section-map.ts): the first
+ * challenge sits at the foot and it climbs toward the goal. No free positions nor
+ * hand-drawn prerequisite connections (that was removed, it confused more than it
+ * helped). The only thing the teacher can change here is the order, with ▲▼ — the same
+ * `moveActivity` already used by the ↑ ↓ arrows of the "Content" list
+ * (section-editor.ts), only with a path view instead of a flat list.
  */
 @Component({
-  selector: 'app-nodo-canvas',
+  selector: 'app-node-canvas',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   styles: `
@@ -57,12 +57,12 @@ interface NodoFila {
 
     <div class="chaflan overflow-auto border-2 border-base-300 bg-base-100">
       <svg
-        [attr.viewBox]="'0 0 ' + VIEW_W + ' ' + alto()"
+        [attr.viewBox]="'0 0 ' + VIEW_W + ' ' + height()"
         class="block mx-auto"
         [style.width.px]="VIEW_W"
-        [style.height.px]="alto()"
+        [style.height.px]="height()"
         role="img"
-        [attr.aria-label]="'Camino de la unidad ' + unidad().nombre + ', ' + filas().length + ' desafíos en orden'"
+        [attr.aria-label]="'Camino de la unidad ' + section().name + ', ' + rows().length + ' desafíos en orden'"
       >
         <defs>
           <marker id="nc-flecha" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -70,8 +70,8 @@ interface NodoFila {
           </marker>
         </defs>
 
-        <!-- camino: una flecha recta de cada desafío al siguiente, apuntando hacia arriba -->
-        @for (fl of flechas(); track $index) {
+        <!-- path: a straight arrow from each challenge to the next, pointing upward -->
+        @for (fl of arrows(); track $index) {
           <line
             [attr.x1]="VIEW_W / 2" [attr.y1]="fl.y1"
             [attr.x2]="VIEW_W / 2" [attr.y2]="fl.y2"
@@ -80,39 +80,39 @@ interface NodoFila {
           />
         }
 
-        <!-- desafíos, en orden -->
-        @for (f of filas(); track f.a.id) {
-          <g [attr.aria-label]="etiquetaNodo(f.a)">
+        <!-- challenges, in order -->
+        @for (f of rows(); track f.a.id) {
+          <g [attr.aria-label]="nodeLabel(f.a)">
             <rect
               [attr.x]="VIEW_W / 2 - NODE_W / 2" [attr.y]="f.y"
               [attr.width]="NODE_W" [attr.height]="NODE_H" rx="4"
               fill="var(--color-base-200)"
-              [attr.stroke]="colorTipo(f.a.tipo)"
+              [attr.stroke]="typeColor(f.a.type)"
               stroke-width="2"
             />
-            <text [attr.x]="VIEW_W / 2 - NODE_W / 2 + 16" [attr.y]="f.y + NODE_H / 2 + 5" font-size="16" [attr.fill]="colorTipo(f.a.tipo)">
-              {{ GLIFO[f.a.tipo] }}
+            <text [attr.x]="VIEW_W / 2 - NODE_W / 2 + 16" [attr.y]="f.y + NODE_H / 2 + 5" font-size="16" [attr.fill]="typeColor(f.a.type)">
+              {{ GLYPH[f.a.type] }}
             </text>
             <text [attr.x]="VIEW_W / 2 - NODE_W / 2 + 40" [attr.y]="f.y + NODE_H / 2 + 4" font-size="11" fill="var(--color-base-content)">
-              {{ acortar(f.a.nombre) }}
-              <title>{{ f.a.nombre }}</title>
+              {{ truncate(f.a.name) }}
+              <title>{{ f.a.name }}</title>
             </text>
-            @if (f.a.esObligatorio) {
+            @if (f.a.isMandatory) {
               <circle [attr.cx]="VIEW_W / 2 + NODE_W / 2 - 10" [attr.cy]="f.y + 10" r="4" fill="var(--color-primary)" />
             }
           </g>
 
-          <!-- reordenar: ▲ lo acerca a la meta (sube en el camino), ▼ lo acerca al inicio
-               (baja) — como el primer desafío queda al pie, subir en el camino es "abajo"
-               para moverActividad (índice más alto) y bajar es "arriba" (índice más bajo). -->
+          <!-- reorder: ▲ brings it closer to the goal (goes up the path), ▼ brings it closer to the start
+               (goes down) — since the first challenge is at the foot, going up the path is "down"
+               for moveActivity (higher index) and going down is "up" (lower index). -->
           <g
             role="button" tabindex="0"
-            [attr.aria-label]="'subir ' + f.a.nombre + ' en el camino'"
-            [attr.opacity]="f.ultimo ? 0.3 : 1"
+            [attr.aria-label]="'subir ' + f.a.name + ' en el camino'"
+            [attr.opacity]="f.last ? 0.3 : 1"
             class="cursor-pointer"
-            (click)="mover(f.a.id, 'abajo')"
-            (keydown.enter)="mover(f.a.id, 'abajo')"
-            (keydown.space)="mover(f.a.id, 'abajo'); $event.preventDefault()"
+            (click)="move(f.a.id, 'abajo')"
+            (keydown.enter)="move(f.a.id, 'abajo')"
+            (keydown.space)="move(f.a.id, 'abajo'); $event.preventDefault()"
           >
             <rect
               [attr.x]="VIEW_W / 2 + NODE_W / 2 + 12" [attr.y]="f.y + NODE_H / 2 - BTN - 2"
@@ -126,12 +126,12 @@ interface NodoFila {
           </g>
           <g
             role="button" tabindex="0"
-            [attr.aria-label]="'bajar ' + f.a.nombre + ' en el camino'"
-            [attr.opacity]="f.primero ? 0.3 : 1"
+            [attr.aria-label]="'bajar ' + f.a.name + ' en el camino'"
+            [attr.opacity]="f.first ? 0.3 : 1"
             class="cursor-pointer"
-            (click)="mover(f.a.id, 'arriba')"
-            (keydown.enter)="mover(f.a.id, 'arriba')"
-            (keydown.space)="mover(f.a.id, 'arriba'); $event.preventDefault()"
+            (click)="move(f.a.id, 'arriba')"
+            (keydown.enter)="move(f.a.id, 'arriba')"
+            (keydown.space)="move(f.a.id, 'arriba'); $event.preventDefault()"
           >
             <rect
               [attr.x]="VIEW_W / 2 + NODE_W / 2 + 12" [attr.y]="f.y + NODE_H / 2 + 2"
@@ -148,8 +148,8 @@ interface NodoFila {
     </div>
   `,
 })
-export class NodoCanvas {
-  readonly unidad = input.required<Unidad>();
+export class NodeCanvas {
+  readonly section = input.required<Section>();
 
   private readonly store = inject(RoadmapStore);
 
@@ -158,29 +158,29 @@ export class NodoCanvas {
   protected readonly NODE_H = NODE_H;
   protected readonly GAP = GAP;
   protected readonly BTN = BTN;
-  protected readonly GLIFO = GLIFO;
+  protected readonly GLYPH = GLYPH;
 
-  // Fila 0 (primer desafío creado) va al pie del camino — mismo criterio que
-  // unidad-mapa.ts (el ascenso empieza abajo y sube hacia la meta).
-  protected readonly filas = computed<NodoFila[]>(() => {
-    const actividades = this.unidad().actividades;
-    const n = actividades.length;
-    return actividades.map((a, i) => ({
+  // Item 0 (first challenge created) goes at the foot of the path — same criterion as
+  // section-map.ts (the ascent starts at the bottom and climbs toward the goal).
+  protected readonly rows = computed<NodeRow[]>(() => {
+    const activities = this.section().activities;
+    const n = activities.length;
+    return activities.map((a, i) => ({
       a,
       y: PAD_Y + (n - 1 - i) * (NODE_H + GAP),
-      primero: i === 0,
-      ultimo: i === n - 1,
+      first: i === 0,
+      last: i === n - 1,
     }));
   });
 
-  protected readonly alto = computed(() => {
-    const n = this.filas().length;
+  protected readonly height = computed(() => {
+    const n = this.rows().length;
     return n === 0 ? PAD_Y * 2 + NODE_H : PAD_Y * 2 + n * NODE_H + (n - 1) * GAP;
   });
 
-  /** Un tramo de flecha entre cada desafío y el siguiente, subiendo (y2 < y1). */
-  protected readonly flechas = computed(() => {
-    const fs = this.filas();
+  /** One arrow segment between each challenge and the next, going up (y2 < y1). */
+  protected readonly arrows = computed(() => {
+    const fs = this.rows();
     const out: { y1: number; y2: number }[] = [];
     for (let i = 0; i < fs.length - 1; i++) {
       out.push({ y1: fs[i].y, y2: fs[i + 1].y + NODE_H });
@@ -188,19 +188,19 @@ export class NodoCanvas {
     return out;
   });
 
-  protected mover(actividadId: string, direccion: 'arriba' | 'abajo'): void {
-    this.store.moverActividad(this.unidad().id, actividadId, direccion);
+  protected move(activityId: string, direction: 'arriba' | 'abajo'): void {
+    this.store.moveActivity(this.section().id, activityId, direction);
   }
 
-  protected acortar(nombre: string): string {
-    return nombre.length > 22 ? `${nombre.slice(0, 21)}…` : nombre;
+  protected truncate(name: string): string {
+    return name.length > 22 ? `${name.slice(0, 21)}…` : name;
   }
 
-  protected etiquetaNodo(a: Actividad): string {
-    return `${a.nombre}, ${ETIQUETA_TIPO[a.tipo]}${a.esObligatorio ? ', obligatorio' : ''}`;
+  protected nodeLabel(a: Activity): string {
+    return `${a.name}, ${TYPE_LABEL[a.type]}${a.isMandatory ? ', obligatorio' : ''}`;
   }
 
-  protected colorTipo(t: TipoNodo): string {
+  protected typeColor(t: NodeType): string {
     switch (t) {
       case 'desafio-practico':
         return 'var(--color-primary)';

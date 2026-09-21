@@ -5,19 +5,19 @@ import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { Biome } from '../world-gen';
 import { TabletopBuilder } from './tabletop-props';
 
-export interface ArchipielagoUnidad {
+export interface ArchipelagoSection {
   id: string;
-  titulo: string;
-  bioma?: Biome;
-  anexos: number;
-  visitadas: number;
-  completa: boolean;
+  title: string;
+  biome?: Biome;
+  attachments: number;
+  visited: number;
+  complete: boolean;
 }
 
 export interface Island3dNode {
   id: string;
-  titulo: string;
-  bioma: Biome;
+  title: string;
+  biome: Biome;
   x: number;
   z: number;
   radius: number;
@@ -25,13 +25,13 @@ export interface Island3dNode {
   dockZ: number;
   dockHeading: number;
   group: THREE.Group;
-  completa: boolean;
+  complete: boolean;
 }
 
-export interface ArchipielagoCallbacks {
-  onSelect: (unidadId: string) => void;
-  onDock: (unidadId: string) => void;
-  onHover?: (unidadId: string | null, screenX: number, screenY: number) => void;
+export interface ArchipelagoCallbacks {
+  onSelect: (sectionId: string) => void;
+  onDock: (sectionId: string) => void;
+  onHover?: (sectionId: string | null, screenX: number, screenY: number) => void;
 }
 
 interface HexTileDef {
@@ -91,16 +91,16 @@ interface Whale {
 }
 
 @Injectable({ providedIn: 'root' })
-export class Archipielago3dService {
+export class Archipelago3dService {
   private canvas!: HTMLCanvasElement;
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
   private animId = 0;
   private running = false;
-  private callbacks?: ArchipielagoCallbacks;
+  private callbacks?: ArchipelagoCallbacks;
 
-  // Entorno: Mesa y Tablero de Mapa Náutico
+  // Environment: Table and Board of the Nautical Map
   private tableMesh!: THREE.Mesh;
   private mapBoardGroup!: THREE.Group;
   private oceanMesh!: THREE.Mesh;
@@ -110,7 +110,7 @@ export class Archipielago3dService {
   private windmills: { blades: THREE.Group }[] = [];
   private volcanoLights: { light: THREE.PointLight; baseIntensity: number }[] = [];
 
-  // Neblina de guerra / bruma en los bordes del tablero (estilo mapa de hexágonos)
+  // Fog of war / haze on the board's edges (hexagon map style)
   private fogPuffs: {
     sprite: THREE.Sprite;
     baseX: number;
@@ -121,23 +121,23 @@ export class Archipielago3dService {
     baseScale: number;
   }[] = [];
 
-  // Texturas y formas cacheadas
+  // Cached textures and shapes
   private static parchmentTex: THREE.CanvasTexture | null = null;
   private static cachedFogTex: THREE.Texture | null = null;
   private static hexShapeCache = new Map<number, THREE.Shape>();
 
-  // Circuitos oceánicos amplios para delfines que patrullan las 4 esquinas del mapa
+  // Wide ocean circuits for dolphins patrolling the 4 corners of the map
   private static dolphinCurve1 = new THREE.CatmullRomCurve3(
     [
-      new THREE.Vector3(0, 0, -28),    // Paso norte
-      new THREE.Vector3(26, 0, -28),   // Hacia el noreste
-      new THREE.Vector3(42, 0, -25),   // Esquina 1: Noreste (superior derecha)
-      new THREE.Vector3(44, 0, 0),     // Costa este
-      new THREE.Vector3(42, 0, 25),    // Esquina 2: Sureste (inferior derecha)
-      new THREE.Vector3(24, 0, 28),    // Bahía sureste
-      new THREE.Vector3(0, 0, 28),     // Paso sur
-      new THREE.Vector3(0, 0, 6),      // Entrada a la fosa central sur
-      new THREE.Vector3(-3, 0, -8),    // Fosa central norte
+      new THREE.Vector3(0, 0, -28),    // North pass
+      new THREE.Vector3(26, 0, -28),   // Toward the northeast
+      new THREE.Vector3(42, 0, -25),   // Corner 1: Northeast (top right)
+      new THREE.Vector3(44, 0, 0),     // East coast
+      new THREE.Vector3(42, 0, 25),    // Corner 2: Southeast (bottom right)
+      new THREE.Vector3(24, 0, 28),    // Southeast bay
+      new THREE.Vector3(0, 0, 28),     // South pass
+      new THREE.Vector3(0, 0, 6),      // Entrance to the central south trench
+      new THREE.Vector3(-3, 0, -8),    // Central north trench
     ],
     true,
     'centripetal',
@@ -145,34 +145,34 @@ export class Archipielago3dService {
 
   private static dolphinCurve2 = new THREE.CatmullRomCurve3(
     [
-      new THREE.Vector3(0, 0, 28),     // Paso sur
-      new THREE.Vector3(-26, 0, 28),   // Hacia el suroeste
-      new THREE.Vector3(-42, 0, 25),   // Esquina 3: Suroeste (inferior izquierda)
-      new THREE.Vector3(-44, 0, 0),    // Costa oeste
-      new THREE.Vector3(-42, 0, -25),  // Esquina 4: Noroeste (superior izquierda)
-      new THREE.Vector3(-24, 0, -28),  // Bahía noroeste
-      new THREE.Vector3(0, 0, -28),    // Paso norte
-      new THREE.Vector3(3, 0, -8),     // Fosa central norte
-      new THREE.Vector3(0, 0, 6),      // Fosa central sur
+      new THREE.Vector3(0, 0, 28),     // South pass
+      new THREE.Vector3(-26, 0, 28),   // Toward the southwest
+      new THREE.Vector3(-42, 0, 25),   // Corner 3: Southwest (bottom left)
+      new THREE.Vector3(-44, 0, 0),    // West coast
+      new THREE.Vector3(-42, 0, -25),  // Corner 4: Northwest (top left)
+      new THREE.Vector3(-24, 0, -28),  // Northwest bay
+      new THREE.Vector3(0, 0, -28),    // North pass
+      new THREE.Vector3(3, 0, -8),     // Central north trench
+      new THREE.Vector3(0, 0, 6),      // Central south trench
     ],
     true,
     'centripetal',
   );
 
-  // Volcanes (Asset volcano.glb del mapa hexagonal)
+  // Volcanoes (volcano.glb asset from the hexagonal map)
   private volcanoTemplate: THREE.Group | null = null;
   private volcanoHolders: { holder: THREE.Group; placeholder: THREE.Object3D }[] = [];
 
-  // Islas (Mini-archipiélagos de hexágonos)
+  // Islands (Hexagon mini-archipelagos)
   private islands: Island3dNode[] = [];
   private islandGroups: THREE.Group[] = [];
   private routesGroup!: THREE.Group;
   private currentHoveredId: string | null = null;
 
-  // Colisionadores físicos de islas (evitan que el barco atraviese tierra)
+  // Physical island colliders (prevent the boat from crossing land)
   private islandColliders: IslandCollider[] = [];
 
-  // Fauna Marina y Aérea (Gaviotas, Delfines y Ballena con chorro de agua)
+  // Marine and Aerial Fauna (Seagulls, Dolphins and a Whale with a water spout)
   private wildlifeGroup!: THREE.Group;
   private seagulls: Seagull[] = [];
   private dolphins: Dolphin[] = [];
@@ -181,11 +181,11 @@ export class Archipielago3dService {
   private wildlifeMixers: THREE.AnimationMixer[] = [];
   private gltfLoader = new GLTFLoader();
 
-  // Barco 3D navegable y Estado de Atraque
+  // Navigable 3D boat and Docking State
   private boatGroup!: THREE.Group;
   private boatModel: THREE.Object3D | null = null;
   private boatPlaceholder: THREE.Group | null = null;
-  private boatHeading = 0; // radianes
+  private boatHeading = 0; // radians
   private boatSpeed = 0;
   private boatPos = new THREE.Vector3(0, 0, 0);
   private autoPilotTarget: Island3dNode | null = null;
@@ -195,17 +195,17 @@ export class Archipielago3dService {
   private onDockCallback: (() => void) | null = null;
   private isSailing = false;
 
-  // Marcador náutico de destino (Pin baliza dorada con cristal, sin círculos)
+  // Nautical destination marker (golden beacon pin with crystal, no circles)
   private mouseTarget: THREE.Vector3 | null = null;
   private targetMarker!: THREE.Group;
   private isPointerDown = false;
 
-  // Estela de agua en V estilizada (espuma lineal)
+  // Stylized V-shaped water wake (linear foam)
   private wakeParticles: { mesh: THREE.Mesh; life: number; maxLife: number }[] = [];
   private wakeGroup!: THREE.Group;
   private lastWakeTime = 0;
 
-  // Controles opcionales por teclado
+  // Optional keyboard controls
   private keys = { forward: false, backward: false, left: false, right: false };
 
   // Raycasting
@@ -216,8 +216,8 @@ export class Archipielago3dService {
 
   init(
     canvas: HTMLCanvasElement,
-    unidades: ArchipielagoUnidad[],
-    callbacks: ArchipielagoCallbacks,
+    sections: ArchipelagoSection[],
+    callbacks: ArchipelagoCallbacks,
     initialUnitId?: string,
   ): void {
     this.canvas = canvas;
@@ -248,18 +248,18 @@ export class Archipielago3dService {
     this.isSailing = false;
     this.onDockCallback = null;
 
-    // Escena con tono taberna cálida
+    // Scene with a warm tavern tone
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x1a120b);
     this.scene.fog = new THREE.FogExp2(0x1a120b, 0.005);
 
-    // Cámara Isométrica Diorama enfocando el libro abierto sobre la mesa (Tilt-Shift)
+    // Isometric Diorama Camera focusing on the open book on the table (Tilt-Shift)
     const aspect = canvas.clientWidth / (canvas.clientHeight || 1);
     this.camera = new THREE.PerspectiveCamera(34, aspect, 0.5, 600);
     this.camera.position.set(0, 68, 62);
     this.camera.lookAt(0, 0, 0);
 
-    // Renderer con render pipeline AAA: sRGB + ACESFilmicToneMapping + sombras suaves
+    // Renderer with AAA render pipeline: sRGB + ACESFilmicToneMapping + soft shadows
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
@@ -274,48 +274,48 @@ export class Archipielago3dService {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    // 1. Iluminación cálida de explorador
+    // 1. Warm explorer lighting
     this.setupLighting();
 
-    // 2. Mesa de roble oscuro (Tabletop de madera noble)
+    // 2. Dark oak table (noble wood Tabletop)
     this.setupTable();
 
-    // 3. Tablero del Gran Mapa Náutico sobre la mesa (continuo y sin división central)
+    // 3. Board of the Great Nautical Map on the table (continuous and without a central division)
     this.setupMapBoard();
 
-    // 4. Cuenca oceánica continua que cubre todo el interior del mapa
+    // 4. Continuous ocean basin covering the whole interior of the map
     this.setupPapercraftOcean();
 
-    // 5. Neblina esponjosa volumétrica en los bordes del tablero (como en el mapa hexagonal)
+    // 5. Volumetric fluffy haze on the board's edges (as in the hexagon map)
     this.setupPerimeterFog();
 
-    // 6. Marcador visual náutico de destino (Pin baliza dorada con cristal)
+    // 6. Nautical destination visual marker (golden beacon pin with crystal)
     this.setupTargetMarker();
 
-    // 7. Construcción de mini-islas formadas por racimos de HEXÁGONOS (con muelle)
-    this.buildHexClusterIslands(unidades);
+    // 7. Construction of mini-islands formed by clusters of HEXAGONS (with a pier)
+    this.buildHexClusterIslands(sections);
 
-    // 7.1 Calcular gradiente costero cristalino de la cuenca marina según las islas
+    // 7.1 Compute the crystalline coastal gradient of the sea basin according to the islands
     this.updateOceanBaseCoastalColors();
 
-    // 8. Ruta náutica del tesoro punteada
+    // 8. Dotted nautical treasure route
     this.routesGroup = new THREE.Group();
     this.scene.add(this.routesGroup);
     this.setupTreasureRoutes();
 
-    // 9. Barco 3D navegable (ship-large.glb)
+    // 9. Navigable 3D boat (ship-large.glb)
     this.setupBoat();
 
-    // 10. Fauna marina y aérea (Gaviotas, Delfines y Ballena con chorro de agua)
+    // 10. Marine and aerial fauna (Seagulls, Dolphins and a Whale with a water spout)
     this.setupWildlife();
 
-    // 11. Cargar asset volcano.glb del mapa hexagonal para islas volcánicas
+    // 11. Load the hexagon map's volcano.glb asset for volcanic islands
     this.loadVolcanoModel();
 
     // Listeners
     this.setupEvents();
 
-    // Posicionar el barquito atracado en la isla inicial
+    // Position the little docked boat on the starting island
     const targetIsland =
       this.islands.find((isl) => isl.id === initialUnitId) ?? this.islands[0];
 
@@ -333,24 +333,24 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Consultas de Estado para la UI
+  // State Queries for the UI
   // -------------------------------------------------------------
-  estaAtracadoEn(unidadId: string): boolean {
-    return this.currentDockedId === unidadId && !this.isSailing;
+  isDockedIn(sectionId: string): boolean {
+    return this.currentDockedId === sectionId && !this.isSailing;
   }
 
-  getEstaNavegando(): boolean {
+  getIsNavigating(): boolean {
     return this.isSailing;
   }
 
   /**
-   * Actualiza dinámicamente en caliente las islas y rutas del archipiélago
-   * sin destruir el barco, el agua, la mesa, la fauna o la cámara.
+   * Dynamically updates, live, the archipelago's islands and routes
+   * without destroying the boat, the water, the table, the fauna or the camera.
    */
-  updateUnidades(nuevasUnidades: ArchipielagoUnidad[]): void {
+  updateSections(newSections: ArchipelagoSection[]): void {
     if (!this.running || !this.scene) return;
 
-    // 1. Limpiar grupos de islas existentes y liberar recursos GPU
+    // 1. Clear existing island groups and free GPU resources
     for (const group of this.islandGroups) {
       group.traverse((obj) => {
         if ((obj as THREE.Mesh).isMesh) {
@@ -373,7 +373,7 @@ export class Archipielago3dService {
     this.volcanoLights = [];
     this.volcanoHolders = [];
 
-    // 2. Limpiar rutas del tesoro anteriores
+    // 2. Clear previous treasure routes
     if (this.routesGroup) {
       while (this.routesGroup.children.length > 0) {
         const obj = this.routesGroup.children[0] as THREE.Line;
@@ -387,17 +387,17 @@ export class Archipielago3dService {
       }
     }
 
-    // 3. Reconstruir las mini-islas con la nueva lista de unidades
-    this.buildHexClusterIslands(nuevasUnidades);
+    // 3. Rebuild the mini-islands with the new list of sections
+    this.buildHexClusterIslands(newSections);
 
-    // 4. Actualizar gradiente costero cristalino de la cuenca marina
+    // 4. Update the crystalline coastal gradient of the sea basin
     this.updateOceanBaseCoastalColors();
 
-    // 5. Reconstruir rutas náuticas entre islas
+    // 5. Rebuild nautical routes between islands
     this.setupTreasureRoutes();
 
-    // 6. Si el barco estaba atracado en una isla que aún existe, mantenerlo ahí;
-    // si fue eliminada mientras estaba atracado, transferirlo suavemente a la primera disponible.
+    // 6. If the boat was docked at an island that still exists, keep it there;
+    // if it was removed while docked, smoothly transfer it to the first available one.
     if (this.currentDockedId) {
       const dockedIsland = this.islands.find((isl) => isl.id === this.currentDockedId);
       if (dockedIsland) {
@@ -424,7 +424,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Dinámica de Ondulaciones Marinas Realistas y Cristalinas
+  // Realistic and Crystalline Sea Wave Dynamics
   // -------------------------------------------------------------
   private getWaveCoastalFactor(x: number, z: number): number {
     if (!this.islands || this.islands.length === 0) return 1.0;
@@ -433,8 +433,8 @@ export class Archipielago3dService {
       const d = Math.hypot(x - isl.x, z - isl.z);
       if (d < minIslandDist) minIslandDist = d;
     }
-    // Cerca de islas y muelles (d < 4.8), aguas completamente mansas (factor 0.08)
-    // En mar abierto (d > 9.0), ondulación plena y natural
+    // Near islands and piers (d < 4.8), completely calm waters (factor 0.08)
+    // In open sea (d > 9.0), full natural undulation
     const tDist = Math.max(0, Math.min(1, (minIslandDist - 4.8) / 4.2));
     return 0.08 + 0.92 * (tDist * tDist * (3 - 2 * tDist));
   }
@@ -442,7 +442,7 @@ export class Archipielago3dService {
   private getWaveHeight(x: number, z: number, t: number): number {
     const coastalFactor = this.getWaveCoastalFactor(x, z);
 
-    // 4 trenes de ondas multidireccionales cruzadas (superficie orgánica y fluida)
+    // 4 crossed multidirectional wave trains (organic and fluid surface)
     const psi1 = (-0.7 * x - 0.7 * z) * 0.72 - t * 1.25;
     const w1 = Math.sin(psi1);
 
@@ -465,7 +465,7 @@ export class Archipielago3dService {
   ): { x: number; y: number; z: number; normHeight: number } {
     const coastalFactor = this.getWaveCoastalFactor(origX, origZ);
 
-    // Componentes de oleaje fino y natural sin crestas monstruosas
+    // Fine and natural swell components without monstrous crests
     const d1x = -0.7, d1z = -0.7, k1 = 0.72, w1 = 1.25, a1 = 0.045 * coastalFactor;
     const d2x = 0.8,  d2z = -0.6, k2 = 1.15, w2 = 1.65, a2 = 0.030 * coastalFactor;
     const d3x = -0.3, d3z = 0.95, k3 = 1.85, w3 = 2.40, a3 = 0.018 * coastalFactor;
@@ -476,19 +476,19 @@ export class Archipielago3dService {
     const psi3 = (d3x * origX + d3z * origZ) * k3 - t * w3;
     const psi4 = (d4x * origX + d4z * origZ) * k4 - t * w4;
 
-    const sin1 = Math.sin(psi1), cos1 = Math.cos(psi1);
-    const sin2 = Math.sin(psi2), cos2 = Math.cos(psi2);
-    const sin3 = Math.sin(psi3), cos3 = Math.cos(psi3);
-    const sin4 = Math.sin(psi4), cos4 = Math.cos(psi4);
+    const without1 = Math.sin(psi1), cos1 = Math.cos(psi1);
+    const without2 = Math.sin(psi2), cos2 = Math.cos(psi2);
+    const without3 = Math.sin(psi3), cos3 = Math.cos(psi3);
+    const without4 = Math.sin(psi4), cos4 = Math.cos(psi4);
 
-    // Desplazamiento horizontal sutil que evita pliegues bruscos
+    // Subtle horizontal displacement that avoids abrupt folds
     const q = 0.12;
     const dispX = -q * (d1x * a1 * cos1 + d2x * a2 * cos2 + d3x * a3 * cos3 + d4x * a4 * cos4);
     const dispZ = -q * (d1z * a1 * cos1 + d2z * a2 * cos2 + d3z * a3 * cos3 + d4z * a4 * cos4);
 
-    const height = a1 * sin1 + a2 * sin2 + a3 * sin3 + a4 * sin4;
+    const height = a1 * without1 + a2 * without2 + a3 * without3 + a4 * without4;
 
-    // Altura normalizada (0 en valles profundos, 1 en crestas)
+    // Normalized height (0 in deep troughs, 1 at crests)
     const normHeight = Math.max(0, Math.min(1, (height + 0.08) / 0.16));
 
     return {
@@ -500,7 +500,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Iluminación
+  // Lighting
   // -------------------------------------------------------------
   private setupLighting(): void {
     const ambient = new THREE.AmbientLight(0xfff1e6, 0.82);
@@ -530,7 +530,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Mesa de Madera (Tabletop)
+  // Wooden Table (Tabletop)
   // -------------------------------------------------------------
   private setupTable(): void {
     const tableGeom = new THREE.PlaneGeometry(400, 400);
@@ -550,7 +550,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Textura Procedural de Pergamino Cartográfico
+  // Procedural Cartographic Parchment Texture
   // -------------------------------------------------------------
   private static getParchmentTexture(): THREE.CanvasTexture {
     if (this.parchmentTex) return this.parchmentTex;
@@ -594,7 +594,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Textura Procedural de Neblina Orgánica Esponjosa
+  // Procedural Fluffy Organic Haze Texture
   // -------------------------------------------------------------
   private static getFogTexture(): THREE.Texture {
     if (this.cachedFogTex) return this.cachedFogTex;
@@ -633,7 +633,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Tablero de Gran Mapa Náutico Extendido sobre la Mesa
+  // Extended Great Nautical Map Board over the Table
   // -------------------------------------------------------------
   private setupMapBoard(): void {
     this.mapBoardGroup = new THREE.Group();
@@ -641,7 +641,7 @@ export class Archipielago3dService {
     const mapW = 114;
     const mapD = 82;
 
-    // Marco / base de madera noble del mapa sobre la mesa
+    // Noble wood frame / base of the map on the table
     const frameGeom = new THREE.BoxGeometry(mapW + 3, 0.8, mapD + 3);
     const frameMat = new THREE.MeshStandardMaterial({
       color: 0x2e180d,
@@ -654,7 +654,7 @@ export class Archipielago3dService {
     frame.receiveShadow = true;
     this.mapBoardGroup.add(frame);
 
-    // Cantoneras de latón dorado en las 4 esquinas del mapa
+    // Golden brass corner protectors on the 4 corners of the map
     const cornerMat = new THREE.MeshStandardMaterial({
       color: 0xd4af37,
       roughness: 0.3,
@@ -670,9 +670,9 @@ export class Archipielago3dService {
       }
     }
 
-    // Moldura perimetral continua de pergamino antiguo cartográfico (sin costura central)
+    // Continuous perimeter molding of antique cartographic parchment (no central seam)
     const marginMat = new THREE.MeshStandardMaterial({
-      map: Archipielago3dService.getParchmentTexture(),
+      map: Archipelago3dService.getParchmentTexture(),
       roughness: 0.85,
       flatShading: true,
     });
@@ -691,19 +691,19 @@ export class Archipielago3dService {
       this.mapBoardGroup.add(ms);
     }
 
-    // ¡Sin lomo central ni división en dos páginas! El agua y el mapa se extienden en un tapiz continuo.
+    // No central spine or split into two pages! The water and the map extend in a continuous tapestry.
 
     this.scene.add(this.mapBoardGroup);
   }
 
   // -------------------------------------------------------------
-  // Cuenca de Agua que cubre todo el sector interior del libro
+  // Water Basin covering the whole interior sector of the book
   // -------------------------------------------------------------
   private setupPapercraftOcean(): void {
     const basinW = 104;
     const basinD = 72;
 
-    // Base de fondo marino a Y = 0.02 (bien por debajo del agua y sin planos intermedios que clipeen)
+    // Seabed base at Y = 0.02 (well below the water and without intermediate planes that clip)
     const seabedGeom = new THREE.PlaneGeometry(basinW, basinD);
     seabedGeom.rotateX(-Math.PI / 2);
     const seabedMat = new THREE.MeshStandardMaterial({
@@ -720,7 +720,7 @@ export class Archipielago3dService {
     this.oceanGeom.rotateX(-Math.PI / 2);
     this.oceanOrigPositions = new Float32Array(this.oceanGeom.attributes['position'].array);
 
-    // Inicializar colores base limpios y radiantes (azul cerúleo tropical)
+    // Initialize clean, radiant base colors (tropical cerulean blue)
     const posCount = this.oceanGeom.attributes['position'].count;
     this.oceanBaseColors = new Float32Array(posCount * 3);
     const initialColors = new Float32Array(posCount * 3);
@@ -736,8 +736,8 @@ export class Archipielago3dService {
       vertexColors: true,
       roughness: 0.20,
       metalness: 0.04,
-      flatShading: false, // Sombreado suave y líquido
-      transparent: false, // Superficie nítida, cristalina y limpia sin transparencias turbias
+      flatShading: false, // Soft, liquid shading
+      transparent: false, // Sharp, crystalline and clean surface without murky transparencies
     });
 
     this.oceanMesh = new THREE.Mesh(this.oceanGeom, oceanMat);
@@ -764,7 +764,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Gradiente Costero Cristalino (Lagunas Turquesas y Rompiente Limpia)
+  // Crystalline Coastal Gradient (Turquoise Lagoons and Clean Surf)
   // -------------------------------------------------------------
   private updateOceanBaseCoastalColors(): void {
     if (!this.oceanOrigPositions || !this.oceanBaseColors || !this.oceanGeom) return;
@@ -786,19 +786,19 @@ export class Archipielago3dService {
 
       let r: number, g: number, b: number;
       if (minDist < 0.7) {
-        // Rompiente costera brillante y limpia alrededor de las islas (#cffafe)
+        // Bright, clean coastal breaker around the islands (#cffafe)
         const k = Math.max(0, Math.min(1, minDist / 0.7));
         r = 0.65 - k * 0.45;
         g = 0.92 - k * 0.16;
         b = 0.98 - k * 0.03;
       } else if (minDist < 5.2) {
-        // Laguna tropical cristalina (turquesa caribeño radiante #22d3ee a #38bdf8)
+        // Crystalline tropical lagoon (radiant Caribbean turquoise #22d3ee to #38bdf8)
         const k = (minDist - 0.7) / 4.5;
         r = 0.20 - k * 0.18;
         g = 0.76 - k * 0.24;
         b = 0.95 - k * 0.15;
       } else {
-        // Mar abierto: azul cerúleo mediterráneo puro, cristalino y vibrante (#0284c7)
+        // Open sea: pure Mediterranean cerulean blue, crystalline and vibrant (#0284c7)
         r = 0.02;
         g = 0.52;
         b = 0.80;
@@ -818,10 +818,10 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Neblina Esponjosa y Volumétrica en los Bordes del Tablero
+  // Fluffy and Volumetric Haze on the Board's Edges
   // -------------------------------------------------------------
   private setupPerimeterFog(): void {
-    const tex = Archipielago3dService.getFogTexture();
+    const tex = Archipelago3dService.getFogTexture();
     const perimeterPoints: { x: number; z: number }[] = [];
 
     for (let i = 0; i < 11; i++) {
@@ -876,7 +876,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Marcador náutico de destino (Pin baliza dorada con cristal)
+  // Nautical destination marker (golden beacon pin with crystal)
   // -------------------------------------------------------------
   private setupTargetMarker(): void {
     const markerGroup = new THREE.Group();
@@ -902,7 +902,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Generador de Forma de Hexágono Pointy-Topped (estilo hex-grid)
+  // Pointy-Topped Hexagon Shape Generator (hex-grid style)
   // -------------------------------------------------------------
   private static getHexShape(r: number): THREE.Shape {
     const key = Math.round(r * 100);
@@ -923,10 +923,10 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Construcción de Mini-Islas formadas por racimos de HEXÁGONOS
+  // Construction of Mini-Islands formed by clusters of HEXAGONS
   // -------------------------------------------------------------
-  private buildHexClusterIslands(unidades: ArchipielagoUnidad[]): void {
-    const n = Math.max(1, unidades.length);
+  private buildHexClusterIslands(sections: ArchipelagoSection[]): void {
+    const n = Math.max(1, sections.length);
     const defaultPositions: THREE.Vector3[] = [];
 
     if (n === 1) {
@@ -971,7 +971,7 @@ export class Archipielago3dService {
       }
     }
 
-    // Separación por relajación física entre islas
+    // Separation by physical relaxation between islands
     const islandRadius = 4.8;
     for (let iter = 0; iter < 16; iter++) {
       for (let a = 0; a < n; a++) {
@@ -979,7 +979,7 @@ export class Archipielago3dService {
           const dx = defaultPositions[b].x - defaultPositions[a].x;
           const dz = defaultPositions[b].z - defaultPositions[a].z;
           const dist = Math.hypot(dx, dz);
-          const minRequired = islandRadius * 2 + 5.5; // Amplio canal marítimo
+          const minRequired = islandRadius * 2 + 5.5; // Wide sea channel
           if (dist < minRequired && dist > 0.001) {
             const push = (minRequired - dist) * 0.5;
             const nx = dx / dist;
@@ -1002,26 +1002,26 @@ export class Archipielago3dService {
       }
     }
 
-    // Construir cada mini-isla compuesta de hexágonos
-    unidades.forEach((u, i) => {
+    // Build each mini-island made of hexagons
+    sections.forEach((u, i) => {
       const pos = defaultPositions[i];
-      const bioma: Biome =
-        u.bioma || (i % 4 === 0 ? 'pradera' : i % 4 === 1 ? 'desierto' : i % 4 === 2 ? 'nieve' : 'lava');
+      const biome: Biome =
+        u.biome || (i % 4 === 0 ? 'pradera' : i % 4 === 1 ? 'desierto' : i % 4 === 2 ? 'nieve' : 'lava');
 
       const group = new THREE.Group();
       group.position.set(pos.x, 0, pos.z);
-      group.userData = { unidadId: u.id, index: i };
+      group.userData = { sectionId: u.id, index: i };
 
-      // Construcción del cluster de hexágonos y muelle
-      const dockInfo = this.buildHexCluster(group, bioma, i, u.completa, pos);
+      // Construction of the hexagon cluster and pier
+      const dockInfo = this.buildHexCluster(group, biome, i, u.complete, pos);
 
       this.scene.add(group);
       this.islandGroups.push(group);
 
       this.islands.push({
         id: u.id,
-        titulo: u.titulo,
-        bioma,
+        title: u.title,
+        biome,
         x: pos.x,
         z: pos.z,
         radius: islandRadius,
@@ -1029,26 +1029,26 @@ export class Archipielago3dService {
         dockZ: dockInfo.dockWorldZ,
         dockHeading: dockInfo.dockHeading,
         group,
-        completa: u.completa,
+        complete: u.complete,
       });
     });
   }
 
   // -------------------------------------------------------------
-  // Generación de un Racimo (Cluster) de Hexágonos por Isla
+  // Generation of a Hexagon Cluster per Island
   // -------------------------------------------------------------
   private buildHexCluster(
     group: THREE.Group,
-    bioma: Biome,
+    biome: Biome,
     index: number,
-    completa: boolean,
+    complete: boolean,
     islandPos: THREE.Vector3,
   ): { dockWorldX: number; dockWorldZ: number; dockHeading: number } {
-    const hexR = 1.95; // Radio circunscrito de cada hexágono individual
+    const hexR = 1.95; // Circumscribed radius of each individual hexagon
 
-    // Patrones de racimos hexagonales orgánicos
+    // Organic hexagonal cluster patterns
     const patterns: HexTileDef[][] = [
-      // Patrón 0 (Bahía Marina con Puerto)
+      // Pattern 0 (Marine Bay with Harbor)
       [
         { q: 0, r: 0, h: 0.45, role: 'core' },
         { q: 1, r: 0, h: 0.25, role: 'nature' },
@@ -1057,7 +1057,7 @@ export class Archipielago3dService {
         { q: -1, r: 0, h: 0.85, role: 'peak' },
         { q: 0, r: -1, h: 0.35, role: 'nature' },
       ],
-      // Patrón 1 (Espolón Alargado)
+      // Pattern 1 (Elongated Spur)
       [
         { q: 0, r: 0, h: 0.50, role: 'core' },
         { q: 1, r: -1, h: 0.90, role: 'peak' },
@@ -1066,7 +1066,7 @@ export class Archipielago3dService {
         { q: 0, r: 1, h: 0.20, role: 'road' },
         { q: -1, r: 1, h: 0.05, role: 'dock' },
       ],
-      // Patrón 2 (Ciudadela Central Elevada)
+      // Pattern 2 (Raised Central Citadel)
       [
         { q: 0, r: 0, h: 0.95, role: 'peak' },
         { q: 1, r: 0, h: 0.30, role: 'nature' },
@@ -1076,7 +1076,7 @@ export class Archipielago3dService {
         { q: -1, r: 1, h: 0.05, role: 'dock' },
         { q: 0, r: 1, h: 0.20, role: 'nature' },
       ],
-      // Patrón 3 (Caldera / Macizo Volcánico)
+      // Pattern 3 (Caldera / Volcanic Massif)
       [
         { q: 0, r: 0, h: 0.45, role: 'core' },
         { q: -1, r: 0, h: 1.10, role: 'peak' },
@@ -1089,33 +1089,33 @@ export class Archipielago3dService {
 
     const cluster = patterns[index % patterns.length];
 
-    // Colores según el bioma del mapa de hexágonos
+    // Colors according to the hexagon map biome
     const beachColor =
-      bioma === 'lava'
+      biome === 'lava'
         ? 0x2e2a27
-        : bioma === 'nieve'
+        : biome === 'nieve'
           ? 0xcfe6f6
-          : bioma === 'desierto'
+          : biome === 'desierto'
             ? 0xfde68a
             : 0xfae8b0;
 
     const cliffColor =
-      bioma === 'pradera'
-        ? 0xca6f3b // Terracota / arcilla cálida idéntica al modelo de Kenney
-        : bioma === 'desierto'
-          ? 0xba7032 // Arenisca de cañón
-          : bioma === 'nieve'
-            ? 0x64748b // Pizarra helada
-            : 0x1c1917; // Basalto volcánico
+      biome === 'pradera'
+        ? 0xca6f3b // Warm terracotta / clay identical to the Kenney model
+        : biome === 'desierto'
+          ? 0xba7032 // Canyon sandstone
+          : biome === 'nieve'
+            ? 0x64748b // Frosted slate
+            : 0x1c1917; // Volcanic basalt
 
     const plateColor =
-      bioma === 'pradera'
-        ? 0x10b981 // Verde esmeralda vibrante
-        : bioma === 'desierto'
-          ? 0xf59e0b // Arena dorada
-          : bioma === 'nieve'
-            ? 0xf8fafc // Nieve blanca
-            : 0x18181b; // Suelo volcánico oscuro
+      biome === 'pradera'
+        ? 0x10b981 // Vibrant emerald green
+        : biome === 'desierto'
+          ? 0xf59e0b // Golden sand
+          : biome === 'nieve'
+            ? 0xf8fafc // White snow
+            : 0x18181b; // Dark volcanic soil
 
     const beachMat = new THREE.MeshStandardMaterial({ color: beachColor, roughness: 0.9, flatShading: true });
     const cliffMat = new THREE.MeshStandardMaterial({ color: cliffColor, roughness: 0.85, flatShading: true });
@@ -1123,21 +1123,21 @@ export class Archipielago3dService {
 
     let dockTile = cluster.find((t) => t.role === 'dock') ?? cluster[0];
 
-    // Colisionador central de la masa insular
+    // Central collider of the island mass
     this.islandColliders.push({
       x: islandPos.x,
       z: islandPos.z,
       r: 2.2,
     });
 
-    // 1. Instanciar cada columna hexagonal del racimo
+    // 1. Instantiate each hexagonal column of the cluster
     cluster.forEach((t) => {
-      // Coordenadas axiales a coordenadas cartesianas locales (pointy-topped)
+      // Axial coordinates to local Cartesian coordinates (pointy-topped)
       const lx = hexR * (Math.sqrt(3) * t.q + (Math.sqrt(3) / 2) * t.r);
       const lz = hexR * (1.5 * t.r);
       const colH = 0.85 + t.h;
 
-      // Colisionador individual por hexágono físico (bloquea el paso del barco por tierra)
+      // Individual collider per physical hexagon (blocks the boat's passage over land)
       if (t.role !== 'dock') {
         this.islandColliders.push({
           x: islandPos.x + lx,
@@ -1146,8 +1146,8 @@ export class Archipielago3dService {
         });
       }
 
-      // Base / Arrecife de arena bajo el hexágono
-      const baseShape = Archipielago3dService.getHexShape(hexR * 1.12);
+      // Sand base / Reef under the hexagon
+      const baseShape = Archipelago3dService.getHexShape(hexR * 1.12);
       const baseGeom = new THREE.ExtrudeGeometry(baseShape, {
         depth: 0.35,
         bevelEnabled: true,
@@ -1161,8 +1161,8 @@ export class Archipielago3dService {
       baseMesh.receiveShadow = true;
       group.add(baseMesh);
 
-      // Columna de acantilado de roca facetada
-      const colShape = Archipielago3dService.getHexShape(hexR * 1.0);
+      // Faceted rock cliff column
+      const colShape = Archipelago3dService.getHexShape(hexR * 1.0);
       const colGeom = new THREE.ExtrudeGeometry(colShape, {
         depth: colH,
         bevelEnabled: true,
@@ -1177,8 +1177,8 @@ export class Archipielago3dService {
       colMesh.receiveShadow = true;
       group.add(colMesh);
 
-      // Tapa superior del bioma (hierba / arena / nieve / lava)
-      const capShape = Archipielago3dService.getHexShape(hexR * 0.96);
+      // Top cap of the biome (grass / sand / snow / lava)
+      const capShape = Archipelago3dService.getHexShape(hexR * 0.96);
       const capGeom = new THREE.ExtrudeGeometry(capShape, {
         depth: 0.22,
         bevelEnabled: true,
@@ -1193,12 +1193,12 @@ export class Archipielago3dService {
       capMesh.receiveShadow = true;
       group.add(capMesh);
 
-      // 2. Colocar assets y decoraciones temáticas en los hexágonos
+      // 2. Place thematic assets and decorations on the hexagons
       const topY = 0.50 + colH + 0.22;
-      this.populateHexTile(group, bioma, t, lx, topY, lz, completa);
+      this.populateHexTile(group, biome, t, lx, topY, lz, complete);
     });
 
-    // 3. Selección infalible del hexágono costero y dirección hacia mar abierto (sin colisión con otros hexágonos)
+    // 3. Foolproof selection of the coastal hexagon and direction toward the open sea (without colliding with other hexagons)
     const hexDirs: { dq: number; dr: number; edx: number; edz: number }[] = [
       { dq: 1, dr: 0, edx: Math.sqrt(3), edz: 0 },
       { dq: 0, dr: 1, edx: Math.sqrt(3) / 2, edz: 1.5 },
@@ -1208,7 +1208,7 @@ export class Archipielago3dService {
       { dq: 1, dr: -1, edx: Math.sqrt(3) / 2, edz: -1.5 },
     ];
 
-    // Vector deseado hacia el canal de navegación central
+    // Desired vector toward the central navigation channel
     const channelTargetX = islandPos.x < 0 ? 1 : -1;
     const channelTargetZ = -islandPos.z * 0.4;
     const channelDist = Math.hypot(channelTargetX, channelTargetZ) || 1;
@@ -1239,7 +1239,7 @@ export class Archipielago3dService {
         const normX = dir.edx / dirLen;
         const normZ = dir.edz / dirLen;
 
-        // Comprobar que la trayectoria del muelle esté completamente libre de cualquier otro hexágono
+        // Check that the pier's trajectory is completely free of any other hexagon
         let clear = true;
         for (const dist of [1.5, 2.8, 4.0]) {
           const testX = lx + normX * (hexR * 0.95 + dist);
@@ -1256,7 +1256,7 @@ export class Archipielago3dService {
         }
 
         if (clear) {
-          // Puntuación: alineación con el canal central + preferencia por hexágonos de cota baja
+          // Score: alignment with the central channel + preference for low-elevation hexagons
           const alignment = normX * ncdX + normZ * ncdZ;
           const heightPenalty = tile.h * 0.4;
           const score = alignment - heightPenalty;
@@ -1292,7 +1292,7 @@ export class Archipielago3dService {
 
     this.buildRusticDockAt(group, pierStartX, pierStartZ, dockAngle);
 
-    // Coordenadas absolutas de atraque del barquito frente al muelle
+    // Absolute docking coordinates of the little boat in front of the pier
     const dockWorldX = islandPos.x + pierStartX + Math.sin(dockAngle) * (pierLength + 1.2);
     const dockWorldZ = islandPos.z + pierStartZ + Math.cos(dockAngle) * (pierLength + 1.2);
 
@@ -1304,20 +1304,20 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Decoración de cada Hexágono según su Rol y Bioma
+  // Decoration of each Hexagon according to its Role and Biome
   // -------------------------------------------------------------
   private populateHexTile(
     group: THREE.Group,
-    bioma: Biome,
+    biome: Biome,
     tile: HexTileDef,
     x: number,
     y: number,
     z: number,
-    completa: boolean,
+    complete: boolean,
   ): void {
     if (tile.role === 'peak') {
-      if (bioma === 'pradera') {
-        // Torre de guardia medieval de piedra con almenas y bandera
+      if (biome === 'pradera') {
+        // Medieval stone watchtower with battlements and a flag
         const tower = new THREE.Mesh(
           new THREE.CylinderGeometry(0.7, 0.85, 2.2, 6),
           new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.8, flatShading: true }),
@@ -1326,7 +1326,7 @@ export class Archipielago3dService {
         tower.castShadow = true;
         group.add(tower);
 
-        // Almenas
+        // Battlements
         const battlement = new THREE.Mesh(
           new THREE.CylinderGeometry(0.9, 0.9, 0.4, 6),
           new THREE.MeshStandardMaterial({ color: 0x64748b, flatShading: true }),
@@ -1335,7 +1335,7 @@ export class Archipielago3dService {
         battlement.castShadow = true;
         group.add(battlement);
 
-        // Asta y bandera azul / verde
+        // Pole and blue / green flag
         const pole = new THREE.Mesh(
           new THREE.CylinderGeometry(0.04, 0.04, 1.2, 4),
           new THREE.MeshStandardMaterial({ color: 0x78350f }),
@@ -1345,12 +1345,12 @@ export class Archipielago3dService {
 
         const flag = new THREE.Mesh(
           new THREE.BoxGeometry(0.5, 0.35, 0.04),
-          new THREE.MeshStandardMaterial({ color: completa ? 0x10b981 : 0x2563eb, flatShading: true }),
+          new THREE.MeshStandardMaterial({ color: complete ? 0x10b981 : 0x2563eb, flatShading: true }),
         );
         flag.position.set(x + 0.25, y + 3.2, z);
         group.add(flag);
-      } else if (bioma === 'desierto') {
-        // Pirámide escalonada de arenisca
+      } else if (biome === 'desierto') {
+        // Stepped sandstone pyramid
         const pyrMat = new THREE.MeshStandardMaterial({ color: 0xd97706, flatShading: true, roughness: 0.85 });
         for (let s = 0; s < 3; s++) {
           const step = new THREE.Mesh(new THREE.BoxGeometry(2.1 - s * 0.6, 0.45, 2.1 - s * 0.6), pyrMat);
@@ -1358,8 +1358,8 @@ export class Archipielago3dService {
           step.castShadow = true;
           group.add(step);
         }
-      } else if (bioma === 'nieve') {
-        // Pico glaciar cristalino
+      } else if (biome === 'nieve') {
+        // Crystalline glacier peak
         const iceMat = new THREE.MeshStandardMaterial({
           color: 0xbae6fd,
           roughness: 0.2,
@@ -1371,12 +1371,12 @@ export class Archipielago3dService {
         peak.castShadow = true;
         group.add(peak);
       } else {
-        // Volcán de la isla de lava con el asset volcano.glb del mapa hexagonal
+        // Lava island volcano with the hexagon map's volcano.glb asset
         const volHolder = new THREE.Group();
         volHolder.position.set(x, y, z);
         group.add(volHolder);
 
-        // Magma ardiente en el cráter superior
+        // Burning magma in the upper crater
         const magma = new THREE.Mesh(
           new THREE.CircleGeometry(0.5, 6),
           new THREE.MeshStandardMaterial({
@@ -1390,7 +1390,7 @@ export class Archipielago3dService {
         magma.position.set(0, 1.72, 0);
         volHolder.add(magma);
 
-        // Luz puntual de magma pulsante
+        // Pulsing magma point light
         const vl = new THREE.PointLight(0xf97316, 1.6, 16);
         vl.position.set(0, 1.88, 0);
         volHolder.add(vl);
@@ -1408,7 +1408,7 @@ export class Archipielago3dService {
           });
           volHolder.add(vol);
         } else {
-          // Placeholder temporal mientras se carga el asset volcano.glb
+          // Temporary placeholder while the volcano.glb asset loads
           const placeholder = new THREE.Mesh(
             new THREE.ConeGeometry(1.6, 2.2, 7),
             new THREE.MeshStandardMaterial({ color: 0x1c1917, flatShading: true, roughness: 0.9 }),
@@ -1420,16 +1420,16 @@ export class Archipielago3dService {
         }
       }
     } else if (tile.role === 'nature') {
-      if (bioma === 'pradera') {
+      if (biome === 'pradera') {
         this.addKenneyPine(group, x - 0.4, y, z - 0.3, 1.2);
         this.addKenneyRoundTree(group, x + 0.4, y, z + 0.2, 1.0);
-      } else if (bioma === 'desierto') {
+      } else if (biome === 'desierto') {
         this.addKenneyPalm(group, x, y, z, 1.15);
-      } else if (bioma === 'nieve') {
+      } else if (biome === 'nieve') {
         this.addKenneyPine(group, x - 0.3, y, z - 0.2, 1.2, true);
         this.addKenneyPine(group, x + 0.4, y, z + 0.3, 0.9, true);
       } else {
-        // Rocas de basalto
+        // Basalt rocks
         const rock = new THREE.Mesh(
           new THREE.DodecahedronGeometry(0.55, 0),
           new THREE.MeshStandardMaterial({ color: 0x27272a, flatShading: true }),
@@ -1441,9 +1441,9 @@ export class Archipielago3dService {
     } else if (tile.role === 'camp') {
       this.addCampTent(group, x, y, z);
     } else if (tile.role === 'road') {
-      // Sendero de tierra / adoquines que conecta el hexágono
+      // Dirt path / cobblestones connecting the hexagon
       const pathMat = new THREE.MeshStandardMaterial({
-        color: bioma === 'nieve' ? 0x94a3b8 : 0x78350f,
+        color: biome === 'nieve' ? 0x94a3b8 : 0x78350f,
         roughness: 0.9,
         flatShading: true,
       });
@@ -1451,8 +1451,8 @@ export class Archipielago3dService {
       path.position.set(x, y + 0.04, z);
       path.rotation.y = 0.4;
       group.add(path);
-    } else if (tile.role === 'core' && bioma === 'pradera') {
-      // Molino de viento en el hexágono secundario
+    } else if (tile.role === 'core' && biome === 'pradera') {
+      // Windmill on the secondary hexagon
       const millBase = new THREE.Mesh(
         new THREE.CylinderGeometry(0.55, 0.75, 1.8, 6),
         new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, flatShading: true }),
@@ -1484,7 +1484,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Muelle Rústico de Madera adosado al borde de un Hexágono (Sin X)
+  // Rustic Wooden Pier attached to the edge of a Hexagon (No X)
   // -------------------------------------------------------------
   private buildRusticDockAt(group: THREE.Group, startX: number, startZ: number, dockAngle: number): void {
     const dockGroup = new THREE.Group();
@@ -1503,28 +1503,28 @@ export class Archipielago3dService {
       flatShading: true,
     });
 
-    // Rampa / tablón de conexión hacia el terreno del hexágono
+    // Ramp / connection plank toward the hexagon's terrain
     const ramp = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.16, 1.2), woodMat);
     ramp.position.set(0, -0.04, -0.4);
     ramp.rotation.x = -0.12;
     ramp.receiveShadow = true;
     dockGroup.add(ramp);
 
-    // Vigas maestras inferiores de soporte
+    // Lower main support beams
     for (const bx of [-0.55, 0.55]) {
       const beam = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.22, 2.9), darkWoodMat);
       beam.position.set(bx, -0.12, 1.45);
       dockGroup.add(beam);
     }
 
-    // Cubierta principal de tablones de madera
+    // Main deck of wooden planks
     const deck = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.16, 2.8), woodMat);
     deck.position.set(0, 0, 1.4);
     deck.castShadow = true;
     deck.receiveShadow = true;
     dockGroup.add(deck);
 
-    // Pilotes de madera hundiéndose en el lecho marino bajo el agua
+    // Wooden piles sinking into the seabed under the water
     for (const sx of [-0.62, 0.62]) {
       for (const sz of [0.4, 1.5, 2.6]) {
         const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 1.5, 6), darkWoodMat);
@@ -1532,14 +1532,14 @@ export class Archipielago3dService {
         post.castShadow = true;
         dockGroup.add(post);
 
-        // Cabeza del pilote sobresaliendo sobre el muelle
+        // Pile head protruding above the pier
         const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.24, 6), darkWoodMat);
         cap.position.set(sx, 0.18, sz);
         dockGroup.add(cap);
       }
     }
 
-    // Bitas de amarre náuticas de madera con soga en la punta del muelle (sin la cruz X)
+    // Nautical wooden mooring bollards with rope at the tip of the pier (without the X cross)
     for (const bx of [-0.48, 0.48]) {
       const bollard = new THREE.Mesh(
         new THREE.CylinderGeometry(0.09, 0.11, 0.42, 6),
@@ -1549,7 +1549,7 @@ export class Archipielago3dService {
       bollard.castShadow = true;
       dockGroup.add(bollard);
 
-      // Soga de cáñamo enrollada en la bita
+      // Hemp rope coiled on the bollard
       const rope = new THREE.Mesh(
         new THREE.TorusGeometry(0.12, 0.035, 6, 12),
         new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.95 }),
@@ -1559,7 +1559,7 @@ export class Archipielago3dService {
       dockGroup.add(rope);
     }
 
-    // Poste con farol náutico en la esquina exterior
+    // Post with a nautical lantern on the outer corner
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.4, 6), darkWoodMat);
     pole.position.set(-0.62, 0.70, 2.6);
     dockGroup.add(pole);
@@ -1580,7 +1580,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Helpers de Props estilo Kenney (Árboles, Palmeras, Tiendas)
+  // Kenney-style Prop Helpers (Trees, Palms, Tents)
   // -------------------------------------------------------------
   private addCampTent(group: THREE.Group, x: number, y: number, z: number): void {
     const tentGeom = new THREE.ConeGeometry(0.85, 1.1, 4);
@@ -1674,7 +1674,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Rutas Náuticas del Tesoro Punteadas (Línea pura sin esferas ni boyas)
+  // Dotted Nautical Treasure Routes (Pure line without spheres or buoys)
   // -------------------------------------------------------------
   private setupTreasureRoutes(): void {
     if (this.islands.length < 2) return;
@@ -1703,24 +1703,24 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Barco 3D (ship-large.glb) y Navegación
+  // 3D Boat (ship-large.glb) and Navigation
   // -------------------------------------------------------------
   private setupBoat(): void {
     this.boatGroup = new THREE.Group();
     this.scene.add(this.boatGroup);
 
-    // Placeholder procedural mientras se completa la carga del modelo 3D GLB
+    // Procedural placeholder while the 3D GLB model finishes loading
     this.boatPlaceholder = this.createBoatPlaceholder();
     this.boatGroup.add(this.boatPlaceholder);
 
-    // Cargar modelo 3D ship-large.glb (frontend/public/mundo-3d/Assets/Vehiculos/ship-large.glb)
+    // Load 3D model ship-large.glb (frontend/public/mundo-3d/Assets/Vehiculos/ship-large.glb)
     this.loadShipModel();
   }
 
   private createBoatPlaceholder(): THREE.Group {
     const holder = new THREE.Group();
 
-    // Casco facetado de madera noble
+    // Faceted noble wood hull
     const hullGeom = new THREE.BufferGeometry();
     const hullVertices = new Float32Array([
       0, -0.3, 1.9,
@@ -1756,7 +1756,7 @@ export class Archipielago3dService {
     hull.castShadow = true;
     holder.add(hull);
 
-    // Cubierta interior de madera noble
+    // Noble wood inner deck
     const deckGeom = new THREE.BufferGeometry();
     const deckVertices = new Float32Array([
       0, 0.44, 2.0,
@@ -1781,7 +1781,7 @@ export class Archipielago3dService {
     boatDeck.receiveShadow = true;
     holder.add(boatDeck);
 
-    // Mástil
+    // Mast
     const mastGeom = new THREE.CylinderGeometry(0.08, 0.11, 4.4, 6);
     const mastMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.9 });
     const mast = new THREE.Mesh(mastGeom, mastMat);
@@ -1789,7 +1789,7 @@ export class Archipielago3dService {
     mast.castShadow = true;
     holder.add(mast);
 
-    // Vela principal
+    // Main sail
     const sailMainGeom = new THREE.BufferGeometry();
     const sailVertices = new Float32Array([
       0, 4.2, 0.15,
@@ -1812,7 +1812,7 @@ export class Archipielago3dService {
     sailMain.castShadow = true;
     holder.add(sailMain);
 
-    // Foque / Vela de proa
+    // Jib / Bow sail
     const jibGeom = new THREE.BufferGeometry();
     const jibVertices = new Float32Array([
       0, 3.6, 0.2,
@@ -1828,7 +1828,7 @@ export class Archipielago3dService {
     jib.castShadow = true;
     holder.add(jib);
 
-    // Gallardete
+    // Pennant
     const pennant = new THREE.Mesh(
       new THREE.ConeGeometry(0.18, 0.75, 3),
       new THREE.MeshStandardMaterial({ color: 0xdc2626, flatShading: true }),
@@ -1842,7 +1842,7 @@ export class Archipielago3dService {
 
   private async loadShipModel(): Promise<void> {
     try {
-      // Cargar la textura colormap específica de la flota pirata (Kenney pirate kit)
+      // Load the pirate fleet's specific colormap texture (Kenney pirate kit)
       const textureLoader = new THREE.TextureLoader();
       const colormapTex = await new Promise<THREE.Texture | null>((resolve) => {
         textureLoader.load(
@@ -1866,7 +1866,7 @@ export class Archipielago3dService {
       const shipScene = gltf.scene;
       if (!shipScene) return;
 
-      // Escalar y posicionar para alinear la línea de flotación con el océano
+      // Scale and position to align the waterline with the ocean
       shipScene.scale.setScalar(0.28);
       shipScene.position.set(0, -0.32, 0);
 
@@ -1897,7 +1897,7 @@ export class Archipielago3dService {
         }
       });
 
-      // Retirar y liberar el placeholder procedural
+      // Remove and free the procedural placeholder
       if (this.boatPlaceholder) {
         this.boatGroup.remove(this.boatPlaceholder);
         this.boatPlaceholder.traverse((c) => {
@@ -1917,12 +1917,12 @@ export class Archipielago3dService {
       this.boatModel = shipScene;
       this.boatGroup.add(shipScene);
     } catch (err) {
-      console.warn('[Archipielago3D] No se pudo cargar ship-large.glb, manteniendo barco procedural:', err);
+      console.warn('[Archipelago3D] Could not load ship-large.glb, keeping the procedural boat:', err);
     }
   }
 
   // -------------------------------------------------------------
-  // Loop de Render y Animación
+  // Render and Animation Loop
   // -------------------------------------------------------------
   private loop = (time: number): void => {
     if (!this.running) return;
@@ -1930,7 +1930,7 @@ export class Archipielago3dService {
     const t = time * 0.001;
     const dt = 0.016;
 
-    // 1. Dinámica de Ondas Marinas Cristalinas (Movimiento físico fluido y destellos de sol en crestas)
+    // 1. Crystalline Sea Wave Dynamics (Fluid physical movement and sun glints on crests)
     const pos = this.oceanGeom.attributes['position'] as THREE.BufferAttribute;
     const colAttr = this.oceanGeom.attributes['color'] as THREE.BufferAttribute;
     const colors = colAttr.array as Float32Array;
@@ -1947,7 +1947,7 @@ export class Archipielago3dService {
         const baseG = this.oceanBaseColors[idx + 1];
         const baseB = this.oceanBaseColors[idx + 2];
 
-        // Destello limpio de sol en las crestas (sin oscurecer jamás los valles del agua)
+        // Clean sun glint on the crests (never darkening the water troughs)
         if (normHeight > 0.80) {
           const glint = ((normHeight - 0.80) / 0.20) * 0.18;
           colors[idx] = Math.min(1.0, baseR + glint * 1.1);
@@ -1964,7 +1964,7 @@ export class Archipielago3dService {
       this.oceanGeom.computeVertexNormals();
     }
 
-    // 2. Neblina Esponjosa en los Bordes (Bruma flotante y oscilante)
+    // 2. Fluffy Haze on the Edges (Floating, oscillating mist)
     for (const f of this.fogPuffs) {
       f.sprite.position.x = f.baseX + Math.sin(t * 0.3 + f.phase) * 0.8;
       f.sprite.position.y = f.baseY + Math.cos(t * 0.45 + f.phase) * 0.2;
@@ -1974,38 +1974,38 @@ export class Archipielago3dService {
       (f.sprite.material as THREE.SpriteMaterial).rotation += f.rotSpeed * dt;
     }
 
-    // 3. Aspas de molinos
+    // 3. Windmill blades
     for (const wm of this.windmills) {
       wm.blades.rotation.z += 0.007;
     }
 
-    // 4. Pulso de magma en volcanes
+    // 4. Magma pulse on volcanoes
     for (const vl of this.volcanoLights) {
       vl.light.intensity = vl.baseIntensity + Math.sin(t * 1.5) * 0.5;
     }
 
-    // 5. Elevación y escala suave al hacer hover sobre una isla
+    // 5. Smooth elevation and scale on hover over an island
     for (const group of this.islandGroups) {
-      const isHovered = group.userData['unidadId'] === this.currentHoveredId;
+      const isHovered = group.userData['sectionId'] === this.currentHoveredId;
       const targetScale = isHovered ? 1.06 : 1.0;
       const targetY = isHovered ? 0.45 : 0.0;
       group.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.14);
       group.position.y += (targetY - group.position.y) * 0.14;
     }
 
-    // 6. Fauna marina y aérea (Gaviotas, Delfines y Ballena con chorro de agua)
+    // 6. Marine and aerial fauna (Seagulls, Dolphins and a Whale with a water spout)
     this.updateWildlife(t, dt);
 
-    // 7. Marcador de destino náutico
+    // 7. Nautical destination marker
     if (this.targetMarker.visible) {
       this.targetMarker.rotation.y += 0.025;
       this.targetMarker.position.y = 0.35 + this.getWaveHeight(this.targetMarker.position.x, this.targetMarker.position.z, t);
     }
 
-    // 8. Navegación física del barquito sobre el oleaje
+    // 8. Physical navigation of the little boat over the swell
     this.updateBoatNavigation(t);
 
-    // 9. Estela de agua en V
+    // 9. V-shaped water wake
     this.updateWake(t);
 
     this.renderer.render(this.scene, this.camera);
@@ -2013,7 +2013,7 @@ export class Archipielago3dService {
   };
 
   // -------------------------------------------------------------
-  // Movimiento del Barquito con Inclinación Física por Olas
+  // Little Boat Movement with Physical Tilt from Waves
   // -------------------------------------------------------------
   private updateBoatNavigation(t: number): void {
     const dt = 0.016;
@@ -2122,7 +2122,7 @@ export class Archipielago3dService {
     this.boatPos.x = Math.max(-48, Math.min(48, this.boatPos.x));
     this.boatPos.z = Math.max(-33, Math.min(33, this.boatPos.z));
 
-    // Resolución física de colisiones contra islas (evita que el barco penetre o atraviese tierra)
+    // Physical collision resolution against islands (prevents the boat from penetrating or crossing land)
     this.resolveBoatCollisions();
 
     const waveH = this.getWaveHeight(this.boatPos.x, this.boatPos.z, t);
@@ -2148,7 +2148,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Estela de Agua en V
+  // V-shaped Water Wake
   // -------------------------------------------------------------
   private updateWake(t: number): void {
     if (Math.abs(this.boatSpeed) > 1.2 && t - this.lastWakeTime > 0.08) {
@@ -2199,7 +2199,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Resolución de Colisiones Físicas del Barquito con las Islas
+  // Physical Collision Resolution of the Little Boat with the Islands
   // -------------------------------------------------------------
   private resolveBoatCollisions(): void {
     const boatRadius = 1.25;
@@ -2215,11 +2215,11 @@ export class Archipielago3dService {
         const nx = dx / dist;
         const nz = dz / dist;
 
-        // Expulsar suavemente el barco fuera de la tierra
+        // Gently push the boat out of the land
         this.boatPos.x += nx * overlap;
         this.boatPos.z += nz * overlap;
 
-        // Deslizamiento tangencial: si avanzaba de frente contra la roca, amortiguar velocidad
+        // Tangential sliding: if it advanced head-on into the rock, dampen speed
         const hx = Math.sin(this.boatHeading);
         const hz = Math.cos(this.boatHeading);
         const forwardDotObstacle = hx * (-nx) + hz * (-nz);
@@ -2231,7 +2231,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Creación de Modelos Low-Poly de Fauna (Gaviotas, Delfines y Ballena)
+  // Creation of Low-Poly Fauna Models (Seagulls, Dolphins and Whale)
   // -------------------------------------------------------------
   private createSeagullMesh(): { group: THREE.Group; wingL: THREE.Group; wingR: THREE.Group } {
     const group = new THREE.Group();
@@ -2252,27 +2252,27 @@ export class Archipielago3dService {
       flatShading: true,
     });
 
-    // Fuselaje
+    // Fuselage
     const bodyGeom = new THREE.ConeGeometry(0.18, 0.95, 4);
     bodyGeom.rotateX(-Math.PI / 2);
     const body = new THREE.Mesh(bodyGeom, bodyMat);
     body.castShadow = true;
     group.add(body);
 
-    // Pico amarillo
+    // Yellow beak
     const beakGeom = new THREE.ConeGeometry(0.07, 0.32, 4);
     beakGeom.rotateX(-Math.PI / 2);
     const beak = new THREE.Mesh(beakGeom, beakMat);
     beak.position.set(0, 0.02, 0.58);
     group.add(beak);
 
-    // Cola
+    // Tail
     const tailGeom = new THREE.BoxGeometry(0.25, 0.02, 0.35);
     const tail = new THREE.Mesh(tailGeom, wingTipMat);
     tail.position.set(0, 0.03, -0.48);
     group.add(tail);
 
-    // Ala izquierda con pivote en la raíz
+    // Left wing with pivot at the root
     const wingL = new THREE.Group();
     wingL.position.set(-0.12, 0.06, 0.05);
 
@@ -2289,7 +2289,7 @@ export class Archipielago3dService {
 
     group.add(wingL);
 
-    // Ala derecha con pivote en la raíz
+    // Right wing with pivot at the root
     const wingR = new THREE.Group();
     wingR.position.set(0.12, 0.06, 0.05);
 
@@ -2321,14 +2321,14 @@ export class Archipielago3dService {
   }
 
   private async loadWildlifeModels(): Promise<void> {
-    // 1. Cargar Delfines (Dolphin.glb)
+    // 1. Load Dolphins (Dolphin.glb)
     try {
       const dolphinGltf = await this.loadGltfSafe('/mundo-3d/Dolphin.glb', '/mundo-3d/dolphin.glb');
       const dolphinClip =
         THREE.AnimationClip.findByName(dolphinGltf.animations, 'Armature|Swim') ||
         dolphinGltf.animations[0];
 
-      // Delfín Líder
+      // Lead Dolphin
       const d1Root = SkeletonUtils.clone(dolphinGltf.scene) as THREE.Group;
       d1Root.scale.setScalar(0.26);
       d1Root.traverse((obj) => {
@@ -2345,7 +2345,7 @@ export class Archipielago3dService {
       this.wildlifeMixers.push(d1Mixer);
       this.wildlifeGroup.add(d1Root);
 
-      // Delfín Compañero
+      // Companion Dolphin
       const d2Root = SkeletonUtils.clone(dolphinGltf.scene) as THREE.Group;
       d2Root.scale.setScalar(0.24);
       d2Root.traverse((obj) => {
@@ -2357,7 +2357,7 @@ export class Archipielago3dService {
       const d2Mixer = new THREE.AnimationMixer(d2Root);
       if (dolphinClip) {
         const action = d2Mixer.clipAction(dolphinClip);
-        action.time = 0.5; // Desfase rítmico natural entre la pareja de delfines
+        action.time = 0.5; // Natural rhythmic offset between the pair of dolphins
         action.play();
       }
       this.wildlifeMixers.push(d2Mixer);
@@ -2366,7 +2366,7 @@ export class Archipielago3dService {
       this.dolphins = [
         {
           group: d1Root,
-          curve: Archipielago3dService.dolphinCurve1,
+          curve: Archipelago3dService.dolphinCurve1,
           progress: 0.05,
           speed: 6.8 / 197.0,
           timer: 2.0,
@@ -2378,7 +2378,7 @@ export class Archipielago3dService {
         },
         {
           group: d2Root,
-          curve: Archipielago3dService.dolphinCurve2,
+          curve: Archipelago3dService.dolphinCurve2,
           progress: 0.55,
           speed: 6.4 / 197.0,
           timer: 8.5,
@@ -2390,10 +2390,10 @@ export class Archipielago3dService {
         },
       ];
     } catch (err) {
-      console.warn('[Archipielago3D] No se pudo cargar Dolphin.glb:', err);
+      console.warn('[Archipelago3D] Could not load Dolphin.glb:', err);
     }
 
-    // 2. Cargar Ballena (Whale.glb)
+    // 2. Load Whale (Whale.glb)
     try {
       const whaleGltf = await this.loadGltfSafe('/mundo-3d/Whale.glb', '/mundo-3d/whale.glb');
       const whaleClip =
@@ -2416,7 +2416,7 @@ export class Archipielago3dService {
       }
       this.wildlifeMixers.push(whaleMixer);
 
-      // Surtidor de vapor del espiráculo integrado en el lomo de la ballena
+      // Blowhole steam spout integrated into the whale's back
       const spoutGroup = new THREE.Group();
       spoutGroup.position.set(0, 0.92, 0.85);
       spoutGroup.visible = false;
@@ -2449,7 +2449,7 @@ export class Archipielago3dService {
         mixer: whaleMixer,
       };
     } catch (err) {
-      console.warn('[Archipielago3D] No se pudo cargar Whale.glb:', err);
+      console.warn('[Archipelago3D] Could not load Whale.glb:', err);
     }
   }
 
@@ -2459,7 +2459,7 @@ export class Archipielago3dService {
       this.volcanoTemplate = gltf.scene;
       if (!this.volcanoTemplate) return;
 
-      // Actualizar todos los volcanes en las islas que estuvieran esperando con placeholder
+      // Update all volcanoes on the islands that were waiting with a placeholder
       for (const item of this.volcanoHolders) {
         item.holder.remove(item.placeholder);
         if ((item.placeholder as THREE.Mesh).geometry) {
@@ -2478,7 +2478,7 @@ export class Archipielago3dService {
       }
       this.volcanoHolders = [];
     } catch (err) {
-      console.warn('[Archipielago3D] No se pudo cargar volcano.glb:', err);
+      console.warn('[Archipelago3D] Could not load volcano.glb:', err);
     }
   }
 
@@ -2503,7 +2503,7 @@ export class Archipielago3dService {
     this.wildlifeGroup.name = 'wildlife';
     this.scene.add(this.wildlifeGroup);
 
-    // 1. Gaviotas (4 aves en vuelo orbital lento, sereno y majestuoso)
+    // 1. Seagulls (4 birds in slow, serene and majestic orbital flight)
     const seagullConfigs = [
       { cx: -10, cz: -8, r: 14, alt: 11.2, speed: 0.18, angle: 0.0, phase: 0.0 },
       { cx: -6, cz: -14, r: 17, alt: 12.5, speed: 0.16, angle: 2.2, phase: 1.3 },
@@ -2527,17 +2527,17 @@ export class Archipielago3dService {
       };
     });
 
-    // 2. Delfines y Ballena con modelos 3D y animaciones esqueléticas (Dolphin.glb y Whale.glb)
+    // 2. Dolphins and Whale with 3D models and skeletal animations (Dolphin.glb and Whale.glb)
     this.loadWildlifeModels();
   }
 
   private updateWildlife(t: number, dt: number): void {
-    // 0. Actualizar mixers de animación esquelética (Swim de delfines y ballena)
+    // 0. Update skeletal animation mixers (Dolphin and whale Swim)
     for (const mixer of this.wildlifeMixers) {
       mixer.update(dt);
     }
 
-    // A. Gaviotas: Vuelo lento y sereno con 75% planeo suave
+    // A. Seagulls: Slow and serene flight with 75% smooth gliding
     for (const g of this.seagulls) {
       g.angle += g.speed * dt;
       const x = g.orbitCenter.x + Math.cos(g.angle) * g.orbitRadius;
@@ -2550,7 +2550,7 @@ export class Archipielago3dService {
       g.group.rotation.y = Math.atan2(tangentX, tangentZ);
       g.group.rotation.z = -0.12;
 
-      // Planeo la mayor parte del tiempo, aleteo suave y pausado
+      // Glide most of the time, soft and slow flapping
       const glideSignal = Math.sin(t * 0.6 + g.phase);
       if (glideSignal > 0.05) {
         g.wingL.rotation.z = 0.08;
@@ -2562,7 +2562,7 @@ export class Archipielago3dService {
       }
     }
 
-    // B. Delfines: Amplia navegación por las 4 esquinas y saltos en arco fluido desincronizados
+    // B. Dolphins: Wide navigation across the 4 corners and desynchronized fluid arc jumps
     for (const d of this.dolphins) {
       d.progress = (d.progress + d.speed * dt) % 1.0;
       const pt = d.curve.getPointAt(d.progress);
@@ -2574,7 +2574,7 @@ export class Archipielago3dService {
       d.timer = (d.timer + dt) % d.cycleDuration;
 
       if (d.timer >= d.submergedDuration) {
-        // En el aire: salto parabólico arqueado majestuoso de largo recorrido
+        // In the air: majestic arched parabolic jump with a long range
         const p = (d.timer - d.submergedDuration) / d.jumpDuration;
         const jumpH = Math.sin(p * Math.PI) * 2.85;
         const y = 0.20 + waveH + jumpH;
@@ -2582,10 +2582,10 @@ export class Archipielago3dService {
         d.group.position.set(pt.x, y, pt.z);
         d.group.rotation.y = heading;
 
-        // Cabeceo arqueado (pitch) que acompaña fielmente la trayectoria parabólica:
-        // - Despegue: sube con cabeza inclinada hacia el cielo (~ -41°)
-        // - Cenit (p = 0.5): cuerpo perfectamente horizontal
-        // - Reingreso (p = 1.0): entra limpiamente de cabeza con picada (~ +41°)
+        // Arched pitch that faithfully follows the parabolic trajectory:
+        // - Takeoff: rises with the head tilted toward the sky (~ -41°)
+        // - Zenith (p = 0.5): body perfectly horizontal
+        // - Re-entry (p = 1.0): enters cleanly head-first in a dive (~ +41°)
         const pitch = -Math.cos(p * Math.PI) * 0.72;
         d.group.rotation.x = pitch;
 
@@ -2595,14 +2595,14 @@ export class Archipielago3dService {
           this.spawnSplashRing(pt.x, pt.z, 2.2);
         }
       } else {
-        // Navegación sumergida fluida bajo el agua
+        // Fluid submerged navigation under the water
         d.group.position.set(pt.x, -0.65 + waveH * 0.4, pt.z);
         d.group.rotation.y = heading;
         d.group.rotation.x = 0;
       }
     }
 
-    // C. Ballena: Inmersión majestuosa, doble chorro y aleta caudal gigante al cielo
+    // C. Whale: Majestic dive, double spout and giant tail fin toward the sky
     if (this.whale) {
       this.whale.cycleTimer = (this.whale.cycleTimer + dt) % 24;
       const c = this.whale.cycleTimer;
@@ -2619,18 +2619,18 @@ export class Archipielago3dService {
       const waveH = this.getWaveHeight(wx, wz, t);
 
       if (c < 9.0) {
-        // Sumergida en el abismo
+        // Submerged in the abyss
         this.whale.group.position.y = -2.8;
         this.whale.group.rotation.x = 0;
         this.whale.spoutGroup.visible = false;
       } else if (c < 12.0) {
-        // Emergencia suave cortando las olas
+        // Gentle emergence cutting through the waves
         const progress = (c - 9.0) / 3.0;
         this.whale.group.position.y = -2.8 + progress * (0.36 + waveH - -2.8);
         this.whale.group.rotation.x = -(1 - progress) * 0.16;
         this.whale.spoutGroup.visible = false;
       } else if (c < 15.5) {
-        // Chorro de vapor del espiráculo
+        // Blowhole steam jet
         const spoutProg = (c - 12.0) / 3.5;
         this.whale.group.position.y = 0.36 + waveH;
         this.whale.group.rotation.x = 0.0;
@@ -2641,7 +2641,7 @@ export class Archipielago3dService {
           const partOffset = i / this.whale.spoutParticles.length;
           const pLife = (spoutProg * 4.0 + partOffset) % 1.0;
           const py = pLife * 4.6;
-          // Doble surtidor en V
+          // Double V-shaped spout
           const side = i % 2 === 0 ? -1 : 1;
           const spreadX = side * (0.12 + pLife * 0.6) + Math.sin(i * 1.4) * 0.12;
           const spreadZ = (pLife * 0.3) * Math.cos(i);
@@ -2655,11 +2655,11 @@ export class Archipielago3dService {
           this.spawnSplashRing(wx, wz, 3.8);
         }
       } else if (c < 19.5) {
-        // Inmersión: cabeza hacia abajo y cola se eleva al sumergirse
+        // Dive: head down and tail rises when submerging
         this.whale.spoutGroup.visible = false;
         const diveProg = (c - 15.5) / 4.0;
         this.whale.group.position.y = (0.36 + waveH) - diveProg * 3.2;
-        // Cabeza apunta hacia abajo
+        // Head points downward
         this.whale.group.rotation.x = 0.32 * Math.sin(diveProg * Math.PI);
 
         if (diveProg > 0.48 && diveProg < 0.54) {
@@ -2672,7 +2672,7 @@ export class Archipielago3dService {
       }
     }
 
-    // D. Anillos de espuma
+    // D. Foam rings
     for (let i = this.splashRings.length - 1; i >= 0; i--) {
       const ring = this.splashRings[i];
       ring.life += dt;
@@ -2692,20 +2692,20 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Zarpar hacia una Isla y Ejecutar Callback al Atracar
+  // Sail toward an Island and Execute Callback on Docking
   // -------------------------------------------------------------
-  zarparHacia(unidadId: string): void {
-    this.zarparYAtracar(unidadId);
+  sailToward(sectionId: string): void {
+    this.sailYDock(sectionId);
   }
 
-  zarparYAtracar(unidadId: string, onDock?: () => void): void {
-    const target = this.islands.find((isl) => isl.id === unidadId);
+  sailYDock(sectionId: string, onDock?: () => void): void {
+    const target = this.islands.find((isl) => isl.id === sectionId);
     if (!target) {
       onDock?.();
       return;
     }
 
-    if (this.currentDockedId === unidadId && !this.isSailing) {
+    if (this.currentDockedId === sectionId && !this.isSailing) {
       onDock?.();
       return;
     }
@@ -2719,21 +2719,21 @@ export class Archipielago3dService {
     const start = new THREE.Vector3(this.boatPos.x, 0.44, this.boatPos.z);
     const end = new THREE.Vector3(target.dockX, 0.44, target.dockZ);
 
-    // Vector de salida hacia mar abierto alejándose del muelle de origen
+    // Exit vector toward open sea moving away from the origin pier
     const startExit = new THREE.Vector3(
       start.x + Math.sin(this.boatHeading) * 4.2,
       0.44,
       start.z + Math.cos(this.boatHeading) * 4.2,
     );
 
-    // Vector de aproximación hacia el muelle de destino desde mar abierto
+    // Approach vector toward the destination pier from open sea
     const endApproach = new THREE.Vector3(
       end.x + Math.sin(target.dockHeading - Math.PI) * 4.2,
       0.44,
       end.z + Math.cos(target.dockHeading - Math.PI) * 4.2,
     );
 
-    // Canal central marítimo despejado de islas (X en torno al centro)
+    // Central sea channel clear of islands (X around the center)
     const midZ = (startExit.z + endApproach.z) * 0.5;
     const canalWaypoint = new THREE.Vector3(
       (startExit.x + endApproach.x) * 0.18,
@@ -2748,7 +2748,7 @@ export class Archipielago3dService {
   }
 
   // -------------------------------------------------------------
-  // Manejo de Eventos Mouse y Teclado
+  // Mouse and Keyboard Event Handling
   // -------------------------------------------------------------
   private setupEvents(): void {
     window.addEventListener('keydown', this.onKeyDown);
@@ -2791,14 +2791,14 @@ export class Archipielago3dService {
     const islandHits = this.raycaster.intersectObjects(this.islandGroups, true);
     if (islandHits.length > 0) {
       let obj: THREE.Object3D | null = islandHits[0].object;
-      while (obj && !obj.userData['unidadId'] && obj.parent) {
+      while (obj && !obj.userData['sectionId'] && obj.parent) {
         obj = obj.parent;
       }
-      if (obj && obj.userData['unidadId']) {
-        const id = obj.userData['unidadId'] as string;
+      if (obj && obj.userData['sectionId']) {
+        const id = obj.userData['sectionId'] as string;
         this.ngZone.run(() => {
           this.callbacks?.onSelect(id);
-          this.zarparHacia(id);
+          this.sailToward(id);
         });
         return;
       }
@@ -2832,11 +2832,11 @@ export class Archipielago3dService {
       let hoveredId: string | null = null;
       if (hits.length > 0) {
         let obj: THREE.Object3D | null = hits[0].object;
-        while (obj && !obj.userData['unidadId'] && obj.parent) {
+        while (obj && !obj.userData['sectionId'] && obj.parent) {
           obj = obj.parent;
         }
-        if (obj && obj.userData['unidadId']) {
-          hoveredId = obj.userData['unidadId'] as string;
+        if (obj && obj.userData['sectionId']) {
+          hoveredId = obj.userData['sectionId'] as string;
         }
       }
 

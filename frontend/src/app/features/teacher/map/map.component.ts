@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { StoreService } from '../../../core/educa/store.service';
 import { VisitService } from '../../../core/educa/visit.service';
-import type { Biome, TipoAnexo } from '../../../core/educa/models';
+import type { Biome, AttachmentType } from '../../../core/educa/models';
 import { EditorComponent, type EditorKind, type EditorResult } from '../builder/editor.component';
 
 interface N {
@@ -14,9 +14,9 @@ interface N {
   x: number;
   y: number;
   r: number;
-  unidadId?: string;
-  moduloId?: string;
-  tipo?: TipoAnexo;
+  sectionId?: string;
+  moduleId?: string;
+  type?: AttachmentType;
   url?: string;
   visited?: boolean;
   passed?: boolean;
@@ -32,22 +32,22 @@ interface E {
 interface Dlg {
   isNew: boolean;
   kind: EditorKind;
-  unidadId?: string;
-  moduloId?: string;
-  anexoId?: string;
+  sectionId?: string;
+  moduleId?: string;
+  attachmentId?: string;
   heading: string;
-  titulo: string;
-  descripcion: string;
+  title: string;
+  description: string;
   color: string;
-  bioma: Biome;
-  tipo: TipoAnexo;
+  biome: Biome;
+  type: AttachmentType;
   url: string;
 }
 
 const DX = 220;
 const DY = 150;
 
-const ANEXO_ICON: Record<string, string> = {
+const ATTACHMENT_ICON: Record<string, string> = {
   documento: '📄',
   video: '🎬',
   enlace: '🔗',
@@ -78,28 +78,28 @@ function linesFor(s: string): string[] {
   imports: [RouterLink, EditorComponent],
   template: `
     @if (store.current(); as a) {
-      <!-- Barra superior -->
+      <!-- Top bar -->
       <div class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-base-300 px-4 py-2 text-xs bg-base-200/60">
         <a [routerLink]="['/profesor/build', a.id]" class="btn btn-xs btn-ghost ui-font text-[9px]">← Volver al editor</a>
         <span class="opacity-40">|</span>
-        <span class="badge badge-sm badge-neutral">🏰 {{ a.nombre }}</span>
-        <span class="badge badge-sm badge-neutral">🌍 {{ counts().unidades }}</span>
-        <span class="badge badge-sm badge-neutral">🎯 {{ counts().modulos }}</span>
-        <span class="badge badge-sm badge-neutral">📦 {{ counts().anexos }}</span>
+        <span class="badge badge-sm badge-neutral">🏰 {{ a.name }}</span>
+        <span class="badge badge-sm badge-neutral">🌍 {{ counts().sections }}</span>
+        <span class="badge badge-sm badge-neutral">🎯 {{ counts().modules }}</span>
+        <span class="badge badge-sm badge-neutral">📦 {{ counts().attachments }}</span>
         <span class="flex-1"></span>
         <a routerLink="/alumno" class="btn btn-xs btn-outline btn-secondary ui-font text-[8px]" title="Ver en 3D">
           👁️ Ver como alumno
         </a>
-        <button (click)="openNewUnidad()" class="btn btn-xs btn-primary ui-font text-[8px]">+ Unidad</button>
+        <button (click)="openNewSection()" class="btn btn-xs btn-primary ui-font text-[8px]">+ Unidad</button>
         <button (click)="toggleAll()" class="btn btn-xs btn-ghost ui-font text-[8px]">{{ allCollapsed() ? 'Expandir todo' : 'Colapsar todo' }}</button>
       </div>
 
       <div class="flex h-[calc(100vh-49px)] flex-col md:flex-row overflow-hidden">
-        <!-- Canvas SVG interactivo -->
+        <!-- Interactive SVG canvas -->
         <div #wrap class="relative flex-1 touch-none select-none overflow-hidden bg-base-300/30"
           (pointerdown)="startPan($event)" (pointermove)="doPan($event)" (pointerup)="endPan()"
           (pointerleave)="endPan()" (wheel)="onWheel($event)" (keydown.escape)="select('')">
-          <svg id="mapa" [attr.viewBox]="viewBox()" class="h-full w-full" role="img" [attr.aria-label]="'Mapa de ' + a.nombre">
+          <svg id="mapa" [attr.viewBox]="viewBox()" class="h-full w-full" role="img" [attr.aria-label]="'Mapa de ' + a.name">
             <g [attr.transform]="'translate(' + pan().x + ' ' + pan().y + ') scale(' + zoom() + ')'">
               @for (e of edges(); track e.x1 + '-' + e.y1 + '-' + e.x2) {
                 <line [attr.x1]="e.x1" [attr.y1]="e.y1" [attr.x2]="e.x2" [attr.y2]="e.y2"
@@ -132,7 +132,7 @@ function linesFor(s: string): string[] {
             </g>
           </svg>
 
-          <!-- Controles de Zoom y Exportación -->
+          <!-- Zoom and Export controls -->
           <div class="absolute bottom-4 left-4 flex gap-1.5 bg-base-100/90 p-1.5 rounded-lg border border-base-300 shadow-lg">
             <button (click)="zoom.set(zoom() * 1.2)" class="btn btn-xs btn-ghost" aria-label="Acercar">+</button>
             <button (click)="zoom.set(zoom() / 1.2)" class="btn btn-xs btn-ghost" aria-label="Alejar">−</button>
@@ -142,7 +142,7 @@ function linesFor(s: string): string[] {
           </div>
         </div>
 
-        <!-- Panel Lateral de Detalle y Edición -->
+        <!-- Side Detail and Editing Panel -->
         <aside class="w-full md:w-80 border-t md:border-t-0 md:border-l border-base-300 bg-base-100 p-4 overflow-y-auto" aria-live="polite">
           @if (selected(); as s) {
             <div class="flex items-center justify-between">
@@ -155,8 +155,8 @@ function linesFor(s: string): string[] {
 
             @if (s.kind === 'unidad') {
               <div class="mt-3 p-2 rounded bg-base-200 text-xs">
-                <p>🎯 {{ countsFor(s.id).modulos }} módulos</p>
-                <p>📦 {{ countsFor(s.id).anexos }} anexos</p>
+                <p>🎯 {{ countsFor(s.id).modules }} módulos</p>
+                <p>📦 {{ countsFor(s.id).attachments }} anexos</p>
               </div>
             }
 
@@ -176,12 +176,12 @@ function linesFor(s: string): string[] {
               }
 
               @if (s.kind === 'unidad') {
-                <button (click)="openNewModulo(s.id)" class="col-span-2 btn btn-xs btn-outline btn-secondary ui-font text-[8px]">+ Módulo en esta unidad</button>
+                <button (click)="openNewModule(s.id)" class="col-span-2 btn btn-xs btn-outline btn-secondary ui-font text-[8px]">+ Módulo en esta unidad</button>
                 <button (click)="toggleCollapse(s.id)" class="col-span-2 btn btn-xs btn-ghost ui-font text-[8px]">{{ isCollapsed(s.id) ? 'Expandir rama' : 'Colapsar rama' }}</button>
               }
 
-              @if (s.kind === 'modulo' && s.unidadId) {
-                <button (click)="openNewAnexo(s.unidadId, s.id)" class="col-span-2 btn btn-xs btn-outline btn-secondary ui-font text-[8px]">+ Anexo en este módulo</button>
+              @if (s.kind === 'modulo' && s.sectionId) {
+                <button (click)="openNewAttachment(s.sectionId, s.id)" class="col-span-2 btn btn-xs btn-outline btn-secondary ui-font text-[8px]">+ Anexo en este módulo</button>
               }
             </div>
           } @else {
@@ -190,11 +190,11 @@ function linesFor(s: string): string[] {
             <p class="mt-3 text-xs opacity-60">{{ nodes().length }} nodos · {{ edges().length }} ramas</p>
 
             <div class="mt-4 grid gap-1.5">
-              @for (u of a.unidades; track u.id) {
+              @for (u of a.sections; track u.id) {
                 <button (click)="select(u.id)" class="flex items-center gap-2 p-2 rounded border border-base-300 text-left text-xs hover:bg-base-200 transition">
                   <span class="h-2.5 w-2.5 rounded-full shrink-0" [style.background]="u.color || '#6366f1'"></span>
-                  <span class="flex-1 truncate font-medium">{{ u.titulo }}</span>
-                  <span class="text-[10px] opacity-60">{{ countsFor(u.id).modulos }}🎯</span>
+                  <span class="flex-1 truncate font-medium">{{ u.title }}</span>
+                  <span class="text-[10px] opacity-60">{{ countsFor(u.id).modules }}🎯</span>
                 </button>
               }
             </div>
@@ -202,11 +202,11 @@ function linesFor(s: string): string[] {
         </aside>
       </div>
 
-      <!-- Modal de edición -->
+      <!-- Editing modal -->
       @if (dlg(); as d) {
         <app-editor [kind]="d.kind" [heading]="d.heading"
-          [initialTitulo]="d.titulo" [initialDescripcion]="d.descripcion"
-          [initialColor]="d.color" [initialBioma]="d.bioma" [initialTipo]="d.tipo" [initialUrl]="d.url"
+          [initialTitle]="d.title" [initialDescription]="d.description"
+          [initialColor]="d.color" [initialBiome]="d.biome" [initialType]="d.type" [initialUrl]="d.url"
           (cancel)="dlg.set(null)" (saveResult)="onSave($event)" />
       }
     } @else {
@@ -239,26 +239,26 @@ export class MapComponent {
     const passed = new Set(this.passedIds());
     void this.collapsed();
     const hide = new Set(this.collapsed());
-    const ns: N[] = [{ id: a.id, label: a.nombre, kind: 'asignatura', detail: a.descripcion, color: '#8b5cf6', x: 0, y: 0, r: 34 }];
+    const ns: N[] = [{ id: a.id, label: a.name, kind: 'asignatura', detail: a.description, color: '#8b5cf6', x: 0, y: 0, r: 34 }];
     let ux = 0;
-    for (const u of a.unidades) {
-      const uNode: N = { id: u.id, label: u.titulo, kind: 'unidad', detail: u.descripcion, color: u.color || '#6366f1', x: ux, y: DY * 1.4, r: 26 };
+    for (const u of a.sections) {
+      const uNode: N = { id: u.id, label: u.title, kind: 'unidad', detail: u.description, color: u.color || '#6366f1', x: ux, y: DY * 1.4, r: 26 };
       ns.push(uNode);
       if (hide.has(u.id)) {
         ux += DX * 1.5;
         continue;
       }
-      let mx = ux - ((u.modulos.length - 1) * DX) / 2;
-      for (const m of u.modulos) {
-        const leafCount = Math.max(1, m.anexos.length);
+      let mx = ux - ((u.modules.length - 1) * DX) / 2;
+      for (const m of u.modules) {
+        const leafCount = Math.max(1, m.attachments.length);
         const cx = mx + ((leafCount - 1) * DX) / 2;
-        ns.push({ id: m.id, label: m.titulo, kind: 'modulo', detail: m.descripcion, color: '#22c55e', x: cx, y: DY * 2.8, r: 20, unidadId: u.id, moduloId: m.id, passed: passed.has(m.id) });
-        m.anexos.forEach((x, i) => {
-          ns.push({ id: x.id, label: x.titulo, kind: 'anexo', detail: `${x.tipo}${x.descripcion ? ' — ' + x.descripcion : ''}${x.url ? ' · ' + x.url : ''}`, color: '#f59e0b', x: mx + i * DX, y: DY * 4, r: 15, unidadId: u.id, moduloId: m.id, tipo: x.tipo, url: x.url, visited: done.has(x.id) });
+        ns.push({ id: m.id, label: m.title, kind: 'modulo', detail: m.description, color: '#22c55e', x: cx, y: DY * 2.8, r: 20, sectionId: u.id, moduleId: m.id, passed: passed.has(m.id) });
+        m.attachments.forEach((x, i) => {
+          ns.push({ id: x.id, label: x.title, kind: 'anexo', detail: `${x.type}${x.description ? ' — ' + x.description : ''}${x.url ? ' · ' + x.url : ''}`, color: '#f59e0b', x: mx + i * DX, y: DY * 4, r: 15, sectionId: u.id, moduleId: m.id, type: x.type, url: x.url, visited: done.has(x.id) });
         });
         mx += leafCount * DX;
       }
-      ux = (u.modulos.length ? mx : ux + DX) + DX / 2;
+      ux = (u.modules.length ? mx : ux + DX) + DX / 2;
     }
     const kids = ns.filter((n) => n.kind === 'unidad');
     if (kids.length) ns[0].x = (kids[0].x + kids[kids.length - 1].x) / 2;
@@ -275,11 +275,11 @@ export class MapComponent {
       const q = byId.get(t);
       if (p && q) es.push({ x1: p.x, y1: p.y, x2: q.x, y2: q.y });
     };
-    for (const u of a.unidades) {
+    for (const u of a.sections) {
       link(a.id, u.id);
-      for (const m of u.modulos) {
+      for (const m of u.modules) {
         link(u.id, m.id);
-        for (const x of m.anexos) link(m.id, x.id);
+        for (const x of m.attachments) link(m.id, x.id);
       }
     }
     return es;
@@ -288,7 +288,7 @@ export class MapComponent {
   selected = computed(() => this.nodes().find((n) => n.id === this.selId()) ?? null);
   allCollapsed = computed(() => {
     const a = this.store.current();
-    return !!a?.unidades.length && a.unidades.every((u) => this.collapsed().includes(u.id));
+    return !!a?.sections.length && a.sections.every((u) => this.collapsed().includes(u.id));
   });
   viewBox = computed(() => {
     const ns = this.nodes();
@@ -306,38 +306,38 @@ export class MapComponent {
     this.refreshProgress();
   }
 
-  emojiFor(n: Pick<N, 'kind' | 'tipo'>): string {
+  emojiFor(n: Pick<N, 'kind' | 'type'>): string {
     if (n.kind === 'asignatura') return '🏰';
     if (n.kind === 'unidad') return '🌍';
     if (n.kind === 'modulo') return '🎯';
-    return ANEXO_ICON[n.tipo ?? ''] ?? '📦';
+    return ATTACHMENT_ICON[n.type ?? ''] ?? '📦';
   }
 
-  countsFor(unidadId: string): { modulos: number; anexos: number; done: number } {
-    const u = this.store.current()?.unidades.find((x) => x.id === unidadId);
-    if (!u) return { modulos: 0, anexos: 0, done: 0 };
-    const ids = u.modulos.flatMap((m) => m.anexos.map((x) => x.id));
+  countsFor(sectionId: string): { modules: number; attachments: number; done: number } {
+    const u = this.store.current()?.sections.find((x) => x.id === sectionId);
+    if (!u) return { modules: 0, attachments: 0, done: 0 };
+    const ids = u.modules.flatMap((m) => m.attachments.map((x) => x.id));
     const done = new Set(this.visitedIds());
-    return { modulos: u.modulos.length, anexos: ids.length, done: ids.filter((id) => done.has(id)).length };
+    return { modules: u.modules.length, attachments: ids.length, done: ids.filter((id) => done.has(id)).length };
   }
 
-  isCollapsed(unidadId: string): boolean {
-    return this.collapsed().includes(unidadId);
+  isCollapsed(sectionId: string): boolean {
+    return this.collapsed().includes(sectionId);
   }
 
-  hiddenCount(unidadId: string): number {
-    const u = this.store.current()?.unidades.find((x) => x.id === unidadId);
+  hiddenCount(sectionId: string): number {
+    const u = this.store.current()?.sections.find((x) => x.id === sectionId);
     if (!u) return 0;
-    return u.modulos.length + u.modulos.reduce((n, m) => n + m.anexos.length, 0);
+    return u.modules.length + u.modules.reduce((n, m) => n + m.attachments.length, 0);
   }
 
-  toggleCollapse(unidadId: string): void {
-    this.collapsed.update((c) => (c.includes(unidadId) ? c.filter((x) => x !== unidadId) : [...c, unidadId]));
+  toggleCollapse(sectionId: string): void {
+    this.collapsed.update((c) => (c.includes(sectionId) ? c.filter((x) => x !== sectionId) : [...c, sectionId]));
   }
 
   toggleAll(): void {
     if (this.allCollapsed()) this.collapsed.set([]);
-    else this.collapsed.set(this.store.current()?.unidades.map((u) => u.id) ?? []);
+    else this.collapsed.set(this.store.current()?.sections.map((u) => u.id) ?? []);
   }
 
   onDbl(n: N): void {
@@ -353,16 +353,16 @@ export class MapComponent {
     this.pan.set({ x: 40, y: 40 });
   }
 
-  openNewUnidad(): void {
-    this.dlg.set({ isNew: true, kind: 'unidad', heading: 'Nueva unidad', titulo: '', descripcion: '', color: '#6366f1', bioma: 'pradera', tipo: 'documento', url: '' });
+  openNewSection(): void {
+    this.dlg.set({ isNew: true, kind: 'unidad', heading: 'Nueva unidad', title: '', description: '', color: '#6366f1', biome: 'pradera', type: 'documento', url: '' });
   }
 
-  openNewModulo(unidadId: string): void {
-    this.dlg.set({ isNew: true, kind: 'modulo', unidadId, heading: 'Nuevo módulo', titulo: '', descripcion: '', color: '#6366f1', bioma: 'pradera', tipo: 'documento', url: '' });
+  openNewModule(sectionId: string): void {
+    this.dlg.set({ isNew: true, kind: 'modulo', sectionId, heading: 'Nuevo módulo', title: '', description: '', color: '#6366f1', biome: 'pradera', type: 'documento', url: '' });
   }
 
-  openNewAnexo(unidadId: string, moduloId: string): void {
-    this.dlg.set({ isNew: true, kind: 'anexo', unidadId, moduloId, heading: 'Nuevo anexo', titulo: '', descripcion: '', color: '#6366f1', bioma: 'pradera', tipo: 'documento', url: '' });
+  openNewAttachment(sectionId: string, moduleId: string): void {
+    this.dlg.set({ isNew: true, kind: 'anexo', sectionId, moduleId, heading: 'Nuevo anexo', title: '', description: '', color: '#6366f1', biome: 'pradera', type: 'documento', url: '' });
   }
 
   openEdit(): void {
@@ -371,20 +371,20 @@ export class MapComponent {
     if (!s || !a) return;
     if (s.kind === 'asignatura') return;
     if (s.kind === 'unidad') {
-      const u = a.unidades.find((x) => x.id === s.id);
+      const u = a.sections.find((x) => x.id === s.id);
       if (!u) return;
-      this.dlg.set({ isNew: false, kind: 'unidad', unidadId: u.id, heading: 'Editar unidad', titulo: u.titulo, descripcion: u.descripcion, color: u.color || '#6366f1', bioma: u.bioma || 'pradera', tipo: 'documento', url: '' });
-    } else if (s.kind === 'modulo' && s.unidadId) {
-      const m = a.unidades.find((x) => x.id === s.unidadId)?.modulos.find((x) => x.id === s.id);
+      this.dlg.set({ isNew: false, kind: 'unidad', sectionId: u.id, heading: 'Editar unidad', title: u.title, description: u.description, color: u.color || '#6366f1', biome: u.biome || 'pradera', type: 'documento', url: '' });
+    } else if (s.kind === 'modulo' && s.sectionId) {
+      const m = a.sections.find((x) => x.id === s.sectionId)?.modules.find((x) => x.id === s.id);
       if (!m) return;
-      this.dlg.set({ isNew: false, kind: 'modulo', unidadId: s.unidadId, moduloId: m.id, heading: 'Editar módulo', titulo: m.titulo, descripcion: m.descripcion, color: '#6366f1', bioma: 'pradera', tipo: 'documento', url: '' });
-    } else if (s.kind === 'anexo' && s.unidadId && s.moduloId) {
-      const x = a.unidades
-        .find((u) => u.id === s.unidadId)
-        ?.modulos.find((m) => m.id === s.moduloId)
-        ?.anexos.find((e) => e.id === s.id);
+      this.dlg.set({ isNew: false, kind: 'modulo', sectionId: s.sectionId, moduleId: m.id, heading: 'Editar módulo', title: m.title, description: m.description, color: '#6366f1', biome: 'pradera', type: 'documento', url: '' });
+    } else if (s.kind === 'anexo' && s.sectionId && s.moduleId) {
+      const x = a.sections
+        .find((u) => u.id === s.sectionId)
+        ?.modules.find((m) => m.id === s.moduleId)
+        ?.attachments.find((e) => e.id === s.id);
       if (!x) return;
-      this.dlg.set({ isNew: false, kind: 'anexo', unidadId: s.unidadId, moduloId: s.moduloId, anexoId: x.id, heading: 'Editar anexo', titulo: x.titulo, descripcion: x.descripcion || '', color: '#6366f1', bioma: 'pradera', tipo: x.tipo, url: x.url || '' });
+      this.dlg.set({ isNew: false, kind: 'anexo', sectionId: s.sectionId, moduleId: s.moduleId, attachmentId: x.id, heading: 'Editar anexo', title: x.title, description: x.description || '', color: '#6366f1', biome: 'pradera', type: x.type, url: x.url || '' });
     }
   }
 
@@ -393,34 +393,34 @@ export class MapComponent {
     if (!d) return;
     if (d.isNew) {
       if (d.kind === 'unidad') {
-        if (!r.titulo.trim()) return;
-        this.store.addUnidad(r.titulo.trim());
-        const all = this.store.current()?.unidades ?? [];
+        if (!r.title.trim()) return;
+        this.store.addSection(r.title.trim());
+        const all = this.store.current()?.sections ?? [];
         const u = all[all.length - 1];
-        if (u) this.store.editUnidad(u.id, { descripcion: r.descripcion, color: r.color, bioma: r.bioma });
+        if (u) this.store.editSection(u.id, { description: r.description, color: r.color, biome: r.biome });
         if (u) this.selId.set(u.id);
-      } else if (d.kind === 'modulo' && d.unidadId) {
-        if (!r.titulo.trim()) return;
-        this.store.addModulo(d.unidadId, r.titulo.trim());
-        const ms = this.store.current()?.unidades.find((u) => u.id === d.unidadId)?.modulos;
+      } else if (d.kind === 'modulo' && d.sectionId) {
+        if (!r.title.trim()) return;
+        this.store.addModule(d.sectionId, r.title.trim());
+        const ms = this.store.current()?.sections.find((u) => u.id === d.sectionId)?.modules;
         const m = ms?.[ms.length - 1];
-        if (m) this.store.editModulo(d.unidadId, m.id, { descripcion: r.descripcion });
+        if (m) this.store.editModule(d.sectionId, m.id, { description: r.description });
         if (m) this.selId.set(m.id);
-      } else if (d.kind === 'anexo' && d.unidadId && d.moduloId) {
-        if (!r.titulo.trim()) return;
-        this.store.addAnexo(d.unidadId, d.moduloId, r.titulo.trim(), r.tipo ?? 'documento');
-        const xs = this.store.current()?.unidades.find((u) => u.id === d.unidadId)?.modulos.find((m) => m.id === d.moduloId)?.anexos;
+      } else if (d.kind === 'anexo' && d.sectionId && d.moduleId) {
+        if (!r.title.trim()) return;
+        this.store.addAttachment(d.sectionId, d.moduleId, r.title.trim(), r.type ?? 'documento');
+        const xs = this.store.current()?.sections.find((u) => u.id === d.sectionId)?.modules.find((m) => m.id === d.moduleId)?.attachments;
         const x = xs?.[xs.length - 1];
-        if (x) this.store.editAnexo(d.unidadId, d.moduloId, x.id, { descripcion: r.descripcion, tipo: r.tipo, url: r.url });
+        if (x) this.store.editAttachment(d.sectionId, d.moduleId, x.id, { description: r.description, type: r.type, url: r.url });
         if (x) this.selId.set(x.id);
       }
     } else {
-      if (d.kind === 'unidad' && d.unidadId)
-        this.store.editUnidad(d.unidadId, { titulo: r.titulo, descripcion: r.descripcion, color: r.color, bioma: r.bioma });
-      if (d.kind === 'modulo' && d.unidadId && d.moduloId)
-        this.store.editModulo(d.unidadId, d.moduloId, { titulo: r.titulo, descripcion: r.descripcion });
-      if (d.kind === 'anexo' && d.unidadId && d.moduloId && d.anexoId)
-        this.store.editAnexo(d.unidadId, d.moduloId, d.anexoId, { titulo: r.titulo, descripcion: r.descripcion, tipo: r.tipo, url: r.url });
+      if (d.kind === 'unidad' && d.sectionId)
+        this.store.editSection(d.sectionId, { title: r.title, description: r.description, color: r.color, biome: r.biome });
+      if (d.kind === 'modulo' && d.sectionId && d.moduleId)
+        this.store.editModule(d.sectionId, d.moduleId, { title: r.title, description: r.description });
+      if (d.kind === 'anexo' && d.sectionId && d.moduleId && d.attachmentId)
+        this.store.editAttachment(d.sectionId, d.moduleId, d.attachmentId, { title: r.title, description: r.description, type: r.type, url: r.url });
     }
     this.dlg.set(null);
   }
@@ -428,17 +428,17 @@ export class MapComponent {
   removeSelected(): void {
     const s = this.selected();
     if (!s || s.kind === 'asignatura') return;
-    if (s.kind === 'unidad') this.store.removeUnidad(s.id);
-    else if (s.kind === 'modulo' && s.unidadId) this.store.removeModulo(s.unidadId, s.id);
-    else if (s.kind === 'anexo' && s.unidadId && s.moduloId) this.store.removeAnexo(s.unidadId, s.moduloId, s.id);
+    if (s.kind === 'unidad') this.store.removeSection(s.id);
+    else if (s.kind === 'modulo' && s.sectionId) this.store.removeModule(s.sectionId, s.id);
+    else if (s.kind === 'anexo' && s.sectionId && s.moduleId) this.store.removeAttachment(s.sectionId, s.moduleId, s.id);
     this.selId.set('');
   }
 
   moveSelected(dir: -1 | 1): void {
     const s = this.selected();
     if (!s) return;
-    if (s.kind === 'unidad') this.store.moveUnidad(s.id, dir);
-    else if (s.kind === 'modulo' && s.unidadId) this.store.moveModulo(s.unidadId, s.id, dir);
+    if (s.kind === 'unidad') this.store.moveSection(s.id, dir);
+    else if (s.kind === 'modulo' && s.sectionId) this.store.moveModule(s.sectionId, s.id, dir);
   }
 
   private refreshProgress(): void {

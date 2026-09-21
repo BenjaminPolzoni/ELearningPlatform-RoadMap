@@ -1,134 +1,134 @@
-import { avatarPorDefecto } from '../../core/avatar/avatar.models';
-import { FilaRanking } from '../../core/data/ranking.models';
+import { defaultAvatar } from '../../core/avatar/avatar.models';
+import { RankingRow } from '../../core/data/ranking.models';
 import {
-  cortesActivos,
-  enRiesgoRegularidad,
-  esCandidatoPromocion,
-  ordenarCohorte,
-  percentilDe,
-  zonaDe,
-} from './ranking.reglas';
+  activeCutoffs,
+  inRiskRegularity,
+  isCandidatePromotion,
+  sortCohort,
+  percentileOf,
+  zoneOf,
+} from './ranking.rules';
 
-function fila(over: Partial<FilaRanking>): FilaRanking {
+function row(over: Partial<RankingRow>): RankingRow {
   return {
-    alumnoId: 'x',
-    posicion: 0,
-    nombre: 'N',
-    apellido: 'A',
-    legajo: '0',
-    avatar: avatarPorDefecto('indefinido'),
+    studentId: 'x',
+    position: 0,
+    name: 'N',
+    lastName: 'A',
+    fileNumber: '0',
+    avatar: defaultAvatar('indefinido'),
     xpTotal: 1000,
-    nivelNodo: 5,
-    percentil: 0,
-    zona: 'ninguna',
-    insignias: 0,
-    vidas: 3,
-    monedas: 0,
-    vidasPerdidasHistorico: 0,
-    ejerciciosCompletados: 0,
-    obligatoriosAprobadosPct: 100,
+    nodeLevel: 5,
+    percentile: 0,
+    zone: 'ninguna',
+    badges: 0,
+    lives: 3,
+    coins: 0,
+    lostLives: 0,
+    completedExercises: 0,
+    mandatoryPassedPct: 100,
     ...over,
   };
 }
 
-describe('ordenarCohorte', () => {
-  it('ordena por XP descendente y numera las posiciones', () => {
-    const r = ordenarCohorte([
-      fila({ alumnoId: 'b', xpTotal: 500 }),
-      fila({ alumnoId: 'a', xpTotal: 900 }),
-      fila({ alumnoId: 'c', xpTotal: 100 }),
+describe('sortCohort', () => {
+  it('sorts by XP descending and numbers the positions', () => {
+    const r = sortCohort([
+      row({ studentId: 'b', xpTotal: 500 }),
+      row({ studentId: 'a', xpTotal: 900 }),
+      row({ studentId: 'c', xpTotal: 100 }),
     ]);
-    expect(r.map((f) => f.alumnoId)).toEqual(['a', 'b', 'c']);
-    expect(r.map((f) => f.posicion)).toEqual([1, 2, 3]);
+    expect(r.map((f) => f.studentId)).toEqual(['a', 'b', 'c']);
+    expect(r.map((f) => f.position)).toEqual([1, 2, 3]);
   });
 
-  it('aplica la cascada de desempate RF-RNK-11: +insignias, −vidas perdidas, +ejercicios', () => {
+  it('applies the RF-RNK-11 tiebreak cascade: +badges, −lost lives, +exercises', () => {
     const base = { xpTotal: 1000 };
-    const porInsignias = ordenarCohorte([
-      fila({ alumnoId: 'pocas', ...base, insignias: 2 }),
-      fila({ alumnoId: 'muchas', ...base, insignias: 6 }),
+    const byBadges = sortCohort([
+      row({ studentId: 'pocas', ...base, badges: 2 }),
+      row({ studentId: 'muchas', ...base, badges: 6 }),
     ]);
-    expect(porInsignias[0].alumnoId).toBe('muchas');
+    expect(byBadges[0].studentId).toBe('muchas');
 
-    const porVidas = ordenarCohorte([
-      fila({ alumnoId: 'perdio', ...base, insignias: 3, vidasPerdidasHistorico: 2 }),
-      fila({ alumnoId: 'intacto', ...base, insignias: 3, vidasPerdidasHistorico: 0 }),
+    const byLives = sortCohort([
+      row({ studentId: 'perdio', ...base, badges: 3, lostLives: 2 }),
+      row({ studentId: 'intacto', ...base, badges: 3, lostLives: 0 }),
     ]);
-    expect(porVidas[0].alumnoId).toBe('intacto');
+    expect(byLives[0].studentId).toBe('intacto');
 
-    const porEjercicios = ordenarCohorte([
-      fila({
-        alumnoId: 'menos',
+    const byExercises = sortCohort([
+      row({
+        studentId: 'menos',
         ...base,
-        insignias: 3,
-        vidasPerdidasHistorico: 1,
-        ejerciciosCompletados: 10,
+        badges: 3,
+        lostLives: 1,
+        completedExercises: 10,
       }),
-      fila({
-        alumnoId: 'mas',
+      row({
+        studentId: 'mas',
         ...base,
-        insignias: 3,
-        vidasPerdidasHistorico: 1,
-        ejerciciosCompletados: 30,
+        badges: 3,
+        lostLives: 1,
+        completedExercises: 30,
       }),
     ]);
-    expect(porEjercicios[0].alumnoId).toBe('mas');
+    expect(byExercises[0].studentId).toBe('mas');
   });
 
-  it('no muta el array de entrada', () => {
-    const entrada = [fila({ xpTotal: 1 }), fila({ xpTotal: 2 })];
-    const copia = [...entrada];
-    ordenarCohorte(entrada);
-    expect(entrada).toEqual(copia);
+  it('does not mutate the input array', () => {
+    const entry = [row({ xpTotal: 1 }), row({ xpTotal: 2 })];
+    const copy = [...entry];
+    sortCohort(entry);
+    expect(entry).toEqual(copy);
   });
 });
 
-describe('percentiles y zonas (RF-RNK-09)', () => {
-  it('los cortes se activan solo con 10 o más inscriptos', () => {
-    expect(cortesActivos(9)).toBe(false);
-    expect(cortesActivos(10)).toBe(true);
+describe('percentiles and zones (RF-RNK-09)', () => {
+  it('the cutoffs are activated only with 10 or more enrolled', () => {
+    expect(activeCutoffs(9)).toBe(false);
+    expect(activeCutoffs(10)).toBe(true);
   });
 
-  it('con menos de 10 inscriptos ninguna posición tiene zona', () => {
-    expect(zonaDe(1, 9)).toBe('ninguna');
-    expect(zonaDe(9, 9)).toBe('ninguna');
+  it('with fewer than 10 enrolled no position has a zone', () => {
+    expect(zoneOf(1, 9)).toBe('ninguna');
+    expect(zoneOf(9, 9)).toBe('ninguna');
   });
 
-  it('con 12 inscriptos marca P90 arriba y P10 abajo', () => {
-    expect(zonaDe(1, 12)).toBe('p90');
-    expect(zonaDe(6, 12)).toBe('ninguna');
-    expect(zonaDe(12, 12)).toBe('p10');
+  it('with 12 enrolled it marks P90 on top and P10 at the bottom', () => {
+    expect(zoneOf(1, 12)).toBe('p90');
+    expect(zoneOf(6, 12)).toBe('ninguna');
+    expect(zoneOf(12, 12)).toBe('p10');
   });
 
-  it('percentil decreciente por posición', () => {
-    expect(percentilDe(1, 12)).toBe(100);
-    expect(percentilDe(12, 12)).toBe(8);
+  it('percentile decreasing by position', () => {
+    expect(percentileOf(1, 12)).toBe(100);
+    expect(percentileOf(12, 12)).toBe(8);
   });
 });
 
-describe('candidato a promoción / riesgo de regularidad', () => {
-  it('candidato = P90 + 0 vidas perdidas + 100% obligatorios (RF-RNK-05)', () => {
+describe('promotion candidate / regularity risk', () => {
+  it('candidate = P90 + 0 lost lives + 100% mandatory (RF-RNK-05)', () => {
     expect(
-      esCandidatoPromocion(
-        fila({ zona: 'p90', vidasPerdidasHistorico: 0, obligatoriosAprobadosPct: 100 }),
+      isCandidatePromotion(
+        row({ zone: 'p90', lostLives: 0, mandatoryPassedPct: 100 }),
       ),
     ).toBe(true);
     expect(
-      esCandidatoPromocion(
-        fila({ zona: 'p90', vidasPerdidasHistorico: 1, obligatoriosAprobadosPct: 100 }),
+      isCandidatePromotion(
+        row({ zone: 'p90', lostLives: 1, mandatoryPassedPct: 100 }),
       ),
     ).toBe(false);
     expect(
-      esCandidatoPromocion(
-        fila({ zona: 'ninguna', vidasPerdidasHistorico: 0, obligatoriosAprobadosPct: 100 }),
+      isCandidatePromotion(
+        row({ zone: 'ninguna', lostLives: 0, mandatoryPassedPct: 100 }),
       ),
     ).toBe(false);
   });
 
-  it('riesgo = P10 + obligatorios sin cerrar (RF-RNK-06)', () => {
-    expect(enRiesgoRegularidad(fila({ zona: 'p10', obligatoriosAprobadosPct: 70 }))).toBe(true);
-    expect(enRiesgoRegularidad(fila({ zona: 'p10', obligatoriosAprobadosPct: 100 }))).toBe(false);
-    expect(enRiesgoRegularidad(fila({ zona: 'ninguna', obligatoriosAprobadosPct: 40 }))).toBe(
+  it('risk = P10 + unfinished mandatory items (RF-RNK-06)', () => {
+    expect(inRiskRegularity(row({ zone: 'p10', mandatoryPassedPct: 70 }))).toBe(true);
+    expect(inRiskRegularity(row({ zone: 'p10', mandatoryPassedPct: 100 }))).toBe(false);
+    expect(inRiskRegularity(row({ zone: 'ninguna', mandatoryPassedPct: 40 }))).toBe(
       false,
     );
   });

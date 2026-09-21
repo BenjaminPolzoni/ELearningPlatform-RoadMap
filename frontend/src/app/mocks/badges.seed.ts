@@ -1,166 +1,166 @@
-import { InsigniaCatalogo, InsigniaOtorgada } from '../core/data/insignias.models';
-import { cohorteMock } from './ranking.seed';
+import { BadgeCatalog, GrantedBadge } from '../core/data/badges.models';
+import { cohortMock } from './ranking.seed';
 
 /**
- * Las 14 insignias del catálogo (pixel-art-arcade-icons skill, references/pixel-grids.md):
- * 12 transversales + 2 por nodo. 10 tienen ícono terminado, 4 están marcadas "rehacer" en
- * la skill (`iconoPendiente: true`) — se muestran igual, con el ícono provisorio.
+ * The 14 badges of the catalog (pixel-art-arcade-icons skill, references/pixel-grids.md):
+ * 12 cross-cutting + 2 per node. 10 have a finished icon, 4 are marked "redo" in
+ * the skill (`pendingIcon: true`) — they are shown anyway, with the provisional icon.
  */
-export function catalogoInsigniasSeed(): InsigniaCatalogo[] {
+export function catalogBadgesSeed(): BadgeCatalog[] {
   return [
     {
-      insigniaId: 'ins-seccion-perfecta',
-      codigo: 'badge_seccion_perfecta',
-      nombre: 'Sección perfecta',
-      descripcion: 'Completaste una sección entera sin perder vidas.',
-      tipo: 'TRANSVERSAL',
-      origen: 'SISTEMA',
-      iconoPendiente: false,
+      badgeId: 'ins-seccion-perfecta',
+      code: 'badge_seccion_perfecta',
+      name: 'Sección perfecta',
+      description: 'Completaste una sección entera sin perder vidas.',
+      type: 'TRANSVERSAL',
+      origin: 'SISTEMA',
+      pendingIcon: false,
     },
     {
-      insigniaId: 'ins-a-la-primera',
-      codigo: 'badge_a_la_primera',
-      nombre: 'A la primera',
-      descripcion: 'Superaste un nodo sin usar reintentos.',
-      tipo: 'TRANSVERSAL',
-      origen: 'SISTEMA',
-      iconoPendiente: false,
+      badgeId: 'ins-a-la-primera',
+      code: 'badge_a_la_primera',
+      name: 'A la primera',
+      description: 'Superaste un nodo sin usar reintentos.',
+      type: 'TRANSVERSAL',
+      origin: 'SISTEMA',
+      pendingIcon: false,
     },
     {
-      insigniaId: 'ins-segunda-oportunidad',
-      codigo: 'badge_segunda_oportunidad',
-      nombre: 'Segunda oportunidad',
-      descripcion: 'Recuperaste una vida perdida.',
-      tipo: 'TRANSVERSAL',
-      origen: 'SISTEMA',
-      iconoPendiente: true,
+      badgeId: 'ins-segunda-oportunidad',
+      code: 'badge_segunda_oportunidad',
+      name: 'Segunda oportunidad',
+      description: 'Recuperaste una vida perdida.',
+      type: 'TRANSVERSAL',
+      origin: 'SISTEMA',
+      pendingIcon: true,
     },
     {
-      insigniaId: 'ins-hito-xp-bronce',
-      codigo: 'badge_hito_xp_bronce',
-      nombre: 'Hito de XP · Bronce',
-      descripcion: 'Alcanzaste el primer umbral de XP del curso.',
-      tipo: 'TRANSVERSAL',
-      origen: 'SISTEMA',
-      iconoPendiente: false,
+      badgeId: 'ins-hito-xp-bronce',
+      code: 'badge_hito_xp_bronce',
+      name: 'Hito de XP · Bronce',
+      description: 'Alcanzaste el primer umbral de XP del curso.',
+      type: 'TRANSVERSAL',
+      origin: 'SISTEMA',
+      pendingIcon: false,
     },
     {
-      insigniaId: 'ins-hito-xp-plata',
-      codigo: 'badge_hito_xp_plata',
-      nombre: 'Hito de XP · Plata',
-      descripcion: 'Alcanzaste el segundo umbral de XP del curso.',
-      tipo: 'TRANSVERSAL',
-      origen: 'SISTEMA',
-      iconoPendiente: false,
+      badgeId: 'ins-hito-xp-plata',
+      code: 'badge_hito_xp_plata',
+      name: 'Hito de XP · Plata',
+      description: 'Alcanzaste el segundo umbral de XP del curso.',
+      type: 'TRANSVERSAL',
+      origin: 'SISTEMA',
+      pendingIcon: false,
     },
     {
-      insigniaId: 'ins-hito-xp-oro',
-      codigo: 'badge_hito_xp_oro',
-      nombre: 'Hito de XP · Oro',
-      descripcion: 'Alcanzaste el tercer umbral de XP del curso.',
-      tipo: 'TRANSVERSAL',
-      origen: 'SISTEMA',
-      iconoPendiente: false,
+      badgeId: 'ins-hito-xp-oro',
+      code: 'badge_hito_xp_oro',
+      name: 'Hito de XP · Oro',
+      description: 'Alcanzaste el tercer umbral de XP del curso.',
+      type: 'TRANSVERSAL',
+      origin: 'SISTEMA',
+      pendingIcon: false,
     },
     {
-      insigniaId: 'ins-subiste-de-nivel',
-      codigo: 'badge_subiste_de_nivel',
-      nombre: 'Subiste de nivel',
-      descripcion: 'Llegaste a un nuevo nivel.',
-      tipo: 'TRANSVERSAL',
-      origen: 'SISTEMA',
-      iconoPendiente: true,
+      badgeId: 'ins-subiste-de-nivel',
+      code: 'badge_subiste_de_nivel',
+      name: 'Subiste de nivel',
+      description: 'Llegaste a un nuevo nivel.',
+      type: 'TRANSVERSAL',
+      origin: 'SISTEMA',
+      pendingIcon: true,
     },
     {
-      insigniaId: 'ins-zona-elite',
-      codigo: 'badge_zona_elite',
-      nombre: 'Zona de élite',
-      descripcion: 'Entraste a la zona P90 del ranking de la cohorte.',
-      tipo: 'TRANSVERSAL',
-      origen: 'SISTEMA',
-      iconoPendiente: false,
+      badgeId: 'ins-zona-elite',
+      code: 'badge_zona_elite',
+      name: 'Zona de élite',
+      description: 'Entraste a la zona P90 del ranking de la cohorte.',
+      type: 'TRANSVERSAL',
+      origin: 'SISTEMA',
+      pendingIcon: false,
     },
     {
-      insigniaId: 'ins-primeros-pasos',
-      codigo: 'badge_primeros_pasos',
-      nombre: 'Primeros pasos',
-      descripcion: 'Completaste tu primer nodo obligatorio.',
-      tipo: 'TRANSVERSAL',
-      origen: 'SISTEMA',
-      iconoPendiente: false,
+      badgeId: 'ins-primeros-pasos',
+      code: 'badge_primeros_pasos',
+      name: 'Primeros pasos',
+      description: 'Completaste tu primer nodo obligatorio.',
+      type: 'TRANSVERSAL',
+      origin: 'SISTEMA',
+      pendingIcon: false,
     },
     {
-      insigniaId: 'ins-explorador',
-      codigo: 'badge_explorador',
-      nombre: 'Explorador',
-      descripcion: 'Completaste un nodo opcional.',
-      tipo: 'TRANSVERSAL',
-      origen: 'SISTEMA',
-      iconoPendiente: true,
+      badgeId: 'ins-explorador',
+      code: 'badge_explorador',
+      name: 'Explorador',
+      description: 'Completaste un nodo opcional.',
+      type: 'TRANSVERSAL',
+      origin: 'SISTEMA',
+      pendingIcon: true,
     },
     {
-      insigniaId: 'ins-maraton',
-      codigo: 'badge_maraton',
-      nombre: 'Maratón',
-      descripcion: 'Completaste una sección entera en un solo día.',
-      tipo: 'TRANSVERSAL',
-      origen: 'SISTEMA',
-      iconoPendiente: true,
+      badgeId: 'ins-maraton',
+      code: 'badge_maraton',
+      name: 'Maratón',
+      description: 'Completaste una sección entera en un solo día.',
+      type: 'TRANSVERSAL',
+      origin: 'SISTEMA',
+      pendingIcon: true,
     },
     {
-      insigniaId: 'ins-pionero',
-      codigo: 'badge_pionero',
-      nombre: 'Pionero',
-      descripcion: 'Fuiste el primero de la cohorte en completar un nodo.',
-      tipo: 'TRANSVERSAL',
-      origen: 'SISTEMA',
-      iconoPendiente: false,
+      badgeId: 'ins-pionero',
+      code: 'badge_pionero',
+      name: 'Pionero',
+      description: 'Fuiste el primero de la cohorte en completar un nodo.',
+      type: 'TRANSVERSAL',
+      origin: 'SISTEMA',
+      pendingIcon: false,
     },
     {
-      insigniaId: 'ins-boss',
-      codigo: 'badge_boss',
-      nombre: 'Boss',
-      descripcion: 'Hito especial asignado por el profesor a un nodo puntual.',
-      tipo: 'POR_NODO',
-      origen: 'SISTEMA',
-      iconoPendiente: false,
+      badgeId: 'ins-boss',
+      code: 'badge_boss',
+      name: 'Boss',
+      description: 'Hito especial asignado por el profesor a un nodo puntual.',
+      type: 'POR_NODO',
+      origin: 'SISTEMA',
+      pendingIcon: false,
     },
     {
-      insigniaId: 'ins-evento',
-      codigo: 'badge_evento',
-      nombre: 'Insignia de evento',
-      descripcion: 'Desafío puntual, como un hackathon interno.',
-      tipo: 'POR_NODO',
-      origen: 'SISTEMA',
-      iconoPendiente: false,
+      badgeId: 'ins-evento',
+      code: 'badge_evento',
+      name: 'Insignia de evento',
+      description: 'Desafío puntual, como un hackathon interno.',
+      type: 'POR_NODO',
+      origin: 'SISTEMA',
+      pendingIcon: false,
     },
   ];
 }
 
-function hash(texto: string): number {
+function hash(text: string): number {
   let h = 0;
-  for (let i = 0; i < texto.length; i++) h = (h * 31 + texto.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) >>> 0;
   return h;
 }
 
 /**
- * Insignias ganadas por un alumno. No hay endpoint real todavía (ver `InsigniasDataPort`),
- * así que se deriva de `cohorteMock()`: usa la cantidad que ya tiene ese alumno en
- * `FilaRanking.insignias` (para no mostrar un número distinto en ranking vs. acá) y elige
- * un subconjunto estable del catálogo con un hash simple — mismo alumno, mismo resultado
- * siempre, sin random real.
+ * Badges earned by a student. There is no real endpoint yet (see `BadgesDataPort`),
+ * so it is derived from `cohortMock()`: it uses the count that student already has in
+ * `RankingRow.badges` (so as not to show a different number in ranking vs. here) and picks
+ * a stable subset of the catalog with a simple hash — same student, same result
+ * always, no real random.
  */
-export function insigniasGanadasSeed(alumnoId: string): InsigniaOtorgada[] {
-  const fila = cohorteMock().find((f) => f.alumnoId === alumnoId);
-  const catalogo = catalogoInsigniasSeed();
-  const cantidad = Math.min(fila?.insignias ?? 0, catalogo.length);
+export function earnedBadgesSeed(studentId: string): GrantedBadge[] {
+  const row = cohortMock().find((f) => f.studentId === studentId);
+  const catalog = catalogBadgesSeed();
+  const count = Math.min(row?.badges ?? 0, catalog.length);
 
-  const ordenado = [...catalogo].sort(
-    (a, b) => hash(alumnoId + a.codigo) - hash(alumnoId + b.codigo),
+  const sorted = [...catalog].sort(
+    (a, b) => hash(studentId + a.code) - hash(studentId + b.code),
   );
 
-  return ordenado.slice(0, cantidad).map((insignia, i) => ({
-    insigniaId: insignia.insigniaId,
-    otorgadaEn: new Date(2026, 2, 1 + ((hash(alumnoId + insignia.codigo) + i) % 60)).toISOString(),
+  return sorted.slice(0, count).map((badge, i) => ({
+    badgeId: badge.badgeId,
+    grantedIn: new Date(2026, 2, 1 + ((hash(studentId + badge.code) + i) % 60)).toISOString(),
   }));
 }

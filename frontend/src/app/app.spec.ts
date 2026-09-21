@@ -10,12 +10,12 @@ describe('App', () => {
     }).compileComponents();
   });
 
-  it('crea el shell', () => {
+  it('creates the shell', () => {
     const fixture = TestBed.createComponent(App);
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('sin sesión no muestra la navbar', async () => {
+  it('without a session it does not show the navbar', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     expect((fixture.nativeElement as HTMLElement).querySelector('header')).toBeNull();

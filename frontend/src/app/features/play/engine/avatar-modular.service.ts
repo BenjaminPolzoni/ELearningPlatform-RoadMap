@@ -3,10 +3,10 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
-import { AvatarModularConfig, leerConfigModular, MODULAR_CONFIG_KEY, sanearConfigModular } from './avatar-config';
+import { AvatarModularConfig, readConfigModular, MODULAR_CONFIG_KEY, sanitizeConfigModular } from './avatar-config';
 import {
   applyShoesTint,
-  CargarClase,
+  LoadCharacterClass,
   createAvatarMounter,
   extractFaceGeometry,
   isHeadMesh,
@@ -15,7 +15,7 @@ import {
 } from './avatar-modular-core';
 import {
   AnimTick,
-  CargarEscena,
+  LoadScene,
   createBackpack,
   createFlowerAntennae,
   createFlyingBat,
@@ -39,103 +39,103 @@ import {
   RgbTick,
 } from './avatar-procedural';
 
-const BASE_PERSONAJES = '/mundo-3d/Assets/CharacterV2/Characters/gltf/';
-const BASE_UTILES = '/mundo-3d/Assets/CharacterV2/Assets/gltf/';
+const BASE_CHARACTERS = '/mundo-3d/Assets/CharacterV2/Characters/gltf/';
+const USEFUL_BASE = '/mundo-3d/Assets/CharacterV2/Assets/gltf/';
 const BASE_MIXED = '/mundo-3d/Assets/Cosmetics/mixed/';
 const BASE_STARS = '/mundo-3d/Assets/Cosmetics/stars/';
 
-/** Personaje ensamblado listo para entrar a escena. */
+/** Assembled character ready to enter the scene. */
 export interface AvatarBuild {
-  /** Grupo del jugador (rig + piezas modulares + cosméticos + mascota voladora). */
+  /** Player group (rig + modular pieces + cosmetics + flying pet). */
   group: THREE.Group;
-  /** Cuerpo (sin mascota): lo que se oculta en primera persona. */
-  cuerpo: THREE.Group;
-  /** Alto del cuerpo ya escalado a 0.32 (composición preview/ciudad): normaliza el mundo. */
+  /** Body (without pet): what gets hidden in first person. */
+  body: THREE.Group;
+  /** Body height already scaled to 0.32 (preview/city composition): normalizes the world. */
   baseHeight: number;
-  /** Mascota terrestre en espacio de mundo (la agrega a escena quien tenga la escena). */
+  /** Ground pet in world space (added to the scene by whoever owns the scene). */
   groundPet: THREE.Group | null;
-  /** Avance por frame: RGB + mascotas. Lo llama el loop del mundo. */
+  /** Per-frame advance: RGB + pets. Called by the world loop. */
   tick(t: number, dt: number): void;
-  /** Desengancha la mascota terrestre y suelta referencias (sin dispose GPU: geometrías cacheadas). */
+  /** Detaches the ground pet and drops references (no GPU dispose: geometries are cached). */
   detach(): void;
 }
 
 /**
- * Ensambla el personaje 3D creado en la ciudad para el mundo hexagonal.
- * Port de la orquestación de `public/mundo-3d/avatar-preview.html`
+ * Assembles the 3D character created in the city for the hexagonal world.
+ * Port of the orchestration of `public/mundo-3d/avatar-preview.html`
  * (applyModularParts, applyCosmetics, attachItems, applyPet + pets).
  */
 @Injectable({ providedIn: 'root' })
 export class AvatarModularService {
   private readonly loader = new GLTFLoader();
-  private readonly clases = new Map<string, GLTF | null>();
+  private readonly classModels = new Map<string, GLTF | null>();
   private readonly mixed = new Map<string, THREE.Group | null>();
-  private readonly estrellas = new Map<string, THREE.Group | null>();
-  private readonly gorros = new Map<string, { hMesh?: THREE.SkinnedMesh; vMesh?: THREE.SkinnedMesh; bMesh?: THREE.SkinnedMesh }>();
+  private readonly stars = new Map<string, THREE.Group | null>();
+  private readonly hats = new Map<string, { hMesh?: THREE.SkinnedMesh; vMesh?: THREE.SkinnedMesh; bMesh?: THREE.SkinnedMesh }>();
 
-  /** Config guardada por la ciudad; `null` si el alumno aún no creó su personaje. */
-  leer(): AvatarModularConfig | null {
-    return leerConfigModular();
+  /** Config saved by the city; `null` if the student has not created their character yet. */
+  read(): AvatarModularConfig | null {
+    return readConfigModular();
   }
 
-  /** Persiste la config del panel (misma clave que escribe la ciudad). */
-  guardar(config: AvatarModularConfig): AvatarModularConfig {
-    const saneada = sanearConfigModular(config);
+  /** Persists the panel's config (same key the city writes). */
+  save(config: AvatarModularConfig): AvatarModularConfig {
+    const sanitized = sanitizeConfigModular(config);
     try {
-      localStorage.setItem(MODULAR_CONFIG_KEY, JSON.stringify(saneada));
+      localStorage.setItem(MODULAR_CONFIG_KEY, JSON.stringify(sanitized));
     } catch {
-      /* ignorar: sin storage el cambio no sobrevive al refresh */
+      /* ignore: without storage the change does not survive a refresh */
     }
-    return saneada;
+    return sanitized;
   }
 
   /**
-   * Aplica un arquetipo propagando clase a cabeza, torso, pantalón, zapatos, pelo
-   * default y barba según clase — pero CONSERVA accesorios, mascota, manos y colores
-   * (incluido el tapaboca). Igual que el preset de la ciudad: cambiar de arquetipo
-   * nunca borra lo ya elegido.
+   * Applies an archetype propagating class to head, torso, pants, shoes, default
+   * hair and beard according to class — but KEEPS accessories, pet, hands and colors
+   * (including the face covering). Same as the city preset: changing archetype
+   * never erases what was already chosen.
    */
-  aplicarArquetipo(config: AvatarModularConfig, clase: string): AvatarModularConfig {
+  applyArchetype(config: AvatarModularConfig, characterClass: string): AvatarModularConfig {
     const next: AvatarModularConfig = {
       ...config,
-      characterClass: clase,
-      headStyle: clase,
+      characterClass: characterClass,
+      headStyle: characterClass,
       hairStyle: 'default',
-      topStyle: clase,
-      pantsStyle: clase,
-      shoesStyle: clase,
+      topStyle: characterClass,
+      pantsStyle: characterClass,
+      shoesStyle: characterClass,
     };
     if (next.beardStyle !== 'mask') {
-      next.beardStyle = clase === 'Barbarian' ? 'long' : clase === 'Ranger' ? 'short' : 'none';
+      next.beardStyle = characterClass === 'Barbarian' ? 'long' : characterClass === 'Ranger' ? 'short' : 'none';
     }
     return next;
   }
 
   /**
-   * Aplica un cambio de cabeza (misma regla que la ciudad
-   * `index.html#select-head-style`): pelo a default + barba según cabeza.
+   * Applies a head change (same rule as the city
+   * `index.html#select-head-style`): hair to default + beard according to head.
    */
-  aplicarCabeza(config: AvatarModularConfig, cabeza: string): AvatarModularConfig {
-    const next: AvatarModularConfig = { ...config, headStyle: cabeza, hairStyle: 'default' };
-    if (cabeza === 'Barbarian') next.beardStyle = 'long';
-    else if (cabeza === 'Ranger') next.beardStyle = 'short';
+  applyHead(config: AvatarModularConfig, head: string): AvatarModularConfig {
+    const next: AvatarModularConfig = { ...config, headStyle: head, hairStyle: 'default' };
+    if (head === 'Barbarian') next.beardStyle = 'long';
+    else if (head === 'Ranger') next.beardStyle = 'short';
     return next;
   }
 
-  private async getClase(clase: string): Promise<GLTF | null> {
-    const hit = this.clases.get(clase);
+  private async getCharacterClass(characterClass: string): Promise<GLTF | null> {
+    const hit = this.classModels.get(characterClass);
     if (hit !== undefined) return hit;
     try {
-      const gltf = await this.loader.loadAsync(BASE_PERSONAJES + clase + '.glb');
-      this.clases.set(clase, gltf);
+      const gltf = await this.loader.loadAsync(BASE_CHARACTERS + characterClass + '.glb');
+      this.classModels.set(characterClass, gltf);
       return gltf;
     } catch {
-      this.clases.set(clase, null);
+      this.classModels.set(characterClass, null);
       return null;
     }
   }
 
-  private readonly cargarClase: CargarClase = (clase) => this.getClase(clase);
+  private readonly loadCharacterClass: LoadCharacterClass = (characterClass) => this.getCharacterClass(characterClass);
 
   private async loadMixedGltf(fileName: string): Promise<THREE.Group | null> {
     const hit = this.mixed.get(fileName);
@@ -153,29 +153,29 @@ export class AvatarModularService {
     }
   }
 
-  private readonly cargarMixed: CargarEscena = async (archivo) => {
-    const scene = await this.loadMixedGltf(archivo);
+  private readonly loadMixed: LoadScene = async (file) => {
+    const scene = await this.loadMixedGltf(file);
     return scene ? scene.clone(true) : null;
   };
 
   private async loadStar(color: string): Promise<THREE.Group | null> {
-    const hit = this.estrellas.get(color);
+    const hit = this.stars.get(color);
     if (hit !== undefined) return hit;
     try {
       const gltf = await this.loader.loadAsync(BASE_STARS + 'star_' + color + '.gltf');
       gltf.scene.traverse((c) => {
         if ((c as THREE.Mesh).isMesh) c.castShadow = true;
       });
-      this.estrellas.set(color, gltf.scene);
+      this.stars.set(color, gltf.scene);
       return gltf.scene;
     } catch {
-      this.estrellas.set(color, null);
+      this.stars.set(color, null);
       return null;
     }
   }
 
-  private readonly cargarEstrella: CargarEscena = async (archivo) => {
-    const color = archivo.replace(/^star_/, '').replace(/\.gltf$/, '');
+  private readonly loadStarScene: LoadScene = async (file) => {
+    const color = file.replace(/^star_/, '').replace(/\.gltf$/, '');
     const scene = await this.loadStar(color);
     return scene ? scene.clone(true) : null;
   };
@@ -186,14 +186,14 @@ export class AvatarModularService {
       if (o.userData['updateRGB']) rgb.add(o);
     };
     const topClass = config.topStyle || config.characterClass || 'Knight';
-    const base = await this.getClase(topClass);
+    const base = await this.getCharacterClass(topClass);
     const group = new THREE.Group();
     group.name = 'jugador_modular';
-    // Composición preview/ciudad: el cuerpo va a 0.32 y la mascota sin escalar.
-    // El mundo normaliza por baseHeight, así la proporción mascota/personaje iguala.
+    // Preview/city composition: the body goes at 0.32 and the pet unscaled.
+    // The world normalizes by baseHeight, so the pet/character proportion matches.
     let baseHeight = 0;
-    // Sin modelo base no hay cuerpo que ocultar en primera persona.
-    let cuerpo = group;
+    // Without a base model there is no body to hide in first person.
+    let body = group;
     if (base) {
       const model = SkeletonUtils.clone(base.scene) as THREE.Group;
       model.scale.setScalar(0.32);
@@ -201,7 +201,7 @@ export class AvatarModularService {
       this.applyCosmetics(model, config, rgb);
       await this.attachItems(model, config, rgb);
       group.add(model);
-      cuerpo = model;
+      body = model;
       baseHeight = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).y;
     }
     const pet = this.applyPet(group, config, rgb);
@@ -218,7 +218,7 @@ export class AvatarModularService {
     };
     return {
       group,
-      cuerpo,
+      body,
       baseHeight,
       groundPet: pet.ground,
       tick,
@@ -229,7 +229,7 @@ export class AvatarModularService {
     };
   }
 
-  private rigDe(model: THREE.Group): { rig: THREE.Object3D; skin: THREE.SkinnedMesh } | null {
+  private rigFor(model: THREE.Group): { rig: THREE.Object3D; skin: THREE.SkinnedMesh } | null {
     const rig = model.getObjectByName('Rig_Medium') ?? model.getObjectByName('Rig');
     let skin: THREE.SkinnedMesh | null = null;
     model.traverse((c) => {
@@ -240,24 +240,24 @@ export class AvatarModularService {
   }
 
   private async applyModularParts(model: THREE.Group, config: AvatarModularConfig): Promise<void> {
-    const hallado = this.rigDe(model);
-    if (!hallado) return;
-    const { rig: targetRig, skin: targetSkin } = hallado;
-    const { mountHair, mountBeard, mountMask } = createAvatarMounter(this.cargarClase);
+    const found = this.rigFor(model);
+    if (!found) return;
+    const { rig: targetRig, skin: targetSkin } = found;
+    const { mountHair, mountBeard, mountMask } = createAvatarMounter(this.loadCharacterClass);
 
-    // 1. Limpiar piezas modulares anteriores
-    const quitarModulares = (padre: THREE.Object3D): void => {
+    // 1. Clear previous modular pieces
+    const removeModular = (parent: THREE.Object3D): void => {
       const fuera: THREE.Object3D[] = [];
-      padre.children.forEach((c) => {
+      parent.children.forEach((c) => {
         if (c.name && c.name.startsWith('modular_')) fuera.push(c);
       });
-      fuera.forEach((c) => padre.remove(c));
+      fuera.forEach((c) => parent.remove(c));
     };
-    quitarModulares(targetRig);
+    removeModular(targetRig);
     const headBone = model.getObjectByName('head');
-    if (headBone) quitarModulares(headBone);
+    if (headBone) removeModular(headBone);
 
-    // 2. Ocultar mallas base originales de cabeza y piernas
+    // 2. Hide the original base meshes of head and legs
     model.traverse((c) => {
       if ((c as THREE.Mesh).isMesh) {
         if (isHeadMesh(c.name)) c.visible = false;
@@ -265,7 +265,7 @@ export class AvatarModularService {
       }
     });
 
-    // 3. Cabeza modular, cabello y cosmético de cara
+    // 3. Modular head, hair and face cosmetic
     const headClass = config.headStyle || config.characterClass || 'Knight';
     const beardType = config.beardStyle !== undefined
       ? config.beardStyle
@@ -302,17 +302,17 @@ export class AvatarModularService {
       shouldMountSeparateBeard = beardType === 'long' || beardType === 'short';
     }
 
-    const tiñePelo = (config.hairColor || '#ffffff').toLowerCase() !== '#ffffff';
-    const peloPropioTiñe = hairType === 'default' && tiñePelo &&
+    const tintsHair = (config.hairColor || '#ffffff').toLowerCase() !== '#ffffff';
+    const ownHairTints = hairType === 'default' && tintsHair &&
       ['Knight', 'Mage', 'Ranger', 'Rogue'].includes(effectiveHeadClass);
-    const hairTypeEfectivo = peloPropioTiñe ? effectiveHeadClass.toLowerCase() : hairType;
+    const hairEffectiveType = ownHairTints ? effectiveHeadClass.toLowerCase() : hairType;
 
-    const peinadosConPelo = ['mage', 'ranger', 'knight', 'rogue'];
-    const sinFlequillo = peinadosConPelo.includes(hairTypeEfectivo) &&
-      hairTypeEfectivo !== effectiveHeadClass.toLowerCase();
-    const estiraFrente = hairTypeEfectivo !== 'default';
+    const hairstylesWithHair = ['mage', 'ranger', 'knight', 'rogue'];
+    const withoutBangs = hairstylesWithHair.includes(hairEffectiveType) &&
+      hairEffectiveType !== effectiveHeadClass.toLowerCase();
+    const stretchesFront = hairEffectiveType !== 'default';
 
-    const headGltf = await this.getClase(effectiveHeadClass);
+    const headGltf = await this.getCharacterClass(effectiveHeadClass);
     if (headGltf) {
       if (effectiveHeadClass === 'Rogue_Hooded') {
         const origHead = headGltf.scene.getObjectByName('RogueHooded_Head') as THREE.SkinnedMesh | undefined;
@@ -332,7 +332,7 @@ export class AvatarModularService {
         if (origHead) {
           const remappedHead = remapSkinnedMesh(origHead, targetSkin.skeleton);
           remappedHead.name = 'modular_head';
-          // Cabeza del maniquí con ajuste proporcional (pivote en la base del cuello).
+          // Mannequin head with proportional fit (pivot at the base of the neck).
           const pos = remappedHead.geometry.attributes['position'] as THREE.BufferAttribute;
           const pivotY = 1.2414;
           const scale = 0.87;
@@ -377,8 +377,8 @@ export class AvatarModularService {
         if (origHead) {
           const headMesh = origHead.clone();
           const isHumanHead = ['Knight', 'Barbarian', 'Mage', 'Ranger', 'Rogue'].includes(effectiveHeadClass);
-          if (isHumanHead && hairTypeEfectivo !== 'default') {
-            headMesh.geometry = extractFaceGeometry(origHead, effectiveHeadClass, false, sinFlequillo, estiraFrente);
+          if (isHumanHead && hairEffectiveType !== 'default') {
+            headMesh.geometry = extractFaceGeometry(origHead, effectiveHeadClass, false, withoutBangs, stretchesFront);
           }
           const remappedHead = remapSkinnedMesh(headMesh, targetSkin.skeleton);
           remappedHead.name = 'modular_head';
@@ -387,8 +387,8 @@ export class AvatarModularService {
       }
     }
 
-    if (hairTypeEfectivo !== 'default') {
-      await mountHair(targetRig, targetSkin, hairTypeEfectivo, effectiveHeadClass, sinFlequillo, config.hairColor || '#ffffff');
+    if (hairEffectiveType !== 'default') {
+      await mountHair(targetRig, targetSkin, hairEffectiveType, effectiveHeadClass, withoutBangs, config.hairColor || '#ffffff');
     }
     if (shouldMountSeparateBeard) {
       await mountBeard(targetRig, targetSkin, beardType, config.beardColor || '#ffffff');
@@ -397,9 +397,9 @@ export class AvatarModularService {
       await mountMask(targetRig, targetSkin, config.beardColor || '#ffffff');
     }
 
-    // 4. Pantalón modular
+    // 4. Modular pants
     const pantsClass = config.pantsStyle || config.characterClass || 'Knight';
-    const pantsGltf = await this.getClase(pantsClass);
+    const pantsGltf = await this.getCharacterClass(pantsClass);
     if (pantsGltf) {
       for (const side of ['Left', 'Right']) {
         let legName = `${pantsClass}_Leg${side}`;
@@ -417,10 +417,10 @@ export class AvatarModularService {
       }
     }
 
-    // 5. Zapatos modulares
+    // 5. Modular shoes
     const isSneakers = config.shoesStyle === 'sneakers';
     const shoesClass = isSneakers ? 'Rogue' : config.shoesStyle || config.characterClass || 'Knight';
-    const shoesGltf = await this.getClase(shoesClass);
+    const shoesGltf = await this.getCharacterClass(shoesClass);
     if (shoesGltf) {
       for (const side of ['Left', 'Right']) {
         let legName = `${shoesClass}_Leg${side}`;
@@ -445,11 +445,11 @@ export class AvatarModularService {
   private async getSharedHat(
     type: 'helmet' | 'bear_hat', model: THREE.Group,
   ): Promise<THREE.Group | null> {
-    const hallado = this.rigDe(model);
-    if (!hallado) return null;
-    const { rig: targetRig, skin: targetSkin } = hallado;
+    const found = this.rigFor(model);
+    if (!found) return null;
+    const { rig: targetRig, skin: targetSkin } = found;
 
-    const escalarGeom = (mesh: THREE.SkinnedMesh, s: number, originY: number, originZ: number): THREE.SkinnedMesh => {
+    const scaleGeom = (mesh: THREE.SkinnedMesh, s: number, originY: number, originZ: number): THREE.SkinnedMesh => {
       const g = mesh.geometry.clone();
       const pos = g.attributes['position'] as THREE.BufferAttribute;
       for (let i = 0; i < pos.count; i++) {
@@ -463,17 +463,17 @@ export class AvatarModularService {
     };
 
     if (type === 'helmet') {
-      let hit = this.gorros.get('helmet');
+      let hit = this.hats.get('helmet');
       if (!hit) {
-        const gltf = await this.getClase('Knight');
+        const gltf = await this.getCharacterClass('Knight');
         const hMesh = gltf?.scene.getObjectByName('Knight_Helmet') as THREE.SkinnedMesh | undefined;
         const vMesh = gltf?.scene.getObjectByName('Knight_HelmetVisor') as THREE.SkinnedMesh | undefined;
         if (!hMesh || !vMesh) return null;
         hit = {
-          hMesh: escalarGeom(hMesh, 1.1, 1.68, 0.04),
-          vMesh: escalarGeom(vMesh, 1.1, 1.68, 0.04),
+          hMesh: scaleGeom(hMesh, 1.1, 1.68, 0.04),
+          vMesh: scaleGeom(vMesh, 1.1, 1.68, 0.04),
         };
-        this.gorros.set('helmet', hit);
+        this.hats.set('helmet', hit);
       }
       const group = new THREE.Group();
       group.name = 'custom_shared_hat';
@@ -481,13 +481,13 @@ export class AvatarModularService {
       if (hit.vMesh) group.add(remapSkinnedMesh(hit.vMesh, targetSkin.skeleton));
       return group;
     }
-    let hit = this.gorros.get('bear_hat');
+    let hit = this.hats.get('bear_hat');
     if (!hit) {
-      const gltf = await this.getClase('Barbarian');
+      const gltf = await this.getCharacterClass('Barbarian');
       const bMesh = gltf?.scene.getObjectByName('Barbarian_BearHat') as THREE.SkinnedMesh | undefined;
       if (!bMesh) return null;
-      hit = { bMesh: escalarGeom(bMesh, 1.15, 1.72, 0.05) };
-      this.gorros.set('bear_hat', hit);
+      hit = { bMesh: scaleGeom(bMesh, 1.15, 1.72, 0.05) };
+      this.hats.set('bear_hat', hit);
     }
     const group = new THREE.Group();
     group.name = 'custom_shared_hat';
@@ -502,8 +502,8 @@ export class AvatarModularService {
       if (oldShared) rig.remove(oldShared);
     }
 
-    // Visibilidad de mallas base: capa según backItem, cabezas siempre ocultas
-    // (casco y gorro de oso van por getSharedHat escalados).
+    // Visibility of base meshes: layer according to backItem, heads always hidden
+    // (helmet and bear hat go through getSharedHat scaled).
     model.traverse((child) => {
       if ((child as THREE.Mesh).isMesh && !child.name.startsWith('modular_')) {
         if (child.name.includes('Cape') || child.name.includes('Cloak')) {
@@ -516,7 +516,7 @@ export class AvatarModularService {
 
     if (config.headItem === 'helmet' || config.headItem === 'bear_hat') {
       const requestedItem = config.headItem;
-      const esManiqui = config.headStyle === 'Mannequin' ||
+      const isMannequin = config.headStyle === 'Mannequin' ||
         (!config.headStyle && config.characterClass === 'Mannequin');
       void this.getSharedHat(requestedItem, model).then((sharedHat) => {
         if (sharedHat && config.headItem === requestedItem) {
@@ -524,14 +524,14 @@ export class AvatarModularService {
           if (currentRig) {
             const old = currentRig.getObjectByName('custom_shared_hat');
             if (old) currentRig.remove(old);
-            if (esManiqui) sharedHat.scale.multiplyScalar(0.87);
+            if (isMannequin) sharedHat.scale.multiplyScalar(0.87);
             currentRig.add(sharedHat);
           }
         }
       });
     }
 
-    const esManiqui = (c: AvatarModularConfig): boolean =>
+    const isMannequin = (c: AvatarModularConfig): boolean =>
       c.headStyle === 'Mannequin' || (!c.headStyle && c.characterClass === 'Mannequin');
 
     const chestBone = model.getObjectByName('chest');
@@ -565,7 +565,7 @@ export class AvatarModularService {
           }
         });
       } else if (config.backItem === 'guitar') {
-        // Los gltf vienen cruzados (guitar_A es azul, guitar_B es rosa): se invierte el mapeo.
+        // The gltf files come crossed (guitar_A is blue, guitar_B is pink): the mapping is inverted.
         const gVar = config.guitarColor === 'B' ? 'A' : 'B';
         void this.loadMixedGltf('guitar_' + gVar + '.gltf').then((gScene) => {
           if (gScene && config.backItem === 'guitar') {
@@ -604,7 +604,7 @@ export class AvatarModularService {
         headObj.position.set(0, 0, 0);
       } else if (config.headItem === 'propeller_hat') {
         headObj = createPropellerHat();
-        // +0.10 para compensar el aplasto vertical (pivota en el origen).
+        // +0.10 to compensate for the vertical squash (it pivots at the origin).
         headObj.position.set(0, 0.4, 0);
       } else if (config.headItem === 'saiyan_scouter') {
         headObj = createSaiyanScouter();
@@ -613,11 +613,11 @@ export class AvatarModularService {
         headObj = createGamerGlasses();
         headObj.position.set(0, 0, 0);
       } else if (config.headItem === 'star_orbit' || /^star_orbit_(yellow|blue|green|red)$/.test(config.headItem || '')) {
-        const legado = String(config.headItem || '').match(/^star_orbit_(yellow|blue|green|red)$/);
-        headObj = createStarOrbit(legado ? legado[1] : config.starOrbitColor || 'yellow', this.cargarEstrella);
+        const legacy = String(config.headItem || '').match(/^star_orbit_(yellow|blue|green|red)$/);
+        headObj = createStarOrbit(legacy ? legacy[1] : config.starOrbitColor || 'yellow', this.loadStarScene);
         headObj.position.set(0, 0, 0);
       } else if (config.headItem === 'flower_antennae') {
-        headObj = createFlowerAntennae(this.cargarMixed);
+        headObj = createFlowerAntennae(this.loadMixed);
         headObj.position.set(0, 0, 0);
       } else if (['skel_helmet', 'skel_mage_hat', 'skel_hood'].includes(config.headItem)) {
         const req = config.headItem;
@@ -625,7 +625,7 @@ export class AvatarModularService {
         const mName = req === 'skel_helmet'
           ? 'Skeleton_Warrior_Helmet'
           : req === 'skel_mage_hat' ? 'Skeleton_Mage_Hat' : 'Skeleton_Rogue_Hood';
-        void this.getClase(src).then((gltf) => {
+        void this.getCharacterClass(src).then((gltf) => {
           if (config.headItem === req && gltf) {
             const h = gltf.scene.getObjectByName(mName);
             if (h) {
@@ -634,7 +634,7 @@ export class AvatarModularService {
                 const old = curH.getObjectByName('custom_head_item');
                 if (old) curH.remove(old);
                 const cloned = h.clone();
-                if (esManiqui(config)) cloned.scale.multiplyScalar(0.87);
+                if (isMannequin(config)) cloned.scale.multiplyScalar(0.87);
                 if (req === 'skel_hood') cloned.scale.multiplyScalar(1.15);
                 cloned.name = 'custom_head_item';
                 curH.add(cloned);
@@ -644,7 +644,7 @@ export class AvatarModularService {
         });
       }
       if (headObj) {
-        if (esManiqui(config)) headObj.scale.multiplyScalar(0.87);
+        if (isMannequin(config)) headObj.scale.multiplyScalar(0.87);
         headObj.name = 'custom_head_item';
         headBone.add(headObj);
         if (headObj.userData['updateRGB']) rgb.add(headObj);
@@ -703,7 +703,7 @@ export class AvatarModularService {
       return r;
     }
     try {
-      const gltf = await this.loader.loadAsync(BASE_UTILES + fileName);
+      const gltf = await this.loader.loadAsync(USEFUL_BASE + fileName);
       return gltf.scene;
     } catch {
       return null;
@@ -711,7 +711,7 @@ export class AvatarModularService {
   }
 
   private findHandSlot(model: THREE.Group, side: 'r' | 'l'): THREE.Object3D | null {
-    // Three.js GLTFLoader sanitiza nombres con puntos: 'handslot.r' → 'handslotr'.
+    // Three.js GLTFLoader sanitizes names with dots: 'handslot.r' → 'handslotr'.
     const candidates = side === 'r'
       ? ['handslotr', 'handslot.r', 'handslot_r', 'handr', 'hand.r']
       : ['handslotl', 'handslot.l', 'handslot_l', 'handl', 'hand.l'];
@@ -754,36 +754,36 @@ export class AvatarModularService {
     const petType = config.pet || 'none';
     if (petType === 'none') return { ground: null, tick: () => undefined };
 
-    let voladora: THREE.Group | null = null;
-    let terrestre: THREE.Group | null = null;
-    if (petType === 'drone') voladora = createFlyingDrone();
-    else if (petType === 'owl') voladora = createFlyingOwl();
-    else if (petType === 'bat') voladora = createFlyingBat();
-    else if (petType === 'ghost') voladora = createFlyingGhost();
+    let flying: THREE.Group | null = null;
+    let land: THREE.Group | null = null;
+    if (petType === 'drone') flying = createFlyingDrone();
+    else if (petType === 'owl') flying = createFlyingOwl();
+    else if (petType === 'bat') flying = createFlyingBat();
+    else if (petType === 'ghost') flying = createFlyingGhost();
     else if (petType === 'chicken') {
-      terrestre = createGroundChicken(this.cargarMixed, config.chickenVariant || 'A');
-      terrestre.userData['playerRef'] = playerGroup;
+      land = createGroundChicken(this.loadMixed, config.chickenVariant || 'A');
+      land.userData['playerRef'] = playerGroup;
     }
-    if (voladora) {
-      playerGroup.add(voladora);
-      if (voladora.userData['updateRGB']) rgb.add(voladora);
+    if (flying) {
+      playerGroup.add(flying);
+      if (flying.userData['updateRGB']) rgb.add(flying);
     }
 
-    const perfiles: Record<string, { speed: number; radius: number; height: number; bob: number; bobFreq: number; wobble: number; bank: number; erratic?: boolean }> = {
+    const profiles: Record<string, { speed: number; radius: number; height: number; bob: number; bobFreq: number; wobble: number; bank: number; erratic?: boolean }> = {
       owl: { speed: 1.05, radius: 0.68, height: 0.98, bob: 0.07, bobFreq: 2.4, wobble: 0.14, bank: 0.45 },
       ghost: { speed: 0.8, radius: 0.52, height: 0.78, bob: 0.09, bobFreq: 2.2, wobble: 0.18, bank: 0.3, erratic: true },
       bat: { speed: 1.5, radius: 0.6, height: 0.9, bob: 0.08, bobFreq: 3.4, wobble: 0.16, bank: 0.55 },
       drone: { speed: 1.35, radius: 0.58, height: 0.86, bob: 0.035, bobFreq: 4.2, wobble: 0.05, bank: 0.35 },
     };
 
-    // Punto auxiliar para pasar la órbita (marco de mundo) a local del jugador.
-    const aMundo = new THREE.Vector3();
+    // Auxiliary point to convert the orbit (world frame) to the player's local frame.
+    const aWorld = new THREE.Vector3();
 
     const tick = (t: number, dt: number): void => {
-      if (voladora) {
-        const kind = (voladora.name || '').replace('pet_', '') || 'drone';
-        const p = perfiles[kind] ?? perfiles['drone'];
-        const ud = voladora.userData as Record<string, number>;
+      if (flying) {
+        const kind = (flying.name || '').replace('pet_', '') || 'drone';
+        const p = profiles[kind] ?? profiles['drone'];
+        const ud = flying.userData as Record<string, number>;
         let slow = 1;
         try {
           if (typeof window !== 'undefined' && window.matchMedia &&
@@ -805,16 +805,16 @@ export class AvatarModularService {
         let r = p.radius + Math.sin(t * 0.7) * p.wobble * 0.5 + Math.sin(t * 1.3 + 0.8) * p.wobble * 0.3;
         if (p.erratic) r += Math.sin(t * 2.1) * 0.05 + Math.sin(t * 3.7 + 2) * 0.03;
         r = Math.max(0.45, r);
-        // Marco de mundo: la órbita y el frente ignoran el giro del jugador para que
-        // doblar no la arrastre (efecto látigo). Vale para dron, búho, murciélago y fantasma.
+        // World frame: the orbit and the front ignore the player's turn so that
+        // turning does not drag it (whip effect). Valid for drone, owl, bat and ghost.
         const yawN = playerGroup.rotation.y;
         const wx = playerGroup.position.x + Math.cos(angle) * r;
         const wz = playerGroup.position.z + Math.sin(angle) * r * 0.92;
         const wy = playerGroup.position.y + p.height +
           Math.sin(t * p.bobFreq) * p.bob + Math.sin(t * (p.bobFreq * 2.3) + 1) * p.bob * 0.25;
-        aMundo.set(wx, wy, wz);
-        playerGroup.worldToLocal(aMundo);
-        voladora.position.copy(aMundo);
+        aWorld.set(wx, wy, wz);
+        playerGroup.worldToLocal(aWorld);
+        flying.position.copy(aWorld);
         const vx = (wx - (ud['prevWX'] as number)) / step;
         const vz = (wz - (ud['prevWZ'] as number)) / step;
         const vy = (wy - (ud['prevWY'] as number)) / step;
@@ -832,25 +832,25 @@ export class AvatarModularService {
         const targetPitch = THREE.MathUtils.clamp(-vy * 0.35, -0.3, 0.3);
         ud['smoothRoll'] = ((ud['smoothRoll'] as number) || 0) + (targetRoll - ((ud['smoothRoll'] as number) || 0)) * k;
         ud['smoothPitch'] = ((ud['smoothPitch'] as number) || 0) + (targetPitch - ((ud['smoothPitch'] as number) || 0)) * k;
-        // El padre solo rota en Y: restar tu yaw deja el frente en marco de mundo.
-        voladora.rotation.set(
+        // The parent only rotates in Y: subtracting your yaw leaves the front in the world frame.
+        flying.rotation.set(
           ud['smoothPitch'] as number,
           (ud['smoothYaw'] as number) - yawN,
           ud['smoothRoll'] as number,
           'YXZ',
         );
-        (voladora.userData['updateAnim'] as AnimTick | undefined)?.(t, step);
+        (flying.userData['updateAnim'] as AnimTick | undefined)?.(t, step);
       }
-      if (terrestre) this.updateGroundPet(terrestre, t, dt, playerGroup);
+      if (land) this.updateGroundPet(land, t, dt, playerGroup);
     };
-    return { ground: terrestre, tick };
+    return { ground: land, tick };
   }
 
   /**
-   * Gallina en espacio de mundo: pasea en un disco alrededor del jugador y lo sigue
-   * a saltitos si se aleja más allá de la correa.
-   * ponytail: sin chequeo de paredes (el mundo hexagonal es abierto y la correa es
-   * corta); si la gallina atraviesa escenografía, pasar colisionadores por acá.
+   * Hen in world space: wanders in a disc around the player and follows them
+   * in little hops if they move beyond the leash.
+   * ponytail: no wall check (the hexagonal world is open and the leash is
+   * short); if the hen crosses scenery, pass colliders through here.
    */
   private updateGroundPet(obj: THREE.Group, time: number, delta: number, player: THREE.Group): void {
     const ud = obj.userData as Record<string, number | undefined>;
