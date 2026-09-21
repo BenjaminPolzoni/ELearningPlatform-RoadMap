@@ -5,6 +5,7 @@ import { EducaBadgeComponent, EducaCardComponent } from '../../ui/educa-ui/educa
 import { EntityEditorDialogComponent, type EditorKind, type EditorResult } from '../../ui/entity-editor-dialog/entity-editor-dialog.component';
 import type { Biome, AttachmentType } from '../../data-access/educa/models';
 import { ATTACHMENT_TYPE_LABEL } from '../../ui/labels';
+import { RoleSwitchComponent } from '../../ui/role-switch/role-switch.component';
 
 interface Editing {
   kind: EditorKind;
@@ -38,7 +39,7 @@ const BIOME_LABEL: Record<Biome, { icon: string; label: string }> = {
 @Component({
   selector: 'app-course-builder-page',
   standalone: true,
-  imports: [RouterLink, EducaBadgeComponent, EducaCardComponent, EntityEditorDialogComponent],
+  imports: [RouterLink, EducaBadgeComponent, EducaCardComponent, EntityEditorDialogComponent, RoleSwitchComponent],
   // The root shell (app.html) is h-[98vh] with overflow hidden: this view scrolls
   // internally with bounded height (h-full), same as avatar-editor and catalog.
   host: { class: 'block w-full h-full overflow-y-auto' },
@@ -54,12 +55,7 @@ const BIOME_LABEL: Record<Biome, { icon: string; label: string }> = {
             <a [routerLink]="['/roadmap/teacher/map', a.id]" class="btn btn-sm btn-outline btn-accent ui-font text-[8px]">
               🗺️ Generar Mapa
             </a>
-            <a routerLink="/roadmap/student" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]" title="Ver el mundo 3D tal como lo ve el alumno">
-              👁️ Ver como alumno
-            </a>
-            <a routerLink="/roadmap/login" class="btn btn-sm btn-ghost border border-neutral/40 ui-font text-[8px]" title="Cambiar de rol">
-              👤 PROFESOR ▾
-            </a>
+            <app-role-switch />
           </div>
         </div>
 

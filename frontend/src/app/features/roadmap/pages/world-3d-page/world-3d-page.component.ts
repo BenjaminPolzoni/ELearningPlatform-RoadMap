@@ -10,7 +10,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { Router, RouterLink, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { AuthMockService } from '../../data-access/session/auth-mock.service';
 import { RoadmapStore } from '../../data-access/roadmap/roadmap.store';
@@ -21,6 +21,7 @@ import { RankingPanelComponent } from '../../ui/ranking-panel/ranking-panel.comp
 import { toEmbedUrl } from '../../domain/resource-embed.util';
 import { TutorialCardComponent } from '../../ui/tutorial-card/tutorial-card.component';
 import { isTutorialScene, TutorialState } from '../../data-access/tutorial/tutorial-state';
+import { RoleSwitchComponent } from '../../ui/role-switch/role-switch.component';
 import {
   BIOME_TO_WORLD_THEME,
   GeneratedWorld,
@@ -92,15 +93,12 @@ function isMessageOpenMaterials(data: unknown): data is { type: 'openMaterials' 
 @Component({
   selector: 'app-world-3d-page',
   standalone: true,
-  imports: [RouterLink, RankingPanelComponent, TutorialCardComponent],
+  imports: [RankingPanelComponent, TutorialCardComponent, RoleSwitchComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="world-3d">
       <div class="role-actions">
-        @if (auth.role() === 'TEACHER') {
-          <a routerLink="/roadmap/teacher" class="btn-back" title="Volver al editor del curso">← Editor</a>
-        }
-        <a class="change-role" (click)="changeRole()">⏻ Cambiar rol</a>
+        <app-role-switch [compact]="true" />
       </div>
       <iframe
         #frame
@@ -317,7 +315,7 @@ function isMessageOpenMaterials(data: unknown): data is { type: 'openMaterials' 
     .role-actions {
       position: absolute;
       top: 0.6rem;
-      right: 0.6rem;
+      left: 0.6rem;
       z-index: 20;
       display: flex;
       gap: 0.4rem;
@@ -334,22 +332,6 @@ function isMessageOpenMaterials(data: unknown): data is { type: 'openMaterials' 
       background:#121620f5; color:#e3f4f6; font-size:14px; box-shadow:0 8px 24px #0004; }
     .tutorial-notice p { margin:8px 0 0; color:#b9cbd2; line-height:1.5; font-size:13px; }
     .tutorial-notice button { margin-top:12px; color:#7ffaff; border:0; background:transparent; cursor:pointer; padding:6px; }
-    .change-role,
-    .btn-back {
-      padding: 0.3rem 0.6rem;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      border-radius: 0.4rem;
-      background: rgba(20, 20, 30, 0.65);
-      color: #fff;
-      font-size: 0.7rem;
-      cursor: pointer;
-      backdrop-filter: blur(4px);
-      text-decoration: none;
-    }
-    .change-role:hover,
-    .btn-back:hover {
-      background: rgba(20, 20, 30, 0.85);
-    }
   `,
 })
 export class World3dPageComponent implements OnInit, OnDestroy {
@@ -458,10 +440,6 @@ export class World3dPageComponent implements OnInit, OnDestroy {
     this.tutorial.dispose();
   }
 
-  protected changeRole(): void {
-    this.auth.exit();
-    this.router.navigate(['/roadmap/login']);
-  }
 
   // Counter, not a boolean: an iframe without a `src` yet fires a "phantom" `load`
   // on `about:blank` BEFORE Angular finishes applying the `[src]` binding

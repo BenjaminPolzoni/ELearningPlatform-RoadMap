@@ -45,8 +45,9 @@ Los nombres de los mensajes y de sus campos son parte del contrato: hay que camb
 
 - **Datos**: reemplazar los adaptadores `InMemory*` por adaptadores HTTP con `HttpGenericService` y mapear
   los nombres de campo contra el contrato real del back de TPI (los modelos actuales espejan el back viejo).
-- **Sesión**: `data-access/session/` es un login mock que guarda el rol en `localStorage`, algo que
-  el AGENTS.md prohíbe. Se reemplaza por el `AuthService` del core (y `pages/dev-login-page` se elimina).
+- **Sesión**: `data-access/session/` es una sesión mock: el rol (alumno o profesor) se cambia con los botones de
+  `ui/role-switch` y se guarda en `localStorage`, algo que el AGENTS.md prohíbe. Se reemplaza por el
+  `AuthService` del core y `ui/role-switch` se elimina.
 - **UI institucional**: `ui/educa-ui` (badge y card) duplica componentes de `@2026-p4-fe/ui`.
 - **Estilos**: las plantillas usan clases de Tailwind y daisyUI, que el front de TPI no incluye y no se van a
   instalar. Sin ellas esas pantallas se ven sin estilo; el mundo 3D (iframe) y los estilos propios de

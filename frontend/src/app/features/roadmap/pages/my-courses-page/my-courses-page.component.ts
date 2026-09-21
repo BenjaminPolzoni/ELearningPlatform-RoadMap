@@ -1,9 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { AuthMockService } from '../../data-access/session/auth-mock.service';
+import { RouterLink } from '@angular/router';
 import { StoreService } from '../../data-access/educa/store.service';
 import type { Subject, Biome } from '../../data-access/educa/models';
 import { EducaBadgeComponent, EducaCardComponent } from '../../ui/educa-ui/educa-ui.component';
+import { RoleSwitchComponent } from '../../ui/role-switch/role-switch.component';
 
 /**
  * Student entry point: My Courses (list of subjects from the `StoreService`, the
@@ -14,7 +14,7 @@ import { EducaBadgeComponent, EducaCardComponent } from '../../ui/educa-ui/educa
 @Component({
   selector: 'app-my-courses-page',
   standalone: true,
-  imports: [RouterLink, EducaBadgeComponent, EducaCardComponent],
+  imports: [RouterLink, EducaBadgeComponent, EducaCardComponent, RoleSwitchComponent],
   template: `
     <div class="mx-auto max-w-3xl p-6 min-h-screen overflow-y-auto">
       <div class="flex items-center justify-between gap-4 border-b border-base-300 pb-4 mb-6">
@@ -23,9 +23,7 @@ import { EducaBadgeComponent, EducaCardComponent } from '../../ui/educa-ui/educa
           <a routerLink="/roadmap/student/avatar" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]" title="Personalizar tu avatar">
             🧍 Mi avatar
           </a>
-          <button (click)="changeRole()" class="btn btn-sm btn-ghost border border-neutral/40 ui-font text-[8px]" title="Cambiar de rol">
-            ⏻ Cambiar rol
-          </button>
+          <app-role-switch />
         </div>
       </div>
 
@@ -56,17 +54,11 @@ import { EducaBadgeComponent, EducaCardComponent } from '../../ui/educa-ui/educa
 })
 export class MyCoursesPageComponent {
   private readonly store = inject(StoreService);
-  private readonly auth = inject(AuthMockService);
-  private readonly router = inject(Router);
 
   // Snapshot on entering: the teacher writes to the same localStorage, so when
   // navigating here the component is created anew and sees what was last saved.
   protected readonly courses = signal<Subject[]>(this.store.listAll());
 
-  protected changeRole(): void {
-    this.auth.exit();
-    this.router.navigate(['/roadmap/login']);
-  }
 
   protected summary(c: Subject): string {
     const modules = c.sections.reduce((n, u) => n + u.modules.length, 0);

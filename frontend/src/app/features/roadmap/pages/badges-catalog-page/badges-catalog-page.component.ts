@@ -20,7 +20,7 @@ import { GENERIC_ICONS } from '../../ui/badge-icons/generic-icons';
 import { BADGE_ORIGIN_LABEL } from '../../ui/labels';
 
 /**
- * Badge catalog (ADMIN and PROFESOR — the student sees the ones earned from their row in the
+ * Badge catalog (PROFESOR — the student sees the ones earned from their row in the
  * ranking or their inventory, not this full catalog). Creating ("＋ Nueva insignia") is PROFESOR only
  * (roadmap-requerimientos.md §9).
  */

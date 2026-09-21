@@ -34,10 +34,7 @@ export class InMemoryRankingAdapter extends RankingDataPort {
       delay(300), // simulates the BFF's network latency
       map((studentProgress) => {
         const cohort = this.cohortWithMyXpReal(studentProgress);
-        const role = this.auth.role();
-        return role === 'STUDENT'
-          ? this.studentView(cohort)
-          : this.staffView(cohort, role === 'ADMIN' ? 'ADMIN' : 'TEACHER');
+        return this.auth.role() === 'STUDENT' ? this.studentView(cohort) : this.staffView(cohort);
       }),
     );
   }
@@ -98,11 +95,11 @@ export class InMemoryRankingAdapter extends RankingDataPort {
   }
 
   /** RF-RNK-10: zero anonymity, to audit before archiving the course. */
-  private staffView(cohort: RankingRow[], role: 'TEACHER' | 'ADMIN'): RankingView {
+  private staffView(cohort: RankingRow[]): RankingView {
     const p90 = cohort.find((f) => f.zone === 'p90')?.position;
     const p10 = cohort.find((f) => f.zone === 'p10')?.position;
     return {
-      role,
+      role: 'TEACHER',
       rows: cohort,
       cutoffs: this.cutoffs(cohort) && p90 && p10 ? { p90, p10 } : null,
       totalEnrolled: cohort.length,

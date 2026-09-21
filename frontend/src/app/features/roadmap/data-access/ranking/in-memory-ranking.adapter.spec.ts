@@ -19,7 +19,7 @@ describe('InMemoryRankingAdapter — trimming by role (RF-RNK-03 / 10)', () => {
     auth = TestBed.inject(AuthMockService);
   });
 
-  afterEach(() => auth.exit());
+  afterEach(() => localStorage.removeItem('mock-role'));
 
   it('ALUMNO: the list comes anonymized except the own row, which is identified', async () => {
     auth.enterAs('STUDENT');
@@ -53,13 +53,6 @@ describe('InMemoryRankingAdapter — trimming by role (RF-RNK-03 / 10)', () => {
     expect(v.rows).toHaveLength(12);
     expect(v.rows.every((f) => typeof f.fileNumber === 'string' && f.fileNumber.length > 0)).toBe(true);
     expect(v.rows[0].position).toBe(1);
-  });
-
-  it('ADMIN: same identified view as PROFESOR (RF-RNK-10)', async () => {
-    auth.enterAs('ADMIN');
-    const v = (await firstValueFrom(adapter.getRanking('cc'))) as StaffRankingView;
-    expect(v.role).toBe('ADMIN');
-    expect(v.rows).toHaveLength(12);
   });
 
   it('the order respects descending XP', async () => {

@@ -22,7 +22,7 @@ function isIdentified(f: DetailRow): f is RankingRow {
  * Detail of a ranking row (RF-RNK-07), videogame HUD style. Visibility
  * is already resolved in the data:
  *  - identified row (`name` present) → the adapter sent it because it is the student's own
- *    row or because the role is PROFESOR/ADMIN → identity and audit are shown.
+ *    row or because the role is PROFESOR → identity and audit are shown.
  *  - anonymous row → only stats (XP, node, percentile, badges, lives, coins).
  * This component does not decide anything about privacy again: it renders what it received.
  */

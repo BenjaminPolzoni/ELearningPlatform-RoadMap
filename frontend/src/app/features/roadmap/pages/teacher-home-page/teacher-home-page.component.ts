@@ -2,11 +2,12 @@ import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { StoreService } from '../../data-access/educa/store.service';
 import { EducaCardComponent } from '../../ui/educa-ui/educa-ui.component';
+import { RoleSwitchComponent } from '../../ui/role-switch/role-switch.component';
 
 @Component({
   selector: 'app-teacher-home-page',
   standalone: true,
-  imports: [RouterLink, EducaCardComponent],
+  imports: [RouterLink, EducaCardComponent, RoleSwitchComponent],
   template: `
     <div class="mx-auto max-w-3xl p-6 min-h-screen overflow-y-auto">
       <!-- Top bar with role and shortcuts -->
@@ -16,12 +17,7 @@ import { EducaCardComponent } from '../../ui/educa-ui/educa-ui.component';
           <a routerLink="/roadmap/badges" class="btn btn-sm btn-outline btn-warning ui-font text-[8px]">
             🏅 Insignias
           </a>
-          <a routerLink="/roadmap/student" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]" title="Ver el mundo 3D tal como lo ve el alumno">
-            👁️ Ver como alumno
-          </a>
-          <a routerLink="/roadmap/login" class="btn btn-sm btn-ghost border border-neutral/40 ui-font text-[8px]" title="Cambiar de rol">
-            👤 PROFESOR ▾
-          </a>
+          <app-role-switch />
         </div>
       </div>
 

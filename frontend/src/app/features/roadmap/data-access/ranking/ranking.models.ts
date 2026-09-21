@@ -12,7 +12,7 @@ import { AvatarConfig } from '../avatar/avatar.models';
 export type Zone = 'none' | 'p90' | 'p10';
 
 /**
- * Identified row. Only received by: PROFESOR/ADMIN (all of them, RF-RNK-10) or the ALUMNO
+ * Identified row. Only received by: PROFESOR (all of them, RF-RNK-10) or the ALUMNO
  * themselves regarding THEIR row (RF-RNK-03/07). `coins` and the profile (name/file number/avatar)
  * are fields that in production the BFF consolidates from other services — here they are stubs.
  */
@@ -66,9 +66,9 @@ export interface StudentRankingView {
   totalEnrolled: number;
 }
 
-/** PROFESOR/ADMIN view (RF-RNK-10): zero anonymity, to audit before archiving. */
+/** PROFESOR view (RF-RNK-10): zero anonymity, to audit before archiving. */
 export interface StaffRankingView {
-  role: 'TEACHER' | 'ADMIN';
+  role: 'TEACHER';
   rows: RankingRow[];
   /** Cutoff positions (e.g. 2 and 11); null if < 10 enrolled (RF-RNK-09). */
   cutoffs: { p90: number; p10: number } | null;

@@ -13,10 +13,16 @@ describe('ROADMAP_ROUTES', () => {
     TestBed.configureTestingModule({ providers: [provideRouter(ROADMAP_ROUTES)] });
   });
 
-  it('redirects the feature root to the mock login', async () => {
+  it('redirects the feature root to the home of the current role', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/');
-    expect(TestBed.inject(Router).url).toBe('/login');
+    expect(TestBed.inject(Router).url).toBe('/teacher');
+  });
+
+  it('sends unknown paths (like the old /login) to the home of the current role', async () => {
+    const harness = await RouterTestingHarness.create();
+    await harness.navigateByUrl('/login');
+    expect(TestBed.inject(Router).url).toBe('/teacher');
   });
 
   it.each(['/teacher', '/student', '/badges'])(

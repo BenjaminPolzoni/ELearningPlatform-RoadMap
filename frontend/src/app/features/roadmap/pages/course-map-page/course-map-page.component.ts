@@ -5,6 +5,7 @@ import { VisitService } from '../../data-access/educa/visit.service';
 import type { Biome, AttachmentType } from '../../data-access/educa/models';
 import { EntityEditorDialogComponent, type EditorKind, type EditorResult } from '../../ui/entity-editor-dialog/entity-editor-dialog.component';
 import { ENTITY_KIND_LABEL } from '../../ui/labels';
+import { RoleSwitchComponent } from '../../ui/role-switch/role-switch.component';
 
 interface N {
   id: string;
@@ -76,7 +77,7 @@ function linesFor(s: string): string[] {
 @Component({
   selector: 'app-course-map-page',
   standalone: true,
-  imports: [RouterLink, EntityEditorDialogComponent],
+  imports: [RouterLink, EntityEditorDialogComponent, RoleSwitchComponent],
   template: `
     @if (store.current(); as a) {
       <!-- Top bar -->
@@ -88,9 +89,7 @@ function linesFor(s: string): string[] {
         <span class="badge badge-sm badge-neutral">🎯 {{ counts().modules }}</span>
         <span class="badge badge-sm badge-neutral">📦 {{ counts().attachments }}</span>
         <span class="flex-1"></span>
-        <a routerLink="/roadmap/student" class="btn btn-xs btn-outline btn-secondary ui-font text-[8px]" title="Ver en 3D">
-          👁️ Ver como alumno
-        </a>
+        <app-role-switch />
         <button (click)="openNewSection()" class="btn btn-xs btn-primary ui-font text-[8px]">+ Unidad</button>
         <button (click)="toggleAll()" class="btn btn-xs btn-ghost ui-font text-[8px]">{{ allCollapsed() ? 'Expandir todo' : 'Colapsar todo' }}</button>
       </div>

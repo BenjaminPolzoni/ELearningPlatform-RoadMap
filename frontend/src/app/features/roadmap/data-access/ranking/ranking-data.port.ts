@@ -13,7 +13,7 @@ export abstract class RankingDataPort {
   /**
    * Cohort standings table. The SHAPE of the result depends on the session role
    * (06-contrato-api.md §3): `StudentRankingView` for ALUMNO (top 3, bottom 3,
-   * their row and anonymous cutoffs) or `StaffRankingView` for PROFESOR/ADMIN (all identified).
+   * their row and anonymous cutoffs) or `StaffRankingView` for PROFESOR (all identified).
    */
   abstract getRanking(courseCohortId: string): Observable<RankingView>;
 }

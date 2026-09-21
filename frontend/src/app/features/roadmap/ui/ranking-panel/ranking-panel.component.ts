@@ -11,7 +11,7 @@ import { RankingDetailComponent } from '../ranking-detail/ranking-detail.compone
  * Arcade cabinet of the ranking (E8). Asks the `RankingDataPort` for the view and shows the one that
  * corresponds to the session role (the adapter already trimmed it — nothing is filtered here):
  *  - ALUMNO  → unified anonymized list, own row and P90/P10 cutoffs (RF-RNK-03).
- *  - PROFESOR/ADMIN → full identified table to audit the closing (RF-RNK-10).
+ *  - PROFESOR → full identified table to audit the closing (RF-RNK-10).
  * Clicking a row opens the detail with the visibility that row already carries (RF-RNK-07).
  */
 @Component({

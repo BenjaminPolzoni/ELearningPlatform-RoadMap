@@ -4,7 +4,7 @@ import { inRiskRegularity, isCandidatePromotion } from '../../domain/ranking/ran
 import { AvatarSpriteComponent } from '../avatar-sprite/avatar-sprite.component';
 
 /**
- * PROFESOR/ADMIN view (RF-RNK-10): dense, identified table with no anonymity, with the
+ * PROFESOR view (RF-RNK-10): dense, identified table with no anonymity, with the
  * minimum columns to scan the cohort — position, student, file number, percentile, XP, historical
  * lost lives and the suggested status (promotion candidate RF-RNK-05 / regularity
  * risk RF-RNK-06). The rest (current node, badges, exercises, % of mandatory)
