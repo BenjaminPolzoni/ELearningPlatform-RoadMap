@@ -15,7 +15,7 @@ export abstract class RoadmapDataPort {
   abstract updateSection(courseCohortId: string, sectionId: string, dto: NewSection): Observable<Section>;
   abstract removeSection(courseCohortId: string, sectionId: string): Observable<void>;
   /** Moves a section one position up/down (same pattern as moveActivity). */
-  abstract moveSection(courseCohortId: string, sectionId: string, direction: 'arriba' | 'abajo'): Observable<void>;
+  abstract moveSection(courseCohortId: string, sectionId: string, direction: 'up' | 'down'): Observable<void>;
 
   // Activities within a section (Phase 2 — Moodle-style editor).
   abstract addActivity(courseCohortId: string, sectionId: string, dto: NewActivity): Observable<Activity>;
@@ -31,7 +31,7 @@ export abstract class RoadmapDataPort {
     courseCohortId: string,
     sectionId: string,
     activityId: string,
-    direction: 'arriba' | 'abajo',
+    direction: 'up' | 'down',
   ): Observable<void>;
 
   /** Relocates a node in the graphic editor (posicion_x/posicion_y, 05 §5/§6). */

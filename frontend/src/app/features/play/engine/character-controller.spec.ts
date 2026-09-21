@@ -11,7 +11,7 @@ const wideWalk = (): Set<string> => {
   return s;
 };
 
-const step = (c: CharacterController, frames: number, view: View = 'libre'): void => {
+const step = (c: CharacterController, frames: number, view: View = 'free'): void => {
   for (let i = 0; i < frames; i++) {
     c.update(0.05, i * 0.05, -Math.PI / 2, false, [], wideWalk(), 1000, null, undefined, view);
   }
@@ -90,7 +90,7 @@ describe('character-controller click-to-move', () => {
     c.bindInput();
     try {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
-      step(c, 20, 'tercera');
+      step(c, 20, 'third');
       window.dispatchEvent(new KeyboardEvent('keyup', { key: 'a' }));
       // 20 × 0.05 × 2.6 rad/s turned, null displacement (it used to pirouette).
       expect(c.char.rotation.y).toBeCloseTo(2.6, 2);
@@ -107,7 +107,7 @@ describe('character-controller click-to-move', () => {
     c.bindInput();
     try {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'w' }));
-      step(c, 10, 'tercera');
+      step(c, 10, 'third');
       window.dispatchEvent(new KeyboardEvent('keyup', { key: 'w' }));
       expect(c.char.position.x).toBeCloseTo(1.92, 2);
       expect(c.char.position.z).toBeCloseTo(0, 2);
@@ -123,7 +123,7 @@ describe('character-controller click-to-move', () => {
     c.bindInput();
     try {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 's' }));
-      step(c, 10, 'tercera');
+      step(c, 10, 'third');
       window.dispatchEvent(new KeyboardEvent('keyup', { key: 's' }));
       // Moves back facing forward: same distance as W but in -x, front intact.
       expect(c.char.position.x).toBeCloseTo(-1.92, 2);

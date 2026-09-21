@@ -15,26 +15,26 @@ function isIdentified(f: ListRow): f is RankingRow {
  * being in P90/P10 without meeting the conditions) is considered a "regular student" and has no
  * banner.
  */
-type ZoneStatus = 'promocion' | 'riesgo' | 'fuera' | 'inactivo';
+type ZoneStatus = 'promotion' | 'risk' | 'outside' | 'inactive';
 type Tone = 'ok' | 'risk' | 'info';
 
 const COPY: Record<ZoneStatus, { tag: string; sub: string; tone: Tone }> = {
-  promocion: {
+  promotion: {
     tag: 'ESTÁS EN ZONA DE PROMOCIÓN',
     sub: 'P90 · 0 vidas perdidas en el curso · 100 % de obligatorios (RF-RNK-05)',
     tone: 'ok',
   },
-  riesgo: {
+  risk: {
     tag: 'ESTÁS EN ZONA DE RIESGO',
     sub: 'P10 · obligatorios sin cerrar — tu regularidad está en juego (RF-RNK-06)',
     tone: 'risk',
   },
-  fuera: {
+  outside: {
     tag: 'SIN PUESTO',
     sub: 'No figurás en esta cohorte todavía',
     tone: 'info',
   },
-  inactivo: {
+  inactive: {
     tag: 'PERCENTILES INACTIVOS',
     sub: 'La cohorte aún no llega a 10 inscriptos (RF-RNK-09)',
     tone: 'info',
@@ -56,25 +56,25 @@ const COPY: Record<ZoneStatus, { tag: string; sub: string; tone: Tone }> = {
   imports: [AvatarSprite],
   template: `
     <!-- ══ YOUR STATUS ══ only appears if you are in PROMOCIÓN or in RIESGO ══ -->
-    @if (view().yo; as yo) {
+    @if (view().me; as me) {
       @if (copy(); as c) {
-        <button type="button" class="rk-estado rk-estado--{{ c.tone }}" (click)="select.emit(yo)">
-          <span class="rk-estado__pos">
-            <span class="rk-estado__pos-num tabular">{{ pad(yo.position) }}</span>
-            <span class="rk-estado__pos-tot">/ {{ view().totalEnrolled }}</span>
+        <button type="button" class="rk-status rk-status--{{ c.tone }}" (click)="select.emit(me)">
+          <span class="rk-status__pos">
+            <span class="rk-status__pos-num tabular">{{ pad(me.position) }}</span>
+            <span class="rk-status__pos-tot">/ {{ view().totalEnrolled }}</span>
           </span>
-          <span class="rk-estado__body">
-            <span class="rk-estado__tag">{{ c.tag }}</span>
-            <span class="rk-estado__sub">{{ c.sub }}</span>
+          <span class="rk-status__body">
+            <span class="rk-status__tag">{{ c.tag }}</span>
+            <span class="rk-status__sub">{{ c.sub }}</span>
           </span>
-          <span class="rk-estado__pctil">P{{ yo.percentile }}</span>
+          <span class="rk-status__pctil">P{{ me.percentile }}</span>
         </button>
       }
     } @else if (copy(); as c) {
-      <div class="rk-estado rk-estado--info">
-        <span class="rk-estado__body">
-          <span class="rk-estado__tag">{{ c.tag }}</span>
-          <span class="rk-estado__sub">{{ c.sub }}</span>
+      <div class="rk-status rk-status--info">
+        <span class="rk-status__body">
+          <span class="rk-status__tag">{{ c.tag }}</span>
+          <span class="rk-status__sub">{{ c.sub }}</span>
         </span>
       </div>
     }
@@ -112,9 +112,9 @@ const COPY: Record<ZoneStatus, { tag: string; sub: string; tone: Tone }> = {
       }
       <div
         class="rk-row"
-        [id]="isMe(f) ? 'rk-yo-row' : null"
+        [id]="isMe(f) ? 'rk-me-row' : null"
         [class.rk-row--promo]="qualifiesForPromotion(f)"
-        [class.rk-row--riesgo]="inRisk(f)"
+        [class.rk-row--risk]="inRisk(f)"
         [class.rk-row--me]="isMe(f)"
         (click)="select.emit(f)"
       >
@@ -126,7 +126,7 @@ const COPY: Record<ZoneStatus, { tag: string; sub: string; tone: Tone }> = {
             @if (qualifiesForPromotion(f)) {
               <span class="rk-tag rk-tag--promo">PROMOCIÓN</span>
             } @else if (inRisk(f)) {
-              <span class="rk-tag rk-tag--riesgo">RIESGO</span>
+              <span class="rk-tag rk-tag--risk">RIESGO</span>
             }
             @if (isMe(f)) {
               <span class="ui-font" style="font-size:0.7rem;opacity:0.7;display:block"
@@ -149,11 +149,11 @@ export class StudentRankingTable {
   /** Status of the own row — `null` = regular student, no banner. */
   protected readonly status = computed<ZoneStatus | null>(() => {
     const v = this.view();
-    const yo = v.yo;
-    if (!yo) return 'fuera';
-    if (!v.cutoffs) return 'inactivo';
-    if (isCandidatePromotion(yo)) return 'promocion';
-    if (inRiskRegularity(yo)) return 'riesgo';
+    const me = v.me;
+    if (!me) return 'outside';
+    if (!v.cutoffs) return 'inactive';
+    if (isCandidatePromotion(me)) return 'promotion';
+    if (inRiskRegularity(me)) return 'risk';
     return null;
   });
   protected readonly copy = computed(() => {

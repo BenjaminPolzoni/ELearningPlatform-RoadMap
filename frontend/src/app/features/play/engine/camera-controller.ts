@@ -3,7 +3,7 @@ import * as THREE from 'three';
 export type CameraMode = 'follow' | 'reading' | 'returning';
 
 /** Camera view: third (from behind), first (on the head) or free (orbital). */
-export type View = 'tercera' | 'primera' | 'libre';
+export type View = 'third' | 'first' | 'free';
 
 /**
  * Base movement yaw: in third it moves relative to the character's front
@@ -11,7 +11,7 @@ export type View = 'tercera' | 'primera' | 'libre';
  * in the rest, relative to the camera as always.
  */
 export function yawMovement(view: View, camYaw: number, facingYaw: number): number {
-  return view === 'tercera' ? facingYaw + Math.PI : camYaw;
+  return view === 'third' ? facingYaw + Math.PI : camYaw;
 }
 
 // Close, fixed framing of the third (free uses the user's yaw/dist/height).
@@ -24,7 +24,7 @@ export class CameraController {
   public dist = 10;
   public height = 6;
   public mode: CameraMode = 'follow';
-  public view: View = 'libre';
+  public view: View = 'free';
   /** Eye height above the feet (set by the world according to the real scale). */
   public eyeHeight = 1.2;
 
@@ -57,9 +57,9 @@ export class CameraController {
     const pm = (e: PointerEvent): void => {
       // Third is fixed at the shoulder: it does not move. First rotates the view (yaw);
       // free also raises/lowers the height.
-      if (!drag || this.mode !== 'follow' || this.view === 'tercera') return;
+      if (!drag || this.mode !== 'follow' || this.view === 'third') return;
       this.yaw -= (e.clientX - lx) * 0.005;
-      if (this.view === 'libre') {
+      if (this.view === 'free') {
         this.height = Math.min(12, Math.max(2, this.height + (e.clientY - ly) * 0.02));
       }
       lx = e.clientX;
@@ -71,7 +71,7 @@ export class CameraController {
     };
 
     const wh = (e: WheelEvent): void => {
-      if (this.mode !== 'follow' || this.view !== 'libre') return;
+      if (this.mode !== 'follow' || this.view !== 'free') return;
       e.preventDefault();
       this.dist = Math.min(16, Math.max(4, this.dist + (e.deltaY > 0 ? 1 : -1)));
     };
@@ -108,7 +108,7 @@ export class CameraController {
 
   /** Toggles in order Free → Third → First; returns the active view. */
   toggleView(): View {
-    this.view = this.view === 'libre' ? 'tercera' : this.view === 'tercera' ? 'primera' : 'libre';
+    this.view = this.view === 'free' ? 'third' : this.view === 'third' ? 'first' : 'free';
     return this.view;
   }
 
@@ -149,7 +149,7 @@ export class CameraController {
       );
       cam.lookAt(charPos.x, charPos.y + 1, charPos.z);
       if (this.returnT >= 1) this.mode = 'follow';
-    } else if (this.view === 'primera') {
+    } else if (this.view === 'first') {
       // First person: eyes on the head looking at the view (moving is
       // relative to the camera). The body is hidden from the
       // CharacterController; the pet stays visible.
@@ -176,7 +176,7 @@ export class CameraController {
    */
   private positionView(out: THREE.Vector3, char: THREE.Object3D, dt: number): THREE.Vector3 {
     const charPos = char.position;
-    if (this.view === 'tercera') {
+    if (this.view === 'third') {
       const ry = char.rotation.y;
       if (this.smoothYaw === null) this.smoothYaw = ry;
       let d = ry - this.smoothYaw;

@@ -71,7 +71,7 @@ export function isGLBBuffer(buffer) {
 export function normalizeAvatarConfig(input = {}) {
   const normalized = { ...DEFAULT_CONFIG, ...input };
 
-  // Compatibilidad con la configuración anterior mientras se migra localStorage.
+  // Compatibility with the previous configuration while localStorage is migrated.
   if (!input.hairStyle && input.variant) normalized.hairStyle = input.variant;
   if (!input.faceAccessory && ['glasses', 'visor'].includes(input.headAccessory)) {
     normalized.faceAccessory = input.headAccessory;
@@ -200,8 +200,8 @@ function collectStats(root, visibleOnly = false) {
     const meshMaterials = Array.isArray(object.material) ? object.material : [object.material];
     meshMaterials.filter(Boolean).forEach((material) => materials.add(material.uuid));
     if (object.isSkinnedMesh && object.skeleton) {
-      // Dos SkinnedMesh pueden tener instancias Skeleton distintas y aun compartir
-      // exactamente el mismo rig. La firma de huesos evita reportar ese caso como error.
+      // Two SkinnedMesh can have different Skeleton instances and still share
+      // exactly the same rig. The bone signature avoids reporting that case as an error.
       skeletons.add(object.skeleton.bones.map((bone) => bone.uuid).join('|'));
     }
   });

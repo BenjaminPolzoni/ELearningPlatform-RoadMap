@@ -39,8 +39,7 @@ import {
 interface MessageEnterActivity {
   type: 'enterActivity';
   unitId: string;
-  /** Wire name fixed by `public/mundo-3d/index.html`. */
-  actividadId: string;
+  activityId: string;
 }
 
 function isMessageEnterActivity(data: unknown): data is MessageEnterActivity {
@@ -49,7 +48,7 @@ function isMessageEnterActivity(data: unknown): data is MessageEnterActivity {
     typeof data === 'object' &&
     (data as { type?: unknown }).type === 'enterActivity' &&
     typeof (data as { unitId?: unknown }).unitId === 'string' &&
-    typeof (data as { actividadId?: unknown }).actividadId === 'string'
+    typeof (data as { activityId?: unknown }).activityId === 'string'
   );
 }
 
@@ -83,11 +82,11 @@ function isMessageOpenRanking(data: unknown): data is { type: 'openRanking' } {
 
 /**
  * Message the Three.js scene sends when the player enters the hub's Temple
- * (see `Estructuras/Temple-dec.glb` in index.html) — opens the theory material
+ * (see `Structures/Temple-dec.glb` in index.html) — opens the theory material
  * tab (static mock until the content service is connected).
  */
-function isMessageOpenMaterials(data: unknown): data is { type: 'openMateriales' } {
-  return !!data && typeof data === 'object' && (data as { type?: unknown }).type === 'openMateriales';
+function isMessageOpenMaterials(data: unknown): data is { type: 'openMaterials' } {
+  return !!data && typeof data === 'object' && (data as { type?: unknown }).type === 'openMaterials';
 }
 
 @Component({
@@ -96,12 +95,12 @@ function isMessageOpenMaterials(data: unknown): data is { type: 'openMateriales'
   imports: [RouterLink, RankingPanel, TutorialCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="mundo-3d">
-      <div class="acciones-rol">
-        @if (auth.role() === 'PROFESOR') {
-          <a routerLink="/profesor" class="btn-volver" title="Volver al editor del curso">← Editor</a>
+    <div class="world-3d">
+      <div class="role-actions">
+        @if (auth.role() === 'TEACHER') {
+          <a routerLink="/teacher" class="btn-back" title="Volver al editor del curso">← Editor</a>
         }
-        <a class="cambiar-rol" (click)="changeRole()">⏻ Cambiar rol</a>
+        <a class="change-role" (click)="changeRole()">⏻ Cambiar rol</a>
       </div>
       <iframe
         #frame
@@ -153,12 +152,12 @@ function isMessageOpenMaterials(data: unknown): data is { type: 'openMateriales'
            navigating to another route. -->
       @if (activeChallenge(); as c) {
         <div class="modal modal-open backdrop-blur-md z-50">
-          <div class="modal-box max-w-xl border-4 border-primary bg-[#1C1E2B] p-6 text-white shadow-2xl chaflan">
+          <div class="modal-box max-w-xl border-4 border-primary bg-[#1C1E2B] p-6 text-white shadow-2xl chamfer">
             <div class="flex items-start justify-between gap-3 border-b-2 border-white/10 pb-3">
               <div>
                 <span class="ui-font text-[8px] text-accent tracking-widest">
                   {{
-                    c.type === 'teoria'
+                    c.type === 'theory'
                       ? 'CONTENIDO TEÓRICO'
                       : isCompleted(c)
                         ? 'MODO REPASO'
@@ -179,7 +178,7 @@ function isMessageOpenMaterials(data: unknown): data is { type: 'openMateriales'
             </div>
 
             <div class="my-4">
-              @if (c.type === 'teoria') {
+              @if (c.type === 'theory') {
                 <!-- Theory content node: embedded material (PDF/video/PPT via external
                      link), no quiz — reading/watching is enough to continue. -->
                 <p class="text-sm text-[#E0E2EC] opacity-90 mb-3">{{ c.description }}</p>
@@ -254,7 +253,7 @@ function isMessageOpenMaterials(data: unknown): data is { type: 'openMateriales'
 
             <div class="modal-action border-t-2 border-white/10 pt-3">
               @if (saveError()) { <p role="alert" class="text-red-300 text-sm">{{ saveError() }}</p> }
-              @if (c.type === 'teoria') {
+              @if (c.type === 'theory') {
                 <button type="button" [disabled]="savingProgress()" class="btn btn-primary w-full ui-font text-[9px]" (click)="onCompleteActivity(c)">
                   {{
                     c.id < (activeWorld()?.mainCount ?? c.id)
@@ -304,7 +303,7 @@ function isMessageOpenMaterials(data: unknown): data is { type: 'openMateriales'
     .reward-toast p { margin: 6px 0 0; font-size: 13px; color: #ded9c7; max-width: 320px; overflow-wrap: anywhere; }
     @keyframes reward-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     @media (prefers-reduced-motion: reduce) { .reward-toast { animation: none; } }
-    .mundo-3d {
+    .world-3d {
       position: fixed;
       inset: 0;
       background: #000;
@@ -315,7 +314,7 @@ function isMessageOpenMaterials(data: unknown): data is { type: 'openMateriales'
       border: 0;
       display: block;
     }
-    .acciones-rol {
+    .role-actions {
       position: absolute;
       top: 0.6rem;
       right: 0.6rem;
@@ -335,8 +334,8 @@ function isMessageOpenMaterials(data: unknown): data is { type: 'openMateriales'
       background:#121620f5; color:#e3f4f6; font-size:14px; box-shadow:0 8px 24px #0004; }
     .tutorial-notice p { margin:8px 0 0; color:#b9cbd2; line-height:1.5; font-size:13px; }
     .tutorial-notice button { margin-top:12px; color:#7ffaff; border:0; background:transparent; cursor:pointer; padding:6px; }
-    .cambiar-rol,
-    .btn-volver {
+    .change-role,
+    .btn-back {
       padding: 0.3rem 0.6rem;
       border: 1px solid rgba(255, 255, 255, 0.25);
       border-radius: 0.4rem;
@@ -347,8 +346,8 @@ function isMessageOpenMaterials(data: unknown): data is { type: 'openMateriales'
       backdrop-filter: blur(4px);
       text-decoration: none;
     }
-    .cambiar-rol:hover,
-    .btn-volver:hover {
+    .change-role:hover,
+    .btn-back:hover {
       background: rgba(20, 20, 30, 0.85);
     }
   `,
@@ -372,10 +371,10 @@ export class World3d implements OnInit, OnDestroy {
   protected readonly tutorial = new TutorialState((() => {
     try { return window.localStorage; } catch { return undefined; }
   })());
-  protected readonly tutorialAvailable = computed(() => this.auth.role() === 'ALUMNO' &&
+  protected readonly tutorialAvailable = computed(() => this.auth.role() === 'STUDENT' &&
     !!this.tutorial.scene()?.ready && !this.tutorial.scene()?.busy && !this.activeChallenge() && !this.rankingOpen() && !this.rewardNotice());
   protected readonly tutorialVisible = computed(() => this.tutorialAvailable() &&
-    this.tutorial.status() === 'activo' && !!this.tutorial.destination());
+    this.tutorial.status() === 'active' && !!this.tutorial.destination());
 
   private readonly synchronizeTutorial = effect(() => {
     const destination = this.tutorial.destination();
@@ -395,9 +394,9 @@ export class World3d implements OnInit, OnDestroy {
   protected restartTutorial(): void { this.tutorial.restart(); this.focusWorld(); }
 
   // 3D exploration tool (Three.js) brought by the 3D team — see 3D/city_generator.html.
-  // Served as a static asset in frontend/public/mundo-3d/ (manual copy for now).
+  // Served as a static asset in frontend/public/world-3d/ (manual copy for now).
   protected readonly world3dUrl: SafeResourceUrl =
-    this.sanitizer.bypassSecurityTrustResourceUrl('mundo-3d/index.html');
+    this.sanitizer.bypassSecurityTrustResourceUrl('world-3d/index.html');
 
   private readonly onMessage = (event: MessageEvent): void => {
     // The embedded world is the only authorized sender, also for its earlier actions.
@@ -411,7 +410,7 @@ export class World3d implements OnInit, OnDestroy {
       return;
     }
     if (isTutorialScene(event.data)) {
-      if (this.auth.role() === 'ALUMNO') this.tutorial.receiveScene(event.data);
+      if (this.auth.role() === 'STUDENT') this.tutorial.receiveScene(event.data);
       return;
     }
     if (event.data?.type === 'tutorialMoved' && Number.isInteger(event.data.attempt)) {
@@ -419,11 +418,11 @@ export class World3d implements OnInit, OnDestroy {
       return;
     }
     if (isMessageEnterActivity(event.data)) {
-      this.openChallenge(event.data.unitId, event.data.actividadId);
+      this.openChallenge(event.data.unitId, event.data.activityId);
     } else if (isMessageOpenRanking(event.data)) {
       this.rankingOpen.set(true);
     } else if (isMessageOpenMaterials(event.data)) {
-      this.router.navigate(['/alumno/materiales']);
+      this.router.navigate(['/student/materials']);
     } else if (isMessageOpenUnitPlay(event.data)) {
       console.log('[World3D Host] Processing openUnitPlay:', event.data);
       const course = this.educaStore.current() ?? this.educaStore.listAll()[0];
@@ -435,7 +434,7 @@ export class World3d implements OnInit, OnDestroy {
         .then((success) => {
           console.log('[World3D Host] Router navigate result:', success);
           if (!success) {
-            this.router.navigate(['/alumno/play', event.data.unitId]).catch(() => false);
+            this.router.navigate(['/student/play', event.data.unitId]).catch(() => false);
           }
         });
     }
@@ -495,7 +494,7 @@ export class World3d implements OnInit, OnDestroy {
 
     const progress = this.store.progress();
     const completed = new Set(
-      (progress?.nodes ?? []).filter((n) => n.status === 'completado').map((n) => n.nodeId),
+      (progress?.nodes ?? []).filter((n) => n.status === 'completed').map((n) => n.nodeId),
     );
     // Same definition of "solved section" as the 2D map (map.ts `islands`): it only looks at
     // the mandatory activities, so an optional "Free practice" left undone does not block it.
@@ -505,42 +504,40 @@ export class World3d implements OnInit, OnDestroy {
       // Old activities (from before the editor asked for difficulty when creating them)
       // may not have it saved — treat them as BASICO instead of 0 XP, so they do not
       // become invisible to the section's progress calculation.
-      const xpFor = (a: (typeof u.activities)[number]) => a.type === 'teoria' ? 0 : XP_BY_DIFFICULTY[a.difficulty ?? 'BASICO'];
+      const xpFor = (a: (typeof u.activities)[number]) => a.type === 'theory' ? 0 : XP_BY_DIFFICULTY[a.difficulty ?? 'BASIC'];
       // XP of THIS section (not the student's total): how much they earned from its challenges vs. how much
       // they would earn by completing all of them — it is what the card shows for the section in progress.
       const xpSection = u.activities.filter((a) => completed.has(a.id)).reduce((sum, a) => sum + xpFor(a), 0);
       const xpSectionMax = u.activities.reduce((sum, a) => sum + xpFor(a), 0);
-      // Wire format: the field names are the contract with `public/mundo-3d/index.html`
-      // (Spanish, owned by the 3D team) — do not rename them here.
       return {
         id: u.id,
-        nombre: u.name,
-        orden: u.order,
-        bioma: u.biome,
-        resuelta: solved,
-        umbralXpDesbloqueo: u.xpThreshold,
-        xpUnidad: xpSection,
-        xpUnidadMax: xpSectionMax,
-        actividades: u.activities.map((a) => ({
+        name: u.name,
+        order: u.order,
+        biome: u.biome,
+        solved,
+        xpThreshold: u.xpThreshold,
+        xpSection,
+        xpSectionMax,
+        activities: u.activities.map((a) => ({
           id: a.id,
-          nombre: a.name,
-          tipo: a.type,
-          dificultad: a.difficulty,
-          descripcion: a.description,
-          completada: completed.has(a.id),
+          name: a.name,
+          type: a.type,
+          difficulty: a.difficulty,
+          description: a.description,
+          completed: completed.has(a.id),
         })),
       };
     });
 
     contentWindow.postMessage(
       {
-        type: 'setUnidades',
-        unidades: sections,
+        type: 'setSections',
+        sections,
         xpTotal: progress?.xpTotal ?? 0,
-        vidasVigentes: progress?.currentLives ?? 3,
+        currentLives: progress?.currentLives ?? 3,
         // Mocked streak same as in map.ts (`streakDays = signal(10)`, no mechanics
         // yet) — it feeds the dynamic billboard of the 3D hub until there is a real calculation.
-        rachaDias: 10,
+        streakDays: 10,
       },
       window.location.origin,
     );
@@ -602,10 +599,10 @@ export class World3d implements OnInit, OnDestroy {
       activityId: act.id,
       title: act.name,
       type: act.type,
-      difficulty: act.difficulty || 'BASICO',
+      difficulty: act.difficulty || 'BASIC',
       minutes: 8,
-      // 'teoria' is not evaluated: it grants no XP (see the same criterion in section-map.ts).
-      xp: act.type === 'teoria' ? 0 : XP_BY_DIFFICULTY[act.difficulty ?? 'BASICO'],
+      // 'theory' is not evaluated: it grants no XP (see the same criterion in section-map.ts).
+      xp: act.type === 'theory' ? 0 : XP_BY_DIFFICULTY[act.difficulty ?? 'BASIC'],
       description: act.description || defaultDescription(act.type),
       resourceUrl: act.resourceUrl,
       resourceType: act.resourceType,
@@ -641,7 +638,7 @@ export class World3d implements OnInit, OnDestroy {
 
   protected isCompleted(c: VerticalChallenge): boolean {
     if (!c.activityId) return false;
-    return (this.store.progress()?.nodes ?? []).some((n) => n.nodeId === c.activityId && n.status === 'completado');
+    return (this.store.progress()?.nodes ?? []).some((n) => n.nodeId === c.activityId && n.status === 'completed');
   }
 
   protected currentQuestion(c: VerticalChallenge): QuestionData {
@@ -655,7 +652,7 @@ export class World3d implements OnInit, OnDestroy {
     );
   }
 
-  /** Embeddable URL of the material of a 'teoria' node (see resource-embed.util.ts). */
+  /** Embeddable URL of the material of a 'theory' node (see resource-embed.util.ts). */
   protected embedUrl(c: VerticalChallenge): SafeResourceUrl {
     const url = toEmbedUrl(c.resourceType ?? 'pdf', c.resourceUrl ?? '');
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
@@ -685,7 +682,7 @@ export class World3d implements OnInit, OnDestroy {
   }
 
   protected onCompleteActivity(c: VerticalChallenge): void {
-    if (this.savingProgress() || this.activeChallenge() !== c || (c.type !== 'teoria' && !this.isQuizResolved())) return;
+    if (this.savingProgress() || this.activeChallenge() !== c || (c.type !== 'theory' && !this.isQuizResolved())) return;
     const wasAlreadyCompleted = this.isCompleted(c);
     if (wasAlreadyCompleted && !c.recovery) { this.closeActivity(); return; }
     const unitId = this.activeUnitId();
@@ -693,18 +690,18 @@ export class World3d implements OnInit, OnDestroy {
     const previous = this.store.progress();
     const previousXp = previous?.xpTotal ?? 0;
     const required = unit?.activities.filter(a => a.isMandatory) ?? [];
-    const wasResolved = required.length > 0 && required.every(a => previous?.nodes.some(n => n.nodeId === a.id && n.status === 'completado'));
+    const wasResolved = required.length > 0 && required.every(a => previous?.nodes.some(n => n.nodeId === a.id && n.status === 'completed'));
     this.savingProgress.set(true);
     this.saveError.set(null);
     this.store.addProgress(wasAlreadyCompleted ? 0 : c.xp, c.activityId, c.recovery ? 3 : this.localLives(), confirmed => {
       if (this.destroyed) return;
       this.savingProgress.set(false);
       if (c.recovery) this.localLives.set(3);
-      if (!c.recovery && c.type !== 'teoria' && unitId && c.activityId &&
-          confirmed.nodes.some(n => n.nodeId === c.activityId && n.status === 'completado')) {
+      if (!c.recovery && c.type !== 'theory' && unitId && c.activityId &&
+          confirmed.nodes.some(n => n.nodeId === c.activityId && n.status === 'completed')) {
         this.pendingReward = { type: 'celebrateProgress', id: crypto.randomUUID(), unitId, activityId: c.activityId,
           xp: Math.max(0, confirmed.xpTotal - previousXp), unitName: unit?.name ?? '',
-          unitCompleted: !wasResolved && required.length > 0 && required.every(a => confirmed.nodes.some(n => n.nodeId === a.id && n.status === 'completado')) };
+          unitCompleted: !wasResolved && required.length > 0 && required.every(a => confirmed.nodes.some(n => n.nodeId === a.id && n.status === 'completed')) };
         this.sendTutorial(this.pendingReward);
         // A missing scene must never hide a successfully saved reward.
         clearTimeout(this.rewardFallback);

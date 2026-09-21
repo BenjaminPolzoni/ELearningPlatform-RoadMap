@@ -35,9 +35,9 @@ export class InMemoryRankingAdapter extends RankingDataPort {
       map((studentProgress) => {
         const cohort = this.cohortWithMyXpReal(studentProgress);
         const role = this.auth.role();
-        return role === 'ALUMNO'
+        return role === 'STUDENT'
           ? this.studentView(cohort)
-          : this.staffView(cohort, role === 'ADMIN' ? 'ADMIN' : 'PROFESOR');
+          : this.staffView(cohort, role === 'ADMIN' ? 'ADMIN' : 'TEACHER');
       }),
     );
   }
@@ -70,7 +70,7 @@ export class InMemoryRankingAdapter extends RankingDataPort {
   private studentView(cohort: RankingRow[]): RankingView {
     const total = cohort.length;
     const isMe = (f: RankingRow) => f.studentId === CURRENT_STUDENT_ID;
-    const yo = cohort.find(isMe) ?? null;
+    const me = cohort.find(isMe) ?? null;
 
     // The full list is shown anonymized EXCEPT the own row, which is
     // identified and highlighted inside the same list (not as a separate block).
@@ -87,8 +87,8 @@ export class InMemoryRankingAdapter extends RankingDataPort {
       : null;
 
     return {
-      role: 'ALUMNO',
-      yo,
+      role: 'STUDENT',
+      me,
       top3: anon.slice(0, 3),
       bottom3: anon.slice(-3),
       cutoffs,
@@ -98,7 +98,7 @@ export class InMemoryRankingAdapter extends RankingDataPort {
   }
 
   /** RF-RNK-10: zero anonymity, to audit before archiving the course. */
-  private staffView(cohort: RankingRow[], role: 'PROFESOR' | 'ADMIN'): RankingView {
+  private staffView(cohort: RankingRow[], role: 'TEACHER' | 'ADMIN'): RankingView {
     const p90 = cohort.find((f) => f.zone === 'p90')?.position;
     const p10 = cohort.find((f) => f.zone === 'p10')?.position;
     return {
@@ -111,7 +111,7 @@ export class InMemoryRankingAdapter extends RankingDataPort {
 
   /** RF-RNK-09: percentiles active only with >= 10 enrolled. */
   private cutoffs(cohort: RankingRow[]): boolean {
-    return cohort.some((f) => f.zone !== 'ninguna');
+    return cohort.some((f) => f.zone !== 'none');
   }
 }
 

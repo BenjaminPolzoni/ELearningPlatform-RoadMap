@@ -13,10 +13,10 @@ import { UiCard } from '../shared/educa-ui';
       <div class="flex items-center justify-between gap-4 border-b border-base-300 pb-4 mb-6">
         <h2 class="title-font text-primary text-xs">VISTA DEL PROFESOR</h2>
         <div class="flex items-center gap-2">
-          <a routerLink="/insignias" class="btn btn-sm btn-outline btn-warning ui-font text-[8px]">
+          <a routerLink="/badges" class="btn btn-sm btn-outline btn-warning ui-font text-[8px]">
             🏅 Insignias
           </a>
-          <a routerLink="/alumno" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]" title="Ver el mundo 3D tal como lo ve el alumno">
+          <a routerLink="/student" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]" title="Ver el mundo 3D tal como lo ve el alumno">
             👁️ Ver como alumno
           </a>
           <a routerLink="/login" class="btn btn-sm btn-ghost border border-neutral/40 ui-font text-[8px]" title="Cambiar de rol">
@@ -51,7 +51,7 @@ import { UiCard } from '../shared/educa-ui';
           <ui-card>
             <div class="flex items-center justify-between gap-3 flex-wrap">
               <div class="min-w-0 flex-1">
-                <a [routerLink]="['/profesor/build', a.id]" class="text-lg font-bold text-primary hover:underline block truncate">
+                <a [routerLink]="['/teacher/build', a.id]" class="text-lg font-bold text-primary hover:underline block truncate">
                   {{ a.name }}
                 </a>
                 <p class="text-xs opacity-70 mt-0.5">
@@ -60,10 +60,10 @@ import { UiCard } from '../shared/educa-ui';
               </div>
 
               <div class="flex items-center gap-2">
-                <a [routerLink]="['/profesor/build', a.id]" class="btn btn-sm btn-primary ui-font text-[9px]">
+                <a [routerLink]="['/teacher/build', a.id]" class="btn btn-sm btn-primary ui-font text-[9px]">
                   🧩 Editar Curso
                 </a>
-                <a [routerLink]="['/profesor/map', a.id]" class="btn btn-sm btn-outline btn-accent ui-font text-[9px]">
+                <a [routerLink]="['/teacher/map', a.id]" class="btn btn-sm btn-outline btn-accent ui-font text-[9px]">
                   🗺️ Mapa
                 </a>
                 <button (click)="del(a.id)" aria-label="Eliminar {{ a.name }}" class="btn btn-sm btn-ghost text-error ui-font text-[9px]">
@@ -88,7 +88,7 @@ export class HomeComponent {
     if (!name.trim()) return;
     const a = this.store.create(name, description);
     this.items.set(this.store.listAll());
-    this.router.navigate(['/profesor/build', a.id]);
+    this.router.navigate(['/teacher/build', a.id]);
   }
 
   del(id: string): void {

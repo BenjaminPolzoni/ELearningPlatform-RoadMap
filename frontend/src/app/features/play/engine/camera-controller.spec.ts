@@ -17,7 +17,7 @@ function character(): THREE.Group {
 describe('CameraController (views)', () => {
   it('free: orbital behind and above like the previous third (default)', () => {
     const c = ctrl();
-    expect(c.view).toBe('libre');
+    expect(c.view).toBe('free');
     c.yaw = 0;
     c.dist = 10;
     c.height = 6;
@@ -28,7 +28,7 @@ describe('CameraController (views)', () => {
   it('first: eyes on the head looking toward the view', () => {
     const c = ctrl();
     c.toggleView(); // switches to third
-    expect(c.toggleView()).toBe('primera');
+    expect(c.toggleView()).toBe('first');
     c.yaw = 0;
     c.update(1, character());
     expect(c.camera.position.toArray()).toEqual([2, 1, 3.5]);
@@ -40,7 +40,7 @@ describe('CameraController (views)', () => {
 
   it('third is like free but close, behind and not responding to yaw/dist', () => {
     const c = ctrl();
-    expect(c.toggleView()).toBe('tercera');
+    expect(c.toggleView()).toBe('third');
     // yaw/dist/height are only used by free: in third they do not move the output.
     c.yaw = 1.2;
     c.dist = 16;
@@ -73,20 +73,20 @@ describe('CameraController (views)', () => {
 
   it('toggleView cycles Free → Third → First → Free', () => {
     const c = ctrl();
-    expect(c.view).toBe('libre');
-    expect(c.toggleView()).toBe('tercera');
-    expect(c.toggleView()).toBe('primera');
-    expect(c.toggleView()).toBe('libre');
+    expect(c.view).toBe('free');
+    expect(c.toggleView()).toBe('third');
+    expect(c.toggleView()).toBe('first');
+    expect(c.toggleView()).toBe('free');
   });
 });
 
 describe('yawMovement', () => {
   it('in third it inverts the front (Forward = where it looks)', () => {
-    expect(yawMovement('tercera', 1.2, 0.3)).toBeCloseTo(0.3 + Math.PI, 10);
+    expect(yawMovement('third', 1.2, 0.3)).toBeCloseTo(0.3 + Math.PI, 10);
   });
 
   it('in first and free it uses the camera yaw', () => {
-    expect(yawMovement('primera', 1.2, 0.3)).toBe(1.2);
-    expect(yawMovement('libre', 1.2, 0.3)).toBe(1.2);
+    expect(yawMovement('first', 1.2, 0.3)).toBe(1.2);
+    expect(yawMovement('free', 1.2, 0.3)).toBe(1.2);
   });
 });

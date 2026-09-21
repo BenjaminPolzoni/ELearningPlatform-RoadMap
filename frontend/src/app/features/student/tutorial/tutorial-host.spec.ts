@@ -6,7 +6,7 @@ import { RoadmapStore } from '../../../core/data/roadmap.store';
 import { World3d } from '../world-3d';
 
 describe('Secure first steps bridge', () => {
-  beforeEach(() => { localStorage.clear(); localStorage.setItem('mock-rol', 'ALUMNO'); });
+  beforeEach(() => { localStorage.clear(); localStorage.setItem('mock-role', 'STUDENT'); });
   afterEach(() => localStorage.clear());
 
   async function setup() {
@@ -50,7 +50,7 @@ describe('Secure first steps bridge', () => {
   });
 
   it('does not start automatically for the teacher', async () => {
-    localStorage.setItem('mock-rol', 'PROFESOR');
+    localStorage.setItem('mock-role', 'TEACHER');
     const { root, message, snapshot } = await setup();
     message(snapshot);
     expect(root.querySelector('app-tutorial-card')).toBeNull();
@@ -61,7 +61,7 @@ describe('Secure first steps bridge', () => {
     const { message } = await setup();
     const router = TestBed.inject(Router);
     const spy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
-    message({ type: 'openUnitPlay', unitId: 'u1-fundamentos' });
-    expect(spy).toHaveBeenCalledWith(expect.arrayContaining(['/play', expect.any(String), 'u1-fundamentos']));
+    message({ type: 'openUnitPlay', unitId: 'u1-fundamentals' });
+    expect(spy).toHaveBeenCalledWith(expect.arrayContaining(['/play', expect.any(String), 'u1-fundamentals']));
   });
 });

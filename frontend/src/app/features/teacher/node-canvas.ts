@@ -10,19 +10,19 @@ const PAD_Y = 28;
 const BTN = 22;
 
 const GLYPH: Record<NodeType, string> = {
-  teoria: '▤',
-  'desafio-teorico': '◇',
-  'desafio-practico': '◆',
+  theory: '▤',
+  'theoretical-challenge': '◇',
+  'practical-challenge': '◆',
   boss: '★',
-  hito: '❖',
+  milestone: '❖',
 };
 
 const TYPE_LABEL: Record<NodeType, string> = {
-  teoria: 'Contenido teórico',
-  'desafio-teorico': 'Desafío teórico',
-  'desafio-practico': 'Desafío práctico',
+  theory: 'Contenido teórico',
+  'theoretical-challenge': 'Desafío teórico',
+  'practical-challenge': 'Desafío práctico',
   boss: 'Boss',
-  hito: 'Hito',
+  milestone: 'Hito',
 };
 
 interface NodeRow {
@@ -55,7 +55,7 @@ interface NodeRow {
       Así se va a ver el camino que recorre el alumno. Usá ▲▼ para cambiar el orden.
     </p>
 
-    <div class="chaflan overflow-auto border-2 border-base-300 bg-base-100">
+    <div class="chamfer overflow-auto border-2 border-base-300 bg-base-100">
       <svg
         [attr.viewBox]="'0 0 ' + VIEW_W + ' ' + height()"
         class="block mx-auto"
@@ -110,9 +110,9 @@ interface NodeRow {
             [attr.aria-label]="'subir ' + f.a.name + ' en el camino'"
             [attr.opacity]="f.last ? 0.3 : 1"
             class="cursor-pointer"
-            (click)="move(f.a.id, 'abajo')"
-            (keydown.enter)="move(f.a.id, 'abajo')"
-            (keydown.space)="move(f.a.id, 'abajo'); $event.preventDefault()"
+            (click)="move(f.a.id, 'down')"
+            (keydown.enter)="move(f.a.id, 'down')"
+            (keydown.space)="move(f.a.id, 'down'); $event.preventDefault()"
           >
             <rect
               [attr.x]="VIEW_W / 2 + NODE_W / 2 + 12" [attr.y]="f.y + NODE_H / 2 - BTN - 2"
@@ -129,9 +129,9 @@ interface NodeRow {
             [attr.aria-label]="'bajar ' + f.a.name + ' en el camino'"
             [attr.opacity]="f.first ? 0.3 : 1"
             class="cursor-pointer"
-            (click)="move(f.a.id, 'arriba')"
-            (keydown.enter)="move(f.a.id, 'arriba')"
-            (keydown.space)="move(f.a.id, 'arriba'); $event.preventDefault()"
+            (click)="move(f.a.id, 'up')"
+            (keydown.enter)="move(f.a.id, 'up')"
+            (keydown.space)="move(f.a.id, 'up'); $event.preventDefault()"
           >
             <rect
               [attr.x]="VIEW_W / 2 + NODE_W / 2 + 12" [attr.y]="f.y + NODE_H / 2 + 2"
@@ -188,7 +188,7 @@ export class NodeCanvas {
     return out;
   });
 
-  protected move(activityId: string, direction: 'arriba' | 'abajo'): void {
+  protected move(activityId: string, direction: 'up' | 'down'): void {
     this.store.moveActivity(this.section().id, activityId, direction);
   }
 
@@ -202,15 +202,15 @@ export class NodeCanvas {
 
   protected typeColor(t: NodeType): string {
     switch (t) {
-      case 'desafio-practico':
+      case 'practical-challenge':
         return 'var(--color-primary)';
       case 'boss':
         return 'var(--color-secondary)';
-      case 'desafio-teorico':
+      case 'theoretical-challenge':
         return 'var(--color-accent)';
-      case 'hito':
+      case 'milestone':
         return 'var(--color-warning)';
-      case 'teoria':
+      case 'theory':
         return 'var(--color-info)';
       default:
         return 'var(--color-info)';

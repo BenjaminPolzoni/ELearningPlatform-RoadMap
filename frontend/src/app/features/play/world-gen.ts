@@ -3,7 +3,7 @@ export type { Biome } from '../../core/educa/models';
 
 // ponytail: absent = meadow (old worlds not yet migrated)
 export function biomeOf(u: Pick<Section, 'biome'>): Biome {
-  return u.biome === 'desierto' || u.biome === 'nieve' || u.biome === 'lava' ? u.biome : 'pradera';
+  return u.biome === 'desert' || u.biome === 'snow' || u.biome === 'lava' ? u.biome : 'meadow';
 }
 
 // One world per section: castle (section) at the end of a straight spine of
@@ -19,11 +19,11 @@ export const AVATARS = ['Knight', 'Barbarian', 'Mage', 'Ranger', 'Rogue', 'Rogue
 export type Avatar = (typeof AVATARS)[number];
 
 export const ATTACHMENT_EMOJI: Record<AttachmentType, string> = {
-  documento: '📄',
+  document: '📄',
   video: '🎬',
-  enlace: '🔗',
-  imagen: '🖼️',
-  ejercicio: '✏️',
+  link: '🔗',
+  image: '🖼️',
+  exercise: '✏️',
 };
 
 import { type TileRef, NB, faceDoor, key, dist, hash, rng } from './domain/hex-math';
@@ -96,8 +96,8 @@ export function genSectionWorld(u: Section, subjectId: string): WorldLayout {
   const rand = rng(hash(`${subjectId}:${u.id}`));
   const color = colorFor(u.color);
   const biome = biomeOf(u);
-  const desert = biome === 'desierto';
-  const snow = biome === 'nieve';
+  const desert = biome === 'desert';
+  const snow = biome === 'snow';
   const lava = biome === 'lava';
   const VOLCANO = `${G}/decoration/nature/volcano.glb`;
   const tiles = new Map<string, TileRef>();
@@ -784,7 +784,7 @@ export function genWorld(a: Subject): WorldLayout {
       volcanoes: [],
       spawn: { q: 0, r: 0 },
       boundR: 4,
-      biome: 'pradera',
+      biome: 'meadow',
     };
   }
   return genSectionWorld(u, a.id);

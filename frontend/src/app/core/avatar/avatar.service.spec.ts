@@ -7,36 +7,36 @@ describe('AvatarService', () => {
   afterEach(() => localStorage.clear());
 
   it('with nothing saved it starts with the default for undefined', () => {
-    expect(TestBed.inject(AvatarService).avatar()).toEqual(defaultAvatar('indefinido'));
+    expect(TestBed.inject(AvatarService).avatar()).toEqual(defaultAvatar('unspecified'));
   });
 
   it('migrates the avatar saved with the previous version without changing its look', () => {
     localStorage.setItem(
-      'mock-avatar',
+      'mock-avatar-v2',
       JSON.stringify({
-        skin: 'clara',
-        hair: 'cresta',
-        hairColor: 'rosa',
-        suitColor: 'noche',
+        skin: 'light',
+        hair: 'mohawk',
+        hairColor: 'pink',
+        suitColor: 'night',
         accessory: 'visor',
-        accessoryColor: 'violeta',
+        accessoryColor: 'violet',
       }),
     );
     const a = TestBed.inject(AvatarService).avatar();
-    expect(a.gender).toBe('indefinido');
-    expect(a.garment).toBe('traje');
-    expect(a.emblem).toBe('cuadro');
-    expect(a.clothesColor).toBe('noche');
-    expect(a.hair).toBe('cresta');
+    expect(a.gender).toBe('unspecified');
+    expect(a.garment).toBe('suit');
+    expect(a.emblem).toBe('square');
+    expect(a.clothesColor).toBe('night');
+    expect(a.hair).toBe('mohawk');
   });
 
   it('RESET goes back to the suggested values but keeps the gender', () => {
     const srv = TestBed.inject(AvatarService);
-    srv.set('gender', 'mujer');
+    srv.set('gender', 'female');
     srv.set('hair', 'afro');
     srv.set('object', 'mate');
     srv.reset();
-    expect(srv.avatar()).toEqual(defaultAvatar('mujer'));
+    expect(srv.avatar()).toEqual(defaultAvatar('female'));
   });
 
   it('RANDOM always produces a valid and complete config', () => {

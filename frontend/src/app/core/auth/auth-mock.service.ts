@@ -1,8 +1,8 @@
 import { Injectable, signal } from '@angular/core';
 
-export type Role = 'PROFESOR' | 'ALUMNO' | 'ADMIN';
+export type Role = 'TEACHER' | 'STUDENT' | 'ADMIN';
 
-const LS_KEY = 'mock-rol';
+const LS_KEY = 'mock-role';
 
 /**
  * Mock login (03-plan-de-implementacion.md, Phase 0). There is no JWT or auth backend: the

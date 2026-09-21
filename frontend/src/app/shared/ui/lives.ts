@@ -19,7 +19,7 @@ export const LIVES_MAX = 3;
         width="16"
         height="14"
         viewBox="0 0 8 7"
-        class="pixelado"
+        class="pixelated"
         [class.glow-pink]="i < lives()"
         aria-hidden="true"
       >

@@ -18,7 +18,7 @@ function migrate(raw: string | null): Progress {
 
 @Injectable({ providedIn: 'root' })
 export class VisitService {
-  private k = (aid: string): string => `educa.visitadas.${aid}`;
+  private k = (aid: string): string => `educa.visited.${aid}`;
 
   private read(aid: string): Progress {
     try {

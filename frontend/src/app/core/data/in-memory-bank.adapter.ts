@@ -3,7 +3,7 @@ import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { BankDataPort } from './bank-data.port';
 
-const LS_PREFIX = 'banco-mock-v2';
+const LS_PREFIX = 'bank-mock-v2';
 const CACHE_TTL_MS = 30_000; // 30 seconds — fresh data from the "service"
 
 interface BankCacheEntry {
@@ -21,11 +21,11 @@ interface BankSeed {
 
 /** Seed per student (simulates what the Bank would have in its database). */
 const SEED: Record<string, BankSeed> = {
-  'alu-01': { coins: 3050, xp: 350, lives: 3 },
-  'alu-02': { coins: 5400, xp: 0, lives: 3 },
-  'alu-03': { coins: 1200, xp: 0, lives: 3 },
-  'alu-04': { coins: 800, xp: 0, lives: 3 },
-  'alu-05': { coins: 4200, xp: 0, lives: 3 },
+  'stu-01': { coins: 3050, xp: 350, lives: 3 },
+  'stu-02': { coins: 5400, xp: 0, lives: 3 },
+  'stu-03': { coins: 1200, xp: 0, lives: 3 },
+  'stu-04': { coins: 800, xp: 0, lives: 3 },
+  'stu-05': { coins: 4200, xp: 0, lives: 3 },
 };
 
 /**

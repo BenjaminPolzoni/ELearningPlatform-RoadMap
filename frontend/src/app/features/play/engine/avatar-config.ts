@@ -1,5 +1,5 @@
 /**
- * Config of the modular 3D character (the one created in the city `mundo-3d/index.html`).
+ * Config of the modular 3D character (the one created in the city `world-3d/index.html`).
  *
  * Same shape as `modular_character_config` in localStorage: the city is the one that
  * writes, the hexagonal world only reads and reflects. The sanitizing replicates the

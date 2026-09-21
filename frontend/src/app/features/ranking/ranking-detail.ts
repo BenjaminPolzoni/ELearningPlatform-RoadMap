@@ -139,8 +139,8 @@ function isIdentified(f: DetailRow): f is RankingRow {
           <div>
             @if (candidate()) {
               <span class="rk-mark rk-mark--promo">CANDIDATO A PROMOCIÓN</span>
-            } @else if (riesgo()) {
-              <span class="rk-mark rk-mark--riesgo">RIESGO DE REGULARIDAD</span>
+            } @else if (isAtRisk()) {
+              <span class="rk-mark rk-mark--risk">RIESGO DE REGULARIDAD</span>
             } @else {
               <span class="rk-mark rk-mark--none">REGULAR</span>
             }
@@ -192,7 +192,7 @@ export class RankingDetail {
     const f = this.identified();
     return f ? isCandidatePromotion(f) : false;
   });
-  protected readonly riesgo = computed(() => {
+  protected readonly isAtRisk = computed(() => {
     const f = this.identified();
     return f ? inRiskRegularity(f) : false;
   });

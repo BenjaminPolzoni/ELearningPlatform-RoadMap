@@ -29,7 +29,7 @@ export function createTutorialBridge(scene, readScene) {
   }
 
   function placeMarker(target, label) {
-    const key = `${target.type}:${target.unitId}:${target.actividadId}:${target.x}:${target.z}`;
+    const key = `${target.type}:${target.unitId}:${target.activityId}:${target.x}:${target.z}`;
     if (key === markerKey) return;
     clearMarker();
     markerKey = key;
@@ -86,7 +86,7 @@ export function createTutorialBridge(scene, readScene) {
     const target = state.modules.find(m => returning
       ? m.type === 'returnCity' && m.unitId === state.zone
       : state.zone === 'city' ? m.type === 'biome' && m.unitId === command.unitId
-      : m.type === 'challenge' && !m.locked && m.unitId === command.unitId && m.actividadId === command.activityId);
+      : m.type === 'challenge' && !m.locked && m.unitId === command.unitId && m.activityId === command.activityId);
     if (!target) { clearMarker(); return; }
     placeMarker(target, returning ? 'Volvé a la ciudad' : command.step === 2 ? 'Tu próxima parada' : 'Probá por acá');
     marker.children[0].material.opacity = motion.matches ? .7 : .65 + Math.sin(now * .002) * .12;

@@ -26,12 +26,12 @@ import { SaveFeedbackToast } from './save-feedback-toast';
         <h2 class="title-font text-primary text-xs">EDITOR DEL CURSO</h2>
         <div class="flex items-center gap-2">
           <a routerLink="/login" class="btn btn-sm btn-ghost border border-neutral/40 ui-font text-[8px]" title="Cambiar de rol">
-            👤 {{ store.roadmap() ? 'PROFESOR' : 'ROL' }} ▾
+            👤 {{ store.roadmap() ? 'TEACHER' : 'ROL' }} ▾
           </a>
-          <a routerLink="/insignias" class="btn btn-sm btn-outline btn-warning ui-font text-[8px]">
+          <a routerLink="/badges" class="btn btn-sm btn-outline btn-warning ui-font text-[8px]">
             🏅 Insignias
           </a>
-          <a routerLink="/alumno" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]" title="Ver el mapa tal como lo ve el alumno">
+          <a routerLink="/student" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]" title="Ver el mapa tal como lo ve el alumno">
             👁 Ver como alumno
           </a>
         </div>
@@ -90,7 +90,7 @@ import { SaveFeedbackToast } from './save-feedback-toast';
                   {{ u.order }}
                 </span>
                 <div class="min-w-0 flex-1">
-                  <a [routerLink]="['/profesor/unidad', u.id]" class="link link-primary font-bold">{{ u.name }}</a>
+                  <a [routerLink]="['/teacher/section', u.id]" class="link link-primary font-bold">{{ u.name }}</a>
                   <div class="text-xs opacity-70">
                     se abre con {{ u.xpThreshold }} XP · {{ u.activities.length }} contenidos
                     @if (u.activities.length === 0) {
@@ -99,10 +99,10 @@ import { SaveFeedbackToast } from './save-feedback-toast';
                   </div>
                 </div>
                 <div class="flex flex-col gap-1 shrink-0">
-                  <button class="btn btn-xs btn-ghost" (click)="move(u.id, 'arriba')" [disabled]="idx === 0" title="subir">↑</button>
-                  <button class="btn btn-xs btn-ghost" (click)="move(u.id, 'abajo')" [disabled]="last" title="bajar">↓</button>
+                  <button class="btn btn-xs btn-ghost" (click)="move(u.id, 'up')" [disabled]="idx === 0" title="subir">↑</button>
+                  <button class="btn btn-xs btn-ghost" (click)="move(u.id, 'down')" [disabled]="last" title="bajar">↓</button>
                 </div>
-                <a [routerLink]="['/profesor/unidad', u.id]" class="btn btn-sm btn-outline btn-primary shrink-0">
+                <a [routerLink]="['/teacher/section', u.id]" class="btn btn-sm btn-outline btn-primary shrink-0">
                   Contenido →
                 </a>
                 <button class="btn btn-sm btn-outline shrink-0" (click)="edit(u)" title="editar nombre y umbral">Editar</button>
@@ -233,7 +233,7 @@ export class Editor {
     );
   }
 
-  protected move(sectionId: string, direction: 'arriba' | 'abajo'): void {
+  protected move(sectionId: string, direction: 'up' | 'down'): void {
     this.store.moveSection(sectionId, direction);
   }
 

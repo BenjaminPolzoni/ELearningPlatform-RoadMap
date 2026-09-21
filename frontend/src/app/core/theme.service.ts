@@ -3,7 +3,7 @@ import { effect, Injectable, signal } from '@angular/core';
 export type Theme = 'arcade-dark' | 'arcade-light';
 export type EnvironmentTheme = 'tabletop' | 'arcade';
 
-const LS_KEY = 'mock-tema';
+const LS_KEY = 'mock-theme';
 const ENV_STORAGE_KEY = 'educa_theme_env';
 const EFFECTS_KEY = 'educa_effects_on';
 

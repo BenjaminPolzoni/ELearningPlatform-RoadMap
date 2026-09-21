@@ -4,11 +4,12 @@ import { StoreService } from '../../../core/educa/store.service';
 import { VisitService } from '../../../core/educa/visit.service';
 import type { Biome, AttachmentType } from '../../../core/educa/models';
 import { EditorComponent, type EditorKind, type EditorResult } from '../builder/editor.component';
+import { ENTITY_KIND_LABEL } from '../../../shared/labels';
 
 interface N {
   id: string;
   label: string;
-  kind: 'asignatura' | 'unidad' | 'modulo' | 'anexo';
+  kind: 'subject' | 'section' | 'module' | 'attachment';
   detail: string;
   color: string;
   x: number;
@@ -48,11 +49,11 @@ const DX = 220;
 const DY = 150;
 
 const ATTACHMENT_ICON: Record<string, string> = {
-  documento: '📄',
+  document: '📄',
   video: '🎬',
-  enlace: '🔗',
-  imagen: '🖼️',
-  ejercicio: '✏️',
+  link: '🔗',
+  image: '🖼️',
+  exercise: '✏️',
 };
 
 function linesFor(s: string): string[] {
@@ -80,14 +81,14 @@ function linesFor(s: string): string[] {
     @if (store.current(); as a) {
       <!-- Top bar -->
       <div class="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-base-300 px-4 py-2 text-xs bg-base-200/60">
-        <a [routerLink]="['/profesor/build', a.id]" class="btn btn-xs btn-ghost ui-font text-[9px]">← Volver al editor</a>
+        <a [routerLink]="['/teacher/build', a.id]" class="btn btn-xs btn-ghost ui-font text-[9px]">← Volver al editor</a>
         <span class="opacity-40">|</span>
         <span class="badge badge-sm badge-neutral">🏰 {{ a.name }}</span>
         <span class="badge badge-sm badge-neutral">🌍 {{ counts().sections }}</span>
         <span class="badge badge-sm badge-neutral">🎯 {{ counts().modules }}</span>
         <span class="badge badge-sm badge-neutral">📦 {{ counts().attachments }}</span>
         <span class="flex-1"></span>
-        <a routerLink="/alumno" class="btn btn-xs btn-outline btn-secondary ui-font text-[8px]" title="Ver en 3D">
+        <a routerLink="/student" class="btn btn-xs btn-outline btn-secondary ui-font text-[8px]" title="Ver en 3D">
           👁️ Ver como alumno
         </a>
         <button (click)="openNewSection()" class="btn btn-xs btn-primary ui-font text-[8px]">+ Unidad</button>
@@ -99,7 +100,7 @@ function linesFor(s: string): string[] {
         <div #wrap class="relative flex-1 touch-none select-none overflow-hidden bg-base-300/30"
           (pointerdown)="startPan($event)" (pointermove)="doPan($event)" (pointerup)="endPan()"
           (pointerleave)="endPan()" (wheel)="onWheel($event)" (keydown.escape)="select('')">
-          <svg id="mapa" [attr.viewBox]="viewBox()" class="h-full w-full" role="img" [attr.aria-label]="'Mapa de ' + a.name">
+          <svg id="map" [attr.viewBox]="viewBox()" class="h-full w-full" role="img" [attr.aria-label]="'Mapa de ' + a.name">
             <g [attr.transform]="'translate(' + pan().x + ' ' + pan().y + ') scale(' + zoom() + ')'">
               @for (e of edges(); track e.x1 + '-' + e.y1 + '-' + e.x2) {
                 <line [attr.x1]="e.x1" [attr.y1]="e.y1" [attr.x2]="e.x2" [attr.y2]="e.y2"
@@ -109,7 +110,7 @@ function linesFor(s: string): string[] {
                 <g [attr.transform]="'translate(' + n.x + ' ' + n.y + ')'"
                   (click)="select(n.id)" (dblclick)="onDbl(n)" (keydown.enter)="select(n.id)" tabindex="0" role="button"
                   [attr.aria-label]="n.label" class="cursor-pointer">
-                  <title>{{ n.label }} · {{ n.kind }}</title>
+                  <title>{{ n.label }} · {{ kindLabel[n.kind] }}</title>
                   <circle [attr.r]="n.r" [attr.fill]="n.color" stroke="#ffffff" stroke-width="2.5" />
                   @if (n.visited) {
                     <circle [attr.r]="n.r + 4" fill="none" stroke="#22c55e" stroke-width="2" stroke-dasharray="4 3" />
@@ -118,7 +119,7 @@ function linesFor(s: string): string[] {
                   @if (n.passed) {
                     <text [attr.x]="n.r - 6" [attr.y]="-n.r + 2" font-size="13">✅</text>
                   }
-                  @if (n.kind === 'unidad' && isCollapsed(n.id)) {
+                  @if (n.kind === 'section' && isCollapsed(n.id)) {
                     <text y="-5" text-anchor="middle" font-size="11" fill="#fff">＋{{ hiddenCount(n.id) }}</text>
                   }
                   @for (ln of lines(n.label); track $index) {
@@ -146,21 +147,21 @@ function linesFor(s: string): string[] {
         <aside class="w-full md:w-80 border-t md:border-t-0 md:border-l border-base-300 bg-base-100 p-4 overflow-y-auto" aria-live="polite">
           @if (selected(); as s) {
             <div class="flex items-center justify-between">
-              <span class="badge badge-sm badge-outline uppercase text-[9px] ui-font">{{ s.kind }}</span>
+              <span class="badge badge-sm badge-outline uppercase text-[9px] ui-font">{{ kindLabel[s.kind] }}</span>
               <button (click)="select('')" class="btn btn-ghost btn-xs text-xs">✕</button>
             </div>
 
             <h2 class="mt-2 text-base font-bold title-font text-primary break-words">{{ emojiFor(s) }} {{ s.label }}</h2>
             <p class="text-xs opacity-70 mt-1">{{ s.detail }}</p>
 
-            @if (s.kind === 'unidad') {
+            @if (s.kind === 'section') {
               <div class="mt-3 p-2 rounded bg-base-200 text-xs">
                 <p>🎯 {{ countsFor(s.id).modules }} módulos</p>
                 <p>📦 {{ countsFor(s.id).attachments }} anexos</p>
               </div>
             }
 
-            @if (s.kind === 'anexo' && s.url) {
+            @if (s.kind === 'attachment' && s.url) {
               <a [href]="s.url" target="_blank" rel="noopener" class="mt-2 block truncate text-xs text-primary underline">
                 ↗ {{ s.url }}
               </a>
@@ -170,17 +171,17 @@ function linesFor(s: string): string[] {
               <button (click)="openEdit()" class="btn btn-sm btn-primary ui-font text-[8px]">✏️ Editar</button>
               <button (click)="removeSelected()" class="btn btn-sm btn-ghost text-error ui-font text-[8px]">🗑 Borrar</button>
 
-              @if (s.kind === 'unidad' || s.kind === 'modulo') {
+              @if (s.kind === 'section' || s.kind === 'module') {
                 <button (click)="moveSelected(-1)" class="btn btn-xs btn-neutral ui-font text-[8px]">↑ Subir</button>
                 <button (click)="moveSelected(1)" class="btn btn-xs btn-neutral ui-font text-[8px]">↓ Bajar</button>
               }
 
-              @if (s.kind === 'unidad') {
+              @if (s.kind === 'section') {
                 <button (click)="openNewModule(s.id)" class="col-span-2 btn btn-xs btn-outline btn-secondary ui-font text-[8px]">+ Módulo en esta unidad</button>
                 <button (click)="toggleCollapse(s.id)" class="col-span-2 btn btn-xs btn-ghost ui-font text-[8px]">{{ isCollapsed(s.id) ? 'Expandir rama' : 'Colapsar rama' }}</button>
               }
 
-              @if (s.kind === 'modulo' && s.sectionId) {
+              @if (s.kind === 'module' && s.sectionId) {
                 <button (click)="openNewAttachment(s.sectionId, s.id)" class="col-span-2 btn btn-xs btn-outline btn-secondary ui-font text-[8px]">+ Anexo en este módulo</button>
               }
             </div>
@@ -212,12 +213,13 @@ function linesFor(s: string): string[] {
     } @else {
       <div class="p-6 text-center">
         <p class="opacity-70">Asignatura no encontrada.</p>
-        <a routerLink="/profesor" class="btn btn-sm btn-primary mt-3">Volver al listado</a>
+        <a routerLink="/teacher" class="btn btn-sm btn-primary mt-3">Volver al listado</a>
       </div>
     }
   `,
 })
 export class MapComponent {
+  protected readonly kindLabel = ENTITY_KIND_LABEL;
   store = inject(StoreService);
   private visits = inject(VisitService);
   counts = this.store.counts;
@@ -239,10 +241,10 @@ export class MapComponent {
     const passed = new Set(this.passedIds());
     void this.collapsed();
     const hide = new Set(this.collapsed());
-    const ns: N[] = [{ id: a.id, label: a.name, kind: 'asignatura', detail: a.description, color: '#8b5cf6', x: 0, y: 0, r: 34 }];
+    const ns: N[] = [{ id: a.id, label: a.name, kind: 'subject', detail: a.description, color: '#8b5cf6', x: 0, y: 0, r: 34 }];
     let ux = 0;
     for (const u of a.sections) {
-      const uNode: N = { id: u.id, label: u.title, kind: 'unidad', detail: u.description, color: u.color || '#6366f1', x: ux, y: DY * 1.4, r: 26 };
+      const uNode: N = { id: u.id, label: u.title, kind: 'section', detail: u.description, color: u.color || '#6366f1', x: ux, y: DY * 1.4, r: 26 };
       ns.push(uNode);
       if (hide.has(u.id)) {
         ux += DX * 1.5;
@@ -252,15 +254,15 @@ export class MapComponent {
       for (const m of u.modules) {
         const leafCount = Math.max(1, m.attachments.length);
         const cx = mx + ((leafCount - 1) * DX) / 2;
-        ns.push({ id: m.id, label: m.title, kind: 'modulo', detail: m.description, color: '#22c55e', x: cx, y: DY * 2.8, r: 20, sectionId: u.id, moduleId: m.id, passed: passed.has(m.id) });
+        ns.push({ id: m.id, label: m.title, kind: 'module', detail: m.description, color: '#22c55e', x: cx, y: DY * 2.8, r: 20, sectionId: u.id, moduleId: m.id, passed: passed.has(m.id) });
         m.attachments.forEach((x, i) => {
-          ns.push({ id: x.id, label: x.title, kind: 'anexo', detail: `${x.type}${x.description ? ' — ' + x.description : ''}${x.url ? ' · ' + x.url : ''}`, color: '#f59e0b', x: mx + i * DX, y: DY * 4, r: 15, sectionId: u.id, moduleId: m.id, type: x.type, url: x.url, visited: done.has(x.id) });
+          ns.push({ id: x.id, label: x.title, kind: 'attachment', detail: `${x.type}${x.description ? ' — ' + x.description : ''}${x.url ? ' · ' + x.url : ''}`, color: '#f59e0b', x: mx + i * DX, y: DY * 4, r: 15, sectionId: u.id, moduleId: m.id, type: x.type, url: x.url, visited: done.has(x.id) });
         });
         mx += leafCount * DX;
       }
       ux = (u.modules.length ? mx : ux + DX) + DX / 2;
     }
-    const kids = ns.filter((n) => n.kind === 'unidad');
+    const kids = ns.filter((n) => n.kind === 'section');
     if (kids.length) ns[0].x = (kids[0].x + kids[kids.length - 1].x) / 2;
     return ns;
   });
@@ -307,9 +309,9 @@ export class MapComponent {
   }
 
   emojiFor(n: Pick<N, 'kind' | 'type'>): string {
-    if (n.kind === 'asignatura') return '🏰';
-    if (n.kind === 'unidad') return '🌍';
-    if (n.kind === 'modulo') return '🎯';
+    if (n.kind === 'subject') return '🏰';
+    if (n.kind === 'section') return '🌍';
+    if (n.kind === 'module') return '🎯';
     return ATTACHMENT_ICON[n.type ?? ''] ?? '📦';
   }
 
@@ -341,7 +343,7 @@ export class MapComponent {
   }
 
   onDbl(n: N): void {
-    if (n.kind === 'unidad') this.toggleCollapse(n.id);
+    if (n.kind === 'section') this.toggleCollapse(n.id);
   }
 
   select(id: string): void {
@@ -354,37 +356,37 @@ export class MapComponent {
   }
 
   openNewSection(): void {
-    this.dlg.set({ isNew: true, kind: 'unidad', heading: 'Nueva unidad', title: '', description: '', color: '#6366f1', biome: 'pradera', type: 'documento', url: '' });
+    this.dlg.set({ isNew: true, kind: 'section', heading: 'Nueva unidad', title: '', description: '', color: '#6366f1', biome: 'meadow', type: 'document', url: '' });
   }
 
   openNewModule(sectionId: string): void {
-    this.dlg.set({ isNew: true, kind: 'modulo', sectionId, heading: 'Nuevo módulo', title: '', description: '', color: '#6366f1', biome: 'pradera', type: 'documento', url: '' });
+    this.dlg.set({ isNew: true, kind: 'module', sectionId, heading: 'Nuevo módulo', title: '', description: '', color: '#6366f1', biome: 'meadow', type: 'document', url: '' });
   }
 
   openNewAttachment(sectionId: string, moduleId: string): void {
-    this.dlg.set({ isNew: true, kind: 'anexo', sectionId, moduleId, heading: 'Nuevo anexo', title: '', description: '', color: '#6366f1', biome: 'pradera', type: 'documento', url: '' });
+    this.dlg.set({ isNew: true, kind: 'attachment', sectionId, moduleId, heading: 'Nuevo anexo', title: '', description: '', color: '#6366f1', biome: 'meadow', type: 'document', url: '' });
   }
 
   openEdit(): void {
     const s = this.selected();
     const a = this.store.current();
     if (!s || !a) return;
-    if (s.kind === 'asignatura') return;
-    if (s.kind === 'unidad') {
+    if (s.kind === 'subject') return;
+    if (s.kind === 'section') {
       const u = a.sections.find((x) => x.id === s.id);
       if (!u) return;
-      this.dlg.set({ isNew: false, kind: 'unidad', sectionId: u.id, heading: 'Editar unidad', title: u.title, description: u.description, color: u.color || '#6366f1', biome: u.biome || 'pradera', type: 'documento', url: '' });
-    } else if (s.kind === 'modulo' && s.sectionId) {
+      this.dlg.set({ isNew: false, kind: 'section', sectionId: u.id, heading: 'Editar unidad', title: u.title, description: u.description, color: u.color || '#6366f1', biome: u.biome || 'meadow', type: 'document', url: '' });
+    } else if (s.kind === 'module' && s.sectionId) {
       const m = a.sections.find((x) => x.id === s.sectionId)?.modules.find((x) => x.id === s.id);
       if (!m) return;
-      this.dlg.set({ isNew: false, kind: 'modulo', sectionId: s.sectionId, moduleId: m.id, heading: 'Editar módulo', title: m.title, description: m.description, color: '#6366f1', biome: 'pradera', type: 'documento', url: '' });
-    } else if (s.kind === 'anexo' && s.sectionId && s.moduleId) {
+      this.dlg.set({ isNew: false, kind: 'module', sectionId: s.sectionId, moduleId: m.id, heading: 'Editar módulo', title: m.title, description: m.description, color: '#6366f1', biome: 'meadow', type: 'document', url: '' });
+    } else if (s.kind === 'attachment' && s.sectionId && s.moduleId) {
       const x = a.sections
         .find((u) => u.id === s.sectionId)
         ?.modules.find((m) => m.id === s.moduleId)
         ?.attachments.find((e) => e.id === s.id);
       if (!x) return;
-      this.dlg.set({ isNew: false, kind: 'anexo', sectionId: s.sectionId, moduleId: s.moduleId, attachmentId: x.id, heading: 'Editar anexo', title: x.title, description: x.description || '', color: '#6366f1', biome: 'pradera', type: x.type, url: x.url || '' });
+      this.dlg.set({ isNew: false, kind: 'attachment', sectionId: s.sectionId, moduleId: s.moduleId, attachmentId: x.id, heading: 'Editar anexo', title: x.title, description: x.description || '', color: '#6366f1', biome: 'meadow', type: x.type, url: x.url || '' });
     }
   }
 
@@ -392,34 +394,34 @@ export class MapComponent {
     const d = this.dlg();
     if (!d) return;
     if (d.isNew) {
-      if (d.kind === 'unidad') {
+      if (d.kind === 'section') {
         if (!r.title.trim()) return;
         this.store.addSection(r.title.trim());
         const all = this.store.current()?.sections ?? [];
         const u = all[all.length - 1];
         if (u) this.store.editSection(u.id, { description: r.description, color: r.color, biome: r.biome });
         if (u) this.selId.set(u.id);
-      } else if (d.kind === 'modulo' && d.sectionId) {
+      } else if (d.kind === 'module' && d.sectionId) {
         if (!r.title.trim()) return;
         this.store.addModule(d.sectionId, r.title.trim());
         const ms = this.store.current()?.sections.find((u) => u.id === d.sectionId)?.modules;
         const m = ms?.[ms.length - 1];
         if (m) this.store.editModule(d.sectionId, m.id, { description: r.description });
         if (m) this.selId.set(m.id);
-      } else if (d.kind === 'anexo' && d.sectionId && d.moduleId) {
+      } else if (d.kind === 'attachment' && d.sectionId && d.moduleId) {
         if (!r.title.trim()) return;
-        this.store.addAttachment(d.sectionId, d.moduleId, r.title.trim(), r.type ?? 'documento');
+        this.store.addAttachment(d.sectionId, d.moduleId, r.title.trim(), r.type ?? 'document');
         const xs = this.store.current()?.sections.find((u) => u.id === d.sectionId)?.modules.find((m) => m.id === d.moduleId)?.attachments;
         const x = xs?.[xs.length - 1];
         if (x) this.store.editAttachment(d.sectionId, d.moduleId, x.id, { description: r.description, type: r.type, url: r.url });
         if (x) this.selId.set(x.id);
       }
     } else {
-      if (d.kind === 'unidad' && d.sectionId)
+      if (d.kind === 'section' && d.sectionId)
         this.store.editSection(d.sectionId, { title: r.title, description: r.description, color: r.color, biome: r.biome });
-      if (d.kind === 'modulo' && d.sectionId && d.moduleId)
+      if (d.kind === 'module' && d.sectionId && d.moduleId)
         this.store.editModule(d.sectionId, d.moduleId, { title: r.title, description: r.description });
-      if (d.kind === 'anexo' && d.sectionId && d.moduleId && d.attachmentId)
+      if (d.kind === 'attachment' && d.sectionId && d.moduleId && d.attachmentId)
         this.store.editAttachment(d.sectionId, d.moduleId, d.attachmentId, { title: r.title, description: r.description, type: r.type, url: r.url });
     }
     this.dlg.set(null);
@@ -427,18 +429,18 @@ export class MapComponent {
 
   removeSelected(): void {
     const s = this.selected();
-    if (!s || s.kind === 'asignatura') return;
-    if (s.kind === 'unidad') this.store.removeSection(s.id);
-    else if (s.kind === 'modulo' && s.sectionId) this.store.removeModule(s.sectionId, s.id);
-    else if (s.kind === 'anexo' && s.sectionId && s.moduleId) this.store.removeAttachment(s.sectionId, s.moduleId, s.id);
+    if (!s || s.kind === 'subject') return;
+    if (s.kind === 'section') this.store.removeSection(s.id);
+    else if (s.kind === 'module' && s.sectionId) this.store.removeModule(s.sectionId, s.id);
+    else if (s.kind === 'attachment' && s.sectionId && s.moduleId) this.store.removeAttachment(s.sectionId, s.moduleId, s.id);
     this.selId.set('');
   }
 
   moveSelected(dir: -1 | 1): void {
     const s = this.selected();
     if (!s) return;
-    if (s.kind === 'unidad') this.store.moveSection(s.id, dir);
-    else if (s.kind === 'modulo' && s.sectionId) this.store.moveModule(s.sectionId, s.id, dir);
+    if (s.kind === 'section') this.store.moveSection(s.id, dir);
+    else if (s.kind === 'module' && s.sectionId) this.store.moveModule(s.sectionId, s.id, dir);
   }
 
   private refreshProgress(): void {
@@ -478,7 +480,7 @@ export class MapComponent {
   }
 
   exportSvg(): void {
-    const el = document.getElementById('mapa');
+    const el = document.getElementById('map');
     if (!el) return;
     const blob = new Blob([new XMLSerializer().serializeToString(el)], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
@@ -487,7 +489,7 @@ export class MapComponent {
   }
 
   exportPng(): void {
-    const el = document.getElementById('mapa');
+    const el = document.getElementById('map');
     if (!el) return;
     const svgUrl = URL.createObjectURL(
       new Blob([new XMLSerializer().serializeToString(el)], { type: 'image/svg+xml' }),

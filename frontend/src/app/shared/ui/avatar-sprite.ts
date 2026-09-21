@@ -15,10 +15,10 @@ const PINK = '#FF2758';
 const VIOLET_DEEP = '#6B21C9';
 const GRAPHITE = '#4B4A57';
 
-const isPink = (c: IdColor) => c === 'rosa' || c === 'rosa-pastel';
+const isPink = (c: IdColor) => c === 'pink' || c === 'pastel-pink';
 
 /** Accessories that cover the whole head (see `coversHead`). */
-const COVER_HEAD: readonly AccessoryId[] = ['gorra', 'gorra-atras', 'beanie'];
+const COVER_HEAD: readonly AccessoryId[] = ['cap', 'backwards-cap', 'beanie'];
 
 /**
  * Student pixel-art sprite (05-design-system.md §4, `ui-avatar`).
@@ -46,21 +46,21 @@ const COVER_HEAD: readonly AccessoryId[] = ['gorra', 'gorra-atras', 'beanie'];
       0%, 100% { transform: translateY(0) }
       50%      { transform: translateY(-10%) }
     }
-    .caminando { animation: paso 0.24s steps(2, end) infinite }
+    .walking { animation: paso 0.24s steps(2, end) infinite }
 
     /* Joy jump (section completed): arcade-style squash-stretch. It goes on a separate
        wrapper so as not to fight with the scaleX(-1) that orients the sprite on the <svg> itself. */
-    @keyframes salto-alegria {
+    @keyframes joy-jump {
       0%   { transform: translateY(0) scaleY(1); }
       20%  { transform: translateY(2%) scaleY(0.82); }
       50%  { transform: translateY(-38%) scaleY(1.12); }
       75%  { transform: translateY(0) scaleY(0.88); }
       100% { transform: translateY(0) scaleY(1); }
     }
-    .celebrando { display: inline-block; animation: salto-alegria 0.75s ease-in-out 4; transform-origin: 50% 100%; }
+    .celebrating { display: inline-block; animation: joy-jump 0.75s ease-in-out 4; transform-origin: 50% 100%; }
 
     @media (prefers-reduced-motion: reduce) {
-      .caminando, .celebrando { animation: none }
+      .walking, .celebrating { animation: none }
     }
   `,
   templateUrl: './avatar-sprite.html',
@@ -72,7 +72,7 @@ export class AvatarSprite {
   readonly walking = input(false);
   /** Joy jump (e.g. on completing a section). Independent of `walking`. */
   readonly celebrating = input(false);
-  readonly facing = input<'derecha' | 'izquierda'>('derecha');
+  readonly facing = input<'right' | 'left'>('right');
   readonly shadow = input(false);
   readonly label = input('Tu avatar');
 
@@ -84,8 +84,8 @@ export class AvatarSprite {
   /** The suit is a jumpsuit: legs the color of the clothing. With the other garments pants are worn. */
   protected readonly pants = computed(() => {
     const { garment, clothesColor } = this.config();
-    if (garment === 'traje') return this.clothes().shadow;
-    return clothesColor === 'noche' || clothesColor === 'negro' ? GRAPHITE : NIGHT;
+    if (garment === 'suit') return this.clothes().shadow;
+    return clothesColor === 'night' || clothesColor === 'black' ? GRAPHITE : NIGHT;
   });
 
   /**
@@ -94,11 +94,11 @@ export class AvatarSprite {
    */
   protected readonly shoes = computed(() => {
     const { garment, clothesColor } = this.config();
-    return garment === 'traje' && clothesColor === 'hueso' ? NIGHT : BONE;
+    return garment === 'suit' && clothesColor === 'bone' ? NIGHT : BONE;
   });
 
   /** T-shirt peeking out under the open jacket: it must contrast with the jacket. */
-  protected readonly tshirt = computed(() => (this.config().clothesColor === 'hueso' ? NIGHT : BONE));
+  protected readonly tshirt = computed(() => (this.config().clothesColor === 'bone' ? NIGHT : BONE));
 
   /** The tie comes in the brand pink, unless the shirt is already pink. */
   protected readonly tie = computed(() =>
@@ -120,7 +120,7 @@ export class AvatarSprite {
   protected readonly emblemColor = computed(() => {
     const { garment, clothesColor } = this.config();
     // With the jacket open the emblem goes on the t-shirt, which is bone or night: never pink.
-    if (garment === 'campera') return PINK;
+    if (garment === 'jacket') return PINK;
     return isPink(clothesColor) ? BONE : PINK;
   });
 
@@ -130,6 +130,6 @@ export class AvatarSprite {
    * grid is symmetric about x=8, the emblem does not move from its place.
    */
   protected readonly counterMirror = computed(() =>
-    this.facing() === 'izquierda' ? 'translate(16 0) scale(-1 1)' : null,
+    this.facing() === 'left' ? 'translate(16 0) scale(-1 1)' : null,
   );
 }

@@ -1,20 +1,20 @@
 /**
  * avatar-modular-core.js
- * Módulo compartido de personalización y ensamblado de avatares 3D.
- * Aplica el patrón Strategy para las reglas de geometría de cada clase (Bárbaro, Mago, etc.)
- * y centraliza la lógica para eliminar duplicación entre index.html y avatar-preview.html.
+ * Shared module for customizing and assembling 3D avatars.
+ * Applies the Strategy pattern for the geometry rules of each class (Barbarian, Mage, etc.)
+ * and centralizes the logic to eliminate duplication between index.html and avatar-preview.html.
  */
 
 import * as THREE from 'three';
 
-// Cachés de geometrías
+// Geometry caches
 export const faceGeomCache = new Map();
 export const hairGeomCache = new Map();
 export const beardGeomCache = new Map();
 export const legSplitCache = new Map();
 
 /**
- * Patrón Strategy: Encapsula las reglas específicas de recorte, escala y nuca para cada clase.
+ * Strategy pattern: Encapsulates the specific trimming, scale and nape rules for each class.
  */
 export const CharacterMeshStrategies = {
   Barbarian: {
@@ -59,7 +59,7 @@ export const CharacterMeshStrategies = {
         const y = fPos.getY(i);
         const z = fPos.getZ(i);
 
-        // Remapear UV de pelo a piel en el cráneo detrás de las orejas
+        // Remap hair UVs to skin on the skull behind the ears
         if (
           u >= 0.13 &&
           u < 0.25 &&
@@ -73,7 +73,7 @@ export const CharacterMeshStrategies = {
           fUv.setXY(i, 0.06, 0.14);
         }
 
-        // Extender nuca hacia arriba y atrás (solo cuello central posterior)
+        // Extend nape upward and backward (rear center neck only)
         if (Math.abs(x) <= 0.26 && z < -0.10 && y >= 1.25 && y <= 1.42) {
           const tY = Math.max(0, Math.min(1, (y - 1.25) / (1.385 - 1.25)));
           const tZ = Math.max(0, Math.min(1, (-z - 0.10) / 0.30));
@@ -129,7 +129,7 @@ export const CharacterMeshStrategies = {
 };
 
 /**
- * Determina si el nombre de una malla corresponde a una cabeza base o accesorio de cabeza.
+ * Determines whether a mesh name corresponds to a base head or a head accessory.
  */
 export function isHeadMesh(name) {
   if (!name) return false;
@@ -148,7 +148,7 @@ export function isHeadMesh(name) {
 }
 
 /**
- * Reasigna los pesos e índices óseos de un SkinnedMesh para que use el esqueleto de destino.
+ * Reassigns the bone weights and indices of a SkinnedMesh so it uses the target skeleton.
  */
 export function remapSkinnedMesh(mesh, targetSkeleton) {
   const cloned = mesh.clone();
@@ -174,7 +174,7 @@ export function remapSkinnedMesh(mesh, targetSkeleton) {
 }
 
 /**
- * Separa la geometría de una pierna en pantalón y calzado según cutoffY.
+ * Splits a leg's geometry into pants and footwear according to cutoffY.
  */
 export function splitLegGeometry(mesh, cutoffY = 0.15) {
   const cacheKey = mesh.name + '_' + cutoffY;
@@ -215,7 +215,7 @@ export function splitLegGeometry(mesh, cutoffY = 0.15) {
 }
 
 /**
- * Aplica tinte personalizado al calzado manteniendo la suela clara.
+ * Applies a custom tint to the footwear while keeping the sole light.
  */
 export function applyShoesTint(shoesMesh, colorHex) {
   if (!shoesMesh || !shoesMesh.geometry || !colorHex) return;
@@ -252,10 +252,10 @@ export function applyShoesTint(shoesMesh, colorHex) {
 }
 
 /**
- * Extrae la geometría de la cara para un cabezal humano.
+ * Extracts the face geometry for a human head piece.
  */
-export function extractFaceGeometry(sourceHeadMesh, headClass, keepBeard = false, sinFlequillo = false, estiraFrente = false) {
-  const cacheKey = `${headClass}_${keepBeard}_${sinFlequillo}_${estiraFrente}`;
+export function extractFaceGeometry(sourceHeadMesh, headClass, keepBeard = false, withoutBangs = false, stretchesFront = false) {
+  const cacheKey = `${headClass}_${keepBeard}_${withoutBangs}_${stretchesFront}`;
   if (faceGeomCache.has(cacheKey)) return faceGeomCache.get(cacheKey);
 
   const geom = sourceHeadMesh.geometry;
@@ -307,7 +307,7 @@ export function extractFaceGeometry(sourceHeadMesh, headClass, keepBeard = false
     );
 
     if (
-      sinFlequillo &&
+      withoutBangs &&
       isFaceFeature &&
       !isSkin &&
       !isEye &&
@@ -327,7 +327,7 @@ export function extractFaceGeometry(sourceHeadMesh, headClass, keepBeard = false
   const faceGeom = geom.clone();
   faceGeom.setIndex(faceIndices);
 
-  if (estiraFrente) {
+  if (stretchesFront) {
     const fPos = faceGeom.attributes.position;
     const fUv = faceGeom.attributes.uv;
     for (let i = 0; i < fPos.count; i++) {
@@ -354,7 +354,7 @@ export function extractFaceGeometry(sourceHeadMesh, headClass, keepBeard = false
 }
 
 /**
- * Extrae la geometría del cabello de un cabezal donante.
+ * Extracts the hair geometry from a donor head piece.
  */
 export function extractHairGeometry(sourceHeadMesh, hairClass, recortaCejas = false) {
   const cacheKey = `${hairClass}_${recortaCejas}`;
@@ -425,7 +425,7 @@ export function extractHairGeometry(sourceHeadMesh, hairClass, recortaCejas = fa
 }
 
 /**
- * Extrae la geometría de la barba (Bárbaro o Arquero).
+ * Extracts the beard geometry (Barbarian or Ranger).
  */
 export function extractBeardGeometry(sourceHeadMesh, beardType) {
   if (beardGeomCache.has(beardType)) return beardGeomCache.get(beardType);
@@ -470,9 +470,9 @@ export function extractBeardGeometry(sourceHeadMesh, beardType) {
 }
 
 /**
- * Monta el cabello modular sobre el personaje.
+ * Mounts the modular hair on the character.
  */
-export async function mountHair(getGLTF, targetRig, targetSkin, hairType, headClass, caraSinFlequillo, hairColor) {
+export async function mountHair(getGLTF, targetRig, targetSkin, hairType, headClass, faceWithoutBangs, hairColor) {
   if (!hairType || hairType === 'default') return;
   const hairClassMap = {
     mage: 'Mage',
@@ -498,15 +498,15 @@ export async function mountHair(getGLTF, targetRig, targetSkin, hairType, headCl
 
   if (esForaneo) {
     const strategy = CharacterMeshStrategies[headClass] || CharacterMeshStrategies.Knight;
-    const sPelo = strategy.hairScale || 1.04;
-    const dyPelo = strategy.hairDy || 0;
+    const sHair = strategy.hairScale || 1.04;
+    const dyHair = strategy.hairDy || 0;
     const pPos = hMesh.geometry.attributes.position;
     for (let i = 0; i < pPos.count; i++) {
       pPos.setXYZ(
         i,
-        pPos.getX(i) * sPelo,
-        dyPelo + 1.68 + (pPos.getY(i) - 1.68) * sPelo,
-        0.04 + (pPos.getZ(i) - 0.04) * sPelo,
+        pPos.getX(i) * sHair,
+        dyHair + 1.68 + (pPos.getY(i) - 1.68) * sHair,
+        0.04 + (pPos.getZ(i) - 0.04) * sHair,
       );
     }
     pPos.needsUpdate = true;
@@ -536,7 +536,7 @@ export async function mountHair(getGLTF, targetRig, targetSkin, hairType, headCl
 }
 
 /**
- * Monta la barba modular sobre el personaje.
+ * Mounts the modular beard on the character.
  */
 export async function mountBeard(getGLTF, targetRig, targetSkin, beardType, beardColor) {
   if (!beardType || beardType === 'none') return;
@@ -565,7 +565,7 @@ export async function mountBeard(getGLTF, targetRig, targetSkin, beardType, bear
 }
 
 /**
- * Monta el tapaboca del Encapuchado como cosmético universal.
+ * Mounts the Hooded face mask as a universal cosmetic.
  */
 export async function mountMask(getGLTF, targetRig, targetSkin, maskColor) {
   const srcGltf = await getGLTF('Rogue_Hooded');
@@ -578,7 +578,7 @@ export async function mountMask(getGLTF, targetRig, targetSkin, maskColor) {
     try {
       mMesh.material.color.set(maskColor);
     } catch {
-      /* ignorar si color inválido */
+      /* ignore if invalid color */
     }
     if (maskColor.toLowerCase() !== '#ffffff' && mMesh.material.emissive) {
       mMesh.material.emissive.set(maskColor);
@@ -594,12 +594,12 @@ export async function mountMask(getGLTF, targetRig, targetSkin, maskColor) {
 }
 
 /**
- * Patrón Factory: Crea las funciones de montaje enlazadas al loader de assets GLTF del entorno.
+ * Factory pattern: Creates the mounting functions bound to the environment's GLTF asset loader.
  */
 export function createAvatarMounter(getGLTF) {
   return {
-    mountHair: (targetRig, targetSkin, hairType, headClass, caraSinFlequillo, hairColor) =>
-      mountHair(getGLTF, targetRig, targetSkin, hairType, headClass, caraSinFlequillo, hairColor),
+    mountHair: (targetRig, targetSkin, hairType, headClass, faceWithoutBangs, hairColor) =>
+      mountHair(getGLTF, targetRig, targetSkin, hairType, headClass, faceWithoutBangs, hairColor),
     mountBeard: (targetRig, targetSkin, beardType, beardColor) =>
       mountBeard(getGLTF, targetRig, targetSkin, beardType, beardColor),
     mountMask: (targetRig, targetSkin, maskColor) =>

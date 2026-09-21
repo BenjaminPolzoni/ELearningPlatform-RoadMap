@@ -20,7 +20,7 @@ import { genIslandsLayout } from './world-gen';
 import { AvatarPanel } from './avatar-panel';
 import { Archipelago3dService, type ArchipelagoSection } from './engine/archipelago-3d.service';
 
-const MODE_STORAGE_KEY = 'educa_islas_modo';
+const MODE_STORAGE_KEY = 'educa_islands_mode';
 
 // Map of the course's island archipelago: one island per section with its biome,
 // interactive navigation by little boat and a dual selector (3D Diorama / 2.5D Nautical Chart).
@@ -35,7 +35,7 @@ const MODE_STORAGE_KEY = 'educa_islas_modo';
         <!-- Top HUD Header -->
         <header class="relative z-20 flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 bg-[#0a192f]/90 backdrop-blur-md border-b border-white/10 flex-wrap">
           <div class="flex items-center gap-3">
-            <a routerLink="/alumno" class="btn btn-ghost btn-xs text-xs font-mono text-gray-300 hover:text-white" title="Volver a mis clases">← Mis clases</a>
+            <a routerLink="/student" class="btn btn-ghost btn-xs text-xs font-mono text-gray-300 hover:text-white" title="Volver a mis clases">← Mis clases</a>
             <div>
               <h1 class="text-sm sm:text-base font-bold text-accent title-font flex items-center gap-1.5">
                 🌍 Archipiélago de {{ a.name }}
@@ -118,8 +118,8 @@ const MODE_STORAGE_KEY = 'educa_islas_modo';
             </div>
           } @else {
             <!-- Illustrated 2.5D Nautical Chart -->
-            <div class="mapa-nautico-container w-full h-full overflow-auto flex items-center justify-center p-4">
-              <div class="mapa-pergamino relative rounded-2xl border-4 border-[#b48a4e] shadow-2xl p-2 w-full max-w-5xl"
+            <div class="nautical-map-container w-full h-full overflow-auto flex items-center justify-center p-4">
+              <div class="parchment-map relative rounded-2xl border-4 border-[#b48a4e] shadow-2xl p-2 w-full max-w-5xl"
                 tabindex="0"
                 (keydown.arrowright)="move(1)" (keydown.arrowdown)="move(1)"
                 (keydown.arrowleft)="move(-1)" (keydown.arrowup)="move(-1)"
@@ -199,7 +199,7 @@ const MODE_STORAGE_KEY = 'educa_islas_modo';
                   }
 
                   <!-- Navigable 2.5D little boat -->
-                  <g class="barco-2d transition-all duration-700 ease-out pointer-events-none"
+                  <g class="boat-2d transition-all duration-700 ease-out pointer-events-none"
                     [attr.transform]="'translate(' + boat2dPos().x + ',' + boat2dPos().y + ')'">
                     <!-- Hull -->
                     <path d="M-18,6 L-12,16 L12,16 L18,6 Z" fill="#854d0e" stroke="#451a03" stroke-width="2.5" />
@@ -220,7 +220,7 @@ const MODE_STORAGE_KEY = 'educa_islas_modo';
 
         <!-- Floating Glassmorphism Arcade Card (Bottom) -->
         @if (chosen(); as u) {
-          <aside class="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-2xl rounded-2xl bg-black/80 border-2 border-primary/70 backdrop-blur-md p-3.5 sm:p-4 text-white shadow-2xl chaflan z-30 transition-all" aria-live="polite">
+          <aside class="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-2xl rounded-2xl bg-black/80 border-2 border-primary/70 backdrop-blur-md p-3.5 sm:p-4 text-white shadow-2xl chamfer z-30 transition-all" aria-live="polite">
             <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
               <span class="text-3xl sm:text-4xl p-2 rounded-xl bg-white/10 border border-white/15 shadow-inner flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 shrink-0">
                 {{ biomeEmoji(u.biome) }}
@@ -272,17 +272,17 @@ const MODE_STORAGE_KEY = 'educa_islas_modo';
     }
   `,
   styles: `
-    .mapa-nautico-container {
+    .nautical-map-container {
       background:
         radial-gradient(120% 90% at 50% 0%, #1e3a5f 0%, transparent 60%),
         linear-gradient(180deg, #0b1f3a 0%, #061224 100%);
     }
-    .mapa-pergamino {
+    .parchment-map {
       background:
         radial-gradient(circle at 50% 40%, #fdf6e2 0%, #faecd0 50%, #f1d7ac 100%);
       box-shadow: inset 0 0 40px rgba(92, 53, 17, 0.35), 0 16px 36px rgba(0, 0, 0, 0.6);
     }
-    .mapa-pergamino:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 4px; }
+    .parchment-map:focus-visible { outline: 2px solid #8b5cf6; outline-offset: 4px; }
     svg g:focus-visible { outline: none; }
     svg g:focus-visible circle { stroke: #8b5cf6; stroke-width: 6; }
   `,
@@ -540,8 +540,8 @@ export class WorldsComponent implements AfterViewInit, OnDestroy {
 
   protected colorFor(id: string): string {
     const b = this.section(id)?.biome;
-    if (b === 'desierto') return '#f59e0b';
-    if (b === 'nieve') return '#e0f2fe';
+    if (b === 'desert') return '#f59e0b';
+    if (b === 'snow') return '#e0f2fe';
     if (b === 'lava') return '#1f242d';
     return this.section(id)?.color || '#22c55e';
   }
@@ -549,7 +549,7 @@ export class WorldsComponent implements AfterViewInit, OnDestroy {
   protected beachColor(id: string): string {
     const b = this.section(id)?.biome;
     if (b === 'lava') return '#44403c';
-    if (b === 'nieve') return '#bae6fd';
+    if (b === 'snow') return '#bae6fd';
     return '#fde68a';
   }
 
@@ -567,15 +567,15 @@ export class WorldsComponent implements AfterViewInit, OnDestroy {
   }
 
   protected biomeEmoji(biome: Biome | undefined): string {
-    if (biome === 'desierto') return '🏜️';
-    if (biome === 'nieve') return '❄️';
+    if (biome === 'desert') return '🏜️';
+    if (biome === 'snow') return '❄️';
     if (biome === 'lava') return '🌋';
     return '🌿';
   }
 
   protected biomeLabel(biome: Biome | undefined): string {
-    if (biome === 'desierto') return 'Desierto';
-    if (biome === 'nieve') return 'Nieve';
+    if (biome === 'desert') return 'Desert';
+    if (biome === 'snow') return 'Snow';
     if (biome === 'lava') return 'Lava';
     return 'Pradera';
   }

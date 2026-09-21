@@ -13,7 +13,7 @@
     canvas {
       display: block;
     }
-    #rotar-hint {
+    #rotate-hint {
       position: fixed;
       left: 50%;
       bottom: 10px;
@@ -38,7 +38,7 @@
   </script>
 </head>
 <body>
-  <div id="rotar-hint">🖱️ arrastrá para rotar · rueda para zoom</div>
+  <div id="rotate-hint">🖱️ arrastrá para rotar · rueda para zoom</div>
   <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -127,7 +127,7 @@
           }
         }
       } catch (e) {
-        console.warn('No se pudo leer modular_character_config:', e);
+        console.warn('Could not read modular_character_config:', e);
       }
       return DEFAULT_CONFIG;
     }
@@ -145,8 +145,8 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     document.body.appendChild(renderer.domElement);
 
-    // Rotación manual del personaje (arrastrar) + zoom (rueda). Sin paneo para
-    // no perder el encuadre; también beneficia al preview del login (mismo archivo).
+    // Manual character rotation (drag) + zoom (wheel). No panning so as
+    // not to lose the framing; it also benefits the login preview (same file).
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0.38, 0);
     controls.enableDamping = true;
@@ -195,7 +195,7 @@
       });
       if (!targetRig || !targetSkin) return;
 
-      // 1. Limpiar piezas modulares anteriores
+      // 1. Clear previous modular pieces
       const toRemove = [];
       targetRig.children.forEach(c => {
         if (c.name && c.name.startsWith('modular_')) toRemove.push(c);
@@ -211,7 +211,7 @@
         headToRemove.forEach(c => headBone.remove(c));
       }
 
-      // 2. Ocultar mallas base originales de cabeza y piernas
+      // 2. Hide the original base meshes of head and legs
       targetModel.traverse(c => {
         if (c.isMesh) {
           if (isHeadMesh(c.name)) {
@@ -221,7 +221,7 @@
         }
       });
 
-      // 3. Montar Cabeza Modular, Cabello y Cosmético de cara (barba o tapaboca)
+      // 3. Mount Modular Head, Hair and Face cosmetic (beard or face mask)
       const headClass = config.headStyle || config.characterClass || 'Knight';
       const beardType = config.beardStyle !== undefined ? config.beardStyle : (headClass === 'Barbarian' ? 'long' : (headClass === 'Ranger' ? 'short' : 'none'));
       const hairType = config.hairStyle || 'default';
@@ -238,7 +238,7 @@
       } else if (headClass === 'Barbarian') {
         if (beardType === 'long') {
           effectiveHeadClass = 'Barbarian';
-          // Separada también en nativa: así le llega el beardColor (horneada no se tiñe).
+          // Also separated as native: so that beardColor reaches it (baked ones cannot be dyed).
           shouldMountSeparateBeard = true;
         } else {
           effectiveHeadClass = 'Knight';
@@ -257,21 +257,21 @@
         shouldMountSeparateBeard = (beardType === 'long' || beardType === 'short');
       }
 
-      // Pelo default con tinte: se monta su propio pelo nativo para que reciba el
-      // color (horneado no se tiñe). Sin tinte, en calva o en no-humano, igual que antes.
-      const tiñePelo = (config.hairColor || '#ffffff').toLowerCase() !== '#ffffff';
-      const peloPropioTiñe = hairType === 'default' && tiñePelo &&
+      // Default hair with dye: its own native hair is mounted so it receives the
+      // color (baked cannot be dyed). Without dye, on bald or non-human, same as before.
+      const dyesHair = (config.hairColor || '#ffffff').toLowerCase() !== '#ffffff';
+      const ownHairDyes = hairType === 'default' && dyesHair &&
         ['Knight', 'Mage', 'Ranger', 'Rogue'].includes(effectiveHeadClass);
-      const hairTypeEfectivo = peloPropioTiñe ? effectiveHeadClass.toLowerCase() : hairType;
+      const effectiveHairType = ownHairDyes ? effectiveHeadClass.toLowerCase() : hairType;
 
-      // El flequillo y cejas propias se quitan con cualquier pelo foráneo que traiga su propio cabello/cejas:
-      // la frente la cubre la franja completa del donante con sus cejas + el estiraFrente.
-      const peinadosConPelo = ['mage', 'ranger', 'knight', 'rogue'];
-      const sinFlequillo = peinadosConPelo.includes(hairTypeEfectivo) &&
-        hairTypeEfectivo !== effectiveHeadClass.toLowerCase();
-      // Frente estirada en todo combo foráneo para alcanzar el casco (ver
-      // extractFaceGeometry: los ojos van por UV y no se mueven).
-      const estiraFrente = hairTypeEfectivo !== 'default';
+      // The bangs and own eyebrows are removed with any foreign hair that brings its own hair/eyebrows:
+      // the forehead is covered by the donor's full strip with its eyebrows + the stretchesFront.
+      const stylesWithHair = ['mage', 'ranger', 'knight', 'rogue'];
+      const withoutBangs = stylesWithHair.includes(effectiveHairType) &&
+        effectiveHairType !== effectiveHeadClass.toLowerCase();
+      // Forehead stretched in every foreign combo to reach the helmet (see
+      // extractFaceGeometry: the eyes go by UV and do not move).
+      const stretchesFront = effectiveHairType !== 'default';
 
       const headGltf = await getGLTF(effectiveHeadClass);
       if (headGltf) {
@@ -294,7 +294,7 @@
             const remappedHead = remapSkinnedMesh(origHead, targetSkin.skeleton);
             remappedHead.name = 'modular_head';
 
-            // Cabeza del maniquí con ajuste proporcional (escala 0.87, +7% respecto a 0.80) con pivote en la base del cuello
+            // Mannequin head with proportional adjustment (scale 0.87, +7% over 0.80) with pivot at the base of the neck
             const pos = remappedHead.geometry.attributes.position;
             const pivotY = 1.2414;
             const scale = 0.87;
@@ -324,7 +324,7 @@
             }
           });
 
-          // Accesorio de cabeza innato (Casco/Sombrero/Capucha de esqueleto)
+          // Innate head accessory (Skeleton Helmet/Hat/Hood)
           let innateHatName = null;
           if (effectiveHeadClass === 'Skeleton_Warrior') innateHatName = 'Skeleton_Warrior_Helmet';
           else if (effectiveHeadClass === 'Skeleton_Mage') innateHatName = 'Skeleton_Mage_Hat';
@@ -345,10 +345,10 @@
           if (origHead) {
             const headMesh = origHead.clone();
             const isHumanHead = ['Knight', 'Barbarian', 'Mage', 'Ranger', 'Rogue'].includes(effectiveHeadClass);
-            if (isHumanHead && hairTypeEfectivo !== 'default') {
-              // Siempre separada (el mesh cubre el mentón); horneada no recibiría el color.
+            if (isHumanHead && effectiveHairType !== 'default') {
+              // Always separated (the mesh covers the chin); a baked one would not receive the color.
               const keepBeard = false;
-              headMesh.geometry = extractFaceGeometry(origHead, effectiveHeadClass, keepBeard, sinFlequillo, estiraFrente);
+              headMesh.geometry = extractFaceGeometry(origHead, effectiveHeadClass, keepBeard, withoutBangs, stretchesFront);
             }
             const remappedHead = remapSkinnedMesh(headMesh, targetSkin.skeleton);
             remappedHead.name = 'modular_head';
@@ -357,12 +357,12 @@
         }
       }
 
-      // Montar cabello modular si corresponde
-      if (hairTypeEfectivo !== 'default') {
-        await mountHair(targetRig, targetSkin, hairTypeEfectivo, effectiveHeadClass, sinFlequillo, config.hairColor || '#ffffff');
+      // Mount modular hair if applicable
+      if (effectiveHairType !== 'default') {
+        await mountHair(targetRig, targetSkin, effectiveHairType, effectiveHeadClass, withoutBangs, config.hairColor || '#ffffff');
       }
 
-      // Montar cosmético de cara modular si corresponde (barba o tapaboca)
+      // Mount modular face cosmetic if applicable (beard or face mask)
       if (shouldMountSeparateBeard) {
         await mountBeard(targetRig, targetSkin, beardType, config.beardColor || '#ffffff');
       }
@@ -370,7 +370,7 @@
         await mountMask(targetRig, targetSkin, config.beardColor || '#ffffff');
       }
 
-      // 4. Montar Pantalón Modular
+      // 4. Mount Modular Pants
       const pantsClass = config.pantsStyle || config.characterClass || 'Knight';
       const pantsGltf = await getGLTF(pantsClass);
       if (pantsGltf) {
@@ -390,7 +390,7 @@
         }
       }
 
-      // 5. Montar Zapatos Modulares
+      // 5. Mount Modular Shoes
       const isSneakers = (config.shoesStyle === 'sneakers');
       const shoesClass = isSneakers ? 'Rogue' : (config.shoesStyle || config.characterClass || 'Knight');
       const shoesGltf = await getGLTF(shoesClass);
@@ -451,7 +451,7 @@
           const gltf = await getGLTF('Knight');
           const hMesh = gltf.scene.getObjectByName('Knight_Helmet');
           const vMesh = gltf.scene.getObjectByName('Knight_HelmetVisor');
-          // Casco un 10% más grande (s = 1.10)
+          // Helmet 10% bigger (s = 1.10)
           sharedHatCache.set('helmet', {
             hMesh: scaleMeshGeom(hMesh, 1.10, 1.68, 0.04),
             vMesh: scaleMeshGeom(vMesh, 1.10, 1.68, 0.04)
@@ -469,7 +469,7 @@
         if (!sharedHatCache.has('bear_hat')) {
           const gltf = await getGLTF('Barbarian');
           const bMesh = gltf.scene.getObjectByName('Barbarian_BearHat');
-          // Gorro de oso un 15% más grande (s = 1.15)
+          // Bear hat 15% bigger (s = 1.15)
           sharedHatCache.set('bear_hat', {
             bMesh: scaleMeshGeom(bMesh, 1.15, 1.72, 0.05)
           });
@@ -487,14 +487,14 @@
     function applyCosmetics(model, config) {
       if (!model) return;
 
-      // Limpiar gorro/casco compartido anterior si existía
+      // Clear the previous shared hat/helmet if there was one
       const targetRig = model.getObjectByName('Rig_Medium') || model.getObjectByName('Rig');
       if (targetRig) {
         const oldShared = targetRig.getObjectByName('custom_shared_hat');
         if (oldShared) targetRig.remove(oldShared);
       }
 
-      // 1. Visibilidad de mallas base glTF (casco y gorro de oso siempre van por getSharedHat escalados)
+      // 1. Visibility of glTF base meshes (helmet and bear hat always go through getSharedHat scaled)
       model.traverse((child) => {
         if (child.isMesh && !child.name.startsWith('modular_')) {
           const name = child.name;
@@ -506,7 +506,7 @@
         }
       });
 
-      // Si se eligió casco (+10%) o gorro de oso (+15%), vincular versión escalada
+      // If helmet (+10%) or bear hat (+15%) was chosen, link the scaled version
       if (config.headItem === 'helmet' || config.headItem === 'bear_hat') {
         const requestedItem = config.headItem;
         const isMannequinHead = (config.headStyle === 'Mannequin' || (!config.headStyle && config.characterClass === 'Mannequin'));
@@ -555,7 +555,7 @@
             }
           });
         } else if (config.backItem === 'guitar') {
-          // Los gltf vienen cruzados (guitar_A es azul, guitar_B es rosa): se invierte el mapeo.
+          // The gltf files come crossed (guitar_A is blue, guitar_B is pink): the mapping is inverted.
           const gVar = config.guitarColor === 'B' ? 'A' : 'B';
           loadMixedGltf('guitar_' + gVar + '.gltf').then(gScene => {
             if (gScene && config.backItem === 'guitar') {
@@ -593,8 +593,8 @@
           activeRGBObjects.add(headObj);
         } else if (config.headItem === 'propeller_hat') {
           headObj = createPropellerHat();
-          // +0.10 para compensar el aplasto vertical (pivota en el origen):
-          // la base del gorro queda a la misma altura, solo el objeto es más bajo.
+          // +0.10 to compensate the vertical squash (it pivots at the origin):
+          // the hat's base stays at the same height, only the object is lower.
           headObj.position.set(0, 0.40, 0);
           activeRGBObjects.add(headObj);
         } else if (config.headItem === 'saiyan_scouter') {
@@ -656,7 +656,7 @@
     const activeRGBObjects = new Set();
 
     // -------------------------------------------------------------
-    // PROCEDURAL 3D MODELS: ESPALDA
+    // PROCEDURAL 3D MODELS: BACK
     // -------------------------------------------------------------
     function createBackpack(color = '#2563eb') {
       const group = new THREE.Group();
@@ -667,7 +667,7 @@
       const darkMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7 });
       const zipMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.3 });
 
-      // Cuerpo principal ampliado un 25% para que luzca imponente y no quede embutido en el torso
+      // Main body enlarged by 25% so it looks imposing and does not end up embedded in the torso
       const body = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.52, 0.22), mainMat);
       body.castShadow = true;
       group.add(body);
@@ -730,7 +730,7 @@
       return group;
     }
 
-    // USB Gigante estilo pendrive gamer invertido 180°: el conector metálico apunta hacia ARRIBA
+    // Giant USB, gamer flash-drive style, inverted 180°: the metallic connector points UP
     function createGiantUSB() {
       const group = new THREE.Group();
       group.name = 'giant_usb';
@@ -740,7 +740,7 @@
       const ledMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x06b6d4, emissiveIntensity: 0.9 });
       const harnessMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.8 });
 
-      // Correas arnés
+      // Harness straps
       const s1 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.65, 0.14), harnessMat);
       s1.rotation.z = Math.PI / 5;
       s1.position.set(0, 0, 0.04);
@@ -751,23 +751,23 @@
       s2.position.set(0, 0, 0.04);
       group.add(s2);
 
-      // Cuerpo principal del USB
+      // USB main body
       const usbBody = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.44, 0.08), bodyMat);
       usbBody.position.set(0.04, -0.02, -0.06);
       usbBody.castShadow = true;
       group.add(usbBody);
 
-      // Línea LED cyan
+      // Cyan LED line
       const led = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.015, 0.085), ledMat);
       led.position.set(0.04, 0.12, -0.06);
       group.add(led);
 
-      // Conector metálico USB-A apuntando hacia ARRIBA
+      // USB-A metallic connector pointing UP
       const plug = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.16, 0.06), plugMat);
       plug.position.set(0.04, 0.28, -0.06);
       group.add(plug);
 
-      // Ranuras del conector USB
+      // USB connector slots
       const hole1 = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.035, 0.065), bodyMat);
       hole1.position.set(0.01, 0.29, -0.06);
       group.add(hole1);
@@ -775,7 +775,7 @@
       hole2.position.set(0.07, 0.29, -0.06);
       group.add(hole2);
 
-      // Aro inferior para llavero
+      // Lower ring for keychain
       const loop = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.012, 8, 16), plugMat);
       loop.position.set(0.04, -0.28, -0.06);
       group.add(loop);
@@ -785,7 +785,7 @@
     }
 
     // -------------------------------------------------------------
-    // PROCEDURAL 3D MODELS: CABEZA (Alineados con orejas y ojos)
+    // PROCEDURAL 3D MODELS: HEAD (Aligned with ears and eyes)
     // -------------------------------------------------------------
     function createGamerHeadphones() {
       const group = new THREE.Group();
@@ -800,18 +800,18 @@
         roughness: 0.2
       });
 
-      // Diadema asentada exactamente sobre la coronilla (radio 0.52, centro en Y=0.40)
+      // Headband seated exactly on the crown (radius 0.52, center at Y=0.40)
       const arch = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.045, 12, 32, Math.PI), blackMat);
       arch.position.set(0, 0.40, 0.02);
       group.add(arch);
 
-      // Almohadilla superior
+      // Upper pad
       const archPad = new THREE.Mesh(new THREE.TorusGeometry(0.51, 0.038, 8, 20, Math.PI * 0.6), cushionMat);
       archPad.rotation.z = Math.PI * 0.2;
       archPad.position.set(0, 0.40, 0.02);
       group.add(archPad);
 
-      // Auriculares a ambos lados de la cabeza a la altura de las orejas (Y = 0.38)
+      // Headphones on both sides of the head at ear height (Y = 0.38)
       for (const side of [-1, 1]) {
         const x = side * 0.54;
 
@@ -820,20 +820,20 @@
         cup.position.set(x, 0.38, 0.02);
         group.add(cup);
 
-        // Anillo RGB neón
+        // Neon RGB ring
         const ring = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.022, 12, 24), rgbMat);
         ring.rotation.y = Math.PI / 2;
         ring.position.set(x + side * 0.052, 0.38, 0.02);
         group.add(ring);
 
-        // Almohadilla interna
+        // Inner pad
         const pad = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.032, 12, 24), cushionMat);
         pad.rotation.y = Math.PI / 2;
         pad.position.set(x - side * 0.032, 0.38, 0.02);
         group.add(pad);
       }
 
-      // Micrófono curvo bajado a nivel de la boca (Y = 0.22)
+      // Curved microphone lowered to mouth level (Y = 0.22)
       const curve = new THREE.CatmullRomCurve3([
         new THREE.Vector3(-0.54, 0.32, 0.08),
         new THREE.Vector3(-0.48, 0.26, 0.34),
@@ -861,7 +861,7 @@
       const group = new THREE.Group();
       group.name = 'propeller_hat';
 
-      // 4 gajos clásicos de colores primarios para la gorra cóptero
+      // 4 classic primary-color gores for the copter cap
       const redMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 });
       const blueMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.5 });
       const yellowMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
@@ -869,7 +869,7 @@
       const metalMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.2, metalness: 0.8 });
       const orangeMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.4 });
 
-      // 1. Cúpula subida en la cabeza (Y = 0.49) y más envolvente (phiLength = 0.54 * PI) para cubrir completamente el cráneo
+      // 1. Dome raised on the head (Y = 0.49) and more enveloping (phiLength = 0.54 * PI) to fully cover the skull
       const capRadius = 0.57;
       const capY = 0.49;
       const capZ = 0.01;
@@ -887,21 +887,21 @@
         group.add(segMesh);
       });
 
-      // 2. Arandela base superior donde nace el eje
+      // 2. Upper base washer where the shaft starts
       const baseGrommet = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.04, 16), metalMat);
       baseGrommet.position.set(0, capY + capRadius - 0.01, capZ);
       group.add(baseGrommet);
 
-      // Eje metálico vertical
+      // Vertical metallic shaft
       const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.16, 12), metalMat);
       shaft.position.set(0, capY + capRadius + 0.08, capZ);
       group.add(shaft);
 
-      // Grupo giratorio de la hélice
+      // Rotating propeller group
       const propGroup = new THREE.Group();
       propGroup.position.set(0, capY + capRadius + 0.16, capZ);
 
-      // Núcleo central / buje
+      // Central core / hub
       const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 14), yellowMat);
       propGroup.add(hub);
 
@@ -909,12 +909,12 @@
       topBead.position.set(0, 0.025, 0);
       propGroup.add(topBead);
 
-      // Palas de la hélice (2 aspas alargadas aerodinámicas con ligera inclinación y puntas rojas)
+      // Propeller blades (2 elongated aerodynamic blades with slight tilt and red tips)
       const bladeGeom = new THREE.BoxGeometry(0.28, 0.012, 0.065);
       const bladeMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3 });
       const tipMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
 
-      // Aspa 1
+      // Blade 1
       const blade1 = new THREE.Mesh(bladeGeom, bladeMat);
       blade1.position.set(0.16, 0, 0);
       blade1.rotation.x = 0.18;
@@ -925,7 +925,7 @@
       tip1.rotation.x = 0.18;
       propGroup.add(tip1);
 
-      // Aspa 2
+      // Blade 2
       const blade2 = new THREE.Mesh(bladeGeom, bladeMat);
       blade2.position.set(-0.16, 0, 0);
       blade2.rotation.x = -0.18;
@@ -938,25 +938,25 @@
 
       group.add(propGroup);
 
-      // Giro continuo de la hélice a 60 FPS
+      // Continuous propeller spin at 60 FPS
       group.userData.updateRGB = (time) => {
         propGroup.rotation.y = time * 24;
       };
 
-      // Gorro un 20% más chico y con 30% menos altura (aplasto vertical)
+      // Hat 20% smaller and with 30% less height (vertical squash)
       group.scale.set(0.8, 0.56, 0.8);
 
       return group;
     }
 
-    // Estrellitas KayKit orbitando la cabeza: 7 copias del gltf del color elegido.
+    // KayKit little stars orbiting the head: 7 copies of the gltf of the chosen color.
     const starOrbitCache = new Map();
 
     function createStarOrbit(color = 'yellow') {
       const group = new THREE.Group();
       group.name = 'star_orbit_' + color;
 
-      // 7 soportes equidistantes: la órbita se anima en updateRGB aunque el gltf aún cargue.
+      // 7 equidistant supports: the orbit is animated in updateRGB even if the gltf is still loading.
       const COUNT = 7;
       const RADIUS = 0.55;
       const HEIGHT = 1.05;
@@ -1000,7 +1000,7 @@
           starOrbitCache.set(color, gltf.scene);
           place(gltf.scene);
         }, undefined, (err) => {
-          console.warn('No se pudo cargar la estrella:', file, err);
+          console.warn('Could not load the star:', file, err);
         });
       }
 
@@ -1008,7 +1008,7 @@
     }
 
     // -------------------------------------------------------------
-    // MIXED BAG (KayKit): gltfs en Assets/Cosmetics/mixed/ con caché compartida.
+    // MIXED BAG (KayKit): gltfs in Assets/Cosmetics/mixed/ with shared cache.
     // -------------------------------------------------------------
     const mixedGltfCache = new Map();
 
@@ -1022,13 +1022,13 @@
           mixedGltfCache.set(fileName, gltf.scene);
           resolve(gltf.scene);
         }, undefined, (err) => {
-          console.warn('No se pudo cargar el cosmético:', fileName, err);
+          console.warn('Could not load the cosmetic:', fileName, err);
           resolve(null);
         });
       });
     }
 
-    // Guitarra en diagonal sobre la espalda, girada 180° en Y (frente afuera, mástil arriba).
+    // Guitar diagonally on the back, rotated 180° on Y (front outward, neck up).
     function placeGuitar(scene, variant = 'A') {
       const g = scene.clone(true);
       g.name = 'guitar_' + variant;
@@ -1038,7 +1038,7 @@
       return g;
     }
 
-    // Dos flores como antenas inclinadas hacia afuera, con balanceo suave.
+    // Two flowers as antennae tilted outward, with gentle swaying.
     function createFlowerAntennae() {
       const group = new THREE.Group();
       group.name = 'flower_antennae';
@@ -1066,8 +1066,8 @@
       return group;
     }
 
-    // Gallina terrestre en ESPACIO DE MUNDO (colgada de scene, no del playerGroup):
-    // así los giros del jugador no la arrastran. La referencia al jugador viaja en userData.
+    // Ground chicken in WORLD SPACE (hung from scene, not from playerGroup):
+    // this way the player's turns do not drag it. The player reference travels in userData.
     function createGroundChicken(playerRef, variant = 'A') {
       const group = new THREE.Group();
       group.name = 'chicken_' + variant;
@@ -1100,7 +1100,7 @@
         roughness: 0.1
       });
 
-      // Auricular en la oreja derecha bajado a Y = 0.38
+      // Earpiece on the right ear lowered to Y = 0.38
       const earpiece = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.08, 20), bodyMat);
       earpiece.rotation.z = Math.PI / 2;
       earpiece.position.set(0.54, 0.38, 0.04);
@@ -1110,7 +1110,7 @@
       earCore.position.set(0.58, 0.38, 0.04);
       group.add(earCore);
 
-      // Montura lateral
+      // Side mount
       const arm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.40), bodyMat);
       arm.position.set(0.52, 0.38, 0.24);
       group.add(arm);
@@ -1119,7 +1119,7 @@
       joint.position.set(0.40, 0.38, 0.44);
       group.add(joint);
 
-      // Lente holográfica frente al ojo derecho (Y = 0.38, Z = 0.48)
+      // Holographic lens in front of the right eye (Y = 0.38, Z = 0.48)
       const lens = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.15, 0.02), lensMat);
       lens.rotation.y = -0.15;
       lens.position.set(0.22, 0.38, 0.48);
@@ -1143,11 +1143,11 @@
         metalness: 0.2
       });
 
-      // Posición bajada a la altura real de los ojos (Y = 0.34, Z = 0.48)
+      // Position lowered to the real eye height (Y = 0.34, Z = 0.48)
       const eyeY = 0.34;
       const eyeZ = 0.48;
 
-      // Marco y lente izquierda (más anchos para cubrir perfectamente los ojos)
+      // Left frame and lens (wider to cover the eyes perfectly)
       const frameL = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.17, 0.03), frameMat);
       frameL.position.set(-0.21, eyeY, eyeZ);
       group.add(frameL);
@@ -1156,7 +1156,7 @@
       lensL.position.set(-0.21, eyeY, eyeZ + 0.006);
       group.add(lensL);
 
-      // Marco y lente derecha
+      // Right frame and lens
       const frameR = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.17, 0.03), frameMat);
       frameR.position.set(0.21, eyeY, eyeZ);
       group.add(frameR);
@@ -1165,12 +1165,12 @@
       lensR.position.set(0.21, eyeY, eyeZ + 0.006);
       group.add(lensR);
 
-      // Puente sobre la nariz
+      // Bridge over the nose
       const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.035, 0.03), frameMat);
       bridge.position.set(0, eyeY + 0.04, eyeZ);
       group.add(bridge);
 
-      // Patillas anatómicas curvadas que conectan el frente (Z=0.48) y calzan sobre y detrás de las orejas (X=+-0.51, Z=0.04)
+      // Curved anatomical temples that connect the front (Z=0.48) and sit on and behind the ears (X=+-0.51, Z=0.04)
       for (const side of [-1, 1]) {
         const templeCurve = new THREE.CatmullRomCurve3([
           new THREE.Vector3(side * 0.34, eyeY + 0.035, eyeZ - 0.01),
@@ -1187,7 +1187,7 @@
     }
 
     // -------------------------------------------------------------
-    // PROCEDURAL 3D MODELS: MANOS
+    // PROCEDURAL 3D MODELS: HANDS
     // -------------------------------------------------------------
     function createGamingMouse() {
       const group = new THREE.Group();
@@ -1272,7 +1272,7 @@
 
       const gourdMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.6 });
       const metalMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.95, roughness: 0.15 });
-      const yerbaMat = new THREE.MeshStandardMaterial({ color: 0x365314, roughness: 0.9 });
+      const herbMat = new THREE.MeshStandardMaterial({ color: 0x365314, roughness: 0.9 });
 
       const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.08, 0.22, 16), gourdMat);
       cup.position.set(0, 0.02, 0);
@@ -1283,19 +1283,19 @@
       bottom.position.set(0, -0.07, 0);
       group.add(bottom);
 
-      const virola = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.04, 16), metalMat);
-      virola.position.set(0, 0.12, 0);
-      group.add(virola);
+      const ferrule = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.115, 0.04, 16), metalMat);
+      ferrule.position.set(0, 0.12, 0);
+      group.add(ferrule);
 
-      const yerba = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.02, 16), yerbaMat);
-      yerba.position.set(0, 0.11, 0);
-      group.add(yerba);
+      const herb = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.02, 16), herbMat);
+      herb.position.set(0, 0.11, 0);
+      group.add(herb);
 
-      const bombilla = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.32, 8), metalMat);
-      bombilla.rotation.x = -0.35;
-      bombilla.rotation.z = 0.15;
-      bombilla.position.set(-0.02, 0.20, 0.03);
-      group.add(bombilla);
+      const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.32, 8), metalMat);
+      straw.rotation.x = -0.35;
+      straw.rotation.z = 0.15;
+      straw.position.set(-0.02, 0.20, 0.03);
+      group.add(straw);
 
       const spout = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.04, 0.012), metalMat);
       spout.rotation.x = -0.35;
@@ -1499,7 +1499,7 @@
     }
 
     // -------------------------------------------------------------
-    // PROCEDURAL 3D MODELS: MASCOTAS VOLADORAS (Flying Pets)
+    // PROCEDURAL 3D MODELS: FLYING PETS
     // -------------------------------------------------------------
     function createFlyingDrone() {
       const group = new THREE.Group();
@@ -1579,7 +1579,7 @@
       const wingMat = new THREE.MeshStandardMaterial({ color: 0x5b2d0e, roughness: 0.75, side: THREE.DoubleSide });
       const wingTipMat = new THREE.MeshStandardMaterial({ color: 0x2f1503, roughness: 0.8, side: THREE.DoubleSide });
 
-      // Cuerpo compacto + cola en abanico
+      // Compact body + fan tail
       const body = new THREE.Mesh(new THREE.SphereGeometry(0.09, 18, 14), bodyMat);
       body.scale.set(0.92, 1.05, 0.9);
       group.add(body);
@@ -1589,7 +1589,7 @@
       chest.scale.set(0.85, 0.95, 0.65);
       group.add(chest);
 
-      // Plumas del pecho: 3 vieiras que rompen la esfera lisa
+      // Chest feathers: 3 scallops that break the smooth sphere
       for (let i = 0; i < 3; i++) {
         const scallop = new THREE.Mesh(new THREE.SphereGeometry(0.028 - i * 0.004, 10, 8), i % 2 ? chestMat : featherMat);
         scallop.position.set((i - 1) * 0.032, -0.045 - Math.abs(i - 1) * -0.008, 0.085);
@@ -1603,7 +1603,7 @@
       tail.scale.set(1.4, 1, 0.45);
       group.add(tail);
 
-      // Patas retraídas en vuelo
+      // Legs retracted in flight
       for (const side of [-1, 1]) {
         const foot = new THREE.Mesh(new THREE.SphereGeometry(0.016, 8, 6), beakMat);
         foot.position.set(side * 0.035, -0.095, 0.01);
@@ -1611,7 +1611,7 @@
         group.add(foot);
       }
 
-      // Cabeza: grupo propio para curiosidad sin mover el cuerpo
+      // Head: own group for curiosity without moving the body
       const headG = new THREE.Group();
       headG.position.set(0, 0.075, 0.01);
       group.add(headG);
@@ -1649,7 +1649,7 @@
       beak.position.set(0, -0.012, 0.072);
       headG.add(beak);
 
-      // Alas emplumadas: forma con festones en vez de caja
+      // Feathered wings: scalloped shape instead of a box
       const makeWing = (side) => {
         const pivot = new THREE.Group();
         pivot.position.set(side * 0.075, 0.03, 0);
@@ -1681,7 +1681,7 @@
       const wingR = makeWing(1);
 
       group.userData.updateAnim = (time, delta) => {
-        // Ciclo aleteo-planeo: a veces planea para verse natural
+        // Flap-glide cycle: sometimes it glides to look natural
         const glide = 0.55 + 0.45 * Math.sin(time * 0.6);
         const amp = 0.18 + 0.5 * Math.max(0, glide);
         const flap = Math.sin(time * 10) * amp + Math.sin(time * 23) * 0.06;
@@ -1689,12 +1689,12 @@
         wingR.rotation.z = -0.12 - flap;
         wingL.rotation.y = Math.sin(time * 10) * 0.08;
         wingR.rotation.y = -Math.sin(time * 10) * 0.08;
-        // Respiración + cabeceo suave
+        // Breathing + gentle head bobbing
         const breathe = 1 + Math.sin(time * 3.1) * 0.018;
         body.scale.set(0.92, 1.05 * breathe, 0.9);
         group.rotation.x = Math.sin(time * 2.1) * 0.05;
         tail.rotation.x = -Math.PI * 0.35 + Math.sin(time * 10) * 0.08;
-        // Curiosidad: la cabeza mira a los lados cada pocos segundos
+        // Curiosity: the head looks to the sides every few seconds
         const ud = group.userData;
         if (ud.nextLook === undefined || time > ud.nextLook) {
           ud.lookTarget = (Math.random() - 0.5) * 0.9;
@@ -1702,7 +1702,7 @@
         }
         headG.rotation.y += ((ud.lookTarget || 0) - headG.rotation.y) * Math.min(1, delta * 4);
         headG.rotation.z = Math.sin(time * 1.7) * 0.05;
-        // Parpadeo: aplasta los ojos 0.12s
+        // Blink: squashes the eyes for 0.12s
         if (ud.blinkUntil === undefined) ud.blinkUntil = time + 2 + Math.random() * 3;
         if (time > ud.blinkUntil - 0.12 && time < ud.blinkUntil) {
           for (const e of eyes) { e.eye.scale.y = 0.12; e.pupil.scale.y = 0.12; }
@@ -1710,7 +1710,7 @@
           for (const e of eyes) { e.eye.scale.y = 1; e.pupil.scale.y = 1; }
           if (time >= ud.blinkUntil) ud.blinkUntil = time + 2.5 + Math.random() * 3.5;
         }
-        // Pupilas hacia el centro (miran al jugador al orbitar)
+        // Pupils toward the center (they look at the player when orbiting)
         for (const e of eyes) e.pupil.position.x = e.side * 0.028 - 0.008;
       };
 
@@ -1805,28 +1805,28 @@
       const faceMat = new THREE.MeshBasicMaterial({ color: 0x0c4a6e });
       const blushMat = new THREE.MeshBasicMaterial({ color: 0xf9a8d4, transparent: true, opacity: 0.55, depthWrite: false });
 
-      // Cabeza + halo exterior para borde luminoso suave
+      // Head + outer halo for a soft glowing edge
       const head = new THREE.Mesh(new THREE.SphereGeometry(0.09, 20, 14, 0, Math.PI * 2, 0, Math.PI * 0.55), ghostMat);
       group.add(head);
       const halo = new THREE.Mesh(new THREE.SphereGeometry(0.098, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.6), rimMat);
       halo.position.y = 0.002;
       group.add(halo);
 
-      // Falda con segmentos para ondular los vértices
+      // Skirt with segments to ripple the vertices
       const skirtGeo = new THREE.CylinderGeometry(0.09, 0.075, 0.17, 18, 4, true);
       const skirt = new THREE.Mesh(skirtGeo, ghostMat);
       skirt.position.set(0, -0.085, 0);
       group.add(skirt);
       const skirtBase = skirtGeo.attributes.position.array.slice();
 
-      // Borde inferior ondulado (picos de fantasma)
+      // Wavy lower edge (ghost peaks)
       const hemGeo = new THREE.TorusGeometry(0.068, 0.012, 8, 18);
       const hem = new THREE.Mesh(hemGeo, ghostMat);
       hem.rotation.x = Math.PI / 2;
       hem.position.y = -0.17;
       group.add(hem);
 
-      // Cola-cinta ondulante en vez de cono rígido
+      // Rippling ribbon tail instead of a rigid cone
       const tailGeo = new THREE.PlaneGeometry(0.07, 0.16, 4, 6);
       const tail = new THREE.Mesh(tailGeo, new THREE.MeshStandardMaterial({
         color: 0xe0f2fe, emissive: 0x38bdf8, emissiveIntensity: 0.4,
@@ -1837,7 +1837,7 @@
       group.add(tail);
       const tailBase = tailGeo.attributes.position.array.slice();
 
-      // Cara cartoon: ojos blancos + pupilas que miran al jugador
+      // Cartoon face: white eyes + pupils that look at the player
       const pupils = [];
       for (const side of [-1, 1]) {
         const white = new THREE.Mesh(new THREE.SphereGeometry(0.024, 12, 10), new THREE.MeshBasicMaterial({ color: 0xffffff }));
@@ -1855,7 +1855,7 @@
         blush.rotation.y = side * 0.5;
         group.add(blush);
 
-        // Bracitos flotantes con manos
+        // Little floating arms with hands
         const armG = new THREE.Group();
         armG.position.set(side * 0.085, -0.05, 0.01);
         const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.016, 0.035, 4, 8), ghostMat);
@@ -1876,14 +1876,14 @@
 
       group.userData.updateAnim = (time, delta) => {
         const floatY = Math.sin(time * 2.2) * 0.5 + Math.sin(time * 5.1) * 0.12;
-        // Resplandor neón pulsante suave
+        // Soft pulsing neon glow
         ghostMat.emissiveIntensity = 0.42 + Math.sin(time * 3.2) * 0.14 + Math.sin(time * 7.7) * 0.04;
         rimMat.opacity = 0.22 + Math.sin(time * 3.2) * 0.07;
-        // Squash & stretch flotante
+        // Floating squash & stretch
         group.scale.set(1 - floatY * 0.02, 1 + floatY * 0.035, 1 - floatY * 0.02);
         group.rotation.z = Math.sin(time * 1.8) * 0.06;
         group.rotation.x = Math.sin(time * 2.6) * 0.04;
-        // Falda ondulante: mueve el anillo inferior con seno por ángulo
+        // Rippling skirt: moves the lower ring with a sine by angle
         const pos = skirtGeo.attributes.position;
         for (let i = 0; i < pos.count; i++) {
           const bx = skirtBase[i * 3], by = skirtBase[i * 3 + 1], bz = skirtBase[i * 3 + 2];
@@ -1896,7 +1896,7 @@
         skirtGeo.computeVertexNormals();
         hem.position.y = -0.17 + Math.sin(time * 5) * 0.006;
         hem.scale.set(1 + Math.sin(time * 5) * 0.03, 1 + Math.cos(time * 5) * 0.03, 1);
-        // Cola serpenteante
+        // Winding tail
         const tp = tailGeo.attributes.position;
         for (let i = 0; i < tp.count; i++) {
           const bx = tailBase[i * 3], by = tailBase[i * 3 + 1];
@@ -1904,13 +1904,13 @@
           tp.setX(i, bx + Math.sin(time * 6 + k * 4) * 0.02 * k);
         }
         tp.needsUpdate = true;
-        // Boca que se abre al subir y brazos nadando
+        // Mouth that opens on the way up and arms swimming
         mouth.scale.y = 1.1 + Math.max(0, Math.sin(time * 2.2)) * 0.7;
         for (const a of group.userData.arms) {
           a.g.position.y = -0.05 + Math.sin(time * 3 + a.phase) * 0.015;
           a.g.rotation.z = a.side * (0.25 + Math.sin(time * 3 + a.phase) * 0.25);
         }
-        // Pupilas miran al centro (al jugador)
+        // Pupils look at the center (at the player)
         for (const p of pupils) p.pupil.position.x = p.side * 0.034 - 0.007;
       };
 
@@ -1941,10 +1941,10 @@
       }
     }
 
-    // Mascota terrestre en ESPACIO DE MUNDO: pasea en un disco alrededor del jugador y
-    // solo lo sigue (dando saltitos) si se aleja más allá de la correa. Arranca a caminar
-    // 2s después de que el jugador empieza a moverse. Desacelera al llegar, evita paredes
-    // (usa el sector con más espacio) y picotea cuando está quieta.
+    // Ground pet in WORLD SPACE: strolls on a disc around the player and
+    // only follows them (hopping) if they get farther than the leash. It starts walking
+    // 2s after the player starts moving. It slows down on arrival, avoids walls
+    // (uses the sector with the most space) and pecks when standing still.
     function updateGroundPet(obj, time, delta) {
       const ud = obj.userData;
       const pr = ud.playerRef;
@@ -1952,13 +1952,13 @@
       const ppx = pr ? pr.position.x : 0;
       const ppz = pr ? pr.position.z : 0;
       const yaw = pr ? pr.rotation.y : 0;
-      // Atrás del jugador según hacia dónde mira.
+      // Behind the player depending on where they face.
       const anx = ppx - Math.sin(yaw) * 0.85;
       const anz = ppz - Math.cos(yaw) * 0.85;
-      // Paredes solo donde hay sistema de colisiones (mundo, no preview).
+      // Walls only where there is a collision system (world, not preview).
       const blocked = (x, z) =>
         typeof checkBuildingCollision === 'function' && checkBuildingCollision(x, z, 0.15);
-      // Ancla validada: si cae dentro de un edificio, el punto libre más cercano al jugador.
+      // Validated anchor: if it falls inside a building, the free point closest to the player.
       let vax = anx;
       let vaz = anz;
       if (blocked(anx, anz)) {
@@ -1989,7 +1989,7 @@
         ud.peckUntil = 0;
       }
 
-      // Anti-teletransporte: si quedó a más de 8, aparece al lado del jugador.
+      // Anti-teleport: if it ended up more than 8 away, it appears next to the player.
       if (Math.hypot(obj.position.x - ppx, obj.position.z - ppz) > 8) {
         obj.position.set(vax, 0, vaz);
         ud.tx = undefined;
@@ -2000,8 +2000,8 @@
       const PERSONAL = 0.35;
       const distP = Math.hypot(obj.position.x - ppx, obj.position.z - ppz);
 
-      // Candado de arranque: la gallina empieza a caminar 2s después de que el
-      // jugador empieza a moverse, aunque siga en movimiento.
+      // Start lock: the chicken starts walking 2s after the
+      // player starts moving, even if they keep moving.
       if (ud.lastPpx === undefined) {
         ud.lastPpx = ppx;
         ud.lastPpz = ppz;
@@ -2020,7 +2020,7 @@
       const mayWalk = ud.lockStart !== undefined && time - ud.lockStart >= 2;
       const fresh = ud.lockStart === undefined && ud.lastMoveAt === -10;
 
-      // Pensar: muestrear puntos de paseo y quedarse con el primero libre.
+      // Think: sample stroll points and keep the first free one.
       const hasTarget = ud.tx !== undefined;
       const arrived = hasTarget && Math.hypot(ud.tx - obj.position.x, ud.tz - obj.position.z) < 0.08;
       if ((!hasTarget || arrived) && time >= ud.thinkAt) {
@@ -2039,7 +2039,7 @@
         ud.thinkAt = time + 2 + Math.random() * 2;
       }
 
-      // Destino: el punto de paseo, o el ancla validada si se pasó de la correa.
+      // Destination: the stroll point, or the validated anchor if it went past the leash.
       let gx = ud.tx ?? vax;
       let gz = ud.tz ?? vaz;
       let maxSpeed = 0.5;
@@ -2056,7 +2056,7 @@
       const hopping =
         wantWalk && (fresh || mayWalk || (ud.wasHopping && ud.lockStart === undefined));
       ud.wasHopping = hopping;
-      // Velocidad proporcional a la distancia: desacelera al llegar.
+      // Speed proportional to distance: it slows down on arrival.
       const speed = Math.min(maxSpeed, 0.15 + dist * (maxSpeed > 1 ? 2.5 : 1.5));
       const hopAmp = 0.02 + 0.04 * Math.min(1, speed / 1.5);
       let advanced = false;
@@ -2066,9 +2066,9 @@
         const nz = dz / (dist || 1);
         const sx = obj.position.x + nx * step;
         const sz = obj.position.z + nz * step;
-        // Solo frena al ENTRAR a una pared: si ya está adentro, la deja salir.
+        // It only brakes on ENTERING a wall: if it is already inside, it lets it out.
         if (!blocked(obj.position.x, obj.position.z) && blocked(sx, sz)) {
-          // Pared en el camino: se detiene y repiensa.
+          // Wall in the way: it stops and rethinks.
           ud.tx = undefined;
           ud.thinkAt = time + 0.5;
         } else {
@@ -2089,7 +2089,7 @@
       obj.position.y = advanced ? Math.abs(Math.sin(ud.groundHop)) * hopAmp : Math.sin(time * 2) * 0.008;
       obj.rotation.z = 0;
 
-      // Picoteo ocasional cuando está quieta.
+      // Occasional pecking when standing still.
       if (!advanced && time >= ud.peckAt) {
         ud.peckUntil = time + 0.6;
         ud.peckAt = time + 4 + Math.random() * 3;
@@ -2129,11 +2129,11 @@
         ud.smoothRoll = 0;
         ud.smoothPitch = 0;
       }
-      // Velocidad con deriva orgánica (no mecedora perfecta)
+      // Speed with organic drift (not a perfect rocker)
       const drift = 1 + Math.sin(time * 0.5) * 0.18 + Math.sin(time * 0.23 + 1.7) * 0.12;
       ud.orbitAngle += dt * p.speed * drift * slow;
       const angle = ud.orbitAngle;
-      // Radio vivo: Lissajous + errático extra para el fantasma
+      // Living radius: Lissajous + extra erratic movement for the ghost
       let r = p.radius + Math.sin(time * 0.7) * p.wobble * 0.5 + Math.sin(time * 1.3 + 0.8) * p.wobble * 0.3;
       if (p.erratic) r += Math.sin(time * 2.1) * 0.05 + Math.sin(time * 3.7 + 2) * 0.03;
       r = Math.max(0.45, r);
@@ -2141,7 +2141,7 @@
       const z = Math.sin(angle) * r * 0.92;
       const y = p.height + Math.sin(time * p.bobFreq) * p.bob + Math.sin(time * (p.bobFreq * 2.3) + 1) * p.bob * 0.25;
       activePetObject.position.set(x, y, z);
-      // Velocidad real para orientar + bankear (pitch/roll naturales)
+      // Real velocity to orient + bank (natural pitch/roll)
       const vx = (x - (ud.prevX ?? x)) / dt;
       const vz = (z - (ud.prevZ ?? z)) / dt;
       const vy = (y - (ud.prevY ?? y)) / dt;
@@ -2152,7 +2152,7 @@
       while (dy < -Math.PI) dy += Math.PI * 2;
       const k = 1 - Math.exp(-6 * dt);
       ud.smoothYaw = (ud.smoothYaw ?? targetYaw) + dy * k;
-      // Bank por giro + pitch por subida/bajada, suavizados
+      // Bank by turn + pitch by climb/descent, smoothed
       const turnRate = THREE.MathUtils.clamp(dy / Math.max(dt, 0.001), -4, 4);
       const targetRoll = THREE.MathUtils.clamp(-turnRate * 0.18 * p.bank * 2.2, -0.5, 0.5) - 0.08;
       const targetPitch = THREE.MathUtils.clamp(-vy * 0.35, -0.3, 0.3);
@@ -2290,11 +2290,11 @@
             }
           },
           undefined,
-          (err) => console.warn('No se pudo cargar animaciones de avatar:', err)
+          (err) => console.warn('Could not load avatar animations:', err)
         );
       },
       undefined,
-      (err) => console.error('No se pudo cargar el avatar:', err)
+      (err) => console.error('Could not load the avatar:', err)
     );
 
     function animar() {

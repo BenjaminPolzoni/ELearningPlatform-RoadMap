@@ -1006,7 +1006,7 @@ export class Archipelago3dService {
     sections.forEach((u, i) => {
       const pos = defaultPositions[i];
       const biome: Biome =
-        u.biome || (i % 4 === 0 ? 'pradera' : i % 4 === 1 ? 'desierto' : i % 4 === 2 ? 'nieve' : 'lava');
+        u.biome || (i % 4 === 0 ? 'meadow' : i % 4 === 1 ? 'desert' : i % 4 === 2 ? 'snow' : 'lava');
 
       const group = new THREE.Group();
       group.position.set(pos.x, 0, pos.z);
@@ -1093,27 +1093,27 @@ export class Archipelago3dService {
     const beachColor =
       biome === 'lava'
         ? 0x2e2a27
-        : biome === 'nieve'
+        : biome === 'snow'
           ? 0xcfe6f6
-          : biome === 'desierto'
+          : biome === 'desert'
             ? 0xfde68a
             : 0xfae8b0;
 
     const cliffColor =
-      biome === 'pradera'
+      biome === 'meadow'
         ? 0xca6f3b // Warm terracotta / clay identical to the Kenney model
-        : biome === 'desierto'
+        : biome === 'desert'
           ? 0xba7032 // Canyon sandstone
-          : biome === 'nieve'
+          : biome === 'snow'
             ? 0x64748b // Frosted slate
             : 0x1c1917; // Volcanic basalt
 
     const plateColor =
-      biome === 'pradera'
+      biome === 'meadow'
         ? 0x10b981 // Vibrant emerald green
-        : biome === 'desierto'
+        : biome === 'desert'
           ? 0xf59e0b // Golden sand
-          : biome === 'nieve'
+          : biome === 'snow'
             ? 0xf8fafc // White snow
             : 0x18181b; // Dark volcanic soil
 
@@ -1316,7 +1316,7 @@ export class Archipelago3dService {
     complete: boolean,
   ): void {
     if (tile.role === 'peak') {
-      if (biome === 'pradera') {
+      if (biome === 'meadow') {
         // Medieval stone watchtower with battlements and a flag
         const tower = new THREE.Mesh(
           new THREE.CylinderGeometry(0.7, 0.85, 2.2, 6),
@@ -1349,7 +1349,7 @@ export class Archipelago3dService {
         );
         flag.position.set(x + 0.25, y + 3.2, z);
         group.add(flag);
-      } else if (biome === 'desierto') {
+      } else if (biome === 'desert') {
         // Stepped sandstone pyramid
         const pyrMat = new THREE.MeshStandardMaterial({ color: 0xd97706, flatShading: true, roughness: 0.85 });
         for (let s = 0; s < 3; s++) {
@@ -1358,7 +1358,7 @@ export class Archipelago3dService {
           step.castShadow = true;
           group.add(step);
         }
-      } else if (biome === 'nieve') {
+      } else if (biome === 'snow') {
         // Crystalline glacier peak
         const iceMat = new THREE.MeshStandardMaterial({
           color: 0xbae6fd,
@@ -1420,12 +1420,12 @@ export class Archipelago3dService {
         }
       }
     } else if (tile.role === 'nature') {
-      if (biome === 'pradera') {
+      if (biome === 'meadow') {
         this.addKenneyPine(group, x - 0.4, y, z - 0.3, 1.2);
         this.addKenneyRoundTree(group, x + 0.4, y, z + 0.2, 1.0);
-      } else if (biome === 'desierto') {
+      } else if (biome === 'desert') {
         this.addKenneyPalm(group, x, y, z, 1.15);
-      } else if (biome === 'nieve') {
+      } else if (biome === 'snow') {
         this.addKenneyPine(group, x - 0.3, y, z - 0.2, 1.2, true);
         this.addKenneyPine(group, x + 0.4, y, z + 0.3, 0.9, true);
       } else {
@@ -1443,7 +1443,7 @@ export class Archipelago3dService {
     } else if (tile.role === 'road') {
       // Dirt path / cobblestones connecting the hexagon
       const pathMat = new THREE.MeshStandardMaterial({
-        color: biome === 'nieve' ? 0x94a3b8 : 0x78350f,
+        color: biome === 'snow' ? 0x94a3b8 : 0x78350f,
         roughness: 0.9,
         flatShading: true,
       });
@@ -1451,7 +1451,7 @@ export class Archipelago3dService {
       path.position.set(x, y + 0.04, z);
       path.rotation.y = 0.4;
       group.add(path);
-    } else if (tile.role === 'core' && biome === 'pradera') {
+    } else if (tile.role === 'core' && biome === 'meadow') {
       // Windmill on the secondary hexagon
       const millBase = new THREE.Mesh(
         new THREE.CylinderGeometry(0.55, 0.75, 1.8, 6),
@@ -1713,7 +1713,7 @@ export class Archipelago3dService {
     this.boatPlaceholder = this.createBoatPlaceholder();
     this.boatGroup.add(this.boatPlaceholder);
 
-    // Load 3D model ship-large.glb (frontend/public/mundo-3d/Assets/Vehiculos/ship-large.glb)
+    // Load 3D model ship-large.glb (frontend/public/world-3d/Assets/Vehicles/ship-large.glb)
     this.loadShipModel();
   }
 
@@ -1846,7 +1846,7 @@ export class Archipelago3dService {
       const textureLoader = new THREE.TextureLoader();
       const colormapTex = await new Promise<THREE.Texture | null>((resolve) => {
         textureLoader.load(
-          '/mundo-3d/Assets/Vehiculos/Textures/colormap.png',
+          '/world-3d/Assets/Vehicles/Textures/colormap.png',
           (tex) => {
             tex.colorSpace = THREE.SRGBColorSpace;
             tex.flipY = false;
@@ -1858,8 +1858,8 @@ export class Archipelago3dService {
       });
 
       const gltf = await this.loadGltfSafe(
-        '/mundo-3d/Assets/Vehiculos/ship-large.glb',
-        'mundo-3d/Assets/Vehiculos/ship-large.glb',
+        '/world-3d/Assets/Vehicles/ship-large.glb',
+        'world-3d/Assets/Vehicles/ship-large.glb',
       );
       if (!this.running || !this.scene) return;
 
@@ -2323,7 +2323,7 @@ export class Archipelago3dService {
   private async loadWildlifeModels(): Promise<void> {
     // 1. Load Dolphins (Dolphin.glb)
     try {
-      const dolphinGltf = await this.loadGltfSafe('/mundo-3d/Dolphin.glb', '/mundo-3d/dolphin.glb');
+      const dolphinGltf = await this.loadGltfSafe('/world-3d/Dolphin.glb', '/world-3d/dolphin.glb');
       const dolphinClip =
         THREE.AnimationClip.findByName(dolphinGltf.animations, 'Armature|Swim') ||
         dolphinGltf.animations[0];
@@ -2395,7 +2395,7 @@ export class Archipelago3dService {
 
     // 2. Load Whale (Whale.glb)
     try {
-      const whaleGltf = await this.loadGltfSafe('/mundo-3d/Whale.glb', '/mundo-3d/whale.glb');
+      const whaleGltf = await this.loadGltfSafe('/world-3d/Whale.glb', '/world-3d/whale.glb');
       const whaleClip =
         THREE.AnimationClip.findByName(whaleGltf.animations, 'Armature|Swim') ||
         whaleGltf.animations[0];

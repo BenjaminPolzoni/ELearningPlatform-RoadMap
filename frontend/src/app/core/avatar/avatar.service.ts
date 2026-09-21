@@ -1,7 +1,7 @@
 import { effect, Injectable, signal } from '@angular/core';
 import { assembleAvatar, AvatarConfig, defaultAvatar, sanitizeAvatar } from './avatar.models';
 
-const LS_KEY = 'mock-avatar';
+const LS_KEY = 'mock-avatar-v2';
 
 /**
  * Persistence of the customized avatar. Like `AuthMockService` and `ThemeService`,
@@ -38,7 +38,7 @@ export class AvatarService {
     this._avatar.set(
       assembleAvatar(<K extends keyof AvatarConfig>(field: K, options: readonly { id: AvatarConfig[K] }[]): AvatarConfig[K] => {
         if (field === 'gender') {
-          return 'indefinido' as AvatarConfig[K];
+          return 'unspecified' as AvatarConfig[K];
         }
         return options[Math.floor(Math.random() * options.length)].id;
       }),
@@ -50,7 +50,7 @@ export class AvatarService {
       const raw = localStorage.getItem(LS_KEY);
       return sanitizeAvatar(raw ? JSON.parse(raw) : null);
     } catch {
-      return defaultAvatar('indefinido');
+      return defaultAvatar('unspecified');
     }
   }
 }

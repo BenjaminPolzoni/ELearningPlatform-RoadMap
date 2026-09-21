@@ -29,7 +29,7 @@ describe('WorldsComponent (island map)', () => {
 
   async function create(modeInitial?: '3d' | '2.5d') {
     if (modeInitial) {
-      localStorage.setItem('educa_islas_modo', modeInitial);
+      localStorage.setItem('educa_islands_mode', modeInitial);
     }
     await TestBed.configureTestingModule({
       imports: [WorldsComponent],
@@ -77,7 +77,7 @@ describe('WorldsComponent (island map)', () => {
     fixture.detectChanges();
 
     expect(comp['mode']()).toBe('3d');
-    expect(localStorage.getItem('educa_islas_modo')).toBe('3d');
+    expect(localStorage.getItem('educa_islands_mode')).toBe('3d');
 
     // Switch back to 2.5D
     const btn2d = fixture.debugElement.query(By.css('button[title*="Carta"]'));
@@ -86,7 +86,7 @@ describe('WorldsComponent (island map)', () => {
     fixture.detectChanges();
 
     expect(comp['mode']()).toBe('2.5d');
-    expect(localStorage.getItem('educa_islas_modo')).toBe('2.5d');
+    expect(localStorage.getItem('educa_islands_mode')).toBe('2.5d');
   });
 
   it('in 3D mode it initializes the Three.js service and the canvas', async () => {

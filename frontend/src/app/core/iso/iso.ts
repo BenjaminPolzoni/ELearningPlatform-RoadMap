@@ -122,9 +122,9 @@ export function faceLateral(
   semiWidth: number,
   semiHeight: number,
   thickness: number,
-  side: 'izq' | 'der',
+  side: 'left' | 'right',
 ): string {
-  const sx = side === 'izq' ? -semiWidth : semiWidth;
+  const sx = side === 'left' ? -semiWidth : semiWidth;
   return [
     `${c.x + sx},${c.y}`,
     `${c.x},${c.y + semiHeight}`,

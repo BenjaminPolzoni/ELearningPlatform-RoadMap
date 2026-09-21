@@ -25,7 +25,7 @@ export class RoadmapStore {
   readonly roadmap = this._roadmap.asReadonly();
   readonly sections = computed(() => this._roadmap()?.sections ?? []);
   readonly connections = computed(() => this._roadmap()?.connections ?? []);
-  readonly progress = toSignal(this.port.getProgress('alu-01', COURSE_SEED_ID));
+  readonly progress = toSignal(this.port.getProgress('stu-01', COURSE_SEED_ID));
 
   constructor() {
     this.reload();
@@ -38,7 +38,7 @@ export class RoadmapStore {
 
   addProgress(earnedXp: number, nodeId?: string, lives?: number,
     onOk: (progress: Progress) => void = () => {}, onError: () => void = () => {}): void {
-    this.port.registerProgress('alu-01', COURSE_SEED_ID, earnedXp, nodeId, lives).subscribe({
+    this.port.registerProgress('stu-01', COURSE_SEED_ID, earnedXp, nodeId, lives).subscribe({
       next: onOk,
       error: () => {
         this.feedback.error('No se pudo guardar el progreso. Intentá nuevamente.');
@@ -48,7 +48,7 @@ export class RoadmapStore {
   }
 
   markContentRead(nodeId: string, onOk: () => void = () => {}): void {
-    this.port.markContentRead('alu-01', COURSE_SEED_ID, nodeId).subscribe({
+    this.port.markContentRead('stu-01', COURSE_SEED_ID, nodeId).subscribe({
       next: () => {
         this.feedback.ok('Lectura registrada ✓');
         onOk();
@@ -98,7 +98,7 @@ export class RoadmapStore {
     });
   }
 
-  moveSection(sectionId: string, direction: 'arriba' | 'abajo'): void {
+  moveSection(sectionId: string, direction: 'up' | 'down'): void {
     this.port.moveSection(COURSE_SEED_ID, sectionId, direction).subscribe({
       next: () => {
         this.reload();
@@ -144,7 +144,7 @@ export class RoadmapStore {
     });
   }
 
-  moveActivity(sectionId: string, activityId: string, direction: 'arriba' | 'abajo'): void {
+  moveActivity(sectionId: string, activityId: string, direction: 'up' | 'down'): void {
     this.port.moveActivity(COURSE_SEED_ID, sectionId, activityId, direction).subscribe({
       next: () => {
         this.reload();

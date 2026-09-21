@@ -37,14 +37,14 @@ export function percentileOf(position: number, totalEnrolled: number): number {
 
 /**
  * Zone of a position: P90 = top decile, P10 = bottom decile.
- * `ninguna` whenever the cohort does not reach the minimum number of enrolled (RF-RNK-09).
+ * `none` whenever the cohort does not reach the minimum number of enrolled (RF-RNK-09).
  */
 export function zoneOf(position: number, totalEnrolled: number): Zone {
-  if (!activeCutoffs(totalEnrolled)) return 'ninguna';
+  if (!activeCutoffs(totalEnrolled)) return 'none';
   const decile = Math.max(1, Math.floor(totalEnrolled * 0.1));
   if (position <= decile) return 'p90';
   if (position > totalEnrolled - decile) return 'p10';
-  return 'ninguna';
+  return 'none';
 }
 
 // Both rules are also evaluated over the student's ANONYMOUS rows (`RankingAnonRow`),

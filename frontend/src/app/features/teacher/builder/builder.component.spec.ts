@@ -63,24 +63,24 @@ describe('BuilderComponent (Educa)', () => {
     const u = store.current()!.sections.find((x) => x.title === 'Unidad Glacial');
     expect(u).toBeTruthy();
 
-    component.editSection(u!.id, u!.title, 'Zona fría', '#06b6d4', 'nieve');
+    component.editSection(u!.id, u!.title, 'Zona fría', '#06b6d4', 'snow');
     expect(component.editing()).toBeTruthy();
 
     component.onSave({
       title: 'Unidad Glacial Actualizada',
       description: 'Zona fría con nieve',
       color: '#06b6d4',
-      biome: 'nieve',
+      biome: 'snow',
     });
 
     const savedU = store.current()!.sections.find((x) => x.id === u!.id);
     expect(savedU?.title).toBe('Unidad Glacial Actualizada');
-    expect(savedU?.biome).toBe('nieve');
+    expect(savedU?.biome).toBe('snow');
 
-    // Verifies that the 'nieve' biome was projected to the 3D Roadmap
+    // Verifies that the 'snow' biome was projected to the 3D Roadmap
     const rm = JSON.parse(localStorage.getItem('roadmap-mock-v3')!);
     const u3d = rm.sections.find((x: any) => x.name === 'Unidad Glacial Actualizada');
     expect(u3d).toBeTruthy();
-    expect(u3d.biome).toBe('Nieve');
+    expect(u3d.biome).toBe('Snow');
   });
 });

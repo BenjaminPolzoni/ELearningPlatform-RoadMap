@@ -6,14 +6,14 @@ export type WorldTheme = 'desert' | 'jungle' | 'castle' | 'snow' | 'nether' | 's
 // Biome (chosen by the teacher) -> 2D map theme. `Nether` is left out on purpose:
 // it does not have its own 2D art/theme yet (see core/data/biomes.ts).
 export const BIOME_TO_WORLD_THEME: Record<string, WorldTheme> = {
-  Desierto: 'desert',
-  desierto: 'desert',
-  Bosque: 'jungle',
-  pradera: 'jungle',
-  Arenisca: 'castle',
-  arenisca: 'castle',
-  Nieve: 'snow',
-  nieve: 'snow',
+  Desert: 'desert',
+  desert: 'desert',
+  Forest: 'jungle',
+  meadow: 'jungle',
+  Sandstone: 'castle',
+  sandstone: 'castle',
+  Snow: 'snow',
+  snow: 'snow',
   Nether: 'nether',
   lava: 'nether',
   Space: 'space',
@@ -38,7 +38,7 @@ export interface VerticalChallenge {
   description: string;
   optional?: boolean;
   recovery?: boolean;
-  // Only for 'teoria' nodes: external link to the material and its type (see resource-embed.util.ts).
+  // Only for 'theory' nodes: external link to the material and its type (see resource-embed.util.ts).
   resourceUrl?: string;
   resourceType?: 'pdf' | 'video' | 'ppt';
   x: number; // percentage 0-100
@@ -61,7 +61,7 @@ export interface WorldAppearanceConfig {
 
 export const WORLD_APPEARANCE: Record<WorldTheme, WorldAppearanceConfig> = {
   desert: {
-    tile: '/desierto_animado.gif',
+    tile: '/desert_animated.gif',
     goal: 'piramide',
     goalName: 'Gran Pirámide del Saber',
     setting: 'Desierto, oasis y ruinas',
@@ -69,7 +69,7 @@ export const WORLD_APPEARANCE: Record<WorldTheme, WorldAppearanceConfig> = {
     lanes: [34, 62, 66, 58, 42, 36, 38, 62, 64, 56, 40, 36],
   },
   jungle: {
-    tile: '/selva_animada.gif',
+    tile: '/jungle_animated.gif',
     goal: 'templo',
     goalName: 'Templo de la Sabiduría',
     setting: 'Selva, cascadas y templos',
@@ -77,7 +77,7 @@ export const WORLD_APPEARANCE: Record<WorldTheme, WorldAppearanceConfig> = {
     lanes: [62, 66, 58, 38, 34, 42, 60, 64, 52, 40, 36, 46],
   },
   castle: {
-    tile: '/cementerio_animado.gif',
+    tile: '/graveyard_animated.gif',
     goal: 'castillo',
     goalName: 'Castillo de la Noche',
     setting: 'Murallas, criptas y alquimia',
@@ -85,7 +85,7 @@ export const WORLD_APPEARANCE: Record<WorldTheme, WorldAppearanceConfig> = {
     lanes: [36, 34, 44, 62, 66, 56, 42, 36, 38, 58, 64, 52],
   },
   snow: {
-    tile: '/bioma_taiga.jpg',
+    tile: '/biome_taiga.jpg',
     goal: 'refugio',
     goalName: 'Refugio de la Taiga Nevada',
     setting: 'Taiga, pinos y cumbres heladas',
@@ -93,7 +93,7 @@ export const WORLD_APPEARANCE: Record<WorldTheme, WorldAppearanceConfig> = {
     lanes: [22, 34, 76, 86, 64, 30, 16, 44, 78, 66, 38, 20],
   },
   nether: {
-    tile: '/nether_animado.gif',
+    tile: '/nether_animated.gif',
     goal: 'fortaleza',
     goalName: 'Fortaleza Infernal de Magma',
     setting: 'Nether, basaltos y ríos de lava',
@@ -103,7 +103,7 @@ export const WORLD_APPEARANCE: Record<WorldTheme, WorldAppearanceConfig> = {
   // Space: dark background reusing the darkest available tile (there is no
   // starry tile of its own yet — see technical debt); the goal is the orbital station.
   space: {
-    tile: '/nether_animado.gif',
+    tile: '/nether_animated.gif',
     goal: 'estacion',
     goalName: 'Estación Orbital del Saber',
     setting: 'Espacio profundo, planetas y estrellas',
@@ -1231,7 +1231,7 @@ export function defaultQuestions(theme: WorldTheme): Record<number, QuestionData
     },
     5: {
       question: '¿Cuál de los siguientes es un valor de tipo booleano?',
-      options: ['true (verdadero)', '"desierto"', '42'],
+      options: ['true (verdadero)', '"desert"', '42'],
       correct: 0,
       explanation: 'El tipo booleano solo puede tener dos estados lógicos: true o false.',
     },

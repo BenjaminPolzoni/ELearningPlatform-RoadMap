@@ -14,14 +14,14 @@ describe('First steps tutorial', () => {
 
   it('waits for the map, character and data; does not start without accessible challenges', () => {
     tutorial.receiveScene(scene({ ready: false }));
-    expect(tutorial.status()).toBe('pendiente');
+    expect(tutorial.status()).toBe('pending');
     tutorial.receiveScene(scene({ destinations: [] }));
-    expect(tutorial.status()).toBe('pendiente');
+    expect(tutorial.status()).toBe('pending');
     tutorial.restart();
     expect(tutorial.helpEmpty()).toBe(true);
-    expect(tutorial.status()).toBe('pendiente');
+    expect(tutorial.status()).toBe('pending');
     tutorial.receiveScene(scene());
-    expect(tutorial.status()).toBe('activo');
+    expect(tutorial.status()).toBe('active');
     expect(tutorial.helpEmpty()).toBe(false);
   });
 
@@ -31,17 +31,17 @@ describe('First steps tutorial', () => {
     expect(tutorial.step()).toBe(2);
     tutorial.receiveScene(scene({ zone: 'u1' }));
     expect(tutorial.step()).toBe(3);
-    tutorial.opened('u1', 'bloqueado');
-    expect(tutorial.status()).toBe('activo');
+    tutorial.opened('u1', 'locked');
+    expect(tutorial.status()).toBe('active');
     tutorial.opened('u1', 'a1');
-    expect(tutorial.status()).toBe('completado');
+    expect(tutorial.status()).toBe('completed');
     expect(tutorial.celebration()).toBe(false);
   });
 
   it('accepts out-of-order actions without requiring them to be repeated', () => {
     tutorial.receiveScene(scene());
     tutorial.opened('u1', 'a1');
-    expect(tutorial.status()).toBe('completado');
+    expect(tutorial.status()).toBe('completed');
   });
 
   it('prefers pending ones in order, but follows the section chosen by the student', () => {
@@ -89,13 +89,13 @@ describe('First steps tutorial', () => {
     tutorial.skip();
     tutorial = new TutorialState(localStorage);
     tutorial.receiveScene(scene());
-    expect(tutorial.status()).toBe('omitido');
+    expect(tutorial.status()).toBe('skipped');
     tutorial.restart();
-    expect(tutorial.status()).toBe('activo');
+    expect(tutorial.status()).toBe('active');
     tutorial.opened('u1', 'a1');
     tutorial = new TutorialState(localStorage);
     tutorial.receiveScene(scene());
-    expect(tutorial.status()).toBe('completado');
+    expect(tutorial.status()).toBe('completed');
     expect(localStorage.getItem('academic-progress')).toBe('unchanged');
   });
 
@@ -117,10 +117,10 @@ describe('First steps tutorial', () => {
 
   it('tolerates corrupt or denied storage', () => {
     localStorage.setItem(TUTORIAL_KEY, '{invalid');
-    expect(new TutorialState(localStorage).status()).toBe('pendiente');
+    expect(new TutorialState(localStorage).status()).toBe('pending');
     tutorial = new TutorialState({ getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); } });
     tutorial.receiveScene(scene()); tutorial.moved(0); tutorial.skip();
-    expect(tutorial.status()).toBe('omitido');
+    expect(tutorial.status()).toBe('skipped');
   });
 
   it('rejects malformed snapshots', () => {

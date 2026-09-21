@@ -241,7 +241,7 @@ export class AvatarPanel implements OnDestroy {
   );
   private readonly previewKey = signal(0);
   protected readonly previewUrl = computed(() =>
-    this.sanitizer.bypassSecurityTrustResourceUrl(`mundo-3d/avatar-preview.html?v=${this.previewKey()}`),
+    this.sanitizer.bypassSecurityTrustResourceUrl(`world-3d/avatar-preview.html?v=${this.previewKey()}`),
   );
 
   protected val(e: Event): string {

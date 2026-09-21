@@ -36,17 +36,17 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
               [class.up]="f.zone === 'p90'"
               [class.down]="f.zone === 'p10'"
               [class.promo]="candidate(f)"
-              [class.riesgo]="riesgo(f)"
+              [class.risk]="isAtRisk(f)"
               (click)="select.emit(f)"
             >
               <td class="tabular">{{ f.position }}</td>
-              <td class="staff__alumno">
-                <div class="staff__ident">
+              <td class="staff__student">
+                <div class="staff__identity">
                   <ui-avatar-sprite class="rk-row__avatar" [config]="f.avatar" [height]="43" />
-                  <b class="staff__nombre">{{ f.name }} {{ f.lastName }}</b>
+                  <b class="staff__name">{{ f.name }} {{ f.lastName }}</b>
                 </div>
               </td>
-              <td class="staff__legajo">{{ f.fileNumber }}</td>
+              <td class="staff__file-number">{{ f.fileNumber }}</td>
               <td class="tabular">P{{ f.percentile }}</td>
               <td class="tabular" style="text-align:right;color:var(--rk-yellow)">
                 {{ f.xpTotal }}
@@ -55,7 +55,7 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
               <td style="text-align:left">
                 @if (candidate(f)) {
                   <span class="tag tag--ok">promoción</span>
-                } @else if (riesgo(f)) {
+                } @else if (isAtRisk(f)) {
                   <span class="tag tag--risk">riesgo</span>
                 } @else {
                   <span style="opacity:0.4">—</span>
@@ -101,25 +101,25 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
     }
     /* Student + file number: two left-aligned columns so each
        name faces its file number and both read effortlessly. */
-    .staff__alumno {
+    .staff__student {
       text-align: left;
     }
-    .staff__ident {
+    .staff__identity {
       display: flex;
       align-items: center;
       gap: 0.6rem;
     }
-    .staff__ident .rk-row__avatar {
+    .staff__identity .rk-row__avatar {
       width: 28px;
       height: 28px;
       flex: none;
     }
-    .staff__nombre {
+    .staff__name {
       text-transform: uppercase;
       letter-spacing: 0.03em;
       white-space: nowrap;
     }
-    .staff__legajo {
+    .staff__file-number {
       text-align: left;
       /* Audit data, not the protagonist of the row: small so as not to compete
          with the student's name. */
@@ -179,17 +179,17 @@ import { AvatarSprite } from '../../shared/ui/avatar-sprite';
       box-shadow: inset 5px 0 0 var(--rk-green);
       color: var(--rk-green);
     }
-    .staff tbody tr.riesgo {
+    .staff tbody tr.risk {
       background: rgba(255, 46, 147, 0.09);
       filter: drop-shadow(0 0 8px rgba(255, 46, 147, 0.35));
     }
-    .staff tbody tr.riesgo:hover {
+    .staff tbody tr.risk:hover {
       background: rgba(255, 46, 147, 0.16);
     }
-    .staff tbody tr.riesgo td {
+    .staff tbody tr.risk td {
       border-bottom-color: rgba(255, 46, 147, 0.4);
     }
-    .staff tbody tr.riesgo td:first-child {
+    .staff tbody tr.risk td:first-child {
       box-shadow: inset 5px 0 0 var(--rk-magenta);
       color: var(--rk-magenta);
     }
@@ -200,5 +200,5 @@ export class StaffRankingTable {
   readonly select = output<RankingRow>();
 
   protected candidate = isCandidatePromotion;
-  protected riesgo = inRiskRegularity;
+  protected isAtRisk = inRiskRegularity;
 }

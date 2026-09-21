@@ -2,7 +2,7 @@ import { PixelGrid } from '../../shared/pixel-icon';
 
 // Grids straight from pixel-art-arcade-icons (references/pixel-grids.md /
 // scripts/pixel-svg.ts GRIDS) — not redesigned, only recolored. The 4 marked
-// `needsRework` there (segunda_oportunidad, subiste_de_nivel, explorador, maraton) are
+// `needsRework` there (second_chance, level_up, explorer, marathon) are
 // included as-is too; the catalog screen flags them as pending instead of hiding them.
 
 // PALETTE_ARCADE → real project token (frontend/src/styles.css daisyUI themes):
@@ -21,7 +21,7 @@ export interface BadgeIcon {
 }
 
 export const BADGE_ICONS: Record<string, BadgeIcon> = {
-  badge_seccion_perfecta: {
+  badge_perfect_section: {
     grid: [
       [0, 1, 1, 1, 1, 1, 1, 1, 0],
       [1, 2, 2, 2, 2, 2, 2, 2, 1],
@@ -35,7 +35,7 @@ export const BADGE_ICONS: Record<string, BadgeIcon> = {
     ],
     colors: { 1: NEUTRAL, 2: PRIMARY, 3: CONTENT, 4: SECONDARY },
   },
-  badge_a_la_primera: {
+  badge_first_try: {
     grid: [
       [0, 0, 1, 1, 1, 1, 1, 0, 0],
       [0, 1, 2, 2, 2, 2, 2, 1, 0],
@@ -49,7 +49,7 @@ export const BADGE_ICONS: Record<string, BadgeIcon> = {
     ],
     colors: { 1: NEUTRAL, 2: PRIMARY, 3: CONTENT, 4: ACCENT },
   },
-  badge_segunda_oportunidad: {
+  badge_second_chance: {
     grid: [
       [0, 0, 0, 0, 1, 0, 0, 0, 0],
       [0, 0, 0, 1, 2, 1, 0, 0, 0],
@@ -63,7 +63,7 @@ export const BADGE_ICONS: Record<string, BadgeIcon> = {
     ],
     colors: { 1: NEUTRAL, 2: PRIMARY },
   },
-  badge_hito_xp_bronce: {
+  badge_milestone_xp_bronze: {
     grid: [
       [0, 1, 1, 1, 1, 1, 1, 1, 0],
       [1, 2, 2, 2, 2, 2, 2, 2, 1],
@@ -77,7 +77,7 @@ export const BADGE_ICONS: Record<string, BadgeIcon> = {
     ],
     colors: { 1: NEUTRAL, 2: SECONDARY, 3: CONTENT },
   },
-  badge_hito_xp_plata: {
+  badge_milestone_xp_silver: {
     grid: [
       [0, 1, 1, 1, 1, 1, 1, 1, 0],
       [1, 2, 2, 2, 2, 2, 2, 2, 1],
@@ -91,7 +91,7 @@ export const BADGE_ICONS: Record<string, BadgeIcon> = {
     ],
     colors: { 1: NEUTRAL, 2: PRIMARY, 3: CONTENT },
   },
-  badge_hito_xp_oro: {
+  badge_milestone_xp_gold: {
     grid: [
       [0, 1, 1, 1, 1, 1, 1, 1, 0],
       [1, 2, 2, 2, 2, 2, 2, 2, 1],
@@ -105,7 +105,7 @@ export const BADGE_ICONS: Record<string, BadgeIcon> = {
     ],
     colors: { 1: NEUTRAL, 2: WARNING, 3: CONTENT },
   },
-  badge_subiste_de_nivel: {
+  badge_level_up: {
     grid: [
       [0, 0, 0, 1, 1, 1, 0, 0, 0],
       [0, 0, 1, 2, 2, 2, 1, 0, 0],
@@ -119,7 +119,7 @@ export const BADGE_ICONS: Record<string, BadgeIcon> = {
     ],
     colors: { 1: NEUTRAL, 2: SECONDARY },
   },
-  badge_zona_elite: {
+  badge_elite_zone: {
     grid: [
       [0, 1, 0, 1, 0, 1, 0, 1, 0],
       [1, 2, 1, 2, 1, 2, 1, 2, 1],
@@ -133,7 +133,7 @@ export const BADGE_ICONS: Record<string, BadgeIcon> = {
     ],
     colors: { 1: NEUTRAL, 2: WARNING, 3: CONTENT },
   },
-  badge_primeros_pasos: {
+  badge_first_steps: {
     grid: [
       [1, 1, 1, 1, 1, 0, 0, 0, 0],
       [1, 2, 2, 2, 1, 0, 0, 0, 0],
@@ -147,7 +147,7 @@ export const BADGE_ICONS: Record<string, BadgeIcon> = {
     ],
     colors: { 1: NEUTRAL, 2: PRIMARY, 3: CONTENT },
   },
-  badge_explorador: {
+  badge_explorer: {
     grid: [
       [0, 0, 1, 1, 1, 1, 1, 0, 0],
       [0, 1, 2, 2, 2, 2, 2, 1, 0],
@@ -161,7 +161,7 @@ export const BADGE_ICONS: Record<string, BadgeIcon> = {
     ],
     colors: { 1: NEUTRAL, 2: SECONDARY, 3: CONTENT, 4: ACCENT },
   },
-  badge_maraton: {
+  badge_marathon: {
     grid: [
       [0, 0, 1, 1, 1, 0, 0, 0, 0],
       [0, 0, 1, 2, 1, 0, 0, 0, 0],
@@ -175,7 +175,7 @@ export const BADGE_ICONS: Record<string, BadgeIcon> = {
     ],
     colors: { 1: NEUTRAL, 2: ACCENT, 3: CONTENT, 4: PRIMARY },
   },
-  badge_pionero: {
+  badge_pioneer: {
     grid: [
       [0, 0, 0, 1, 1, 0, 0, 0, 0],
       [0, 0, 1, 2, 2, 1, 0, 0, 0],
@@ -203,7 +203,7 @@ export const BADGE_ICONS: Record<string, BadgeIcon> = {
     ],
     colors: { 1: NEUTRAL, 2: CONTENT, 3: ACCENT },
   },
-  badge_evento: {
+  badge_event: {
     grid: [
       [0, 1, 1, 1, 1, 1, 1, 1, 0],
       [1, 2, 2, 3, 2, 3, 2, 2, 1],

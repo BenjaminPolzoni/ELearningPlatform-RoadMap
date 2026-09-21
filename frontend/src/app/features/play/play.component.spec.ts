@@ -11,7 +11,7 @@ import { vi } from 'vitest';
 describe('PlayComponent', () => {
   beforeEach(() => {
     localStorage.clear();
-    localStorage.setItem('mock-rol', 'ALUMNO');
+    localStorage.setItem('mock-role', 'STUDENT');
   });
   afterEach(() => localStorage.clear());
 
@@ -34,7 +34,7 @@ describe('PlayComponent', () => {
           useValue: {
             snapshot: {
               paramMap: {
-                get: (key: string) => (key === 'id' ? COURSE_SEED_ID : key === 'unidadId' ? 'u1-fundamentos' : null),
+                get: (key: string) => (key === 'id' ? COURSE_SEED_ID : key === 'sectionId' ? 'u1-fundamentals' : null),
               },
             },
           },
@@ -76,7 +76,7 @@ describe('PlayComponent', () => {
           useValue: {
             snapshot: {
               paramMap: {
-                get: (key: string) => (key === 'id' ? COURSE_SEED_ID : key === 'unidadId' ? 'u2' : null),
+                get: (key: string) => (key === 'id' ? COURSE_SEED_ID : key === 'sectionId' ? 'u2' : null),
               },
             },
           },
@@ -118,7 +118,7 @@ describe('PlayComponent', () => {
           useValue: {
             snapshot: {
               paramMap: {
-                get: (key: string) => (key === 'id' ? COURSE_SEED_ID : key === 'unidadId' ? 'u1-fundamentos' : null),
+                get: (key: string) => (key === 'id' ? COURSE_SEED_ID : key === 'sectionId' ? 'u1-fundamentals' : null),
               },
             },
           },
@@ -136,7 +136,7 @@ describe('PlayComponent', () => {
     fixture.detectChanges();
 
     const html = fixture.nativeElement as HTMLElement;
-    const returns = [...html.querySelectorAll('a[href="/alumno"]')];
+    const returns = [...html.querySelectorAll('a[href="/student"]')];
     expect(returns.length).toBeGreaterThan(0);
     expect(returns.some((a) => a.textContent?.includes('Mis clases'))).toBe(true);
     expect(html.textContent).not.toContain('Ciudad 3D');
@@ -149,7 +149,7 @@ describe('PlayComponent', () => {
       setEffectsEnabled: vi.fn(),
       destroy: vi.fn(),
       dispose: vi.fn(),
-      toggleView: vi.fn().mockReturnValue('primera'),
+      toggleView: vi.fn().mockReturnValue('first'),
     };
 
     await TestBed.configureTestingModule({
@@ -162,7 +162,7 @@ describe('PlayComponent', () => {
           useValue: {
             snapshot: {
               paramMap: {
-                get: (key: string) => (key === 'id' ? COURSE_SEED_ID : key === 'unidadId' ? 'u1-fundamentos' : null),
+                get: (key: string) => (key === 'id' ? COURSE_SEED_ID : key === 'sectionId' ? 'u1-fundamentals' : null),
               },
             },
           },

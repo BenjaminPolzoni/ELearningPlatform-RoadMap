@@ -1,7 +1,7 @@
-"""Construye el avatar low-poly modular y lo exporta como GLB.
+"""Builds the modular low-poly avatar and exports it as GLB.
 
-Se ejecuta con Blender en modo background. Blender es una herramienta de autoría y no
-forma parte de las dependencias de la aplicación.
+Run it with Blender in background mode. Blender is an authoring tool and is not
+part of the application's dependencies.
 """
 
 import math
@@ -13,7 +13,7 @@ from mathutils import Vector
 
 
 OUTPUT_GLB = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../../public/mundo-3d/Assets/Avatar/avatar-low-poly-approved.glb")
+    os.path.join(os.path.dirname(__file__), "../../public/world-3d/Assets/Avatar/avatar-low-poly-approved.glb")
 )
 PREVIEW_PNG = os.path.join(os.environ.get("TEMP", os.path.dirname(OUTPUT_GLB)), "avatar-low-poly-approved-preview.png")
 
@@ -691,7 +691,7 @@ def export_glb(root):
 
 
 def render_preview(root):
-    # Render técnico del GLB fuente para control visual; no se incorpora al proyecto.
+    # Technical render of the source GLB for visual control; it is not added to the project.
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_EEVEE_NEXT"
     scene.render.resolution_x = 720

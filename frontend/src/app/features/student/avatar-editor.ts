@@ -21,7 +21,7 @@ import {
 import { AvatarService } from '../../core/avatar/avatar.service';
 import { AvatarSprite } from '../../shared/ui/avatar-sprite';
 
-type Tab = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
+type Tab = 'body' | 'clothes' | 'accessories' | 'gear';
 
 /**
  * Avatar customization. Every change is applied live on the preview and saved
@@ -71,14 +71,14 @@ type Tab = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
   `,
   template: `
     <div class="mb-4 flex items-center gap-3">
-      <a routerLink="/alumno" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]">◀ AL MAPA</a>
+      <a routerLink="/student" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]">◀ AL MAPA</a>
       <h2 class="title-font text-2xl text-primary">Tu personaje</h2>
     </div>
 
     <div class="grid gap-6 lg:grid-cols-[440px_1fr]">
       <!-- avatar showcase: stays fixed while browsing the tabs -->
       <div
-        class="escena-neon chaflan flex flex-col items-center gap-4 border-2 border-primary p-6 lg:sticky lg:top-4 lg:self-start"
+        class="neon-scene chamfer flex flex-col items-center gap-4 border-2 border-primary p-6 lg:sticky lg:top-4 lg:self-start"
       >
         <div class="grid h-96 w-full place-items-center">
           <ui-avatar-sprite
@@ -126,7 +126,7 @@ type Tab = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
           [attr.aria-labelledby]="'tab-' + tab()"
         >
           @switch (tab()) {
-            @case ('cuerpo') {
+            @case ('body') {
               <section>
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">TONO DE PIEL</h3>
                 <ng-container
@@ -162,7 +162,7 @@ type Tab = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
               </section>
             }
 
-            @case ('ropa') {
+            @case ('clothes') {
               <section>
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">PRENDA</h3>
                 <ng-container *ngTemplateOutlet="chips; context: { $implicit: garments, field: 'garment' }" />
@@ -202,7 +202,7 @@ type Tab = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
               </section>
             }
 
-            @case ('accesorios') {
+            @case ('accessories') {
               <section>
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">CABEZA</h3>
                 <div class="mb-2">
@@ -210,7 +210,7 @@ type Tab = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
                     *ngTemplateOutlet="chips; context: { $implicit: accessories, field: 'accessory' }"
                   />
                 </div>
-                @if (srv.avatar().accessory !== 'ninguno') {
+                @if (srv.avatar().accessory !== 'none') {
                   <ng-container
                     *ngTemplateOutlet="
                       muestras;
@@ -229,7 +229,7 @@ type Tab = 'cuerpo' | 'ropa' | 'accesorios' | 'equipo';
               </section>
             }
 
-            @case ('equipo') {
+            @case ('gear') {
               <section>
                 <h3 class="ui-font mb-2 text-[9px] text-secondary">OBJETO EN MANO</h3>
                 <ng-container *ngTemplateOutlet="chips; context: { $implicit: objects, field: 'object' }" />
@@ -289,12 +289,12 @@ export class AvatarEditor {
   protected readonly srv = inject(AvatarService);
 
   protected readonly tabs: readonly { id: Tab; name: string }[] = [
-    { id: 'cuerpo', name: 'CUERPO' },
-    { id: 'ropa', name: 'ROPA' },
-    { id: 'accesorios', name: 'ACCESORIOS' },
-    { id: 'equipo', name: 'EQUIPO' },
+    { id: 'body', name: 'CUERPO' },
+    { id: 'clothes', name: 'ROPA' },
+    { id: 'accessories', name: 'ACCESORIOS' },
+    { id: 'gear', name: 'EQUIPO' },
   ];
-  protected readonly tab = signal<Tab>('cuerpo');
+  protected readonly tab = signal<Tab>('body');
 
   protected readonly genders = GENDERS;
   protected readonly skins = SKINS;
@@ -312,15 +312,15 @@ export class AvatarEditor {
   /** The sprite hides the emblem in these cases; without the warning, it would seem broken. */
   protected readonly noticeEmblem = computed(() => {
     const a = this.srv.avatar();
-    if (a.emblem === 'ninguno' || emblemVisible(a)) return null;
-    return a.garment === 'camisa'
+    if (a.emblem === 'none' || emblemVisible(a)) return null;
+    return a.garment === 'shirt'
       ? 'LA CORBATA DE LA CAMISA TAPA EL EMBLEMA'
       : 'LA LAPTOP TAPA EL EMBLEMA';
   });
 
   protected readonly noticeGlasses = computed(() => {
     const a = this.srv.avatar();
-    return a.glasses !== 'ninguno' && !visibleGlasses(a);
+    return a.glasses !== 'none' && !visibleGlasses(a);
   });
 
   protected chosen(field: keyof AvatarConfig, id: string): boolean {

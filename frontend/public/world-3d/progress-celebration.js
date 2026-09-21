@@ -88,7 +88,7 @@ export function createProgressCelebration(scene, readScene) {
       badges.name = 'completed-unit-badges';
       badges.visible = state.zone === 'city' && !state.busy;
       revision = state.revision;
-      for (const unit of state.units.filter(u => u.resuelta)) {
+      for (const unit of state.units.filter(u => u.solved)) {
         const entry = state.modules.find(m => m.type === 'biome' && m.unitId === unit.unitId);
         if (!entry) continue;
         const canvas = document.createElement('canvas');
@@ -109,8 +109,8 @@ export function createProgressCelebration(scene, readScene) {
       if (now > pending.deadline) pending = null;
       else if (state.ready && !state.busy) {
         const unit = state.units.find(u => u.unitId === pending.unitId);
-        const completed = unit?.actividades.some(a => a.id === pending.activityId && a.completada);
-        const target = state.modules.find(m => m.type === 'challenge' && m.unitId === pending.unitId && m.actividadId === pending.activityId);
+        const completed = unit?.activities.some(a => a.id === pending.activityId && a.completed);
+        const target = state.modules.find(m => m.type === 'challenge' && m.unitId === pending.unitId && m.activityId === pending.activityId);
         // Waiting for the completed node also guards against the old scene being ready before setUnidades arrives.
         if (completed && target && state.zone === pending.unitId) { start(pending, state, target, now); pending = null; }
       }

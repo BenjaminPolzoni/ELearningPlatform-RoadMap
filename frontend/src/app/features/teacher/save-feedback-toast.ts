@@ -12,7 +12,7 @@ import { SaveFeedbackService } from '../../core/services/save-feedback.service';
   template: `
     @for (f of feedback.items(); track f.id) {
       <div
-        class="alert chaflan border-2 py-2 px-3 text-sm"
+        class="alert chamfer border-2 py-2 px-3 text-sm"
         [class.alert-success]="f.type === 'ok'"
         [class.alert-error]="f.type === 'error'"
         role="status"

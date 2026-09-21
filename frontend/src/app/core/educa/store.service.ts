@@ -95,7 +95,7 @@ export class StoreService {
           description: '',
           order: a.sections.length,
           modules: [],
-          biome: 'pradera',
+          biome: 'meadow',
           color: '#6366f1',
         },
       ],
@@ -185,7 +185,7 @@ export class StoreService {
   }
 
   // — Appendices —
-  addAttachment(sectionId: string, moduleId: string, title: string, type: AttachmentType = 'documento'): void {
+  addAttachment(sectionId: string, moduleId: string, title: string, type: AttachmentType = 'document'): void {
     const anx: Attachment = { id: uid(), title, type };
     this.update((a) => ({
       ...a,
@@ -269,12 +269,12 @@ export class StoreService {
       let actIndex = 0;
       for (const m of u.modules) {
         for (const anx of m.attachments) {
-          const isExercise = anx.type === 'ejercicio';
+          const isExercise = anx.type === 'exercise';
           const actId = `${u.id}-${anx.id}`;
           activities.push({
             id: actId,
             name: anx.title,
-            type: isExercise ? 'desafio-practico' : 'teoria',
+            type: isExercise ? 'practical-challenge' : 'theory',
             isMandatory: isExercise,
             allowedRetries: isExercise ? 2 : 0,
             positionX: 100 + (actIndex % 4) * 170,
@@ -285,7 +285,7 @@ export class StoreService {
               (isExercise
                 ? 'Completa este desafío para ganar experiencia.'
                 : 'Material de consulta teórico.'),
-            difficulty: isExercise ? 'BASICO' : undefined,
+            difficulty: isExercise ? 'BASIC' : undefined,
             resourceUrl: anx.url,
             resourceType: anx.type === 'video' ? 'video' : 'pdf',
           });

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 /**
- * Procedural models of the character (port of `public/mundo-3d/avatar-preview.html`).
+ * Procedural models of the character (port of `public/world-3d/avatar-preview.html`).
  *
  * Everything the city editor generates with geometry instead of GLTF: backpack,
  * head accessories, hand objects, keyboard, pets. No Angular dependencies:

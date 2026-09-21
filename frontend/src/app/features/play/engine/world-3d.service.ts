@@ -114,9 +114,9 @@ const SNOW_LIFT: Record<string, number> = {
 const isSnowProp = (m: string): boolean => m.includes('/snowman') || m.includes('/pine_snow') || m.includes('/tree_snow');
 
 const BIOME_STYLE: Record<Biome, { sky: number; hemiGround: number; sand: number; road: number; water: number }> = {
-  pradera: { sky: 0x87ceeb, hemiGround: 0x668866, sand: 0, road: 0, water: 0 },
-  desierto: { sky: 0xf2d8a0, hemiGround: 0xc2a06b, sand: 0xd3ac72, road: 0x8a5a2b, water: 0x6b4423 },
-  nieve: { sky: 0xdcecf5, hemiGround: 0xb9c8d4, sand: 0xeef3f6, road: 0x6b7280, water: 0xa8cdea },
+  meadow: { sky: 0x87ceeb, hemiGround: 0x668866, sand: 0, road: 0, water: 0 },
+  desert: { sky: 0xf2d8a0, hemiGround: 0xc2a06b, sand: 0xd3ac72, road: 0x8a5a2b, water: 0x6b4423 },
+  snow: { sky: 0xdcecf5, hemiGround: 0xb9c8d4, sand: 0xeef3f6, road: 0x6b7280, water: 0xa8cdea },
   lava: { sky: 0x2b0f0a, hemiGround: 0x7a2d12, sand: 0x2e2a28, road: 0x5a514d, water: 0xff5a1a },
 };
 
@@ -193,7 +193,7 @@ export class World3dService {
   private nextFishJump = 0;
   private waterCoastData: WaterCoastSpot[] = [];
   private effectsOn = true;
-  private biome: Biome = 'pradera';
+  private biome: Biome = 'meadow';
   private clickCleanups: (() => void)[] = [];
   private grow: { o: THREE.Object3D; base: THREE.Vector3; t0: number }[] = [];
   private booted = false;
@@ -371,10 +371,10 @@ export class World3dService {
           '#include <color_fragment>',
           `#include <color_fragment>
           {
-            // Detección de la corriente de lava por saturación cálida frente al gris de la roca
+            // Detection of the lava stream by warm saturation against the rock's gray
             bool isLava = (diffuseColor.r - diffuseColor.b > 0.28) && (diffuseColor.r > 0.42);
             if (isLava) {
-              // Corriente descendente continua hacia la base
+              // Continuous downward stream toward the base
               float flowPhase = vVolcanoLocalPos.y * 6.2 + uTime * 3.4 + sin(vVolcanoLocalPos.x * 8.0) * 1.2;
               float wave = sin(flowPhase) * 0.5 + 0.5;
               float waveSharp = pow(wave, 2.5);
@@ -389,7 +389,7 @@ export class World3dService {
               float intensity = uEruptionIntensity;
               diffuseColor.rgb = lavaC * (1.1 + wave * 0.5) * intensity;
             } else {
-              // Ceniza oscura en las caras rocosas superiores
+              // Dark ash on the upper rock faces
               float ash = smoothstep(0.45, 0.70, normalize(vVolcanoNormal).y);
               diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.26, 0.24, 0.23), ash * 0.75);
             }
@@ -546,8 +546,8 @@ export class World3dService {
   /** Applies the biome atmosphere without overriding the background (the store image is kept). */
   private applyBiome(): void {
     const style = BIOME_STYLE[this.biome];
-    if (!style || this.biome === 'pradera') return;
-    if (this.biome === 'desierto' || this.biome === 'nieve' || this.biome === 'lava') {
+    if (!style || this.biome === 'meadow') return;
+    if (this.biome === 'desert' || this.biome === 'snow' || this.biome === 'lava') {
       const fog = this.scene.fog as THREE.Fog | null;
       if (fog) fog.color.setHex(style.sky);
       else this.scene.fog = new THREE.Fog(style.sky, 50, 130);
@@ -566,7 +566,7 @@ export class World3dService {
     this.callbacks = callbacks;
     this.isDestroyed = false;
     this.currentTheme = initialTheme;
-    this.biome = layout.biome ?? 'pradera';
+    this.biome = layout.biome ?? 'meadow';
     this.tumbleweeds = [];
     this.magmaMats = [];
     this.volcanoSmoke = [];
@@ -690,9 +690,9 @@ export class World3dService {
       });
     };
 
-    const snow = this.biome === 'nieve';
+    const snow = this.biome === 'snow';
     const lava = this.biome === 'lava';
-    const tinted = this.biome === 'desierto' || snow || lava;
+    const tinted = this.biome === 'desert' || snow || lava;
     const style = BIOME_STYLE[this.biome];
 
     for (const t of layout.tiles) {
@@ -892,7 +892,7 @@ export class World3dService {
 
     // Tumbleweeds with wind (desert only, ambience: no collision, no seed)
     // They enter from behind the left edge; 4 staggered units.
-    if (this.biome === 'desierto') {
+    if (this.biome === 'desert') {
       this.computeTumbleweedBounds();
       for (let i = 0; i < this.twCount; i++) {
         const g = await this.assets.load(TUMBLEWEED);
@@ -907,7 +907,7 @@ export class World3dService {
     }
 
     // Snowfall (snow only): 1 draw call following the character
-    if (this.biome === 'nieve') {
+    if (this.biome === 'snow') {
       this.startSnowfall((layout.boundR ?? 14) * this.sx);
     }
 
@@ -919,7 +919,7 @@ export class World3dService {
     }
 
     // Meadow fauna: little fish jumping in the water and a flock of birds
-    if (this.biome === 'pradera') {
+    if (this.biome === 'meadow') {
       this.initMeadowWildlife(layout);
     }
 
@@ -1084,8 +1084,8 @@ export class World3dService {
 
   /** Toggles first/third person / free camera (hides the body in first). */
   toggleView(): View {
-    const view = this.camController?.toggleView() ?? 'libre';
-    this.charController?.setViewFirst(view === 'primera');
+    const view = this.camController?.toggleView() ?? 'free';
+    this.charController?.setViewFirst(view === 'first');
     return view;
   }
 

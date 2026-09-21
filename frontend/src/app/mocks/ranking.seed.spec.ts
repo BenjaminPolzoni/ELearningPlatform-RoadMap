@@ -4,7 +4,7 @@ import { studentsSeed } from './seed';
 
 describe('avatarConfigMock', () => {
   it('is deterministic: the same seed always gives the same avatar', () => {
-    expect(avatarConfigMock('alu-05')).toEqual(avatarConfigMock('alu-05'));
+    expect(avatarConfigMock('stu-05')).toEqual(avatarConfigMock('stu-05'));
   });
 
   it('gives a valid and complete config for every student in the seed', () => {

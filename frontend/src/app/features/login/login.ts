@@ -16,8 +16,8 @@ interface RoleOption {
   selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="escena-neon fixed inset-0 grid place-items-center p-6">
-      <div class="chaflan w-full max-w-lg border-2 border-primary bg-base-200/95 p-8 backdrop-blur shadow-[0_0_50px_rgba(139,92,246,0.3)]">
+    <div class="neon-scene fixed inset-0 grid place-items-center p-6">
+      <div class="chamfer w-full max-w-lg border-2 border-primary bg-base-200/95 p-8 backdrop-blur shadow-[0_0_50px_rgba(139,92,246,0.3)]">
         <div class="flex flex-col items-center gap-5 text-center">
           <iframe
             title="Tu avatar"
@@ -63,18 +63,18 @@ export class Login {
 
   // ?v= prevents the browser from serving an old cached version of the static file.
   protected readonly avatarPreviewUrl: SafeResourceUrl =
-    this.sanitizer.bypassSecurityTrustResourceUrl('mundo-3d/avatar-preview.html?v=18');
+    this.sanitizer.bypassSecurityTrustResourceUrl('world-3d/avatar-preview.html?v=18');
 
   protected readonly options: RoleOption[] = [
     {
-      role: 'ALUMNO',
+      role: 'STUDENT',
       label: 'VISTA ALUMNO',
       icon: '🎓',
       desc: 'Mundo 3D explorable, biomas por unidad y mapa de desafíos',
       btnClass: 'btn-outline btn-primary hover:bg-primary/20',
     },
     {
-      role: 'PROFESOR',
+      role: 'TEACHER',
       label: 'VISTA PROFESOR',
       icon: '👨‍🏫',
       desc: 'Editor de unidades, contenidos y catálogo de insignias',
@@ -91,10 +91,10 @@ export class Login {
 
   protected enter(role: Role): void {
     this.auth.enterAs(role);
-    if (role === 'ALUMNO') {
-      this.router.navigate(['/alumno']);
-    } else if (role === 'PROFESOR') {
-      this.router.navigate(['/profesor']);
+    if (role === 'STUDENT') {
+      this.router.navigate(['/student']);
+    } else if (role === 'TEACHER') {
+      this.router.navigate(['/teacher']);
     } else {
       this.router.navigate(['/']);
     }

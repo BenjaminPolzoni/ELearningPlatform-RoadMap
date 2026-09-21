@@ -60,7 +60,7 @@ import { RankingDetail } from './ranking-detail';
           } @else if (view(); as v) {
             @if (selection(); as sel) {
               <app-ranking-detail [row]="sel" [total]="totalEnrolled()" />
-            } @else if (v.role === 'ALUMNO') {
+            } @else if (v.role === 'STUDENT') {
               <app-ranking-table-student [view]="v" (select)="selection.set($event)" />
             } @else {
               <app-ranking-table-staff [view]="v" (select)="selection.set($event)" />
@@ -77,13 +77,13 @@ import { RankingDetail } from './ranking-detail';
 
         <footer class="rk-deck">
           <span class="rk-joystick" aria-hidden="true"></span>
-          @if (!selection() && viewStudentWithYo(); as yo) {
+          @if (!selection() && viewStudentWithMe(); as me) {
             <button
               class="rk-deck__text rk-deck__text--btn rk-neon-success"
               (click)="scrollToMyRow()"
               title="Ir a tu fila en la lista"
             >
-              &#9654; IR A TU POSICIÓN · {{ pad(yo.position) }}/{{ totalEnrolled() }}
+              &#9654; IR A TU POSICIÓN · {{ pad(me.position) }}/{{ totalEnrolled() }}
             </button>
           } @else {
             <span class="rk-deck__text rk-neon-success">INSERT COIN · PRESS START</span>
@@ -127,9 +127,9 @@ export class RankingPanel {
   protected readonly selection = signal<RankingRow | RankingAnonRow | null>(null);
 
   /** The student's own row if the session is ALUMNO and is in the cohort; otherwise `null`. */
-  protected readonly viewStudentWithYo = computed(() => {
+  protected readonly viewStudentWithMe = computed(() => {
     const v = this.view();
-    return v && v.role === 'ALUMNO' ? v.yo : null;
+    return v && v.role === 'STUDENT' ? v.me : null;
   });
   protected readonly totalEnrolled = computed(() => this.view()?.totalEnrolled ?? 0);
 
@@ -137,10 +137,10 @@ export class RankingPanel {
     return String(n).padStart(2, '0');
   }
 
-  /** Scrolls the screen to the student's own row (id `rk-yo-row`). */
+  /** Scrolls the screen to the student's own row (id `rk-me-row`). */
   protected scrollToMyRow(): void {
     const ir = () =>
-      document.getElementById('rk-yo-row')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document.getElementById('rk-me-row')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     if (this.selection()) {
       this.selection.set(null); // go back to the table if we came from the detail
       setTimeout(ir, 60);

@@ -36,8 +36,9 @@ import { Lives } from './lives';
 import { FIRE_COLORS, FIRE_GRID } from './streak';
 import { RankingPanel } from '../ranking/ranking-panel';
 import { PixelIcon } from '../../shared/pixel-icon';
+import { NODE_TYPE_LABEL, ROLE_LABEL } from '../../shared/labels';
 
-type IslandStatus = 'bloqueada' | 'disponible' | 'completada';
+type IslandStatus = 'locked' | 'available' | 'completed';
 
 interface Island {
   u: Section;
@@ -74,10 +75,10 @@ const MARGIN = 90;
       width: 100%;
       height: 100%;
     }
-    .isla-hit:focus-visible {
+    .island-hit:focus-visible {
       outline: none;
     }
-    .isla-hit:focus-visible .isla-foco {
+    .island-hit:focus-visible .island-focus {
       stroke: #f3eaff;
       stroke-width: 3;
       stroke-dasharray: 6 4;
@@ -86,18 +87,18 @@ const MARGIN = 90;
   template: `
     @if (preview()) {
       <!-- Preview mode embedded in the teacher's editor: no arcade chassis or HUD -->
-      <div class="escena-neon relative overflow-hidden border-2 border-secondary" style="height: 300px">
+      <div class="neon-scene relative overflow-hidden border-2 border-secondary" style="height: 300px">
         <svg #canvas [attr.viewBox]="viewBox()" class="block h-full w-full select-none" role="img">
           <defs>
-            <linearGradient id="isla-top" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="island-top" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#3E2166" />
               <stop offset="100%" stop-color="#241046" />
             </linearGradient>
-            <linearGradient id="isla-top-on" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="island-top-on" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#9D57FF" />
               <stop offset="100%" stop-color="#5A1BA8" />
             </linearGradient>
-            <linearGradient id="isla-base" x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id="island-base" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stop-color="#54299B" />
               <stop offset="45%" stop-color="#331255" />
               <stop offset="100%" stop-color="#1B0838" />
@@ -122,12 +123,12 @@ const MARGIN = 90;
             }
           </g>
           @for (island of islands(); track island.u.id) {
-            <g class="isla-hit">
+            <g class="island-hit">
               <ellipse [attr.cx]="island.floor.x" [attr.cy]="island.floor.y + 30" [attr.rx]="SEMI_WIDTH * 0.82" [attr.ry]="SEMI_HEIGHT * 0.5" fill="#0E0120" opacity="0.5" />
-              <polygon [attr.points]="polyBase(island)" fill="url(#isla-base)" stroke="#7B3AD6" stroke-width="1.5" stroke-opacity="0.45" />
-              <polygon [attr.points]="polyFace(island, 'izq')" fill="#4A2280" />
-              <polygon [attr.points]="polyFace(island, 'der')" fill="#2A1049" />
-              <polygon [attr.points]="polyCover(island)" fill="url(#isla-top-on)" [attr.stroke]="border(island)" stroke-width="2" />
+              <polygon [attr.points]="polyBase(island)" fill="url(#island-base)" stroke="#7B3AD6" stroke-width="1.5" stroke-opacity="0.45" />
+              <polygon [attr.points]="polyFace(island, 'left')" fill="#4A2280" />
+              <polygon [attr.points]="polyFace(island, 'right')" fill="#2A1049" />
+              <polygon [attr.points]="polyCover(island)" fill="url(#island-top-on)" [attr.stroke]="border(island)" stroke-width="2" />
               <text [attr.x]="island.c.x" [attr.y]="island.c.y + THICKNESS + LONG_BASE + 26" text-anchor="middle" font-size="15" fill="#F3EAFF" style="font-family: var(--font-title)">
                 {{ island.u.order }}. {{ island.u.name }}
               </text>
@@ -160,12 +161,12 @@ const MARGIN = 90;
                 class="badge badge-outline ui-font text-[9px] cursor-pointer transition-colors flex items-center gap-1 border-primary/50 text-base-content hover:bg-primary/15"
                 title="Cambiar de rol / volver al selector"
               >
-                <span>{{ auth.role() ?? 'ALUMNO' }}</span>
+                <span>{{ roleLabel(auth.role()) }}</span>
                 <span class="text-[8px] opacity-70">▾</span>
               </a>
 
               <a
-                routerLink="/alumno/avatar"
+                routerLink="/student/avatar"
                 class="btn btn-circle btn-sm bg-[#1B1740] border-2 border-primary shadow-[0_0_12px_rgba(139,92,246,0.5)] flex items-center justify-center overflow-hidden hover:scale-110 transition-transform"
                 title="Personalizar mi avatar"
               >
@@ -225,19 +226,19 @@ const MARGIN = 90;
                 [attr.aria-label]="'Mapa del curso: ' + islands().length + ' unidades'"
               >
                 <defs>
-                  <linearGradient id="isla-top" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="island-top" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stop-color="#3E2166" />
                     <stop offset="100%" stop-color="#241046" />
                   </linearGradient>
-                  <linearGradient id="isla-top-on" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="island-top-on" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stop-color="#8FF7FF" />
                     <stop offset="100%" stop-color="#00A8BF" />
                   </linearGradient>
-                  <linearGradient id="isla-top-done" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="island-top-done" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stop-color="#7FC4CE" />
                     <stop offset="100%" stop-color="#2C5B64" />
                   </linearGradient>
-                  <linearGradient id="isla-base" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="island-base" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stop-color="#2A4A52" />
                     <stop offset="45%" stop-color="#1B3238" />
                     <stop offset="100%" stop-color="#0D1A1D" />
@@ -270,7 +271,7 @@ const MARGIN = 90;
                         stroke-width="2"
                         stroke-dasharray="3 13"
                         opacity="0.9"
-                        class="anim-fluir"
+                        class="anim-flow"
                       />
                     }
                   }
@@ -279,7 +280,7 @@ const MARGIN = 90;
                 <!-- Floating islands -->
                 @for (island of islands(); track island.u.id) {
                   <g
-                    class="isla-hit cursor-pointer"
+                    class="island-hit cursor-pointer"
                     tabindex="0"
                     role="button"
                     [attr.aria-label]="label(island)"
@@ -307,28 +308,28 @@ const MARGIN = 90;
                         fill="#FFFFFF"
                         opacity="0.3"
                         filter="url(#neon)"
-                        class="anim-latir"
+                        class="anim-pulse"
                       />
                     }
 
                     <!-- Volumetric geometry -->
                     <polygon
                       [attr.points]="polyBase(island)"
-                      fill="url(#isla-base)"
+                      fill="url(#island-base)"
                       stroke="#3FA8B8"
                       stroke-width="1.5"
                       stroke-opacity="0.45"
                     />
-                    <polygon [attr.points]="polyFace(island, 'izq')" fill="#234048" />
-                    <polygon [attr.points]="polyFace(island, 'der')" fill="#14282C" />
+                    <polygon [attr.points]="polyFace(island, 'left')" fill="#234048" />
+                    <polygon [attr.points]="polyFace(island, 'right')" fill="#14282C" />
                     <polygon
                       [attr.points]="polyCover(island)"
                       [attr.fill]="
-                        island.status === 'bloqueada'
-                          ? 'url(#isla-top)'
-                          : island.status === 'completada'
-                            ? 'url(#isla-top-done)'
-                            : 'url(#isla-top-on)'
+                        island.status === 'locked'
+                          ? 'url(#island-top)'
+                          : island.status === 'completed'
+                            ? 'url(#island-top-done)'
+                            : 'url(#island-top-on)'
                       "
                       [attr.stroke]="border(island)"
                       stroke-width="2"
@@ -336,7 +337,7 @@ const MARGIN = 90;
                     <polygon
                       [attr.points]="polyCoverInterior(island)"
                       fill="none"
-                      [attr.stroke]="island.status === 'bloqueada' ? '#241046' : '#C79BFF'"
+                      [attr.stroke]="island.status === 'locked' ? '#241046' : '#C79BFF'"
                       stroke-width="1.5"
                       opacity="0.5"
                     />
@@ -345,7 +346,7 @@ const MARGIN = 90;
                     @for (cr of crystals(island); track $index) {
                       <polygon [attr.points]="cr.p" [attr.fill]="cr.color" [attr.opacity]="cr.op" />
                     }
-                    <polygon [attr.points]="polyCover(island)" class="isla-foco" fill="none" stroke="none" />
+                    <polygon [attr.points]="polyCover(island)" class="island-focus" fill="none" stroke="none" />
 
                     <!-- Floating hexagonal emblem -->
                     <g [attr.transform]="'translate(' + island.c.x + ',' + (island.c.y - 108) + ')'">
@@ -354,14 +355,14 @@ const MARGIN = 90;
                         [attr.fill]="fill(island.status)"
                         [attr.stroke]="island.current ? '#F3EAFF' : '#190236'"
                         stroke-width="2"
-                        [attr.filter]="island.status === 'bloqueada' ? null : 'url(#neon)'"
-                        [class.anim-flotar]="island.current"
+                        [attr.filter]="island.status === 'locked' ? null : 'url(#neon)'"
+                        [class.anim-float]="island.current"
                       />
                       <text
                         y="6"
                         text-anchor="middle"
                         font-size="15"
-                        [attr.fill]="island.status === 'bloqueada' ? '#8B7BA8' : '#FFFFFF'"
+                        [attr.fill]="island.status === 'locked' ? '#8B7BA8' : '#FFFFFF'"
                         style="font-family: var(--font-pixel)"
                       >
                         {{ glyph(island) }}
@@ -374,7 +375,7 @@ const MARGIN = 90;
                       [attr.y]="island.c.y + THICKNESS + LONG_BASE + 26"
                       text-anchor="middle"
                       font-size="15"
-                      [attr.fill]="island.status === 'bloqueada' ? '#9A85BD' : '#F3EAFF'"
+                      [attr.fill]="island.status === 'locked' ? '#9A85BD' : '#F3EAFF'"
                       style="font-family: var(--font-title)"
                     >
                       {{ island.u.order }}. {{ island.u.name }}
@@ -384,7 +385,7 @@ const MARGIN = 90;
                       [attr.y]="island.c.y + THICKNESS + LONG_BASE + 44"
                       text-anchor="middle"
                       font-size="9"
-                      [attr.fill]="island.status === 'bloqueada' ? '#FF2758' : '#B98CF0'"
+                      [attr.fill]="island.status === 'locked' ? '#FF2758' : '#B98CF0'"
                       style="font-family: var(--font-pixel)"
                     >
                       {{ subtitle(island) }}
@@ -396,7 +397,7 @@ const MARGIN = 90;
                 <!-- Player avatar: follows the clicked section (visual jump),
                      by default the real 'current' section of progress -->
                 @if (avatarIsland(); as island) {
-                  <g class="anim-flotar pointer-events-none">
+                  <g class="anim-float pointer-events-none">
                     <foreignObject
                       class="avatar-jump"
                       [attr.x]="island.c.x - 24"
@@ -424,7 +425,7 @@ const MARGIN = 90;
                 <button
                   type="button"
                   class="btn btn-xs btn-secondary ui-font text-[8px] flex items-center gap-1.5 shadow-md"
-                  (click)="inventoryModal.set('insignias')"
+                  (click)="inventoryModal.set('badges')"
                   title="Insignias y logros"
                 >
                   <span class="text-xs">🏅</span>
@@ -433,7 +434,7 @@ const MARGIN = 90;
                 <button
                   type="button"
                   class="btn btn-xs btn-accent ui-font text-[8px] flex items-center gap-1.5 shadow-md"
-                  (click)="inventoryModal.set('equipamiento')"
+                  (click)="inventoryModal.set('equipment')"
                   title="Mochila y equipamiento"
                 >
                   <span class="text-xs">🎒</span>
@@ -454,7 +455,7 @@ const MARGIN = 90;
               @if (sel(); as island) {
                 <div
                   #cardSection
-                  class="chaflan absolute w-80 border-2 border-primary bg-base-200/95 p-4 backdrop-blur z-50 shadow-2xl"
+                  class="chamfer absolute w-80 border-2 border-primary bg-base-200/95 p-4 backdrop-blur z-50 shadow-2xl"
                   [style.left.px]="cardPos()?.x ?? 16"
                   [style.top.px]="cardPos()?.y ?? 56"
                 >
@@ -467,7 +468,7 @@ const MARGIN = 90;
                   <ul class="mt-3 flex flex-col gap-1 text-xs">
                     @for (a of island.u.activities; track a.id) {
                       <li class="flex items-center gap-2">
-                        <span class="badge badge-outline badge-xs ui-font text-[7px]">{{ a.type }}</span>
+                        <span class="badge badge-outline badge-xs ui-font text-[7px]">{{ nodeTypeLabel[a.type] }}</span>
                         <span class="truncate">{{ a.name }}</span>
                       </li>
                     } @empty {
@@ -475,7 +476,7 @@ const MARGIN = 90;
                     }
                   </ul>
 
-                  @if (island.status === 'bloqueada') {
+                  @if (island.status === 'locked') {
                     @if (lockReason(island); as m) {
                       <p class="mt-3 text-xs leading-relaxed text-white/70">
                         🔒 {{ m.pre }}<b class="text-warning">{{ m.highlighted }}</b>{{ m.post }}
@@ -614,6 +615,8 @@ const MARGIN = 90;
   `,
 })
 export class MapView implements OnDestroy {
+  protected readonly nodeTypeLabel = NODE_TYPE_LABEL;
+  protected readonly roleLabel = (r: keyof typeof ROLE_LABEL | null): string => (r ? ROLE_LABEL[r] : ROLE_LABEL.STUDENT);
   readonly preview = input(false);
 
   protected readonly store = inject(RoadmapStore);
@@ -629,7 +632,7 @@ export class MapView implements OnDestroy {
    *  section card is drawn — recalculated when opened, next to the clicked node. */
   protected readonly cardPos = signal<{ x: number; y: number } | null>(null);
 
-  private readonly progress = toSignal(this.data.getProgress('alu-01', COURSE_SEED_ID));
+  private readonly progress = toSignal(this.data.getProgress('stu-01', COURSE_SEED_ID));
 
   protected readonly SEMI_WIDTH = SEMI_WIDTH;
   protected readonly SEMI_HEIGHT = SEMI_HEIGHT;
@@ -660,7 +663,7 @@ export class MapView implements OnDestroy {
     if (!this.sel()) return;
     const target = event.target as Element | null;
     if (!target) return;
-    if (target.closest('.isla-hit')) return;
+    if (target.closest('.island-hit')) return;
     const card = this.cardSection()?.nativeElement;
     if (card?.contains(target)) return;
     this.sel.set(null);
@@ -700,7 +703,7 @@ export class MapView implements OnDestroy {
     const us = this.store.sections();
     const points = layoutIslands(us.length);
     const complete = new Set(
-      (this.progress()?.nodes ?? []).filter((n) => n.status === 'completado').map((n) => n.nodeId),
+      (this.progress()?.nodes ?? []).filter((n) => n.status === 'completed').map((n) => n.nodeId),
     );
     const xp = this.xp();
 
@@ -717,12 +720,12 @@ export class MapView implements OnDestroy {
       const completed =
         mandatory.length > 0 && mandatory.every((a) => complete.has(a.id));
       const status: IslandStatus = this.preview()
-        ? 'disponible'
+        ? 'available'
         : completed
-          ? 'completada'
+          ? 'completed'
           : xp >= u.xpThreshold && previousCompleted
-            ? 'disponible'
-            : 'bloqueada';
+            ? 'available'
+            : 'locked';
       previousCompleted = completed;
       return {
         u,
@@ -736,11 +739,11 @@ export class MapView implements OnDestroy {
     });
 
     if (!this.preview() && items.length > 0) {
-      // If no 'disponible' section is left (roadmap 100% complete), the
+      // If no 'available' section is left (roadmap 100% complete), the
       // avatar stays on the last section instead of disappearing.
       const current =
-        items.find((it) => it.status === 'disponible') ??
-        [...items].reverse().find((it) => it.status === 'completada') ??
+        items.find((it) => it.status === 'available') ??
+        [...items].reverse().find((it) => it.status === 'completed') ??
         items[items.length - 1];
       current.current = true;
     }
@@ -748,7 +751,7 @@ export class MapView implements OnDestroy {
   });
 
   protected readonly completed = computed(
-    () => this.islands().filter((i) => i.status === 'completada').length,
+    () => this.islands().filter((i) => i.status === 'completed').length,
   );
 
   /** Section clicked by the player for the avatar's visual jump (purely
@@ -789,16 +792,16 @@ export class MapView implements OnDestroy {
     return is.slice(0, -1).map((a, i) => {
       const b = is[i + 1];
       const color =
-        a.status === 'completada'
+        a.status === 'completed'
           ? 'var(--color-node-done)'
-          : a.current || a.status === 'disponible'
+          : a.current || a.status === 'available'
             ? 'var(--color-node-open)'
             : 'var(--color-node-locked)';
       return {
         id: `${a.u.id}->${b.u.id}`,
         d: path(a.c, b.c),
         color,
-        faint: a.status === 'bloqueada',
+        faint: a.status === 'locked',
       };
     });
   });
@@ -822,7 +825,7 @@ export class MapView implements OnDestroy {
   protected polyCover(i: Island): string {
     return diamond(i.c, SEMI_WIDTH, SEMI_HEIGHT);
   }
-  protected polyFace(i: Island, side: 'izq' | 'der'): string {
+  protected polyFace(i: Island, side: 'left' | 'right'): string {
     return faceLateral(i.c, SEMI_WIDTH, SEMI_HEIGHT, THICKNESS, side);
   }
   protected polyBase(i: Island): string {
@@ -834,7 +837,7 @@ export class MapView implements OnDestroy {
 
   protected crystals(i: Island): { p: string; color: string; op: number }[] {
     const seed = i.u.order * 37;
-    const dimmed = i.status === 'bloqueada';
+    const dimmed = i.status === 'locked';
     return Array.from({ length: 3 }, (_, k) => {
       const r1 = frac(Math.sin((seed + k) * 12.9898) * 43758.5453) - 0.5;
       const r2 = frac(Math.sin((seed + k) * 78.233) * 43758.5453) - 0.5;
@@ -853,22 +856,22 @@ export class MapView implements OnDestroy {
   }
 
   protected fill(e: IslandStatus): string {
-    return e === 'completada'
+    return e === 'completed'
       ? 'var(--color-node-done)'
-      : e === 'disponible'
+      : e === 'available'
         ? 'var(--color-node-open)'
         : 'var(--color-node-locked)';
   }
 
   protected border(i: Island): string {
     if (i.current) return '#FFFFFF';
-    if (i.status === 'bloqueada') return '#2D164A';
-    if (i.status === 'completada') return '#5FB8C4';
+    if (i.status === 'locked') return '#2D164A';
+    if (i.status === 'completed') return '#5FB8C4';
     return '#00E5FF';
   }
 
   protected glyph(i: Island): string {
-    return i.status === 'completada' ? '✓' : i.status === 'bloqueada' ? '🔒' : String(i.u.order);
+    return i.status === 'completed' ? '✓' : i.status === 'locked' ? '🔒' : String(i.u.order);
   }
 
   private previousSection(i: Island): Island | null {
@@ -878,12 +881,12 @@ export class MapView implements OnDestroy {
   }
 
   protected subtitle(i: Island): string {
-    if (i.status === 'bloqueada') {
+    if (i.status === 'locked') {
       const previous = this.previousSection(i);
-      if (previous && previous.status !== 'completada') return `COMPLETÁ LA UNIDAD ${previous.u.order}`;
+      if (previous && previous.status !== 'completed') return `COMPLETÁ LA UNIDAD ${previous.u.order}`;
       return `XP COSTO: ${i.u.xpThreshold}`;
     }
-    if (i.status === 'completada') return 'COMPLETADA';
+    if (i.status === 'completed') return 'COMPLETADA';
     return `${i.done}/${i.total} ACTIVIDADES`;
   }
 
@@ -891,7 +894,7 @@ export class MapView implements OnDestroy {
    *  card when it is locked — split in 3 to highlight the key data. */
   protected lockReason(i: Island): { pre: string; highlighted: string; post: string } {
     const previous = this.previousSection(i);
-    if (previous && previous.status !== 'completada') {
+    if (previous && previous.status !== 'completed') {
       return {
         pre: 'Te falta completar ',
         highlighted: `Unidad ${previous.u.order} · "${previous.u.name}"`,
@@ -908,7 +911,7 @@ export class MapView implements OnDestroy {
 
   protected label(i: Island): string {
     const statusLabel =
-      i.status === 'completada' ? 'completada' : i.status === 'bloqueada' ? 'bloqueada' : 'disponible';
+      i.status === 'completed' ? 'completed' : i.status === 'locked' ? 'locked' : 'available';
     return `Unidad ${i.u.order}: ${i.u.name}, ${statusLabel}. ${this.subtitle(i)}`;
   }
 
@@ -919,7 +922,7 @@ export class MapView implements OnDestroy {
     }
     this.sel.set(null);
 
-    if (i.status === 'bloqueada') {
+    if (i.status === 'locked') {
       this.jumpTimers.forEach((t) => clearTimeout(t));
       this.jumpTimers = [];
       this.updateCardPos(i);
@@ -1005,7 +1008,7 @@ export class MapView implements OnDestroy {
   }
 
   protected enter(i: Island): void {
-    this.router.navigate(['/alumno/unidad', i.u.id]);
+    this.router.navigate(['/student/section', i.u.id]);
   }
 
   // ---------- Pan and Zoom ----------

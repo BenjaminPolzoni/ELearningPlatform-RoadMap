@@ -139,7 +139,7 @@ html {
 /* ---------- art primitives shared by map and board ---------- */
 
 /* Scene background: violet vignette over violet-tinged black. */
-.escena-neon {
+.neon-scene {
   background:
     radial-gradient(120% 80% at 50% 0%, #35146b 0%, transparent 60%),
     radial-gradient(90% 70% at 15% 100%, #4a1080 0%, transparent 55%),
@@ -155,12 +155,12 @@ html {
 }
 
 /* Chamfered borders: the brand look is angular, never rounded (05 §2). */
-.chaflan {
+.chamfer {
   clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
 }
 
 /* Sprites and board: no smoothing at all, it is pixel-art. */
-.pixelado {
+.pixelated {
   image-rendering: pixelated;
   shape-rendering: crispEdges;
 }
@@ -189,13 +189,13 @@ html {
   }
 }
 
-.anim-flotar {
+.anim-float {
   animation: flotar 2.8s ease-in-out infinite;
 }
-.anim-latir {
+.anim-pulse {
   animation: latir 1.4s ease-in-out infinite;
 }
-.anim-fluir {
+.anim-flow {
   animation: fluir 1.2s linear infinite;
 }
 
@@ -207,9 +207,9 @@ html {
 
 /* RF-NFR-05 / 05 §7: no animation when the system discourages it. */
 @media (prefers-reduced-motion: reduce) {
-  .anim-flotar,
-  .anim-latir,
-  .anim-fluir,
+  .anim-float,
+  .anim-pulse,
+  .anim-flow,
   .avatar-jump {
     animation: none !important;
     transition: none !important;
@@ -563,7 +563,7 @@ html {
 }
 
 /* — "TU ESTADO" banner: protagonist of the student's view — */
-.rk-estado {
+.rk-status {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -571,83 +571,83 @@ html {
   text-align: left;
   padding: 0.9rem 1.1rem;
   margin-bottom: 0.4rem;
-  border: 2px solid var(--rk-estado-color, var(--rk-cyan));
+  border: 2px solid var(--rk-status-color, var(--rk-cyan));
   border-left-width: 8px;
   border-radius: 3px;
-  background: var(--rk-estado-fill, rgba(0, 229, 255, 0.08));
+  background: var(--rk-status-fill, rgba(0, 229, 255, 0.08));
   box-shadow:
-    inset 0 0 24px var(--rk-estado-fill, rgba(0, 229, 255, 0.08)),
-    0 0 18px var(--rk-estado-glow, rgba(0, 229, 255, 0.28));
+    inset 0 0 24px var(--rk-status-fill, rgba(0, 229, 255, 0.08)),
+    0 0 18px var(--rk-status-glow, rgba(0, 229, 255, 0.28));
   cursor: pointer;
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease;
 }
-button.rk-estado:hover {
+button.rk-status:hover {
   transform: translateX(2px);
   box-shadow:
-    inset 0 0 24px var(--rk-estado-fill, rgba(0, 229, 255, 0.08)),
-    0 0 26px var(--rk-estado-glow, rgba(0, 229, 255, 0.42));
+    inset 0 0 24px var(--rk-status-fill, rgba(0, 229, 255, 0.08)),
+    0 0 26px var(--rk-status-glow, rgba(0, 229, 255, 0.42));
 }
-.rk-estado--ok {
-  --rk-estado-color: var(--rk-promo);
-  --rk-estado-fill: rgba(16, 185, 129, 0.12);
-  --rk-estado-glow: rgba(16, 185, 129, 0.42);
+.rk-status--ok {
+  --rk-status-color: var(--rk-promo);
+  --rk-status-fill: rgba(16, 185, 129, 0.12);
+  --rk-status-glow: rgba(16, 185, 129, 0.42);
 }
-.rk-estado--risk {
-  --rk-estado-color: var(--rk-risk);
-  --rk-estado-fill: rgba(239, 68, 68, 0.12);
-  --rk-estado-glow: rgba(239, 68, 68, 0.42);
+.rk-status--risk {
+  --rk-status-color: var(--rk-risk);
+  --rk-status-fill: rgba(239, 68, 68, 0.12);
+  --rk-status-glow: rgba(239, 68, 68, 0.42);
 }
-.rk-estado--info {
-  --rk-estado-color: var(--rk-cyan);
-  --rk-estado-fill: rgba(0, 229, 255, 0.08);
-  --rk-estado-glow: rgba(0, 229, 255, 0.28);
+.rk-status--info {
+  --rk-status-color: var(--rk-cyan);
+  --rk-status-fill: rgba(0, 229, 255, 0.08);
+  --rk-status-glow: rgba(0, 229, 255, 0.28);
 }
-.rk-estado__pos {
+.rk-status__pos {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   line-height: 1;
-  color: var(--rk-estado-color);
+  color: var(--rk-status-color);
 }
-.rk-estado__pos-num {
+.rk-status__pos-num {
   font-family: var(--font-console);
   font-size: 2.4rem;
 }
-.rk-estado__pos-tot {
+.rk-status__pos-tot {
   font-family: var(--font-console);
   font-size: 0.9rem;
   opacity: 0.7;
 }
-.rk-estado__body {
+.rk-status__body {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
   min-width: 0;
 }
-.rk-estado__tag {
+.rk-status__tag {
   font-family: var(--font-title);
   font-size: 0.72rem;
   letter-spacing: 0.08em;
   line-height: 1.4;
-  color: var(--rk-estado-color);
-  text-shadow: 0 0 8px var(--rk-estado-glow);
+  color: var(--rk-status-color);
+  text-shadow: 0 0 8px var(--rk-status-glow);
 }
-.rk-estado__sub {
+.rk-status__sub {
   font-family: var(--font-console);
   font-size: 1rem;
   color: var(--rk-ink);
   opacity: 0.85;
 }
-.rk-estado__pctil {
+.rk-status__pctil {
   flex-shrink: 0;
   margin-left: auto;
   font-family: var(--font-console);
   font-size: 1.5rem;
-  color: var(--rk-estado-color);
-  text-shadow: 0 0 8px var(--rk-estado-glow);
+  color: var(--rk-status-color);
+  text-shadow: 0 0 8px var(--rk-status-glow);
 }
 
 /* — status label in the row (PROMOCIÓN / RIESGO) — */
@@ -666,7 +666,7 @@ button.rk-estado:hover {
   color: var(--rk-promo);
   text-shadow: 0 0 6px rgba(16, 185, 129, 0.65);
 }
-.rk-tag--riesgo {
+.rk-tag--risk {
   color: var(--rk-risk);
   text-shadow: 0 0 6px rgba(239, 68, 68, 0.65);
 }
@@ -760,7 +760,7 @@ button.rk-estado:hover {
     0 0 16px rgba(16, 185, 129, 0.4);
 }
 /* RIESGO (RF-RNK-06): red neon border and glow #EF4444. */
-.rk-row--riesgo {
+.rk-row--risk {
   border-color: var(--rk-risk);
   background: rgba(239, 68, 68, 0.09);
   box-shadow:
@@ -781,7 +781,7 @@ button.rk-estado:hover {
     inset 5px 0 0 var(--rk-promo),
     0 0 16px rgba(16, 185, 129, 0.4);
 }
-.rk-row--me.rk-row--riesgo {
+.rk-row--me.rk-row--risk {
   border-color: var(--rk-risk);
   box-shadow:
     inset 5px 0 0 var(--rk-risk),
@@ -796,7 +796,7 @@ button.rk-estado:hover {
 .rk-row--promo .rk-row__pos {
   color: var(--rk-promo);
 }
-.rk-row--riesgo .rk-row__pos {
+.rk-row--risk .rk-row__pos {
   color: var(--rk-risk);
 }
 .rk-row--me .rk-row__pos {
@@ -959,7 +959,7 @@ button.rk-estado:hover {
   color: var(--rk-promo);
   text-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
 }
-.rk-mark--riesgo {
+.rk-mark--risk {
   color: var(--rk-risk);
   text-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
 }

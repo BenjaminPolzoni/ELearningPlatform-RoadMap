@@ -14,7 +14,7 @@ import { sortCohort, percentileOf, zoneOf } from '../domain/ranking/ranking.rule
 import { studentsSeed } from './seed';
 
 /** Logged-in student in the mock (matches `features/student/map.ts`). */
-export const CURRENT_STUDENT_ID = 'alu-01';
+export const CURRENT_STUDENT_ID = 'stu-01';
 
 /** Deterministic avatar combination by `seed` — same catalog as the avatar editor. */
 export function avatarConfigMock(seed: string): AvatarConfig {
@@ -30,9 +30,9 @@ export function avatarConfigMock(seed: string): AvatarConfig {
 
 /**
  * Raw data per student (12 rows). Designed to exercise the rules:
- *  - alu-02 leads cleanly → promotion candidate (RF-RNK-05).
- *  - alu-03 is in the high zone but with one lost life → NOT a candidate.
- *  - alu-01 (the logged-in user) is mid-table.
+ *  - stu-02 leads cleanly → promotion candidate (RF-RNK-05).
+ *  - stu-03 is in the high zone but with one lost life → NOT a candidate.
+ *  - stu-01 (the logged-in user) is mid-table.
  *  - the last ones carry unfinished mandatory items → regularity risk (RF-RNK-06).
  */
 interface Raw {
@@ -49,7 +49,7 @@ interface Raw {
 
 const RAW: Raw[] = [
   {
-    id: 'alu-02',
+    id: 'stu-02',
     xpTotal: 4820,
     nodeLevel: 18,
     badges: 9,
@@ -60,7 +60,7 @@ const RAW: Raw[] = [
     mandatoryPassedPct: 100,
   },
   {
-    id: 'alu-05',
+    id: 'stu-05',
     xpTotal: 4310,
     nodeLevel: 16,
     badges: 7,
@@ -71,7 +71,7 @@ const RAW: Raw[] = [
     mandatoryPassedPct: 100,
   },
   {
-    id: 'alu-03',
+    id: 'stu-03',
     xpTotal: 4180,
     nodeLevel: 16,
     badges: 8,
@@ -82,7 +82,7 @@ const RAW: Raw[] = [
     mandatoryPassedPct: 95,
   },
   {
-    id: 'alu-09',
+    id: 'stu-09',
     xpTotal: 3600,
     nodeLevel: 14,
     badges: 6,
@@ -93,7 +93,7 @@ const RAW: Raw[] = [
     mandatoryPassedPct: 92,
   },
   {
-    id: 'alu-07',
+    id: 'stu-07',
     xpTotal: 3255,
     nodeLevel: 13,
     badges: 5,
@@ -104,7 +104,7 @@ const RAW: Raw[] = [
     mandatoryPassedPct: 88,
   },
   {
-    id: 'alu-01',
+    id: 'stu-01',
     xpTotal: 2980,
     nodeLevel: 12,
     badges: 5,
@@ -115,7 +115,7 @@ const RAW: Raw[] = [
     mandatoryPassedPct: 84,
   },
   {
-    id: 'alu-11',
+    id: 'stu-11',
     xpTotal: 2740,
     nodeLevel: 11,
     badges: 4,
@@ -126,7 +126,7 @@ const RAW: Raw[] = [
     mandatoryPassedPct: 80,
   },
   {
-    id: 'alu-04',
+    id: 'stu-04',
     xpTotal: 2390,
     nodeLevel: 10,
     badges: 4,
@@ -137,7 +137,7 @@ const RAW: Raw[] = [
     mandatoryPassedPct: 72,
   },
   {
-    id: 'alu-08',
+    id: 'stu-08',
     xpTotal: 2015,
     nodeLevel: 9,
     badges: 3,
@@ -148,7 +148,7 @@ const RAW: Raw[] = [
     mandatoryPassedPct: 65,
   },
   {
-    id: 'alu-12',
+    id: 'stu-12',
     xpTotal: 1580,
     nodeLevel: 7,
     badges: 2,
@@ -159,7 +159,7 @@ const RAW: Raw[] = [
     mandatoryPassedPct: 55,
   },
   {
-    id: 'alu-06',
+    id: 'stu-06',
     xpTotal: 1240,
     nodeLevel: 6,
     badges: 2,
@@ -170,7 +170,7 @@ const RAW: Raw[] = [
     mandatoryPassedPct: 48,
   },
   {
-    id: 'alu-10',
+    id: 'stu-10',
     xpTotal: 820,
     nodeLevel: 4,
     badges: 1,
@@ -202,7 +202,7 @@ export function cohortMock(): RankingRow[] {
       xpTotal: c.xpTotal,
       nodeLevel: c.nodeLevel,
       percentile: 0,
-      zone: 'ninguna',
+      zone: 'none',
       badges: c.badges,
       lives: c.lives,
       coins: c.coins,

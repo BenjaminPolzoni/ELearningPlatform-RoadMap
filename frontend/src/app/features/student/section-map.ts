@@ -36,6 +36,7 @@ import {
   VerticalChallenge,
   WorldTheme,
 } from './vertical-world.engine';
+import { DIFFICULTY_LABEL } from '../../shared/labels';
 
 interface WalkPuff {
   id: number;
@@ -110,7 +111,7 @@ interface ConfettiPiece {
       0%   { transform: translateY(-10%) rotate(0deg); opacity: 1; }
       100% { transform: translateY(650%) rotate(540deg); opacity: 0.15; }
     }
-    .confetti-pieza {
+    .confetti-piece {
       position: absolute;
       top: 0;
       width: 8px;
@@ -120,7 +121,7 @@ interface ConfettiPiece {
       animation-iteration-count: infinite;
     }
     @media (prefers-reduced-motion: reduce) {
-      .confetti-pieza { animation: none; opacity: 0; }
+      .confetti-piece { animation: none; opacity: 0; }
     }
   `,
   template: `
@@ -137,7 +138,7 @@ interface ConfettiPiece {
           >
             <div class="flex items-center gap-3">
               <a
-                routerLink="/alumno"
+                routerLink="/student"
                 class="btn btn-xs border border-primary/50 bg-[#252836] ui-font text-[8px] text-primary hover:border-primary hover:bg-[#303348]"
               >
                 ← MUNDO
@@ -362,7 +363,7 @@ interface ConfettiPiece {
                 >
                   <button type="button" class="encounter-close" (click)="sel.set(null)" aria-label="Cerrar">×</button>
                   <span class="encounter-kicker">
-                    {{ c.recovery ? 'RECUPERACIÓN' : c.optional ? 'DESAFÍO BONUS' : 'DESAFÍO ' + c.id }} · {{ c.difficulty }}
+                    {{ c.recovery ? 'RECUPERACIÓN' : c.optional ? 'DESAFÍO BONUS' : 'DESAFÍO ' + c.id }} · {{ difficultyLabel[c.difficulty] ?? c.difficulty }}
                   </span>
                   <h3>{{ c.title }}</h3>
                   <p class="encounter-meta">{{ c.description }}</p>
@@ -399,13 +400,13 @@ interface ConfettiPiece {
           <!-- ACTIVITY AND QUESTIONS MODAL (Interactive quiz) -->
       @if (activeChallenge(); as c) {
         <div class="modal modal-open backdrop-blur-md z-50">
-          <div class="modal-box max-w-xl border-4 border-primary bg-[#1C1E2B] p-6 text-white shadow-2xl chaflan">
+          <div class="modal-box max-w-xl border-4 border-primary bg-[#1C1E2B] p-6 text-white shadow-2xl chamfer">
             <!-- Modal Header -->
             <div class="flex items-start justify-between gap-3 border-b-2 border-white/10 pb-3">
               <div>
                 <span class="ui-font text-[8px] text-accent tracking-widest">
                   {{
-                    c.type === 'teoria'
+                    c.type === 'theory'
                       ? 'CONTENIDO TEÓRICO'
                       : isCompleted(c)
                         ? 'MODO REPASO'
@@ -427,7 +428,7 @@ interface ConfettiPiece {
 
             <!-- Activity / Question content -->
             <div class="my-4">
-              @if (c.type === 'teoria') {
+              @if (c.type === 'theory') {
                 <!-- Theory content node: embedded material (PDF/video/PPT via external
                      link), no quiz — reading/watching is enough to continue. -->
                 <p class="text-sm text-[#E0E2EC] opacity-90 mb-3">{{ c.description }}</p>
@@ -505,7 +506,7 @@ interface ConfettiPiece {
 
             <!-- Modal action buttons -->
             <div class="modal-action border-t-2 border-white/10 pt-3">
-              @if (c.type === 'teoria') {
+              @if (c.type === 'theory') {
                 <button
                   type="button"
                   class="btn btn-primary w-full ui-font text-[9px]"
@@ -549,7 +550,7 @@ interface ConfettiPiece {
           <div class="pointer-events-none absolute inset-0 overflow-hidden">
             @for (p of confettiPieces(); track p.id) {
               <span
-                class="confetti-pieza"
+                class="confetti-piece"
                 [style.left.%]="p.left"
                 [style.background]="p.color"
                 [style.animation-delay.s]="p.delay"
@@ -559,7 +560,7 @@ interface ConfettiPiece {
             }
           </div>
           <div
-            class="modal-box relative max-w-md border-4 border-primary bg-[#1C1E2B] p-8 text-center text-white shadow-2xl chaflan"
+            class="modal-box relative max-w-md border-4 border-primary bg-[#1C1E2B] p-8 text-center text-white shadow-2xl chamfer"
           >
             <button
               class="btn btn-ghost btn-sm absolute right-3 top-3 text-lg text-white/70 hover:text-white"
@@ -581,7 +582,7 @@ interface ConfettiPiece {
             <button
               type="button"
               class="btn btn-primary w-full ui-font text-[9px] mt-6"
-              routerLink="/alumno"
+              routerLink="/student"
             >
               VOLVER AL ROADMAP →
             </button>
@@ -593,12 +594,13 @@ interface ConfettiPiece {
     } @else {
       <div class="p-8 text-center text-white/70">
         <p>No se encontró la unidad solicitada.</p>
-        <a routerLink="/alumno" class="btn btn-primary btn-sm mt-4">Volver al inicio</a>
+        <a routerLink="/student" class="btn btn-primary btn-sm mt-4">Volver al inicio</a>
       </div>
     }
   `,
 })
 export class SectionMap {
+  protected readonly difficultyLabel: Record<string, string> = DIFFICULTY_LABEL;
   readonly id = input.required<string>();
 
   protected readonly avatarSrv = inject(AvatarService);
@@ -607,7 +609,7 @@ export class SectionMap {
   private readonly sanitizer = inject(DomSanitizer);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly progress = toSignal(this.data.getProgress('alu-01', COURSE_SEED_ID));
+  private readonly progress = toSignal(this.data.getProgress('stu-01', COURSE_SEED_ID));
 
   protected readonly mapViewport = viewChild<ElementRef<HTMLDivElement>>('mapViewport');
   protected readonly mapPanel = viewChild<ElementRef<HTMLDivElement>>('mapPanel');
@@ -668,12 +670,12 @@ export class SectionMap {
         minutes: 8,
         // The real XP the teacher loads (PAR-01, XP_BY_DIFFICULTY) — it used to be a
         // value made up by position (100 + i*25) that did not match the assigned
-        // difficulty. 'hito' has no difficulty: fixed reward. 'teoria' is not evaluated:
+        // difficulty. 'milestone' has no difficulty: fixed reward. 'theory' is not evaluated:
         // it grants no XP.
-        xp: act?.type === 'teoria' ? 0 : act?.difficulty ? XP_BY_DIFFICULTY[act.difficulty] : 50,
+        xp: act?.type === 'theory' ? 0 : act?.difficulty ? XP_BY_DIFFICULTY[act.difficulty] : 50,
         // If the teacher did not write a description, the same one suggested to them as a
         // placeholder in the editor (see defaultDescription in roadmap.models.ts).
-        description: act?.description || defaultDescription(act?.type ?? 'desafio-practico'),
+        description: act?.description || defaultDescription(act?.type ?? 'practical-challenge'),
         resourceUrl: act?.resourceUrl,
         resourceType: act?.resourceType,
         x: 50,
@@ -745,7 +747,7 @@ export class SectionMap {
   // Avatar walk
   protected readonly playerPos = signal<{ x: number; y: number }>({ x: 50, y: 90.5 });
   protected readonly isWalking = signal<boolean>(false);
-  protected readonly facing = signal<'derecha' | 'izquierda'>('derecha');
+  protected readonly facing = signal<'right' | 'left'>('right');
   protected readonly walkPuffs = signal<WalkPuff[]>([]);
   // Id of the main path stop (0..mainCount) where the avatar is logically standing
   private readonly currentStopId = signal<number>(0);
@@ -775,7 +777,7 @@ export class SectionMap {
       const w = this.world();
       const p = this.store.progress();
       const complete = new Set(
-        (p?.nodes ?? []).filter((n) => n.status === 'completado').map((n) => n.nodeId),
+        (p?.nodes ?? []).filter((n) => n.status === 'completed').map((n) => n.nodeId),
       );
       const persistedIds = w.challenges
         .filter((c) => c.activityId && complete.has(c.activityId))
@@ -1132,7 +1134,7 @@ export class SectionMap {
       const clampedY = Math.max(2, Math.min(98, y));
 
       const dx = clampedX - this.playerPos().x;
-      if (Math.abs(dx) > 0.001) this.facing.set(dx < 0 ? 'izquierda' : 'derecha');
+      if (Math.abs(dx) > 0.001) this.facing.set(dx < 0 ? 'left' : 'right');
       this.playerPos.set({ x: clampedX, y: clampedY });
       // Camera glued to the player during the walk: the world moves to
       // keep them centered, instead of the avatar crossing a fixed viewport and
@@ -1182,7 +1184,7 @@ export class SectionMap {
     );
   }
 
-  /** Embeddable URL of the material of a 'teoria' node (see resource-embed.util.ts). */
+  /** Embeddable URL of the material of a 'theory' node (see resource-embed.util.ts). */
   protected embedUrl(c: VerticalChallenge): SafeResourceUrl {
     const url = toEmbedUrl(c.resourceType ?? 'pdf', c.resourceUrl ?? '');
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
@@ -1214,7 +1216,7 @@ export class SectionMap {
 
   protected onCompleteActivity(c: VerticalChallenge): void {
     const wasAlreadyCompleted = this.isCompleted(c);
-    if (c.type === 'teoria' && !wasAlreadyCompleted) {
+    if (c.type === 'theory' && !wasAlreadyCompleted) {
       this.store.markContentRead(c.activityId ?? '', () => this.finishActivity(c));
       return;
     }
@@ -1225,7 +1227,7 @@ export class SectionMap {
     const wasAlreadyCompleted = this.isCompleted(c);
     if (!wasAlreadyCompleted) {
       this.completedIds.update((ids) => [...ids, c.id]);
-      if (c.type !== 'teoria') this.store.addProgress(c.xp, c.activityId, this.localLives());
+      if (c.type !== 'theory') this.store.addProgress(c.xp, c.activityId, this.localLives());
     }
     if (c.recovery) {
       this.localLives.set(3);
@@ -1252,7 +1254,7 @@ export class SectionMap {
     this.playVictoryFanfare();
 
     if (this.celebrateTimeoutId) clearTimeout(this.celebrateTimeoutId);
-    // Lets the 4 jumps finish (4 × 0.75s, see .celebrando in avatar-sprite.ts) before
+    // Lets the 4 jumps finish (4 × 0.75s, see .celebrating in avatar-sprite.ts) before
     // covering the scene with the sign.
     this.celebrateTimeoutId = window.setTimeout(() => {
       this.showUnitComplete.set(true);

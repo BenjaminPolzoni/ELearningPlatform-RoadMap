@@ -9,7 +9,7 @@
 
 import { AvatarConfig } from '../avatar/avatar.models';
 
-export type Zone = 'ninguna' | 'p90' | 'p10';
+export type Zone = 'none' | 'p90' | 'p10';
 
 /**
  * Identified row. Only received by: PROFESOR/ADMIN (all of them, RF-RNK-10) or the ALUMNO
@@ -51,9 +51,9 @@ export type RankingAnonRow = Omit<RankingRow, 'studentId' | 'name' | 'lastName' 
 
 /** STUDENT view (RF-RNK-03): strict anonymity except the own row. */
 export interface StudentRankingView {
-  role: 'ALUMNO';
+  role: 'STUDENT';
   /** Own row with full identity; null if the student is not in the cohort. */
-  yo: RankingRow | null;
+  me: RankingRow | null;
   top3: RankingAnonRow[];
   bottom3: RankingAnonRow[];
   /** Cutoff rows, anonymous. null if the cohort has < 10 enrolled (RF-RNK-09). */
@@ -68,7 +68,7 @@ export interface StudentRankingView {
 
 /** PROFESOR/ADMIN view (RF-RNK-10): zero anonymity, to audit before archiving. */
 export interface StaffRankingView {
-  role: 'PROFESOR' | 'ADMIN';
+  role: 'TEACHER' | 'ADMIN';
   rows: RankingRow[];
   /** Cutoff positions (e.g. 2 and 11); null if < 10 enrolled (RF-RNK-09). */
   cutoffs: { p90: number; p10: number } | null;

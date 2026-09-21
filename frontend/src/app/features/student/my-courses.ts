@@ -20,7 +20,7 @@ import { UiBadge, UiCard } from '../teacher/shared/educa-ui';
       <div class="flex items-center justify-between gap-4 border-b border-base-300 pb-4 mb-6">
         <h2 class="title-font text-primary text-xs">MIS CLASES</h2>
         <div class="flex items-center gap-2">
-          <a routerLink="/alumno/avatar" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]" title="Personalizar tu avatar">
+          <a routerLink="/student/avatar" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]" title="Personalizar tu avatar">
             🧍 Mi avatar
           </a>
           <button (click)="changeRole()" class="btn btn-sm btn-ghost border border-neutral/40 ui-font text-[8px]" title="Cambiar de rol">
@@ -82,8 +82,8 @@ export class MyCourses {
   }
 
   protected biomeEmoji(biome: Biome | undefined): string {
-    if (biome === 'desierto') return '🏜️';
-    if (biome === 'nieve') return '❄️';
+    if (biome === 'desert') return '🏜️';
+    if (biome === 'snow') return '❄️';
     if (biome === 'lava') return '🌋';
     return '🌿';
   }

@@ -11,6 +11,6 @@ import { Progress } from '../../core/data/roadmap.models';
  * known status for that student; if it is not known, it falls back to the length of `progress.nodes`.
  */
 export function nodeLevel(progress: Progress, totalNodes = progress.nodes.length): number {
-  const completed = progress.nodes.filter((n) => n.status === 'completado').length;
+  const completed = progress.nodes.filter((n) => n.status === 'completed').length;
   return Math.min(Math.max(1, completed + 1), Math.max(1, totalNodes));
 }

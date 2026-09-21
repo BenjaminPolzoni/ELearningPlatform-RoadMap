@@ -7,45 +7,45 @@
 // These routes confirm path/role; there is no documented body schema, so `NewBadge`
 // and `BadgeCatalog` are a proposal built from the form fields.
 
-export type BadgeType = 'TRANSVERSAL' | 'POR_NODO';
+export type BadgeType = 'CROSS_CUTTING' | 'PER_NODE';
 
-/** `SISTEMA` = the 14 fixed ones from the skill. `PROFESOR` = created from the create modal. */
-export type BadgeOrigin = 'SISTEMA' | 'PROFESOR';
+/** `SYSTEM` = the 14 fixed ones from the skill. `TEACHER` = created from the create modal. */
+export type BadgeOrigin = 'SYSTEM' | 'TEACHER';
 
 export type BadgeCriterion =
-  | 'XP_MINIMO'
-  | 'SECCION_SIN_PERDER_VIDAS'
-  | 'NODO_SIN_REINTENTOS'
-  | 'VIDA_RECUPERADA'
-  | 'NIVEL_ALCANZADO'
-  | 'ZONA_P90'
-  | 'NODO_OBLIGATORIO_ESPECIFICO'
-  | 'NODO_OPCIONAL_COMPLETADO'
-  | 'SECCION_EN_UN_DIA'
-  | 'PRIMERO_EN_NODO';
+  | 'MIN_XP'
+  | 'SECTION_NO_LIVES_LOST'
+  | 'NODE_NO_RETRIES'
+  | 'LIFE_RECOVERED'
+  | 'LEVEL_REACHED'
+  | 'ZONE_P90'
+  | 'SPECIFIC_MANDATORY_NODE'
+  | 'OPTIONAL_NODE_COMPLETED'
+  | 'SECTION_IN_ONE_DAY'
+  | 'FIRST_ON_NODE';
 
 export const CRITERION_LABEL: Record<BadgeCriterion, string> = {
-  XP_MINIMO: 'XP mínimo acumulado',
-  SECCION_SIN_PERDER_VIDAS: 'Sección completada sin perder vidas',
-  NODO_SIN_REINTENTOS: 'Nodo completado sin reintentos',
-  VIDA_RECUPERADA: 'Vida recuperada',
-  NIVEL_ALCANZADO: 'Nivel alcanzado',
-  ZONA_P90: 'Entrada a zona P90',
-  NODO_OBLIGATORIO_ESPECIFICO: 'Nodo obligatorio específico completado',
-  NODO_OPCIONAL_COMPLETADO: 'Nodo opcional completado',
-  SECCION_EN_UN_DIA: 'Sección completa en un día',
-  PRIMERO_EN_NODO: 'Primero en completar un nodo',
+  MIN_XP: 'XP mínimo acumulado',
+  SECTION_NO_LIVES_LOST: 'Sección completada sin perder vidas',
+  NODE_NO_RETRIES: 'Nodo completado sin reintentos',
+  LIFE_RECOVERED: 'Vida recuperada',
+  LEVEL_REACHED: 'Nivel alcanzado',
+  ZONE_P90: 'Entrada a zona P90',
+  SPECIFIC_MANDATORY_NODE: 'Nodo obligatorio específico completado',
+  OPTIONAL_NODE_COMPLETED: 'Nodo opcional completado',
+  SECTION_IN_ONE_DAY: 'Sección completa en un día',
+  FIRST_ON_NODE: 'Primero en completar un nodo',
 };
 
 /** Criteria that additionally require a numeric value (e.g. "Minimum XP: 500"). */
-export const CRITERIA_WITH_VALUE = new Set<BadgeCriterion>(['XP_MINIMO', 'NIVEL_ALCANZADO']);
+export const CRITERIA_WITH_VALUE = new Set<BadgeCriterion>(['MIN_XP', 'LEVEL_REACHED']);
 
 /** The only cross-cutting criterion that actually points to a specific node, not a number. */
-export const CRITERION_SPECIFIC_NODE: BadgeCriterion = 'NODO_OBLIGATORIO_ESPECIFICO';
+export const CRITERION_SPECIFIC_NODE: BadgeCriterion = 'SPECIFIC_MANDATORY_NODE';
 
 export interface BadgeCatalog {
   badgeId: string;
-  /** Internal stable key — icon key in `badge-icons.ts` (SISTEMA) or `generic-icons.ts` (PROFESOR). */
+  /** Internal stable key — icon key in `badge-icons.ts` (SYSTEM) or `generic-icons.ts` (TEACHER). */
   code: string;
   name: string;
   description: string;
@@ -53,11 +53,11 @@ export interface BadgeCatalog {
   origin: BadgeOrigin;
   /** true = provisional icon (pixel-grids.md marks it "redo"), shown anyway but labeled. */
   pendingIcon: boolean;
-  /** Only PROFESOR badges (TRANSVERSAL type): criterion chosen at creation. */
+  /** Only TEACHER badges (CROSS_CUTTING type): criterion chosen at creation. */
   criterion?: BadgeCriterion;
   /** Only if `criterion` is in `CRITERIA_WITH_VALUE`. */
   valueCriterion?: number;
-  /** Only PROFESOR badges with type POR_NODO, or criterion `NODO_OBLIGATORIO_ESPECIFICO`. */
+  /** Only TEACHER badges with type PER_NODE, or criterion `SPECIFIC_MANDATORY_NODE`. */
   nodeId?: string;
 }
 

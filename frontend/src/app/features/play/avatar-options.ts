@@ -1,6 +1,6 @@
 /**
  * Options of the My character panel: same values and labels as the city editor
- * (`public/mundo-3d/index.html` selects) for full parity.
+ * (`public/world-3d/index.html` selects) for full parity.
  */
 
 export interface AvatarOption {

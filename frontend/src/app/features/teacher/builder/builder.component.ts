@@ -4,6 +4,7 @@ import { StoreService } from '../../../core/educa/store.service';
 import { UiBadge, UiCard } from '../shared/educa-ui';
 import { EditorComponent, type EditorKind, type EditorResult } from './editor.component';
 import type { Biome, AttachmentType } from '../../../core/educa/models';
+import { ATTACHMENT_TYPE_LABEL } from '../../../shared/labels';
 
 interface Editing {
   kind: EditorKind;
@@ -20,17 +21,17 @@ interface Editing {
 }
 
 const ICON: Record<string, string> = {
-  documento: '📄',
+  document: '📄',
   video: '🎬',
-  enlace: '🔗',
-  imagen: '🖼️',
-  ejercicio: '✏️',
+  link: '🔗',
+  image: '🖼️',
+  exercise: '✏️',
 };
 
 const BIOME_LABEL: Record<Biome, { icon: string; label: string }> = {
-  pradera: { icon: '🌿', label: 'Pradera' },
-  desierto: { icon: '🏜️', label: 'Desierto' },
-  nieve: { icon: '❄️', label: 'Nieve' },
+  meadow: { icon: '🌿', label: 'Pradera' },
+  desert: { icon: '🏜️', label: 'Desierto' },
+  snow: { icon: '❄️', label: 'Nieve' },
   lava: { icon: '🌋', label: 'Lava' },
 };
 
@@ -46,14 +47,14 @@ const BIOME_LABEL: Record<Biome, { icon: string; label: string }> = {
       <div class="mx-auto max-w-4xl p-6">
         <!-- Top navigation bar -->
         <div class="flex items-center justify-between gap-4 border-b border-base-300 pb-4">
-          <a routerLink="/profesor" class="btn btn-sm btn-ghost ui-font text-[9px]">
+          <a routerLink="/teacher" class="btn btn-sm btn-ghost ui-font text-[9px]">
             ← Asignaturas
           </a>
           <div class="flex items-center gap-2">
-            <a [routerLink]="['/profesor/map', a.id]" class="btn btn-sm btn-outline btn-accent ui-font text-[8px]">
+            <a [routerLink]="['/teacher/map', a.id]" class="btn btn-sm btn-outline btn-accent ui-font text-[8px]">
               🗺️ Generar Mapa
             </a>
-            <a routerLink="/alumno" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]" title="Ver el mundo 3D tal como lo ve el alumno">
+            <a routerLink="/student" class="btn btn-sm btn-outline btn-secondary ui-font text-[8px]" title="Ver el mundo 3D tal como lo ve el alumno">
               👁️ Ver como alumno
             </a>
             <a routerLink="/login" class="btn btn-sm btn-ghost border border-neutral/40 ui-font text-[8px]" title="Cambiar de rol">
@@ -96,7 +97,7 @@ const BIOME_LABEL: Record<Biome, { icon: string; label: string }> = {
                 <div class="flex items-center gap-1">
                   <button (click)="store.moveSection(un.id, -1)" aria-label="Subir unidad" class="btn btn-xs btn-ghost" [disabled]="$index === 0">↑</button>
                   <button (click)="store.moveSection(un.id, 1)" aria-label="Bajar unidad" class="btn btn-xs btn-ghost" [disabled]="$last">↓</button>
-                  <button (click)="editSection(un.id, un.title, un.description, un.color || '#6366f1', un.biome || 'pradera')" class="btn btn-xs btn-outline btn-primary">Editar</button>
+                  <button (click)="editSection(un.id, un.title, un.description, un.color || '#6366f1', un.biome || 'meadow')" class="btn btn-xs btn-outline btn-primary">Editar</button>
                   <button (click)="store.removeSection(un.id)" class="btn btn-xs btn-ghost text-error">✕</button>
                 </div>
               </div>
@@ -141,7 +142,7 @@ const BIOME_LABEL: Record<Biome, { icon: string; label: string }> = {
                       <div class="mt-1.5 flex items-center gap-2 text-xs bg-base-200/40 rounded p-1.5">
                         <span class="text-sm shrink-0">{{ icon(an.type) }}</span>
                         <span class="font-medium truncate">{{ an.title }}</span>
-                        <span class="badge badge-xs badge-neutral shrink-0">{{ an.type }}</span>
+                        <span class="badge badge-xs badge-neutral shrink-0">{{ attachmentTypeLabel[an.type] }}</span>
                         @if (an.url) {
                           <a [href]="an.url" target="_blank" rel="noopener" class="link link-primary text-[10px] truncate max-w-40">↗ enlace</a>
                         }
@@ -169,12 +170,13 @@ const BIOME_LABEL: Record<Biome, { icon: string; label: string }> = {
     } @else {
       <div class="p-6 text-center">
         <p class="opacity-70">Asignatura no encontrada.</p>
-        <a routerLink="/profesor" class="btn btn-sm btn-primary mt-3">Volver al listado</a>
+        <a routerLink="/teacher" class="btn btn-sm btn-primary mt-3">Volver al listado</a>
       </div>
     }
   `,
 })
 export class BuilderComponent {
+  protected readonly attachmentTypeLabel = ATTACHMENT_TYPE_LABEL;
   store = inject(StoreService);
   counts = this.store.counts;
   editing = signal<Editing | null>(null);
@@ -190,33 +192,33 @@ export class BuilderComponent {
   }
 
   biomeInfo(b?: Biome): { icon: string; label: string } {
-    return BIOME_LABEL[b ?? 'pradera'] ?? BIOME_LABEL.pradera;
+    return BIOME_LABEL[b ?? 'meadow'] ?? BIOME_LABEL.meadow;
   }
 
   addSection(v: string): void {
     if (v.trim()) this.store.addSection(v.trim());
   }
 
-  editSection(id: string, title: string, description: string, color: string, biome: Biome = 'pradera'): void {
-    this.editing.set({ kind: 'unidad', sectionId: id, heading: 'Editar unidad', title, description, color, biome, type: 'documento', url: '' });
+  editSection(id: string, title: string, description: string, color: string, biome: Biome = 'meadow'): void {
+    this.editing.set({ kind: 'section', sectionId: id, heading: 'Editar unidad', title, description, color, biome, type: 'document', url: '' });
   }
 
   editModule(sectionId: string, moduleId: string, title: string, description: string): void {
-    this.editing.set({ kind: 'modulo', sectionId, moduleId, heading: 'Editar módulo', title, description, color: '#6366f1', biome: 'pradera', type: 'documento', url: '' });
+    this.editing.set({ kind: 'module', sectionId, moduleId, heading: 'Editar módulo', title, description, color: '#6366f1', biome: 'meadow', type: 'document', url: '' });
   }
 
   editAttachment(sectionId: string, moduleId: string, attachmentId: string, title: string, description: string, type: Editing['type'], url: string): void {
-    this.editing.set({ kind: 'anexo', sectionId, moduleId, attachmentId, heading: 'Editar anexo', title, description, color: '#6366f1', biome: 'pradera', type, url });
+    this.editing.set({ kind: 'attachment', sectionId, moduleId, attachmentId, heading: 'Editar anexo', title, description, color: '#6366f1', biome: 'meadow', type, url });
   }
 
   onSave(r: EditorResult): void {
     const e = this.editing();
     if (!e) return;
-    if (e.kind === 'unidad' && e.sectionId)
+    if (e.kind === 'section' && e.sectionId)
       this.store.editSection(e.sectionId, { title: r.title, description: r.description, color: r.color, biome: r.biome });
-    if (e.kind === 'modulo' && e.sectionId && e.moduleId)
+    if (e.kind === 'module' && e.sectionId && e.moduleId)
       this.store.editModule(e.sectionId, e.moduleId, { title: r.title, description: r.description });
-    if (e.kind === 'anexo' && e.sectionId && e.moduleId && e.attachmentId)
+    if (e.kind === 'attachment' && e.sectionId && e.moduleId && e.attachmentId)
       this.store.editAttachment(e.sectionId, e.moduleId, e.attachmentId, { title: r.title, description: r.description, type: r.type, url: r.url });
     this.editing.set(null);
   }

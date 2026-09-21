@@ -21,10 +21,10 @@ describe('InMemoryRankingAdapter — trimming by role (RF-RNK-03 / 10)', () => {
   afterEach(() => auth.exit());
 
   it('ALUMNO: the list comes anonymized except the own row, which is identified', async () => {
-    auth.enterAs('ALUMNO');
+    auth.enterAs('STUDENT');
     const v = (await firstValueFrom(adapter.getRanking('cc'))) as StudentRankingView;
 
-    expect(v.role).toBe('ALUMNO');
+    expect(v.role).toBe('STUDENT');
     const identified = v.list.filter((f) => 'name' in f);
     expect(identified).toHaveLength(1);
     expect((identified[0] as { name: string }).name).toBe('Camila');
@@ -32,12 +32,12 @@ describe('InMemoryRankingAdapter — trimming by role (RF-RNK-03 / 10)', () => {
     expect(v.top3.every((f) => 'pseudonym' in f && !('name' in f))).toBe(true);
     expect(v.top3).toHaveLength(3);
     expect(v.bottom3).toHaveLength(3);
-    expect(v.yo?.name).toBe('Camila'); // alu-01 in studentsSeed()
-    expect(v.yo?.fileNumber).toBe('90001');
+    expect(v.me?.name).toBe('Camila'); // stu-01 in studentsSeed()
+    expect(v.me?.fileNumber).toBe('90001');
   });
 
   it('ALUMNO: with 12 enrolled there are P90/P10 cutoffs (RF-RNK-09)', async () => {
-    auth.enterAs('ALUMNO');
+    auth.enterAs('STUDENT');
     const v = (await firstValueFrom(adapter.getRanking('cc'))) as StudentRankingView;
     expect(v.totalEnrolled).toBe(12);
     expect(v.cutoffs).not.toBeNull();
@@ -46,9 +46,9 @@ describe('InMemoryRankingAdapter — trimming by role (RF-RNK-03 / 10)', () => {
   });
 
   it('PROFESOR: receives all the identified rows', async () => {
-    auth.enterAs('PROFESOR');
+    auth.enterAs('TEACHER');
     const v = (await firstValueFrom(adapter.getRanking('cc'))) as StaffRankingView;
-    expect(v.role).toBe('PROFESOR');
+    expect(v.role).toBe('TEACHER');
     expect(v.rows).toHaveLength(12);
     expect(v.rows.every((f) => typeof f.fileNumber === 'string' && f.fileNumber.length > 0)).toBe(true);
     expect(v.rows[0].position).toBe(1);
@@ -62,7 +62,7 @@ describe('InMemoryRankingAdapter — trimming by role (RF-RNK-03 / 10)', () => {
   });
 
   it('the order respects descending XP', async () => {
-    auth.enterAs('PROFESOR');
+    auth.enterAs('TEACHER');
     const v = (await firstValueFrom(adapter.getRanking('cc'))) as StaffRankingView;
     const xps = v.rows.map((f) => f.xpTotal);
     expect(xps).toEqual([...xps].sort((a, b) => b - a));

@@ -5,7 +5,7 @@ import { Activity, Student, Connection, NewActivity, NewSection, Progress, Roadm
 import { studentsSeed, seedProgress, roadmapSeed } from '../../mocks/seed';
 
 const LS_KEY = 'roadmap-mock-v3';
-const PROGRESS_LS_KEY = 'progreso-mock-v3';
+const PROGRESS_LS_KEY = 'progress-mock-v3';
 
 // Default position grid for nodes without posicion_x/y (new creations, or old localStorage
 // data from before this editor) — non-overlapping, in columns of 4 (same width
@@ -85,10 +85,10 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
     return of(void 0);
   }
 
-  moveSection(_cc: string, sectionId: string, direction: 'arriba' | 'abajo'): Observable<void> {
+  moveSection(_cc: string, sectionId: string, direction: 'up' | 'down'): Observable<void> {
     const arr = this.roadmap.sections;
     const i = arr.findIndex((u) => u.id === sectionId);
-    const j = direction === 'arriba' ? i - 1 : i + 1;
+    const j = direction === 'up' ? i - 1 : i + 1;
     if (i < 0 || j < 0 || j >= arr.length) return of(void 0);
     [arr[i], arr[j]] = [arr[j], arr[i]];
     arr.forEach((u, idx) => (u.order = idx + 1));
@@ -131,11 +131,11 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
     return of(void 0);
   }
 
-  moveActivity(_cc: string, sectionId: string, activityId: string, direction: 'arriba' | 'abajo'): Observable<void> {
+  moveActivity(_cc: string, sectionId: string, activityId: string, direction: 'up' | 'down'): Observable<void> {
     const section = this.section(sectionId);
     if (!section) return of(void 0);
     const i = section.activities.findIndex((a) => a.id === activityId);
-    const j = direction === 'arriba' ? i - 1 : i + 1;
+    const j = direction === 'up' ? i - 1 : i + 1;
     if (i < 0 || j < 0 || j >= section.activities.length) return of(void 0);
     const arr = section.activities;
     [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -180,10 +180,10 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
     return of(void 0);
   }
 
-  private readonly subjectProgress = new BehaviorSubject<Progress>(this.loadProgress('alu-01'));
+  private readonly subjectProgress = new BehaviorSubject<Progress>(this.loadProgress('stu-01'));
 
   getProgress(studentId: string, _courseCohortId: string): Observable<Progress> {
-    if (studentId === 'alu-01') {
+    if (studentId === 'stu-01') {
       return this.subjectProgress.asObservable();
     }
     return of(structuredClone(this.loadProgress(studentId)));
@@ -204,13 +204,13 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
     if (nodeId) {
       const n = p.nodes.find((item) => item.nodeId === nodeId);
       if (n) {
-        n.status = 'completado';
+        n.status = 'completed';
       } else {
-        p.nodes.push({ nodeId, status: 'completado' });
+        p.nodes.push({ nodeId, status: 'completed' });
       }
     }
     this.saveProgress(studentId, p);
-    if (studentId === 'alu-01') {
+    if (studentId === 'stu-01') {
       this.subjectProgress.next(structuredClone(p));
     }
     return of(structuredClone(p));
@@ -221,12 +221,12 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
       return throwError(() => new RoadmapApiError('No existe el curso-cohorte', 404));
     }
     const activity = this.node(nodeId);
-    if (!activity || activity.type !== 'teoria') {
+    if (!activity || activity.type !== 'theory') {
       return throwError(() => new RoadmapApiError('El nodo no es contenido teórico', 400));
     }
     const p = this.loadProgress(studentId);
     const status = p.nodes.find((item) => item.nodeId === nodeId)?.status;
-    if (status === 'bloqueado') {
+    if (status === 'locked') {
       return throwError(() => new RoadmapApiError('La unidad todavía no está desbloqueada', 403));
     }
     p.readingsContent ??= [];
@@ -234,10 +234,10 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
       p.readingsContent.push({ nodeId, registeredIn: new Date().toISOString() });
     }
     const nodeProgress = p.nodes.find((item) => item.nodeId === nodeId);
-    if (nodeProgress) nodeProgress.status = 'completado';
-    else p.nodes.push({ nodeId, status: 'completado' });
+    if (nodeProgress) nodeProgress.status = 'completed';
+    else p.nodes.push({ nodeId, status: 'completed' });
     this.saveProgress(studentId, p);
-    if (studentId === 'alu-01') this.subjectProgress.next(structuredClone(p));
+    if (studentId === 'stu-01') this.subjectProgress.next(structuredClone(p));
     return of(structuredClone(p));
   }
 
@@ -252,14 +252,14 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
   /**
    * Keeps only the fields that correspond to the type: any challenge (theoretical, practical or
    * boss) carries difficulty and a `challengeId` (stub — in production the Challenge
-   * Engine references it, T03); 'hito' and 'teoria' do not, because they are not evaluated. 'teoria' instead carries
+   * Engine references it, T03); 'milestone' and 'theory' do not, because they are not evaluated. 'theory' instead carries
    * `resourceUrl`/`resourceType` (external link to the material). The description is free for
    * any type — if the teacher leaves it empty, the student's map uses
    * `defaultDescription()`.
    */
   private normalize(dto: NewActivity, previous?: Activity): Omit<Activity, 'id' | 'positionX' | 'positionY'> {
-    const isTheory = dto.type === 'teoria';
-    const isChallenge = dto.type !== 'hito' && !isTheory;
+    const isTheory = dto.type === 'theory';
+    const isChallenge = dto.type !== 'milestone' && !isTheory;
     return {
       name: dto.name.trim(),
       type: dto.type,
@@ -267,7 +267,7 @@ export class InMemoryRoadmapAdapter extends RoadmapDataPort {
       allowedRetries: isChallenge ? Math.max(0, Math.min(3, dto.allowedRetries)) : 0,
       challengeId: isChallenge ? (previous?.challengeId ?? `desafio-ext-${Date.now().toString(36)}`) : undefined,
       description: dto.description?.trim() || undefined,
-      difficulty: isChallenge ? (dto.difficulty ?? 'BASICO') : undefined,
+      difficulty: isChallenge ? (dto.difficulty ?? 'BASIC') : undefined,
       resourceUrl: isTheory ? dto.resourceUrl?.trim() || undefined : undefined,
       resourceType: isTheory ? (dto.resourceType ?? 'pdf') : undefined,
     };

@@ -765,8 +765,8 @@ export class DungeonShop3dService {
   private async loadHeraldicWallEmblem(x: number, y: number, z: number): Promise<void> {
     try {
       const [shieldGltf, swordGltf] = await Promise.all([
-        this.gltfLoader.loadAsync('/mundo-3d/Assets/CharacterV2/Assets/gltf/shield_badge_color.gltf'),
-        this.gltfLoader.loadAsync('/mundo-3d/Assets/CharacterV2/Assets/gltf/sword_1handed.gltf'),
+        this.gltfLoader.loadAsync('/world-3d/Assets/CharacterV2/Assets/gltf/shield_badge_color.gltf'),
+        this.gltfLoader.loadAsync('/world-3d/Assets/CharacterV2/Assets/gltf/sword_1handed.gltf'),
       ]);
 
       const emblemGroup = new THREE.Group();

@@ -8,14 +8,14 @@ import { World3d } from './world-3d';
 import { VerticalChallenge } from './vertical-world.engine';
 
 describe('Confirmed progress celebrations', () => {
-  beforeEach(() => { localStorage.setItem('mock-rol', 'ALUMNO'); });
+  beforeEach(() => { localStorage.setItem('mock-role', 'STUDENT'); });
   afterEach(() => { localStorage.clear(); vi.useRealTimers(); });
 
   async function setup(completed = false, optional = false) {
-    const progress = signal<Progress>({ studentId: 'alu-01', courseCohortId: 'curso', xpTotal: 100,
-      currentLives: 3, nodes: completed ? [{ nodeId: 'a1', status: 'completado' }] : [] });
+    const progress = signal<Progress>({ studentId: 'stu-01', courseCohortId: 'curso', xpTotal: 100,
+      currentLives: 3, nodes: completed ? [{ nodeId: 'a1', status: 'completed' }] : [] });
     const unit: Section = { id: 'u1', name: 'Bosque', order: 1, xpThreshold: 0,
-      activities: [{ id: 'a1', name: 'Desafío', type: 'desafio-practico', isMandatory: !optional,
+      activities: [{ id: 'a1', name: 'Desafío', type: 'practical-challenge', isMandatory: !optional,
         allowedRetries: 3, positionX: 0, positionY: 0 }] };
     const save = vi.fn();
     await TestBed.configureTestingModule({ imports: [World3d], providers: [provideRouter([]),
@@ -25,11 +25,11 @@ describe('Confirmed progress celebrations', () => {
     fixture.detectChanges();
     const host = fixture.componentInstance;
     host['focusWorld'] = () => {};
-    const challenge: VerticalChallenge = { id: 1, activityId: 'a1', title: 'Desafío', type: 'desafio-practico',
-      difficulty: 'BASICO', minutes: 1, xp: 100, description: '', x: 0, y: 0 };
+    const challenge: VerticalChallenge = { id: 1, activityId: 'a1', title: 'Desafío', type: 'practical-challenge',
+      difficulty: 'BASIC', minutes: 1, xp: 100, description: '', x: 0, y: 0 };
     host['openActivity'](challenge); host['activeUnitId'].set('u1'); host['isQuizResolved'].set(true);
     const confirm = () => {
-      const next: Progress = { ...progress(), xpTotal: 175, nodes: [{ nodeId: 'a1', status: 'completado' }] };
+      const next: Progress = { ...progress(), xpTotal: 175, nodes: [{ nodeId: 'a1', status: 'completed' }] };
       progress.set(next); save.mock.calls.at(-1)![3](next);
     };
     return { fixture, host, challenge, save, confirm };
@@ -90,7 +90,7 @@ describe('Confirmed progress celebrations', () => {
 
   it('excludes theory and recovery from the effects', async () => {
     const { host, challenge, confirm } = await setup();
-    challenge.type = 'teoria'; challenge.xp = 0;
+    challenge.type = 'theory'; challenge.xp = 0;
     host['onCompleteActivity'](challenge); confirm();
     expect(host['pendingReward']).toBeNull();
     host['openActivity'](challenge); host['activeUnitId'].set('u1'); host['isQuizResolved'].set(true);

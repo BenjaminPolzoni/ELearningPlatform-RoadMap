@@ -16,11 +16,11 @@ function row(over: Partial<RankingRow>): RankingRow {
     name: 'N',
     lastName: 'A',
     fileNumber: '0',
-    avatar: defaultAvatar('indefinido'),
+    avatar: defaultAvatar('unspecified'),
     xpTotal: 1000,
     nodeLevel: 5,
     percentile: 0,
-    zone: 'ninguna',
+    zone: 'none',
     badges: 0,
     lives: 3,
     coins: 0,
@@ -90,13 +90,13 @@ describe('percentiles and zones (RF-RNK-09)', () => {
   });
 
   it('with fewer than 10 enrolled no position has a zone', () => {
-    expect(zoneOf(1, 9)).toBe('ninguna');
-    expect(zoneOf(9, 9)).toBe('ninguna');
+    expect(zoneOf(1, 9)).toBe('none');
+    expect(zoneOf(9, 9)).toBe('none');
   });
 
   it('with 12 enrolled it marks P90 on top and P10 at the bottom', () => {
     expect(zoneOf(1, 12)).toBe('p90');
-    expect(zoneOf(6, 12)).toBe('ninguna');
+    expect(zoneOf(6, 12)).toBe('none');
     expect(zoneOf(12, 12)).toBe('p10');
   });
 
@@ -120,7 +120,7 @@ describe('promotion candidate / regularity risk', () => {
     ).toBe(false);
     expect(
       isCandidatePromotion(
-        row({ zone: 'ninguna', lostLives: 0, mandatoryPassedPct: 100 }),
+        row({ zone: 'none', lostLives: 0, mandatoryPassedPct: 100 }),
       ),
     ).toBe(false);
   });
@@ -128,7 +128,7 @@ describe('promotion candidate / regularity risk', () => {
   it('risk = P10 + unfinished mandatory items (RF-RNK-06)', () => {
     expect(inRiskRegularity(row({ zone: 'p10', mandatoryPassedPct: 70 }))).toBe(true);
     expect(inRiskRegularity(row({ zone: 'p10', mandatoryPassedPct: 100 }))).toBe(false);
-    expect(inRiskRegularity(row({ zone: 'ninguna', mandatoryPassedPct: 40 }))).toBe(
+    expect(inRiskRegularity(row({ zone: 'none', mandatoryPassedPct: 40 }))).toBe(
       false,
     );
   });

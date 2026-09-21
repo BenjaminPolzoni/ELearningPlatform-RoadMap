@@ -27,7 +27,7 @@ const SECTION_NAMES = [
 const THRESHOLDS = [0, 500, 1200, 2000, 3200];
 // Same visual result the name/order heuristic in section-map.ts already gave.
 // The 5th section uses the Space biome (planet nodes + spaceship as avatar in the 3D world).
-const SECTION_BIOMES: Biome[] = ['Desierto', 'Bosque', 'Arenisca', 'Nieve', 'Espacio'];
+const SECTION_BIOMES: Biome[] = ['Desert', 'Forest', 'Sandstone', 'Snow', 'Space'];
 
 interface Row {
   name: string;
@@ -45,22 +45,22 @@ interface Row {
 // content (see PLAN_CONTENIDO_TEORICO.md): an external link (here, a sample video)
 // that the student watches before tackling the theory quiz that evaluates those concepts.
 const TEMPLATE: Row[] = [
-  { name: 'Introducción de la unidad', type: 'teoria', isMandatory: true, retries: 0,
+  { name: 'Introducción de la unidad', type: 'theory', isMandatory: true, retries: 0,
     description: 'Mirá el video antes de encarar el desafío teórico de la unidad.',
     resourceUrl: 'https://www.youtube.com/watch?v=EjemploVid1', resourceType: 'video' },
-  { name: 'Teoría', type: 'desafio-teorico', isMandatory: true, retries: 0,
+  { name: 'Teoría', type: 'theoretical-challenge', isMandatory: true, retries: 0,
     description: 'Preguntas sobre los conceptos teóricos de la unidad.',
-    difficulty: 'BASICO' },
-  { name: 'Práctica guiada', type: 'desafio-practico', isMandatory: true, retries: 0,
-    description: 'Ejercicios resueltos paso a paso.', difficulty: 'BASICO' },
-  { name: 'Práctica libre', type: 'desafio-practico', isMandatory: false, retries: 0,
-    description: 'Ejercitación adicional opcional.', difficulty: 'BASICO' },
-  { name: 'Ejercicio integrador', type: 'desafio-practico', isMandatory: true, retries: 0,
-    description: 'Combina los temas de la unidad.', difficulty: 'MEDIO' },
-  { name: 'Desafío', type: 'desafio-practico', isMandatory: true, retries: 1,
-    difficulty: 'MEDIO' },
+    difficulty: 'BASIC' },
+  { name: 'Práctica guiada', type: 'practical-challenge', isMandatory: true, retries: 0,
+    description: 'Ejercicios resueltos paso a paso.', difficulty: 'BASIC' },
+  { name: 'Práctica libre', type: 'practical-challenge', isMandatory: false, retries: 0,
+    description: 'Ejercitación adicional opcional.', difficulty: 'BASIC' },
+  { name: 'Ejercicio integrador', type: 'practical-challenge', isMandatory: true, retries: 0,
+    description: 'Combina los temas de la unidad.', difficulty: 'MEDIUM' },
+  { name: 'Desafío', type: 'practical-challenge', isMandatory: true, retries: 1,
+    difficulty: 'MEDIUM' },
   { name: 'Boss', type: 'boss', isMandatory: true, retries: 1,
-    difficulty: 'AVANZADO' },
+    difficulty: 'ADVANCED' },
 ];
 
 // Default position grid (same 4-column serpentine that `section-map.ts` computed
@@ -86,7 +86,7 @@ export function roadmapSeed(): Roadmap {
     order: i + 1,
     biome: SECTION_BIOMES[i],
     activities: TEMPLATE.map((p, j): Activity => {
-      const isChallenge = p.type !== 'hito' && p.type !== 'teoria';
+      const isChallenge = p.type !== 'milestone' && p.type !== 'theory';
       return {
         id: `u${i + 1}-a${j + 1}`,
         name: p.name,
@@ -127,7 +127,7 @@ const NAMES = [
 
 export function studentsSeed(): Student[] {
   return LAST_NAMES.map((lastName, i) => ({
-    id: `alu-${String(i + 1).padStart(2, '0')}`,
+    id: `stu-${String(i + 1).padStart(2, '0')}`,
     name: NAMES[i],
     lastName,
     fileNumber: `${90000 + i + 1}`,
@@ -139,9 +139,9 @@ export function studentsSeed(): Student[] {
 export function seedProgress(studentId: string): Progress {
   const rm = roadmapSeed();
   const statusOf = (ui: number, ai: number): NodeStatus => {
-    if (ui > 0) return 'bloqueado';
-    if (studentId === 'alu-01') return ai < 3 ? 'completado' : ai === 3 ? 'habilitado' : 'bloqueado';
-    return ai === 0 ? 'habilitado' : 'bloqueado';
+    if (ui > 0) return 'locked';
+    if (studentId === 'stu-01') return ai < 3 ? 'completed' : ai === 3 ? 'enabled' : 'locked';
+    return ai === 0 ? 'enabled' : 'locked';
   };
   const nodes: NodeProgress[] = rm.sections.flatMap((u, ui) =>
     u.activities.map((a, ai) => ({ nodeId: a.id, status: statusOf(ui, ai) })),
@@ -149,7 +149,7 @@ export function seedProgress(studentId: string): Progress {
   return {
     studentId,
     courseCohortId: COURSE_SEED_ID,
-    xpTotal: studentId === 'alu-01' ? 350 : 0,
+    xpTotal: studentId === 'stu-01' ? 350 : 0,
     currentLives: 3,
     nodes,
     readingsContent: [],

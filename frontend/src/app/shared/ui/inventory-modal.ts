@@ -7,7 +7,7 @@ import { PixelIcon } from '../pixel-icon';
 import { BADGE_ICONS } from '../../features/badges/badge-icons';
 import { GENERIC_ICONS } from '../../features/badges/generic-icons';
 
-export type InventoryMode = 'insignias' | 'equipamiento';
+export type InventoryMode = 'badges' | 'equipment';
 
 export interface InvItem {
   icon?: string;
@@ -36,21 +36,21 @@ const EQUIPMENT: InvItem[] = [
     >
       <div
         class="w-[480px] max-w-[92vw] rounded-2xl border-2 bg-base-200 p-5 shadow-[0_0_40px_rgba(139,92,246,0.4)]"
-        [class.border-[#FFD60A]]="mode() === 'insignias'"
-        [class.border-primary]="mode() === 'equipamiento'"
+        [class.border-[#FFD60A]]="mode() === 'badges'"
+        [class.border-primary]="mode() === 'equipment'"
         (click)="$event.stopPropagation()"
       >
         <div class="flex items-center justify-between border-b border-neutral/30 pb-3">
           <div class="flex items-center gap-2">
-            <span class="text-xl">{{ mode() === 'insignias' ? '🏅' : '🎒' }}</span>
+            <span class="text-xl">{{ mode() === 'badges' ? '🏅' : '🎒' }}</span>
             <h3
               class="text-lg font-black tracking-wide"
-              [class.text-warning]="mode() === 'insignias'"
-              [class.glow-gold]="mode() === 'insignias'"
-              [class.text-primary]="mode() === 'equipamiento'"
-              [class.glow-cyan]="mode() === 'equipamiento'"
+              [class.text-warning]="mode() === 'badges'"
+              [class.glow-gold]="mode() === 'badges'"
+              [class.text-primary]="mode() === 'equipment'"
+              [class.glow-cyan]="mode() === 'equipment'"
             >
-              {{ mode() === 'insignias' ? 'INSIGNIAS DEL CURSO' : 'EQUIPAMIENTO' }}
+              {{ mode() === 'badges' ? 'INSIGNIAS DEL CURSO' : 'EQUIPAMIENTO' }}
             </h3>
           </div>
           <button
@@ -63,7 +63,7 @@ const EQUIPMENT: InvItem[] = [
         </div>
 
         <ul class="mt-4 flex flex-col gap-2.5 max-h-[60vh] overflow-y-auto pr-1">
-          @if (mode() === 'insignias') {
+          @if (mode() === 'badges') {
             @for (item of badgesList(); track item.badgeId) {
               <li
                 class="card bg-base-300 p-3 flex flex-row items-center gap-3.5 border border-neutral/40 rounded-xl"
@@ -88,8 +88,8 @@ const EQUIPMENT: InvItem[] = [
                   </div>
                   <div class="text-xs text-base-content/70 mt-1 leading-snug">{{ item.description }}</div>
                   <div class="flex items-center gap-2 mt-1">
-                    <span class="badge badge-outline badge-xs ui-font text-[8px]">{{ item.type === 'POR_NODO' ? 'por nodo' : 'transversal' }}</span>
-                    @if (item.origin === 'PROFESOR') {
+                    <span class="badge badge-outline badge-xs ui-font text-[8px]">{{ item.type === 'PER_NODE' ? 'por nodo' : 'transversal' }}</span>
+                    @if (item.origin === 'TEACHER') {
                       <span class="badge badge-accent badge-xs ui-font text-[8px]">profesor</span>
                     }
                   </div>
@@ -128,7 +128,7 @@ const EQUIPMENT: InvItem[] = [
 
         <div class="modal-action mt-4 flex justify-between items-center border-t border-neutral/30 pt-3">
           <span class="text-[10px] ui-font text-base-content/50">
-            {{ mode() === 'insignias' ? badgesList().length + ' insignias disponibles' : equipment.length + ' ítems' }}
+            {{ mode() === 'badges' ? badgesList().length + ' insignias disponibles' : equipment.length + ' ítems' }}
           </span>
           <button class="btn btn-ghost btn-sm border border-neutral/40 hover:bg-neutral/40" (click)="close.emit()">
             Cerrar
@@ -139,7 +139,7 @@ const EQUIPMENT: InvItem[] = [
   `,
 })
 export class InventoryModal {
-  readonly mode = input<InventoryMode>('insignias');
+  readonly mode = input<InventoryMode>('badges');
   readonly close = output<void>();
 
   private readonly data = inject(BadgesDataPort);
@@ -147,7 +147,7 @@ export class InventoryModal {
   private readonly catalog = toSignal(this.data.getCatalog(COURSE_SEED_ID), {
     initialValue: [] as BadgeCatalog[],
   });
-  private readonly earned = toSignal(this.data.getEarnedByStudent('alu-01'), {
+  private readonly earned = toSignal(this.data.getEarnedByStudent('stu-01'), {
     initialValue: [],
   });
 
@@ -162,6 +162,6 @@ export class InventoryModal {
   });
 
   protected icon(i: BadgeCatalog) {
-    return BADGE_ICONS[i.code] ?? GENERIC_ICONS[i.code] ?? BADGE_ICONS['badge_seccion_perfecta'];
+    return BADGE_ICONS[i.code] ?? GENERIC_ICONS[i.code] ?? BADGE_ICONS['badge_perfect_section'];
   }
 }

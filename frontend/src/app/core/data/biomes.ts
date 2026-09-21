@@ -1,7 +1,7 @@
 // Visual biome of a section, chosen by the teacher (editor.ts). The keys match
-// the asset folders of the 3D world (frontend/public/mundo-3d/Assets/House/<Biome>),
+// the asset folders of the 3D world (frontend/public/world-3d/Assets/House/<Biome>),
 // so nothing has to be translated/remapped on the 3D viewer side.
-export type Biome = 'Desierto' | 'Bosque' | 'Arenisca' | 'Nieve' | 'Nether' | 'Espacio';
+export type Biome = 'Desert' | 'Forest' | 'Sandstone' | 'Snow' | 'Nether' | 'Space';
 
 export interface BiomeInfo {
   id: Biome;
@@ -17,13 +17,13 @@ export interface BiomeInfo {
 }
 
 export const BIOMES: BiomeInfo[] = [
-  { id: 'Desierto', label: 'Desierto', icon: '🏜️', available: true, previewImage: '/mapa_desierto_tile_vertical.png' },
-  { id: 'Bosque', label: 'Bosque', icon: '🌲', available: true, previewImage: '/mapa_selva_tile.png' },
-  { id: 'Arenisca', label: 'Arenisca', icon: '🏛️', available: true, previewImage: '/mapa_castillo_tile.png' },
-  { id: 'Nieve', label: 'Nieve', icon: '❄️', available: true, previewImage: '/mapa_nieve_tile.png' },
+  { id: 'Desert', label: 'Desierto', icon: '🏜️', available: true, previewImage: '/map_desert_tile_vertical.png' },
+  { id: 'Forest', label: 'Bosque', icon: '🌲', available: true, previewImage: '/map_jungle_tile.png' },
+  { id: 'Sandstone', label: 'Arenisca', icon: '🏛️', available: true, previewImage: '/map_castle_tile.png' },
+  { id: 'Snow', label: 'Nieve', icon: '❄️', available: true, previewImage: '/map_snow_tile.png' },
   { id: 'Nether', label: 'Nether', icon: '🔥', available: false },
-  // Space: islands without water/clouds, planet-nodes and a ship as the avatar (see buildChallengeIsland in mundo-3d/index.html).
-  { id: 'Espacio', label: 'Espacio', icon: '🚀', available: true },
+  // Space: islands without water/clouds, planet-nodes and a ship as the avatar (see buildChallengeIsland in world-3d/index.html).
+  { id: 'Space', label: 'Espacio', icon: '🚀', available: true },
 ];
 
-export const BIOME_DEFAULT: Biome = 'Desierto';
+export const BIOME_DEFAULT: Biome = 'Desert';

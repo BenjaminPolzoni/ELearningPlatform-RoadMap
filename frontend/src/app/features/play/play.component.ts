@@ -54,7 +54,7 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
     @if (missing()) {
       <div class="p-6 text-center text-white">
         <p>Mundo no encontrado.</p>
-        <a routerLink="/alumno" class="btn btn-sm btn-primary mt-3 ui-font text-[9px]">← Volver a Mis clases</a>
+        <a routerLink="/student" class="btn btn-sm btn-primary mt-3 ui-font text-[9px]">← Volver a Mis clases</a>
       </div>
     } @else {
       <div class="relative h-[calc(100dvh-57px)] w-full overflow-hidden"
@@ -63,7 +63,7 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
         <canvas #cv class="block h-full w-full touch-none"></canvas>
 
         <div class="absolute left-2 right-2 top-2 flex flex-wrap items-center gap-2 rounded-xl bg-black/60 p-2 text-sm text-white backdrop-blur border border-white/10 shadow-lg">
-          <a routerLink="/alumno" class="btn btn-xs btn-outline btn-accent ui-font text-[8px]" title="Volver a Mis clases">← Mis clases</a>
+          <a routerLink="/student" class="btn btn-xs btn-outline btn-accent ui-font text-[8px]" title="Volver a Mis clases">← Mis clases</a>
           @if (aid()) {
             <a [routerLink]="['/play', aid()]" class="btn btn-xs btn-ghost ui-font text-[8px]">Mundos</a>
           }
@@ -76,7 +76,7 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
           }
           <button (click)="toggleView()" class="btn btn-xs btn-outline btn-info ui-font text-[8px]"
             title="Cambiar cámara (V): Tercera → Primera → Libre">
-            🎥 {{ view() === 'tercera' ? '3ª' : view() === 'primera' ? '1ª' : 'Libre' }}
+            🎥 {{ view() === 'third' ? '3ª' : view() === 'first' ? '1ª' : 'Libre' }}
           </button>
           <button (click)="toggleEffects()" class="btn btn-xs btn-outline ui-font text-[8px]"
             [class.btn-success]="theme.effects()"
@@ -88,12 +88,12 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
         <p class="absolute bottom-2 left-2 rounded bg-black/50 px-2 py-1 text-xs text-white/80 ui-font text-[8px]">{{ hint() }} · arrastrar cámara · rueda zoom</p>
 
         @if (atCastle()) {
-          <aside class="absolute right-2 top-16 w-72 rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-center text-white shadow-2xl chaflan" aria-live="polite">
+          <aside class="absolute right-2 top-16 w-72 rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-center text-white shadow-2xl chamfer" aria-live="polite">
             @if (allComplete()) {
               <p class="text-3xl animate-bounce">🏆</p>
               <h2 class="mt-1 font-bold text-primary title-font">¡Unidad completada!</h2>
               <p class="text-sm text-gray-400">{{ title() }} · {{ visitedIds().length }}/{{ total() }} cofres</p>
-              <a routerLink="/alumno" class="btn btn-primary btn-sm mt-3 w-full ui-font text-[8px]">← MIS CLASES</a>
+              <a routerLink="/student" class="btn btn-primary btn-sm mt-3 w-full ui-font text-[8px]">← MIS CLASES</a>
             } @else {
               <p class="text-3xl">🔒</p>
               <h2 class="mt-1 font-bold text-primary title-font">El castillo aguarda…</h2>
@@ -101,7 +101,7 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
             }
           </aside>
         } @else if (reading(); as rd) {
-          <aside class="absolute bottom-2 right-2 top-16 flex w-80 flex-col rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-white shadow-2xl chaflan" aria-live="polite">
+          <aside class="absolute bottom-2 right-2 top-16 flex w-80 flex-col rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-white shadow-2xl chamfer" aria-live="polite">
             <p class="text-3xl">{{ emoji(rd.type) }}</p>
             <h2 class="mt-1 font-bold text-primary title-font">{{ rd.title }}</h2>
             <div class="mt-2 flex-1 overflow-y-auto text-sm leading-relaxed text-gray-300">{{ textReading(rd) }}</div>
@@ -111,7 +111,7 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
             <button (click)="finishReading()" class="mt-3 btn btn-sm btn-primary w-full ui-font text-[8px]">Finalizar ✅</button>
           </aside>
         } @else if (challenge(); as ch) {
-          <aside class="absolute right-2 top-16 w-72 rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-center text-white shadow-2xl chaflan" aria-live="polite">
+          <aside class="absolute right-2 top-16 w-72 rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-center text-white shadow-2xl chamfer" aria-live="polite">
             <p class="text-3xl">🗼</p>
             <h2 class="mt-1 font-bold text-primary title-font">Desafío: {{ ch.title }}</h2>
             @if (question(); as q) {
@@ -126,7 +126,7 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
             <button (click)="challenge.set(null)" class="mt-2 text-xs text-gray-400 underline ui-font">seguir explorando</button>
           </aside>
         } @else if (near(); as m) {
-          <aside class="absolute right-2 top-16 w-72 rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-white shadow-2xl chaflan" aria-live="polite">
+          <aside class="absolute right-2 top-16 w-72 rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-white shadow-2xl chamfer" aria-live="polite">
             <p class="text-3xl">{{ emoji(m.type) }}</p>
             <h2 class="mt-1 font-bold text-primary title-font">{{ m.title }}</h2>
             @if (isVisited(m.attachmentId)) {
@@ -137,7 +137,7 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
             }
           </aside>
         } @else if (nearTower(); as t) {
-          <aside class="absolute right-2 top-16 w-72 rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-center text-white shadow-2xl chaflan" aria-live="polite">
+          <aside class="absolute right-2 top-16 w-72 rounded-xl bg-[#1C1E2B] border border-primary/40 p-4 text-center text-white shadow-2xl chamfer" aria-live="polite">
             <p class="text-3xl">{{ towerPassed(t.moduleId) ? '✅' : '🗼' }}</p>
             <h2 class="mt-1 font-bold text-primary title-font">{{ t.title }}</h2>
             @if (!towerPassed(t.moduleId)) {
@@ -153,7 +153,7 @@ import { DungeonShopModalComponent } from './dungeon-shop-modal';
             }
           </aside>
         } @else if (nearMarket() && !inShop()) {
-          <aside class="absolute left-1/2 bottom-20 -translate-x-1/2 z-30 flex items-center gap-3.5 rounded-2xl bg-[#1C1E2B]/95 border-2 border-amber-400/80 backdrop-blur-md px-5 py-3.5 text-white shadow-2xl chaflan pointer-events-auto transition-all animate-bounce" aria-live="polite">
+          <aside class="absolute left-1/2 bottom-20 -translate-x-1/2 z-30 flex items-center gap-3.5 rounded-2xl bg-[#1C1E2B]/95 border-2 border-amber-400/80 backdrop-blur-md px-5 py-3.5 text-white shadow-2xl chamfer pointer-events-auto transition-all animate-bounce" aria-live="polite">
             <span class="text-3xl filter drop-shadow">🏪</span>
             <div>
               <div class="flex items-center gap-2">
@@ -224,7 +224,7 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
     { id: 'espada', emoji: '🗡️', name: 'Espada de madera', price: 30, desc: 'Para practicar desafíos' },
     { id: 'escudo', emoji: '🛡️', name: 'Escudo', price: 25, desc: 'Protección mock' },
     { id: 'pocion', emoji: '🧪', name: 'Poción', price: 15, desc: 'Sabe a fresa (demo)' },
-    { id: 'mapa', emoji: '🗺️', name: 'Mapa del tesoro', price: 50, desc: 'No lleva a ningún lado (demo)' },
+    { id: 'map', emoji: '🗺️', name: 'Mapa del tesoro', price: 50, desc: 'No lleva a ningún lado (demo)' },
   ];
   reading = signal<AttachmentMarker | null>(null);
   challenge = signal<ModulePlaced | null>(null);
@@ -237,16 +237,16 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
   /** Class of the character created in the city (informative badge, no selector). */
   avatarName = signal('');
   /** Camera view: free (orbital), third (behind) or first (eyes). */
-  view = signal<View>('libre');
+  view = signal<View>('free');
   /** Movement help according to the view (in 3rd person A/D turn, they do not strafe). */
   hint = computed(() =>
-    this.view() === 'tercera'
+    this.view() === 'third'
       ? 'W/S avanzar · A/D girar · Shift correr · V cámara · X efectos · entra en las 🏠'
       : 'WASD/flechas moverse · Shift correr · V cámara · X efectos · entra en las 🏠',
   );
-  biome = signal<Biome>('pradera');
+  biome = signal<Biome>('meadow');
   biomeEmoji = computed(() =>
-    this.biome() === 'desierto' ? '🏜️' : this.biome() === 'nieve' ? '❄️' : this.biome() === 'lava' ? '🌋' : '🌿',
+    this.biome() === 'desert' ? '🏜️' : this.biome() === 'snow' ? '❄️' : this.biome() === 'lava' ? '🌋' : '🌿',
   );
   total = computed(() => this.layout?.attachments.length ?? 0);
   emoji = (t: AttachmentMarker['type']): string => ATTACHMENT_EMOJI[t];
@@ -283,7 +283,7 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
 
   async ngAfterViewInit(): Promise<void> {
     let id = this.route.snapshot.paramMap.get('id') ?? '';
-    let sectionId = this.route.snapshot.paramMap.get('unidadId') ?? '';
+    let sectionId = this.route.snapshot.paramMap.get('sectionId') ?? '';
     if (!sectionId && id) {
       sectionId = id;
       id = '';
@@ -341,7 +341,7 @@ export class PlayComponent implements AfterViewInit, OnDestroy {
     this.activeUnitId.set(u.id);
     this.title.set(u.title);
     this.layout = genSectionWorld(u, id);
-    this.biome.set(this.layout.biome ?? 'pradera');
+    this.biome.set(this.layout.biome ?? 'meadow');
     this.visitedIds.set(this.visits.list(id));
     this.passedIds.set(this.visits.passed(id));
 

@@ -39,10 +39,10 @@ import {
   RgbTick,
 } from './avatar-procedural';
 
-const BASE_CHARACTERS = '/mundo-3d/Assets/CharacterV2/Characters/gltf/';
-const USEFUL_BASE = '/mundo-3d/Assets/CharacterV2/Assets/gltf/';
-const BASE_MIXED = '/mundo-3d/Assets/Cosmetics/mixed/';
-const BASE_STARS = '/mundo-3d/Assets/Cosmetics/stars/';
+const BASE_CHARACTERS = '/world-3d/Assets/CharacterV2/Characters/gltf/';
+const USEFUL_BASE = '/world-3d/Assets/CharacterV2/Assets/gltf/';
+const BASE_MIXED = '/world-3d/Assets/Cosmetics/mixed/';
+const BASE_STARS = '/world-3d/Assets/Cosmetics/stars/';
 
 /** Assembled character ready to enter the scene. */
 export interface AvatarBuild {
@@ -62,7 +62,7 @@ export interface AvatarBuild {
 
 /**
  * Assembles the 3D character created in the city for the hexagonal world.
- * Port of the orchestration of `public/mundo-3d/avatar-preview.html`
+ * Port of the orchestration of `public/world-3d/avatar-preview.html`
  * (applyModularParts, applyCosmetics, attachItems, applyPet + pets).
  */
 @Injectable({ providedIn: 'root' })
@@ -247,11 +247,11 @@ export class AvatarModularService {
 
     // 1. Clear previous modular pieces
     const removeModular = (parent: THREE.Object3D): void => {
-      const fuera: THREE.Object3D[] = [];
+      const orphans: THREE.Object3D[] = [];
       parent.children.forEach((c) => {
-        if (c.name && c.name.startsWith('modular_')) fuera.push(c);
+        if (c.name && c.name.startsWith('modular_')) orphans.push(c);
       });
-      fuera.forEach((c) => parent.remove(c));
+      orphans.forEach((c) => parent.remove(c));
     };
     removeModular(targetRig);
     const headBone = model.getObjectByName('head');

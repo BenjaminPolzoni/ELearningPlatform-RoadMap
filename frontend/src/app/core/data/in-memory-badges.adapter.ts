@@ -12,7 +12,7 @@ import {
 import { catalogBadgesSeed, earnedBadgesSeed } from '../../mocks/badges.seed';
 import { GENERIC_ICONS } from '../../features/badges/generic-icons';
 
-const LS_KEY = 'insignias-mock-v2';
+const LS_KEY = 'badges-mock-v2';
 
 /**
  * Implementation of {@link BadgesDataPort} for Phases 0-2. Starts from the seed (14 from the
@@ -34,12 +34,12 @@ export class InMemoryBadgesAdapter extends BadgesDataPort {
 
   create(_courseCohortId: string, dto: NewBadge): Observable<BadgeCatalog> {
     const badge: BadgeCatalog = {
-      badgeId: `ins-profesor-${Date.now().toString(36)}`,
+      badgeId: `badge-teacher-${Date.now().toString(36)}`,
       code: dto.icon,
       name: dto.name,
       description: this.describe(dto),
       type: dto.type,
-      origin: 'PROFESOR',
+      origin: 'TEACHER',
       pendingIcon: GENERIC_ICONS[dto.icon]?.needsRework ?? false,
       criterion: dto.criterion,
       valueCriterion: dto.valueCriterion,
@@ -52,7 +52,7 @@ export class InMemoryBadgesAdapter extends BadgesDataPort {
 
   /** The teacher does not write the description by hand (it is not a form field) — it builds itself. */
   private describe(dto: NewBadge): string {
-    if (dto.type === 'POR_NODO') return 'Insignia por nodo — se otorga al completar el nodo elegido.';
+    if (dto.type === 'PER_NODE') return 'Insignia por nodo — se otorga al completar el nodo elegido.';
     if (!dto.criterion) return '';
     if (dto.criterion === CRITERION_SPECIFIC_NODE) {
       return CRITERION_LABEL[dto.criterion];

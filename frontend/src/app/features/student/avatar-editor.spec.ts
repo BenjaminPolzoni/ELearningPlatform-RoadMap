@@ -49,7 +49,7 @@ describe('AvatarEditor', () => {
   });
 
   it('keeps the gender undefined by default', () => {
-    expect(srv.avatar().gender).toBe('indefinido');
+    expect(srv.avatar().gender).toBe('unspecified');
   });
 
   it('warns when the shirt or the laptop cover the emblem', () => {
@@ -74,7 +74,7 @@ describe('AvatarEditor', () => {
   it('RESET restarts keeping the gender undefined', () => {
     srv.set('object', 'mate');
     click('RESET');
-    expect(srv.avatar().gender).toBe('indefinido');
-    expect(srv.avatar().object).toBe('ninguno');
+    expect(srv.avatar().gender).toBe('unspecified');
+    expect(srv.avatar().object).toBe('none');
   });
 });

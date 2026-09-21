@@ -1,11 +1,11 @@
-<span [class.celebrando]="celebrating()">
+<span [class.celebrating]="celebrating()">
   <svg
     [attr.height]="height()"
     viewBox="0 0 16 22"
-    class="pixelado overflow-visible"
-    [class.caminando]="walking()"
+    class="pixelated overflow-visible"
+    [class.walking]="walking()"
     [style.width.px]="height() * (16 / 22)"
-    [style.transform]="facing() === 'izquierda' ? 'scaleX(-1)' : null"
+    [style.transform]="facing() === 'left' ? 'scaleX(-1)' : null"
     role="img"
     [attr.aria-label]="label()"
   >
@@ -15,7 +15,7 @@
     }
 
     <!-- legs and shoes -->
-    <g data-capa="piernas">
+    <g data-layer="legs">
       <rect x="4" y="17" width="3" height="4" [attr.fill]="pants()" />
       <rect x="9" y="17" width="3" height="4" [attr.fill]="pants()" />
       <rect x="3" y="21" width="4" height="1" [attr.fill]="shoes()" />
@@ -23,8 +23,8 @@
     </g>
 
     <!-- torso: the silhouette defines the outline; the garment only adds details on top -->
-    <g data-capa="torso" [attr.data-silueta]="config().gender">
-      @if (config().gender === 'mujer') {
+    <g data-layer="torso" [attr.data-silhouette]="config().gender">
+      @if (config().gender === 'female') {
         <rect x="4" y="11" width="8" height="3" [attr.fill]="clothes().base" />
         <rect x="5" y="14" width="6" height="2" [attr.fill]="clothes().base" />
         <rect x="4" y="16" width="8" height="1" [attr.fill]="clothes().base" />
@@ -34,23 +34,23 @@
     </g>
 
     <!-- arms and hands (same position in the three silhouettes); the shirt is short-sleeved -->
-    <g data-capa="brazos">
+    <g data-layer="arms">
       <rect x="2" y="11" width="2" height="5" [attr.fill]="clothes().shadow" />
       <rect x="12" y="11" width="2" height="5" [attr.fill]="clothes().shadow" />
-      @if (config().garment === 'remera') {
+      @if (config().garment === 'tshirt') {
         <rect x="2" y="13" width="2" height="3" [attr.fill]="skin().base" />
         <rect x="12" y="13" width="2" height="3" [attr.fill]="skin().base" />
       }
       <rect x="2" y="16" width="2" height="1" [attr.fill]="skin().base" />
       <rect x="12" y="16" width="2" height="1" [attr.fill]="skin().base" />
-      @if (config().gender === 'varon') {
+      @if (config().gender === 'male') {
         <!-- broad shoulders: the top row of the torso extends over the arms -->
         <rect x="2" y="11" width="12" height="1" [attr.fill]="clothes().base" />
       }
     </g>
 
     <!-- garment details (the suit has none: it is the same plain jumpsuit as always) -->
-    <g data-capa="prenda">
+    <g data-layer="garment">
       @switch (config().garment) {
         @case ('hoodie') {
           <!-- hood around the neck: the head and neck cover it in the center -->
@@ -59,16 +59,16 @@
           <rect x="9" y="11" width="1" height="1" fill="#F3EAFF" />
           <rect x="4" y="16" width="8" height="1" [attr.fill]="clothes().shadow" />
         }
-        @case ('remera') {
+        @case ('tshirt') {
           <rect x="6" y="11" width="4" height="1" [attr.fill]="clothes().shadow" />
         }
-        @case ('camisa') {
+        @case ('shirt') {
           <rect x="5" y="11" width="2" height="1" fill="#F3EAFF" />
           <rect x="9" y="11" width="2" height="1" fill="#F3EAFF" />
           <rect x="7" y="11" width="2" height="1" [attr.fill]="tie()" />
           <rect x="7" y="12" width="2" height="4" [attr.fill]="tie()" />
         }
-        @case ('campera') {
+        @case ('jacket') {
           <rect x="6" y="11" width="4" height="6" [attr.fill]="tshirt()" />
           <rect x="5" y="12" width="1" height="5" [attr.fill]="clothes().shadow" />
           <rect x="10" y="12" width="1" height="5" [attr.fill]="clothes().shadow" />
@@ -78,9 +78,9 @@
 
     <!-- chest emblem: the rects inherit the group's fill -->
     @if (showEmblem()) {
-      <g data-capa="emblema" [attr.fill]="emblemColor()" [attr.transform]="counterMirror()">
+      <g data-layer="emblem" [attr.fill]="emblemColor()" [attr.transform]="counterMirror()">
         @switch (config().emblem) {
-          @case ('cuadro') {
+          @case ('square') {
             <rect x="7" y="13" width="2" height="2" />
           }
           @case ('tag') {
@@ -93,7 +93,7 @@
             <rect x="10" y="13" width="1" height="1" />
             <rect x="9" y="14" width="1" height="1" />
           }
-          @case ('llaves') {
+          @case ('braces') {
             <!-- Each brace is two arms toward the center and a tip pointing outward. It used
                  to be a vertical bar with a pixel at the side and it read as "⊣ ⊢". -->
             <rect x="6" y="12" width="2" height="1" />
@@ -115,7 +115,7 @@
             <rect x="6" y="14" width="1" height="1" />
             <rect x="8" y="14" width="1" height="1" />
           }
-          @case ('punto-y-coma') {
+          @case ('semicolon') {
             <rect x="7" y="12" width="1" height="1" />
             <rect x="7" y="14" width="1" height="1" />
             <rect x="6" y="15" width="1" height="1" />
@@ -131,8 +131,8 @@
     }
 
     <!-- neck, head and features according to the silhouette -->
-    <g data-capa="cabeza">
-      @if (config().gender === 'mujer') {
+    <g data-layer="head">
+      @if (config().gender === 'female') {
         <rect x="7" y="10" width="2" height="1" [attr.fill]="skin().shadow" />
         <rect x="4" y="3" width="8" height="6" [attr.fill]="skin().base" />
         <!-- rounded chin -->
@@ -147,15 +147,15 @@
       <rect x="5" y="6" width="1" height="1" fill="#F3EAFF" />
       <rect x="9" y="6" width="1" height="1" fill="#F3EAFF" />
       @switch (config().gender) {
-        @case ('mujer') {
-          <g data-capa="pestanas">
+        @case ('female') {
+          <g data-layer="eyelashes">
             <rect x="4" y="6" width="1" height="1" fill="#190236" />
             <rect x="11" y="6" width="1" height="1" fill="#190236" />
           </g>
           <rect x="7" y="8" width="2" height="1" fill="#E0567A" />
         }
-        @case ('varon') {
-          <g data-capa="cejas">
+        @case ('male') {
+          <g data-layer="eyebrows">
             <rect x="5" y="5" width="2" height="1" [attr.fill]="hair().shadow" />
             <rect x="9" y="5" width="2" height="1" [attr.fill]="hair().shadow" />
           </g>
@@ -168,20 +168,20 @@
     </g>
 
     <!-- beard: hair-colored, below the hair -->
-    @if (config().beard !== 'ninguna') {
-      <g data-capa="barba">
+    @if (config().beard !== 'none') {
+      <g data-layer="beard">
         @switch (config().beard) {
-          @case ('barba') {
+          @case ('beard') {
             <rect x="4" y="7" width="1" height="3" [attr.fill]="hair().shadow" />
             <rect x="11" y="7" width="1" height="3" [attr.fill]="hair().shadow" />
             <rect x="5" y="8" width="2" height="1" [attr.fill]="hair().base" />
             <rect x="9" y="8" width="2" height="1" [attr.fill]="hair().base" />
             <rect x="5" y="9" width="6" height="1" [attr.fill]="hair().base" />
           }
-          @case ('bigote') {
+          @case ('mustache') {
             <rect x="6" y="8" width="4" height="1" [attr.fill]="hair().base" />
           }
-          @case ('candado') {
+          @case ('goatee') {
             <rect x="6" y="8" width="1" height="2" [attr.fill]="hair().base" />
             <rect x="9" y="8" width="1" height="2" [attr.fill]="hair().base" />
             <rect x="7" y="9" width="2" height="1" [attr.fill]="hair().base" />
@@ -191,27 +191,27 @@
     }
 
     <!-- hair (the long hair and the ponytail peek out at the sides of the head) -->
-    <g data-capa="pelo">
+    <g data-layer="hair">
       @switch (config().hair) {
-        @case ('corto') {
+        @case ('short') {
           <rect x="4" y="2" width="8" height="2" [attr.fill]="hair().base" />
           <rect x="4" y="4" width="1" height="2" [attr.fill]="hair().shadow" />
           <rect x="11" y="4" width="1" height="2" [attr.fill]="hair().shadow" />
         }
-        @case ('largo') {
+        @case ('long') {
           <rect x="4" y="2" width="8" height="2" [attr.fill]="hair().base" />
           <rect x="3" y="3" width="1" height="8" [attr.fill]="hair().base" />
           <rect x="12" y="3" width="1" height="8" [attr.fill]="hair().shadow" />
           <rect x="4" y="4" width="1" height="2" [attr.fill]="hair().shadow" />
           <rect x="11" y="4" width="1" height="2" [attr.fill]="hair().shadow" />
         }
-        @case ('cresta') {
+        @case ('mohawk') {
           <rect x="7" y="0" width="2" height="3" [attr.fill]="hair().base" />
           <rect x="6" y="1" width="1" height="2" [attr.fill]="hair().shadow" />
           <rect x="9" y="1" width="1" height="2" [attr.fill]="hair().shadow" />
           <rect x="4" y="2" width="8" height="2" [attr.fill]="hair().shadow" />
         }
-        @case ('rapado') {
+        @case ('shaved') {
           <rect x="4" y="2" width="8" height="1" [attr.fill]="hair().shadow" />
         }
         @case ('afro') {
@@ -220,14 +220,14 @@
           <rect x="13" y="2" width="1" height="4" [attr.fill]="hair().shadow" />
           <rect x="4" y="0" width="8" height="1" [attr.fill]="hair().base" />
         }
-        @case ('rodete') {
+        @case ('bun') {
           <rect x="4" y="2" width="8" height="2" [attr.fill]="hair().base" />
           <rect x="6" y="0" width="4" height="2" [attr.fill]="hair().base" />
           <rect x="6" y="1" width="4" height="1" [attr.fill]="hair().shadow" />
           <rect x="4" y="4" width="1" height="1" [attr.fill]="hair().shadow" />
           <rect x="11" y="4" width="1" height="1" [attr.fill]="hair().shadow" />
         }
-        @case ('coleta') {
+        @case ('ponytail') {
           <rect x="4" y="2" width="8" height="2" [attr.fill]="hair().base" />
           <rect x="4" y="4" width="1" height="1" [attr.fill]="hair().shadow" />
           <rect x="11" y="4" width="1" height="1" [attr.fill]="hair().shadow" />
@@ -235,7 +235,7 @@
           <rect x="13" y="5" width="1" height="3" [attr.fill]="hair().base" />
           <rect x="13" y="8" width="1" height="1" [attr.fill]="hair().shadow" />
         }
-        @case ('despeinado') {
+        @case ('messy') {
           <rect x="4" y="2" width="8" height="2" [attr.fill]="hair().base" />
           <rect x="3" y="1" width="2" height="2" [attr.fill]="hair().base" />
           <rect x="6" y="1" width="2" height="1" [attr.fill]="hair().base" />
@@ -251,15 +251,15 @@
 
     <!-- glasses: fixed colors; they are not drawn with a visor -->
     @if (showGlasses()) {
-      <g data-capa="anteojos">
+      <g data-layer="glasses">
         @switch (config().glasses) {
-          @case ('marco-grueso') {
+          @case ('thick-frame') {
             <rect x="4" y="5" width="8" height="1" fill="#190236" />
             <rect x="4" y="6" width="1" height="2" fill="#190236" />
             <rect x="7" y="6" width="2" height="1" fill="#190236" />
             <rect x="11" y="6" width="1" height="2" fill="#190236" />
           }
-          @case ('redondos') {
+          @case ('round') {
             <rect x="5" y="5" width="2" height="1" fill="#B9A6D6" />
             <rect x="4" y="6" width="1" height="2" fill="#B9A6D6" />
             <rect x="5" y="8" width="2" height="1" fill="#B9A6D6" />
@@ -268,7 +268,7 @@
             <rect x="9" y="8" width="2" height="1" fill="#B9A6D6" />
             <rect x="7" y="6" width="2" height="1" fill="#B9A6D6" />
           }
-          @case ('sol') {
+          @case ('sunglasses') {
             <rect x="4" y="5" width="8" height="1" fill="#190236" />
             <rect x="4" y="6" width="3" height="2" fill="#0E0120" />
             <rect x="9" y="6" width="3" height="2" fill="#0E0120" />
@@ -276,7 +276,7 @@
             <rect x="5" y="6" width="1" height="1" fill="#8B3DF5" />
             <rect x="10" y="6" width="1" height="1" fill="#8B3DF5" />
           }
-          @case ('codigo') {
+          @case ('code') {
             <rect x="4" y="5" width="8" height="1" fill="#190236" />
             <rect x="4" y="6" width="1" height="2" fill="#190236" />
             <rect x="7" y="6" width="2" height="1" fill="#190236" />
@@ -292,13 +292,13 @@
     }
 
     <!-- head accessory: always above the hair. -->
-    <g data-capa="accesorio">
+    <g data-layer="accessory">
       @if (coversHead()) {
         <rect x="4" y="0" width="8" height="1" [attr.fill]="acc().base" />
         <rect x="3" y="1" width="10" height="2" [attr.fill]="acc().base" />
         <rect x="3" y="3" width="10" height="1" [attr.fill]="acc().shadow" />
       }
-      @if (config().accessory === 'auriculares' || config().accessory === 'headset') {
+      @if (config().accessory === 'headphones' || config().accessory === 'headset') {
         <rect x="4" y="0" width="8" height="1" [attr.fill]="acc().base" />
         <rect x="2" y="1" width="2" height="1" [attr.fill]="acc().base" />
         <rect x="12" y="1" width="2" height="1" [attr.fill]="acc().base" />
@@ -310,10 +310,10 @@
           <rect x="3" y="5" width="10" height="3" [attr.fill]="acc().base" opacity="0.85" />
           <rect x="3" y="5" width="10" height="1" [attr.fill]="acc().shadow" />
         }
-        @case ('gorra') {
+        @case ('cap') {
           <rect x="0" y="3" width="4" height="1" [attr.fill]="acc().base" />
         }
-        @case ('gorra-atras') {
+        @case ('backwards-cap') {
           <!-- fit opening and visor peeking out from behind -->
           <rect x="7" y="2" width="2" height="1" [attr.fill]="acc().shadow" />
           <rect x="12" y="2" width="3" height="1" [attr.fill]="acc().shadow" />
@@ -324,7 +324,7 @@
           <rect x="8" y="1" width="1" height="2" [attr.fill]="acc().shadow" />
           <rect x="11" y="1" width="1" height="2" [attr.fill]="acc().shadow" />
         }
-        @case ('corona') {
+        @case ('crown') {
           <rect x="4" y="0" width="2" height="2" [attr.fill]="acc().base" />
           <rect x="7" y="0" width="2" height="2" [attr.fill]="acc().base" />
           <rect x="10" y="0" width="2" height="2" [attr.fill]="acc().base" />
@@ -342,8 +342,8 @@
     <!-- held object: fixed colors, in front of everything. The laptop is held in front
          of the chest with both hands; coffee and mate in the right hand; the keyboard against the
          left side. -->
-    @if (config().object !== 'ninguno') {
-      <g data-capa="objeto">
+    @if (config().object !== 'none') {
+      <g data-layer="object">
         @switch (config().object) {
           @case ('laptop') {
             <rect x="4" y="12" width="8" height="5" fill="#4B4A57" />
@@ -353,7 +353,7 @@
             <rect x="9" y="14" width="2" height="1" fill="#2BD46A" />
             <rect x="8" y="12" width="1" height="1" fill="#F3EAFF" />
           }
-          @case ('cafe') {
+          @case ('coffee') {
             <rect x="13" y="14" width="3" height="3" fill="#F3EAFF" />
             <rect x="13" y="14" width="3" height="1" fill="#6B4226" />
             <rect x="15" y="15" width="1" height="2" fill="#B9A6D6" />
@@ -368,7 +368,7 @@
             <!-- straw -->
             <rect x="15" y="11" width="1" height="3" fill="#CFCAD6" />
           }
-          @case ('teclado') {
+          @case ('keyboard') {
             <rect x="0" y="14" width="6" height="2" fill="#4B4A57" />
             <rect x="0" y="14" width="1" height="1" fill="#F3EAFF" />
             <rect x="2" y="14" width="1" height="1" fill="#F3EAFF" />

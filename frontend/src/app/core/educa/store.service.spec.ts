@@ -66,13 +66,13 @@ describe('StoreService (Educa)', () => {
     const a = service.create('Curso Web', 'Frontend y Backend');
     service.addSection('Unidad Frontend');
     const uId = service.current()!.sections[0].id;
-    service.editSection(uId, { biome: 'nieve' });
+    service.editSection(uId, { biome: 'snow' });
 
     service.addModule(uId, 'Módulo CSS');
     const mId = service.current()!.sections[0].modules[0].id;
 
     // Add an attachment of type exercise and one of type video
-    service.addAttachment(uId, mId, 'Quiz de Flexbox', 'ejercicio');
+    service.addAttachment(uId, mId, 'Quiz de Flexbox', 'exercise');
     service.addAttachment(uId, mId, 'Tutorial Grid', 'video');
 
     const currentU = service.current()!.sections[0];
@@ -81,17 +81,17 @@ describe('StoreService (Educa)', () => {
     // Verify synchronization in the student's roadmap
     const rm = JSON.parse(localStorage.getItem('roadmap-mock-v3')!);
     const u3d = rm.sections[0];
-    expect(u3d.biome).toBe('Nieve');
+    expect(u3d.biome).toBe('Snow');
     expect(u3d.activities.length).toBe(2);
 
     const exerciseAct = u3d.activities.find((act: any) => act.name === 'Quiz de Flexbox');
     expect(exerciseAct).toBeTruthy();
-    expect(exerciseAct.type).toBe('desafio-practico');
+    expect(exerciseAct.type).toBe('practical-challenge');
     expect(exerciseAct.isMandatory).toBe(true);
 
     const videoAct = u3d.activities.find((act: any) => act.name === 'Tutorial Grid');
     expect(videoAct).toBeTruthy();
-    expect(videoAct.type).toBe('teoria');
+    expect(videoAct.type).toBe('theory');
     expect(videoAct.isMandatory).toBe(false);
   });
 

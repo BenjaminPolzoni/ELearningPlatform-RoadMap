@@ -1,7 +1,8 @@
 import { Component, input, output, signal } from '@angular/core';
 import type { Biome, AttachmentType } from '../../../core/educa/models';
+import { ATTACHMENT_TYPE_LABEL } from '../../../shared/labels';
 
-export type EditorKind = 'unidad' | 'modulo' | 'anexo';
+export type EditorKind = 'section' | 'module' | 'attachment';
 
 export interface EditorResult {
   title: string;
@@ -35,7 +36,7 @@ export interface EditorResult {
             class="textarea textarea-bordered textarea-sm w-full mt-1"></textarea>
         </label>
 
-        @if (kind() === 'unidad') {
+        @if (kind() === 'section') {
           <div class="mt-2 grid grid-cols-2 gap-3 items-center">
             <label class="block text-xs font-semibold ui-font">Color
               <div class="flex items-center gap-2 mt-1">
@@ -46,21 +47,21 @@ export interface EditorResult {
 
             <label class="block text-xs font-semibold ui-font">Bioma (Mundo 3D)
               <select [value]="biome()" (change)="biome.set(inputBiome($event))" class="select select-bordered select-sm w-full mt-1">
-                <option value="pradera">🌿 Pradera</option>
-                <option value="desierto">🏜️ Desierto</option>
-                <option value="nieve">❄️ Nieve</option>
+                <option value="meadow">🌿 Pradera</option>
+                <option value="desert">🏜️ Desierto</option>
+                <option value="snow">❄️ Nieve</option>
                 <option value="lava">🌋 Lava</option>
               </select>
             </label>
           </div>
         }
 
-        @if (kind() === 'anexo') {
+        @if (kind() === 'attachment') {
           <div class="mt-2 flex flex-col sm:flex-row gap-2">
             <label class="text-xs font-semibold ui-font">Tipo
               <select [value]="type()" (change)="type.set(inputType($event))" class="select select-bordered select-sm w-full mt-1">
                 @for (t of types; track t) {
-                  <option [value]="t">{{ iconOf(t) }} {{ t }}</option>
+                  <option [value]="t">{{ iconOf(t) }} {{ typeLabel[t] }}</option>
                 }
               </select>
             </label>
@@ -80,13 +81,13 @@ export interface EditorResult {
   `,
 })
 export class EditorComponent {
-  kind = input<EditorKind>('unidad');
+  kind = input<EditorKind>('section');
   heading = input('Editar');
   initialTitle = input('');
   initialDescription = input('');
   initialColor = input('#6366f1');
-  initialBiome = input<Biome>('pradera');
-  initialType = input<AttachmentType>('documento');
+  initialBiome = input<Biome>('meadow');
+  initialType = input<AttachmentType>('document');
   initialUrl = input('');
 
   saveResult = output<EditorResult>();
@@ -95,10 +96,11 @@ export class EditorComponent {
   title = signal('');
   description = signal('');
   color = signal('#6366f1');
-  biome = signal<Biome>('pradera');
-  type = signal<AttachmentType>('documento');
+  biome = signal<Biome>('meadow');
+  type = signal<AttachmentType>('document');
   url = signal('');
-  types: AttachmentType[] = ['documento', 'video', 'enlace', 'imagen', 'ejercicio'];
+  typeLabel = ATTACHMENT_TYPE_LABEL;
+  types: AttachmentType[] = ['document', 'video', 'link', 'image', 'exercise'];
 
   constructor() {
     queueMicrotask(() => {
@@ -117,24 +119,24 @@ export class EditorComponent {
 
   inputType(e: Event): AttachmentType {
     const val = (e.target as HTMLSelectElement | null)?.value;
-    return (this.types.includes(val as AttachmentType) ? val : 'documento') as AttachmentType;
+    return (this.types.includes(val as AttachmentType) ? val : 'document') as AttachmentType;
   }
 
   inputBiome(e: Event): Biome {
     const val = (e.target as HTMLSelectElement | null)?.value;
-    if (val === 'desierto') return 'desierto';
-    if (val === 'nieve') return 'nieve';
+    if (val === 'desert') return 'desert';
+    if (val === 'snow') return 'snow';
     if (val === 'lava') return 'lava';
-    return 'pradera';
+    return 'meadow';
   }
 
   iconOf(t: AttachmentType): string {
     switch (t) {
-      case 'documento': return '📄';
+      case 'document': return '📄';
       case 'video': return '🎬';
-      case 'enlace': return '🔗';
-      case 'imagen': return '🖼️';
-      case 'ejercicio': return '✏️';
+      case 'link': return '🔗';
+      case 'image': return '🖼️';
+      case 'exercise': return '✏️';
       default: return '📦';
     }
   }

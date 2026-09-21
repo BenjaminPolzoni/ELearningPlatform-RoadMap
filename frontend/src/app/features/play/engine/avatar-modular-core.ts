@@ -3,7 +3,7 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 /**
  * Geometric core of the modular character (typed port of
- * `public/mundo-3d/avatar-modular-core.js` — identical names and logic for
+ * `public/world-3d/avatar-modular-core.js` — identical names and logic for
  * traceability; it only adds types).
  *
  * Extracts face/hair/beard/pants/footwear from the KayKit class GLBs

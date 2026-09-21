@@ -18,11 +18,11 @@ import { XpBar } from './xp-bar';
   host: { class: 'block' },
   template: `
     <div
-      class="chaflan flex items-center gap-3 border-2 border-secondary bg-base-200/85 px-3 py-2 backdrop-blur-sm"
+      class="chamfer flex items-center gap-3 border-2 border-secondary bg-base-200/85 px-3 py-2 backdrop-blur-sm"
     >
       <!-- the avatar bust crops the full-body sprite to head+torso -->
       <a
-        routerLink="/alumno/avatar"
+        routerLink="/student/avatar"
         class="grid h-14 w-14 shrink-0 place-items-start justify-center overflow-hidden border-2 border-primary bg-base-100 transition-colors hover:border-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
         [attr.aria-label]="'Personalizar avatar'"
         title="Personalizar avatar"

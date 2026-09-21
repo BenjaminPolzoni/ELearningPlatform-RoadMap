@@ -17,6 +17,7 @@ import { PixelIcon } from '../../shared/pixel-icon';
 import { RouterLink } from '@angular/router';
 import { BADGE_ICONS } from './badge-icons';
 import { GENERIC_ICONS } from './generic-icons';
+import { BADGE_ORIGIN_LABEL } from '../../shared/labels';
 
 /**
  * Badge catalog (ADMIN and PROFESOR — the student sees the ones earned from their row in the
@@ -35,12 +36,12 @@ import { GENERIC_ICONS } from './generic-icons';
         <h2 class="title-font text-primary text-xs">CATÁLOGO DE INSIGNIAS</h2>
         <span class="ui-font opacity-80 text-[10px]">{{ badges().length }} en total</span>
       </div>
-      <a routerLink="/profesor" class="btn btn-sm btn-ghost border border-neutral/40 ui-font text-[8px]">
+      <a routerLink="/teacher" class="btn btn-sm btn-ghost border border-neutral/40 ui-font text-[8px]">
         ◀ Volver al editor
       </a>
     </div>
 
-    @if (auth.role() === 'PROFESOR') {
+    @if (auth.role() === 'TEACHER') {
       @if (showForm()) {
         <form class="card bg-base-200 border-2 border-primary mb-6" (submit)="create($event)">
           <div class="card-body gap-4">
@@ -87,12 +88,12 @@ import { GENERIC_ICONS } from './generic-icons';
                 [ngModel]="type()"
                 (ngModelChange)="changeType($event)"
               >
-                <option value="TRANSVERSAL">Transversal</option>
-                <option value="POR_NODO">Por nodo</option>
+                <option value="CROSS_CUTTING">Transversal</option>
+                <option value="PER_NODE">Por nodo</option>
               </select>
             </label>
 
-            @if (type() === 'TRANSVERSAL') {
+            @if (type() === 'CROSS_CUTTING') {
               <div class="flex flex-wrap gap-3 items-end">
                 <label class="form-control min-w-64">
                   <span class="label-text ui-font">Criterio</span>
@@ -175,7 +176,7 @@ import { GENERIC_ICONS } from './generic-icons';
               <p class="opacity-80 text-sm">{{ i.description }}</p>
               <div class="flex flex-wrap gap-2 mt-1">
                 <span class="badge badge-outline badge-sm ui-font">{{ typeLabel(i) }}</span>
-                <span class="badge badge-outline badge-sm ui-font">{{ i.origin }}</span>
+                <span class="badge badge-outline badge-sm ui-font">{{ originLabel[i.origin] }}</span>
                 @if (i.pendingIcon) {
                   <span class="badge badge-warning badge-sm ui-font">ícono pendiente</span>
                 }
@@ -188,6 +189,7 @@ import { GENERIC_ICONS } from './generic-icons';
   `,
 })
 export class Catalog {
+  protected readonly originLabel = BADGE_ORIGIN_LABEL;
   protected readonly auth = inject(AuthMockService);
   protected readonly store = inject(RoadmapStore);
   private readonly data = inject(BadgesDataPort);
@@ -201,7 +203,7 @@ export class Catalog {
   protected readonly saving = signal(false);
   protected readonly name = signal('');
   protected readonly iconSel = signal<string | null>(null);
-  protected readonly type = signal<BadgeType>('TRANSVERSAL');
+  protected readonly type = signal<BadgeType>('CROSS_CUTTING');
   protected readonly criterion = signal<BadgeCriterion | null>(null);
   protected readonly valueCriterion = signal<number | null>(null);
   protected readonly nodeId = signal<string | null>(null);
@@ -214,12 +216,12 @@ export class Catalog {
     return c !== null && CRITERIA_WITH_VALUE.has(c);
   });
   private readonly needsNodeByCriterion = computed(() => this.criterion() === CRITERION_SPECIFIC_NODE);
-  /** POR_NODO always asks for a node; TRANSVERSAL only if the chosen criterion is "specific node". */
-  protected readonly showNode = computed(() => this.type() === 'POR_NODO' || this.needsNodeByCriterion());
+  /** PER_NODE always asks for a node; CROSS_CUTTING only if the chosen criterion is "specific node". */
+  protected readonly showNode = computed(() => this.type() === 'PER_NODE' || this.needsNodeByCriterion());
 
   protected readonly formValid = computed(() => {
     if (!this.name().trim() || !this.iconSel()) return false;
-    if (this.type() === 'TRANSVERSAL') {
+    if (this.type() === 'CROSS_CUTTING') {
       if (!this.criterion()) return false;
       if (this.needsValue() && !(this.valueCriterion() && this.valueCriterion()! > 0)) return false;
       if (this.needsNodeByCriterion() && !this.nodeId()) return false;
@@ -240,7 +242,7 @@ export class Catalog {
       name: this.name().trim(),
       icon: this.iconSel()!,
       type: this.type(),
-      criterion: this.type() === 'TRANSVERSAL' ? this.criterion()! : undefined,
+      criterion: this.type() === 'CROSS_CUTTING' ? this.criterion()! : undefined,
       valueCriterion: this.needsValue() ? this.valueCriterion()! : undefined,
       nodeId: this.showNode() ? this.nodeId()! : undefined,
     };
@@ -270,7 +272,7 @@ export class Catalog {
     this.showForm.set(false);
     this.name.set('');
     this.iconSel.set(null);
-    this.type.set('TRANSVERSAL');
+    this.type.set('CROSS_CUTTING');
     this.criterion.set(null);
     this.valueCriterion.set(null);
     this.nodeId.set(null);
@@ -289,7 +291,7 @@ export class Catalog {
   }
 
   protected typeLabel(i: BadgeCatalog): string {
-    return i.type === 'POR_NODO' ? 'por nodo' : 'transversal';
+    return i.type === 'PER_NODE' ? 'por nodo' : 'transversal';
   }
 
   private load(): void {

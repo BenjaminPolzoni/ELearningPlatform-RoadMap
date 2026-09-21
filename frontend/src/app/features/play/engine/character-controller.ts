@@ -199,7 +199,7 @@ export class CharacterController {
     maxRadius: number,
     frontier: FogFrontier | null,
     onHitBarrier?: () => void,
-    view: View = 'libre',
+    view: View = 'free',
   ): void {
     const char = this.char;
     if (!char) return;
@@ -210,7 +210,7 @@ export class CharacterController {
     let seekingTarget = false;
 
     if (!isLocked) {
-      if (view === 'tercera') {
+      if (view === 'third') {
         // Tank controls: A/D turn in place, W/S advance along the front.
         // (With strafe + instant turn, A/D fed back into the turn and the
         // character pirouetted without moving.)
@@ -257,7 +257,7 @@ export class CharacterController {
       // In tank mode A/D command the turn: auto-facing would flip the character on
       // S (per-frame flip-flop, zero displacement). It only faces when following
       // a click destination.
-      if (view !== 'tercera' || seekingTarget) char.rotation.y = Math.atan2(mv.x, mv.y);
+      if (view !== 'third' || seekingTarget) char.rotation.y = Math.atan2(mv.x, mv.y);
       this.play(running ? this.runClip : this.walkClip);
       if (!this.mixer) char.position.y = Math.abs(Math.sin(t * (running ? 14 : 10))) * 0.08;
     } else {

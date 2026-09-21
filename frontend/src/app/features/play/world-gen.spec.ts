@@ -15,7 +15,7 @@ const section = (over: Partial<Section> = {}): Section => ({
       order: 0,
       attachments: [
         { id: 'x1', title: 'A1', type: 'video' },
-        { id: 'x2', title: 'A2', type: 'documento' },
+        { id: 'x2', title: 'A2', type: 'document' },
       ],
     },
     { id: 'm2', title: 'M2', description: '', order: 1, attachments: [] },
@@ -317,20 +317,20 @@ describe('world-gen v2 (world per section)', () => {
   });
 
   it('biomes: meadow by default, desert without tree/grass/tent, with rock, deterministic', () => {
-    expect(biomeOf({})).toBe('pradera');
-    expect(biomeOf({ biome: 'desierto' })).toBe('desierto');
-    const wD1 = genSectionWorld(section({ biome: 'desierto' }), 'a1');
-    const wD2 = genSectionWorld(section({ biome: 'desierto' }), 'a1');
+    expect(biomeOf({})).toBe('meadow');
+    expect(biomeOf({ biome: 'desert' })).toBe('desert');
+    const wD1 = genSectionWorld(section({ biome: 'desert' }), 'a1');
+    const wD2 = genSectionWorld(section({ biome: 'desert' }), 'a1');
     expect(wD1).toEqual(wD2);
-    expect(wD1.biome).toBe('desierto');
-    expect(genSectionWorld(section(), 'a1').biome).toBe('pradera');
+    expect(wD1.biome).toBe('desert');
+    expect(genSectionWorld(section(), 'a1').biome).toBe('meadow');
     const models = [...wD1.decor.map((d) => d.model), ...wD1.ridge.map((m) => m.model)];
     expect(models.some((m) => m.includes('tree') || m.includes('grass') || m.includes('tent'))).toBe(false);
     expect(models.some((m) => m.includes('rock'))).toBe(true);
   });
 
   it('desert vegetation: desert includes cactus.glb and tumbleweed.glb; meadow no proc:', () => {
-    const wD = genSectionWorld(section({ biome: 'desierto' }), 'a1');
+    const wD = genSectionWorld(section({ biome: 'desert' }), 'a1');
     const dModels = wD.decor.map((d) => d.model);
     expect(dModels.some((m) => m.includes('cactus_'))).toBe(true);
     expect(dModels.some((m) => m.includes('tumbleweed_lowpoly.glb'))).toBe(true);
@@ -340,7 +340,7 @@ describe('world-gen v2 (world per section)', () => {
   });
 
   it('desert props only next to the market: barrels/crates at dist 1 from the market', () => {
-    const wD = genSectionWorld(section({ biome: 'desierto' }), 'a1');
+    const wD = genSectionWorld(section({ biome: 'desert' }), 'a1');
     const market = wD.modules.find((m) => m.moduleId.startsWith('__market')) as { q: number; r: number };
     const dd = (a: { q: number; r: number }, b: { q: number; r: number }): number =>
       (Math.abs(a.q - b.q) + Math.abs(a.r - b.r) + Math.abs(a.q + a.r - b.q - b.r)) / 2;
@@ -349,11 +349,11 @@ describe('world-gen v2 (world per section)', () => {
   });
 
   it('snow: deterministic white biome, no green, with snow props and bare mountains', () => {
-    expect(biomeOf({ biome: 'nieve' })).toBe('nieve');
-    const wN1 = genSectionWorld(section({ biome: 'nieve' }), 'a1');
-    const wN2 = genSectionWorld(section({ biome: 'nieve' }), 'a1');
+    expect(biomeOf({ biome: 'snow' })).toBe('snow');
+    const wN1 = genSectionWorld(section({ biome: 'snow' }), 'a1');
+    const wN2 = genSectionWorld(section({ biome: 'snow' }), 'a1');
     expect(wN1).toEqual(wN2);
-    expect(wN1.biome).toBe('nieve');
+    expect(wN1.biome).toBe('snow');
     const models = [...wN1.decor.map((d) => d.model), ...wN1.ridge.map((m) => m.model)];
     expect(models.some((m) => m.includes('tree_single') || m.includes('trees_A') || m.includes('_grass') || m.includes('tent'))).toBe(false);
     expect(
@@ -373,7 +373,7 @@ describe('world-gen v2 (world per section)', () => {
     expect(vols.length).toBeLessThanOrEqual(2);
     const vset = new Set(wL1.volcanoes.map((v) => `${v.q},${v.r}`));
     for (const v of vols) expect(vset.has(`${v.q},${v.r}`)).toBe(true);
-    for (const b of ['desierto', 'nieve', undefined] as const) {
+    for (const b of ['desert', 'snow', undefined] as const) {
       const w = genSectionWorld(section(b === undefined ? {} : { biome: b }), 'a1');
       expect(w.ridge.some((m) => m.model.includes('volcano.glb'))).toBe(false);
     }
@@ -394,7 +394,7 @@ describe('world-gen v2 (world per section)', () => {
   });
 
   it('desert bones: 2+ proc:huesos in desert, nothing in meadow', () => {
-    const wD = genSectionWorld(section({ biome: 'desierto' }), 'a1');
+    const wD = genSectionWorld(section({ biome: 'desert' }), 'a1');
     expect(wD.decor.filter((d) => d.model === 'proc:huesos').length).toBeGreaterThanOrEqual(2);
     const wP = genSectionWorld(section(), 'a1');
     expect(wP.decor.some((d) => d.model === 'proc:huesos')).toBe(false);

@@ -2,7 +2,7 @@ import { Component, input } from '@angular/core';
 import { PixelGrid, PixelIcon } from '../../shared/pixel-icon';
 
 /**
- * Pixel-art fire (pixel-art-arcade-icons skill, `fire_racha`), 7x9, used as is — it is the
+ * Pixel-art fire (pixel-art-arcade-icons skill, `fire_streak`), 7x9, used as is — it is the
  * only icon in the set that is not 9x9. Only 1 state (there is no "extinguished streak" like heart_empty).
  */
 export const FIRE_GRID: PixelGrid = [

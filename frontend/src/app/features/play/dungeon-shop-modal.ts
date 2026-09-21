@@ -64,7 +64,7 @@ export const SHOP_ITEMS: ShopPropItem[] = [
     dialog: 'Ningún cerrojo se resiste a una llave templada en fuego de forja.',
   },
   {
-    id: 'mapa',
+    id: 'map',
     emoji: '📜',
     name: 'Mapa Náutico Antiguo',
     type: 'Reliquia',

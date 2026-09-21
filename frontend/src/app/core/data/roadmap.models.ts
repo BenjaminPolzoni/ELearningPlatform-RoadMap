@@ -4,35 +4,35 @@
 
 import { Biome } from './biomes';
 
-export type NodeStatus = 'bloqueado' | 'habilitado' | 'completado' | 'fallado';
-// 'teoria' is reading material (PDF/video/PPT via external link, see `resourceUrl` in
+export type NodeStatus = 'locked' | 'enabled' | 'completed' | 'failed';
+// 'theory' is reading material (PDF/video/PPT via external link, see `resourceUrl` in
 // `Activity`), without evaluation or XP — meant to be the first node of the section,
 // before the challenge that evaluates that content. The rest are evaluated challenges, either
 // theoretical or practical (the modality is in the type itself, as in the real contract — see
-// docs/openapi/ms-roadmap.yaml, Nodo.tipo). `boss` and `hito` remain separate types
+// docs/openapi/ms-roadmap.yaml, Nodo.tipo). `boss` and `milestone` remain separate types
 // (not selectable from the editor for now).
-export type NodeType = 'teoria' | 'desafio-teorico' | 'desafio-practico' | 'boss' | 'hito';
+export type NodeType = 'theory' | 'theoretical-challenge' | 'practical-challenge' | 'boss' | 'milestone';
 
-// Type of external resource the teacher uploads for a 'teoria' node — the project has no
+// Type of external resource the teacher uploads for a 'theory' node — the project has no
 // file-upload backend, so the "content" is always a link (YouTube,
 // Google Drive, OneDrive, etc.), never a file of its own.
 export type ResourceTheoryType = 'pdf' | 'video' | 'ppt';
 
 // PAR-01: base XP by difficulty (100 / 250 / 500). Mirror of the backend's Difficulty.
-export type Difficulty = 'BASICO' | 'MEDIO' | 'AVANZADO';
+export type Difficulty = 'BASIC' | 'MEDIUM' | 'ADVANCED';
 // Single source of truth for XP by difficulty — used both by the editor (to show the
 // teacher how much the challenge will be worth) and by the student's map (to actually award it).
-export const XP_BY_DIFFICULTY: Record<Difficulty, number> = { BASICO: 100, MEDIO: 250, AVANZADO: 500 };
+export const XP_BY_DIFFICULTY: Record<Difficulty, number> = { BASIC: 100, MEDIUM: 250, ADVANCED: 500 };
 
 // Description the student sees on the map when the teacher leaves the field empty — the
 // editor shows it as a placeholder so they know what will come out if they do not write their own.
 export function defaultDescription(type: NodeType): string {
   switch (type) {
-    case 'teoria':
+    case 'theory':
       return 'Revisá el material antes de encarar el desafío de la unidad.';
-    case 'desafio-teorico':
+    case 'theoretical-challenge':
       return 'Respondé las preguntas para demostrar que entendiste los conceptos de la unidad.';
-    case 'desafio-practico':
+    case 'practical-challenge':
       return 'Resolvé el ejercicio aplicando lo aprendido en la unidad.';
     case 'boss':
       return 'Superá el desafío final de la unidad.';
@@ -49,9 +49,9 @@ export interface Activity {
   allowedRetries: number; // 0-3 (RF-DES-07)
   challengeId?: string;
   description?: string;
-  // Evaluated and awards XP (every type except 'hito' and 'teoria').
+  // Evaluated and awards XP (every type except 'milestone' and 'theory').
   difficulty?: Difficulty;
-  // Only for type 'teoria': external link to the material (PDF/video/PPT) and its type, to
+  // Only for type 'theory': external link to the material (PDF/video/PPT) and its type, to
   // know how to embed it in the student's map (see resource-embed.util.ts).
   resourceUrl?: string;
   resourceType?: ResourceTheoryType;

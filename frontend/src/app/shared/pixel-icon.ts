@@ -49,7 +49,7 @@ export class PixelIcon {
   protected readonly rows = computed(() => this.grid().length);
   protected readonly pixels = computed(() => gridToPixels(this.grid(), this.colors()));
 
-  // Square grids (cols === rows, every icon until fire_racha) keep width === height === size,
+  // Square grids (cols === rows, every icon until fire_streak) keep width === height === size,
   // same as before — this only changes behavior for non-square grids.
   protected readonly width = computed(() => {
     const c = this.cols();

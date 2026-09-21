@@ -15,10 +15,11 @@ import {
 import { ConfirmButton } from './confirm-button';
 import { NodeCanvas } from './node-canvas';
 import { SaveFeedbackToast } from './save-feedback-toast';
+import { DIFFICULTY_LABEL } from '../../shared/labels';
 
-// Types creatable from this form — 'boss'/'hito' are left out (see roadmap.models.ts).
-type ContentType = 'teoria' | 'desafio-teorico' | 'desafio-practico';
-type View = 'lista' | 'mapa';
+// Types creatable from this form — 'boss'/'milestone' are left out (see roadmap.models.ts).
+type ContentType = 'theory' | 'theoretical-challenge' | 'practical-challenge';
+type View = 'list' | 'map';
 
 /**
  * Editor of a section (E1 / Phase 2, Moodle style). The content is listed in a column,
@@ -37,7 +38,7 @@ type View = 'lista' | 'mapa';
   // (the node list, which may be taller than the screen) scrolls internally.
   host: { class: 'block w-full h-full overflow-y-auto p-6' },
   template: `
-    <a routerLink="/profesor" class="btn btn-sm btn-ghost mb-4">← Volver al curso</a>
+    <a routerLink="/teacher" class="btn btn-sm btn-ghost mb-4">← Volver al curso</a>
 
     @if (section(); as u) {
       <div class="max-w-3xl mx-auto">
@@ -48,18 +49,18 @@ type View = 'lista' | 'mapa';
         <!-- ── Tabs: content (CRUD) / node map (prerequisites) ── -->
         <div class="flex gap-2 mb-4">
           <button type="button" class="btn btn-sm"
-            [class.btn-primary]="view() === 'lista'" [class.btn-outline]="view() !== 'lista'"
-            (click)="view.set('lista')">
+            [class.btn-primary]="view() === 'list'" [class.btn-outline]="view() !== 'list'"
+            (click)="view.set('list')">
             📋 Contenido
           </button>
           <button type="button" class="btn btn-sm"
-            [class.btn-primary]="view() === 'mapa'" [class.btn-outline]="view() !== 'mapa'"
-            (click)="view.set('mapa')">
+            [class.btn-primary]="view() === 'map'" [class.btn-outline]="view() !== 'map'"
+            (click)="view.set('map')">
             🗺️ Mapa de nodos
           </button>
         </div>
 
-        @if (view() === 'mapa') {
+        @if (view() === 'map') {
           <app-node-canvas [section]="u" class="block mb-8" />
         } @else {
           <!-- ── Content in a column, linear downwards (Moodle) ──────── -->
@@ -95,8 +96,8 @@ type View = 'lista' | 'mapa';
                       </button>
                       <div class="flex flex-col items-end gap-1 shrink-0">
                         <div class="flex gap-1">
-                          <button class="btn btn-xs btn-ghost" (click)="move(a.id, 'arriba')" [disabled]="idx === 0" title="subir">↑</button>
-                          <button class="btn btn-xs btn-ghost" (click)="move(a.id, 'abajo')" [disabled]="last" title="bajar">↓</button>
+                          <button class="btn btn-xs btn-ghost" (click)="move(a.id, 'up')" [disabled]="idx === 0" title="subir">↑</button>
+                          <button class="btn btn-xs btn-ghost" (click)="move(a.id, 'down')" [disabled]="last" title="bajar">↓</button>
                         </div>
                         <div class="flex gap-1">
                           <button class="btn btn-xs btn-outline" (click)="edit(a)" title="editar contenido" aria-label="editar contenido">✏️</button>
@@ -109,7 +110,7 @@ type View = 'lista' | 'mapa';
                         <span class="badge badge-sm ui-font" [class]="badgeType(a.type)">{{ typeLabel(a) }}</span>
                         @if (a.difficulty) {
                           <span class="badge badge-sm ui-font" [class]="badgeDifficulty(a.difficulty)">
-                            {{ a.difficulty }} · {{ xpFor(a.difficulty) }} XP
+                            {{ difficultyLabel[a.difficulty] }} · {{ xpFor(a.difficulty) }} XP
                           </span>
                         }
                         @if (a.isMandatory) { <span class="badge badge-sm badge-warning ui-font">obligatorio</span> }
@@ -152,9 +153,9 @@ type View = 'lista' | 'mapa';
                   <label class="form-control">
                     <span class="label-text ui-font">Tipo</span>
                     <select class="select select-bordered select-sm" [ngModel]="type()" (ngModelChange)="type.set($event)" name="tipo">
-                      <option value="teoria">Contenido teórico</option>
-                      <option value="desafio-teorico">Desafío teórico</option>
-                      <option value="desafio-practico">Desafío práctico</option>
+                      <option value="theory">Contenido teórico</option>
+                      <option value="theoretical-challenge">Desafío teórico</option>
+                      <option value="practical-challenge">Desafío práctico</option>
                     </select>
                   </label>
                   <label class="form-control flex-1 min-w-52">
@@ -177,7 +178,7 @@ type View = 'lista' | 'mapa';
                     Si la dejás vacía, el alumno ve la descripción sugerida de arriba.
                   </span>
                 </label>
-                @if (type() === 'teoria') {
+                @if (type() === 'theory') {
                   <div class="flex flex-wrap gap-3">
                     <label class="form-control">
                       <span class="label-text ui-font">Tipo de recurso</span>
@@ -203,9 +204,9 @@ type View = 'lista' | 'mapa';
                     <label class="form-control">
                       <span class="label-text ui-font">Dificultad</span>
                       <select class="select select-bordered select-sm" [ngModel]="difficulty()" (ngModelChange)="difficulty.set($event)" name="dificultad">
-                        <option value="BASICO">Básico · 100 XP</option>
-                        <option value="MEDIO">Medio · 250 XP</option>
-                        <option value="AVANZADO">Avanzado · 500 XP</option>
+                        <option value="BASIC">Básico · 100 XP</option>
+                        <option value="MEDIUM">Medio · 250 XP</option>
+                        <option value="ADVANCED">Avanzado · 500 XP</option>
                       </select>
                     </label>
                     <label class="form-control">
@@ -239,6 +240,7 @@ type View = 'lista' | 'mapa';
   `,
 })
 export class SectionEditor {
+  protected readonly difficultyLabel = DIFFICULTY_LABEL;
   protected readonly store = inject(RoadmapStore);
   private readonly route = inject(ActivatedRoute);
   private readonly nameInputRef = viewChild<ElementRef<HTMLInputElement>>('nombreInput');
@@ -246,7 +248,7 @@ export class SectionEditor {
   private readonly sectionId = this.route.snapshot.paramMap.get('id') ?? '';
   protected readonly section = computed(() => this.store.sectionById(this.sectionId));
 
-  protected readonly view = signal<View>('lista');
+  protected readonly view = signal<View>('list');
 
   // ── detail dropdown per content item (type/XP/mandatory/retries/description) ──
   private readonly expandedIds = signal<ReadonlySet<string>>(new Set());
@@ -263,11 +265,11 @@ export class SectionEditor {
   // ── form state ──────────────────────────────────
   protected readonly showForm = signal(false);
   protected readonly editingId = signal<string | null>(null);
-  protected readonly type = signal<ContentType>('desafio-teorico');
+  protected readonly type = signal<ContentType>('theoretical-challenge');
   protected readonly name = signal('');
   protected readonly isMandatory = signal(true);
   protected readonly description = signal('');
-  protected readonly difficulty = signal<Difficulty>('BASICO');
+  protected readonly difficulty = signal<Difficulty>('BASIC');
   protected readonly retries = signal(1);
   protected readonly resourceUrl = signal('');
   protected readonly resourceType = signal<ResourceTheoryType>('pdf');
@@ -277,7 +279,7 @@ export class SectionEditor {
   protected onKeydown(ev: KeyboardEvent): void {
     if (ev.altKey && !ev.ctrlKey && !ev.metaKey && ev.key.toLowerCase() === 'a') {
       ev.preventDefault();
-      this.view.set('lista');
+      this.view.set('list');
       this.openForm();
     }
   }
@@ -292,7 +294,7 @@ export class SectionEditor {
     const name = this.name().trim();
     if (!name) return;
 
-    const isTheory = this.type() === 'teoria';
+    const isTheory = this.type() === 'theory';
     const dto: NewActivity = {
       name,
       type: this.type(),
@@ -315,12 +317,12 @@ export class SectionEditor {
   protected edit(a: Activity): void {
     this.editingId.set(a.id);
     this.showForm.set(true);
-    // 'boss'/'hito' are not in the selector — when editing one they fall back to a practice challenge.
-    this.type.set(a.type === 'teoria' ? 'teoria' : a.type === 'desafio-teorico' ? 'desafio-teorico' : 'desafio-practico');
+    // 'boss'/'milestone' are not in the selector — when editing one they fall back to a practice challenge.
+    this.type.set(a.type === 'theory' ? 'theory' : a.type === 'theoretical-challenge' ? 'theoretical-challenge' : 'practical-challenge');
     this.name.set(a.name);
     this.isMandatory.set(a.isMandatory);
     this.description.set(a.description ?? '');
-    this.difficulty.set(a.difficulty ?? 'BASICO');
+    this.difficulty.set(a.difficulty ?? 'BASIC');
     this.retries.set(a.allowedRetries);
     this.resourceUrl.set(a.resourceUrl ?? '');
     this.resourceType.set(a.resourceType ?? 'pdf');
@@ -330,22 +332,22 @@ export class SectionEditor {
     this.clean();
   }
 
-  protected move(activityId: string, direction: 'arriba' | 'abajo'): void {
+  protected move(activityId: string, direction: 'up' | 'down'): void {
     this.store.moveActivity(this.sectionId, activityId, direction);
   }
 
   // ── presentation helpers ────────────────────────────────
   protected isChallenge(type: NodeType): boolean {
-    return type !== 'hito' && type !== 'teoria';
+    return type !== 'milestone' && type !== 'theory';
   }
   protected xpFor(d: Difficulty): number {
     return XP_BY_DIFFICULTY[d];
   }
   protected icon(type: NodeType): string {
     switch (type) {
-      case 'teoria': return '📖';
-      case 'desafio-teorico': return '🧠';
-      case 'desafio-practico': return '⚔️';
+      case 'theory': return '📖';
+      case 'theoretical-challenge': return '🧠';
+      case 'practical-challenge': return '⚔️';
       case 'boss': return '👑';
       default: return '📍';
     }
@@ -353,24 +355,24 @@ export class SectionEditor {
   protected typeLabel(a: Activity): string {
     switch (a.type) {
       case 'boss': return 'boss';
-      case 'teoria': return 'contenido teórico';
-      case 'desafio-teorico': return 'desafío teórico';
-      case 'desafio-practico': return 'desafío práctico';
-      default: return 'hito';
+      case 'theory': return 'contenido teórico';
+      case 'theoretical-challenge': return 'desafío teórico';
+      case 'practical-challenge': return 'desafío práctico';
+      default: return 'milestone';
     }
   }
   protected badgeType(type: NodeType): string {
     switch (type) {
-      case 'desafio-teorico':
-      case 'desafio-practico':
+      case 'theoretical-challenge':
+      case 'practical-challenge':
         return 'badge-primary';
       case 'boss': return 'badge-secondary';
-      case 'teoria': return 'badge-accent';
+      case 'theory': return 'badge-accent';
       default: return 'badge-info badge-outline';
     }
   }
   protected badgeDifficulty(d: Difficulty): string {
-    return d === 'BASICO' ? 'badge-success' : d === 'MEDIO' ? 'badge-warning' : 'badge-error';
+    return d === 'BASIC' ? 'badge-success' : d === 'MEDIUM' ? 'badge-warning' : 'badge-error';
   }
   protected descriptionDefault(type: NodeType): string {
     return defaultDescription(type);
@@ -379,11 +381,11 @@ export class SectionEditor {
   private clean(): void {
     this.showForm.set(false);
     this.editingId.set(null);
-    this.type.set('desafio-teorico');
+    this.type.set('theoretical-challenge');
     this.name.set('');
     this.isMandatory.set(true);
     this.description.set('');
-    this.difficulty.set('BASICO');
+    this.difficulty.set('BASIC');
     this.retries.set(1);
     this.resourceUrl.set('');
     this.resourceType.set('pdf');

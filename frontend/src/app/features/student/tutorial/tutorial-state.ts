@@ -1,7 +1,7 @@
 import { computed, signal } from '@angular/core';
 
-export const TUTORIAL_KEY = 'roadmap.primeros-pasos.v1';
-export type TutorialStatus = 'pendiente' | 'activo' | 'omitido' | 'completado';
+export const TUTORIAL_KEY = 'roadmap.first-steps.v2';
+export type TutorialStatus = 'pending' | 'active' | 'skipped' | 'completed';
 export interface TutorialDestination {
   unitId: string;
   activityId: string;
@@ -29,7 +29,7 @@ export function isTutorialScene(value: unknown): value is TutorialScene {
 
 /** UI-only progress: never awards XP or changes academic progress (RF-CUR-01). */
 export class TutorialState {
-  readonly status = signal<TutorialStatus>('pendiente');
+  readonly status = signal<TutorialStatus>('pending');
   readonly step = signal<1 | 2 | 3>(1);
   readonly scene = signal<TutorialScene | null>(null);
   readonly attempt = signal(0);
@@ -48,7 +48,7 @@ export class TutorialState {
   constructor(private readonly storage?: Pick<Storage, 'getItem' | 'setItem'>) {
     try {
       const saved = JSON.parse(storage?.getItem(TUTORIAL_KEY) ?? 'null');
-      if (saved && ['pendiente', 'activo', 'omitido', 'completado'].includes(saved.status) &&
+      if (saved && ['pending', 'active', 'skipped', 'completed'].includes(saved.status) &&
           [1, 2, 3].includes(saved.step)) {
         this.status.set(saved.status);
         this.step.set(saved.step);
@@ -60,24 +60,24 @@ export class TutorialState {
     this.scene.set(scene);
     if (!scene.ready || !this.destination()) return;
     this.helpEmpty.set(false);
-    if (this.status() === 'pendiente') this.status.set('activo');
-    if (this.status() !== 'activo') return;
+    if (this.status() === 'pending') this.status.set('active');
+    if (this.status() !== 'active') return;
     if (scene.destinations.some(d => d.unitId === scene.zone)) this.step.set(3);
     else if (this.step() === 3) this.step.set(2);
     this.save();
   }
 
   moved(attempt: number): void {
-    if (attempt !== this.attempt() || this.status() !== 'activo' || this.step() !== 1 ||
+    if (attempt !== this.attempt() || this.status() !== 'active' || this.step() !== 1 ||
         !this.scene()?.ready || this.scene()?.busy || !this.destination()) return;
     this.step.set(2);
     this.save();
   }
 
   opened(unitId: string, activityId: string): void {
-    if (this.status() !== 'activo' || !this.scene()?.ready ||
+    if (this.status() !== 'active' || !this.scene()?.ready ||
         !this.scene()?.destinations.some(d => d.unitId === unitId && d.activityId === activityId)) return;
-    this.status.set('completado');
+    this.status.set('completed');
     this.celebrationPending = true;
     this.save();
   }
@@ -90,7 +90,7 @@ export class TutorialState {
   }
 
   skip(): void {
-    this.status.set('omitido');
+    this.status.set('skipped');
     this.helpEmpty.set(false);
     this.save();
   }
@@ -101,7 +101,7 @@ export class TutorialState {
     this.celebrationPending = false;
     if (!this.destination()) { this.helpEmpty.set(true); return; }
     this.attempt.update(n => n + 1);
-    this.status.set('activo');
+    this.status.set('active');
     this.step.set(this.scene()?.destinations.some(d => d.unitId === this.scene()?.zone) ? 3 : 1);
     this.save();
   }
