@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { beforeEach, describe, expect, it } from 'vitest';
+
 import { App } from './app';
 
 describe('App', () => {
@@ -10,14 +12,8 @@ describe('App', () => {
     }).compileComponents();
   });
 
-  it('creates the shell', () => {
+  it('creates the root', () => {
     const fixture = TestBed.createComponent(App);
     expect(fixture.componentInstance).toBeTruthy();
-  });
-
-  it('without a session it does not show the navbar', async () => {
-    const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-    expect((fixture.nativeElement as HTMLElement).querySelector('header')).toBeNull();
   });
 });

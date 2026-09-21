@@ -1,92 +1,14 @@
 import { Routes } from '@angular/router';
-import { sessionGuard } from './core/auth/session.guard';
 
+/**
+ * Root routes of the standalone roadmap app. In the TPI monolith this file (and the rest of the
+ * shell) belongs to the platform team; the only thing that matters is the `roadmap` entry.
+ */
 export const routes: Routes = [
   {
-    path: 'login',
-    loadComponent: () => import('./features/login/login').then((m) => m.Login),
+    path: 'roadmap',
+    loadChildren: () => import('./features/roadmap/roadmap.routes').then((m) => m.ROADMAP_ROUTES),
   },
-  {
-    path: 'teacher',
-    canActivate: [sessionGuard],
-    loadComponent: () => import('./features/teacher/home/home.component').then((m) => m.HomeComponent),
-  },
-  {
-    path: 'teacher/build/:id',
-    canActivate: [sessionGuard],
-    loadComponent: () => import('./features/teacher/builder/builder.component').then((m) => m.BuilderComponent),
-  },
-  {
-    path: 'teacher/map/:id',
-    canActivate: [sessionGuard],
-    loadComponent: () => import('./features/teacher/map/map.component').then((m) => m.MapComponent),
-  },
-  {
-    path: 'teacher/section/:id',
-    canActivate: [sessionGuard],
-    loadComponent: () => import('./features/teacher/builder/builder.component').then((m) => m.BuilderComponent),
-  },
-  {
-    // Student entry point: My Courses (list of subjects from StoreService,
-    // the ones created by the teacher). Choosing one leads to the /play/:id worlds hub.
-    path: 'student',
-    canActivate: [sessionGuard],
-    loadComponent: () => import('./features/student/my-courses').then((m) => m.MyCourses),
-  },
-  {
-    // 3D world city+islands of a subject (formerly /alumno). The :id is the subject id
-    // in StoreService; the component calls store.open(id).
-    path: 'student/course/:id',
-    canActivate: [sessionGuard],
-    loadComponent: () => import('./features/student/world-3d').then((m) => m.World3d),
-  },
-  {
-    // Customization of the avatar that walks the section board.
-    path: 'student/avatar',
-    canActivate: [sessionGuard],
-    loadComponent: () => import('./features/student/avatar-editor').then((m) => m.AvatarEditor),
-  },
-  {
-    // Internal board of the section (Mario 3 style) — entered from a house in the 3D world.
-    path: 'student/section/:id',
-    canActivate: [sessionGuard],
-    loadComponent: () => import('./features/student/section-map').then((m) => m.SectionMap),
-  },
-  {
-    // Theory material (static mock): entered from the Temple in the 3D world via
-    // postMessage `openMaterials` — see features/student/materials.ts.
-    path: 'student/materials',
-    canActivate: [sessionGuard],
-    loadComponent: () => import('./features/student/materials').then((m) => m.Materials),
-  },
-  {
-    // Worlds hub of the subject (Educa)
-    path: 'play/:id',
-    canActivate: [sessionGuard],
-    loadComponent: () => import('./features/play/worlds.component').then((m) => m.WorldsComponent),
-  },
-  {
-    // 3D hexagon map (Educa) per section
-    path: 'play/:id/:sectionId',
-    canActivate: [sessionGuard],
-    loadComponent: () => import('./features/play/play.component').then((m) => m.PlayComponent),
-  },
-  {
-    path: 'student/play/:sectionId',
-    canActivate: [sessionGuard],
-    loadComponent: () => import('./features/play/play.component').then((m) => m.PlayComponent),
-  },
-  {
-    path: 'badges',
-    canActivate: [sessionGuard],
-    loadComponent: () => import('./features/badges/catalog').then((m) => m.Catalog),
-  },
-  {
-    // The root always falls back to the role selector (mock login, Phase 0). With a role
-    // already saved in localStorage too: the list/world is reached through its routes.
-    path: '',
-    redirectTo: 'login',
-    pathMatch: 'full',
-  },
-  { path: '**', redirectTo: '' },
+  { path: '', pathMatch: 'full', redirectTo: 'roadmap' },
+  { path: '**', redirectTo: 'roadmap' },
 ];

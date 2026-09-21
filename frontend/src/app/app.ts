@@ -1,31 +1,10 @@
-import { Component, HostListener, inject, signal } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
-import { AuthMockService } from './core/auth/auth-mock.service';
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
 
-/** Shell: outlet + desktop-only gate (RF-NFR-05). */
+/** Root of the standalone roadmap app: it only hosts the router outlet. */
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.css',
+  template: '<router-outlet />',
 })
-export class App {
-  protected readonly auth = inject(AuthMockService);
-  private readonly router = inject(Router);
-
-  protected readonly isDesktop = signal(this.measure());
-
-  @HostListener('window:resize')
-  protected onResize(): void {
-    this.isDesktop.set(this.measure());
-  }
-
-  protected exit(): void {
-    this.auth.exit();
-    this.router.navigate(['/login']);
-  }
-
-  private measure(): boolean {
-    return window.innerWidth >= 1024;
-  }
-}
+export class App {}
