@@ -47,12 +47,10 @@ Los nombres de los mensajes y de sus campos son parte del contrato: hay que camb
   los nombres de campo contra el contrato real del back de TPI (los modelos actuales espejan el back viejo).
 - **Sesión**: `data-access/session/` es un login mock que guarda el rol en `localStorage`, algo que
   el AGENTS.md prohíbe. Se reemplaza por el `AuthService` del core (y `pages/dev-login-page` se elimina).
-- **UI institucional**: `ui/educa-ui` (botón, badge, card) duplica componentes de `@2026-p4-fe/ui`.
-- **Estilos**: el look arcade usa Tailwind + daisyUI y `src/styles.css`, que no están en el front de TPI.
-  Hay que decidir cómo se incorporan.
+- **UI institucional**: `ui/educa-ui` (badge y card) duplica componentes de `@2026-p4-fe/ui`.
+- **Estilos**: las plantillas usan clases de Tailwind y daisyUI, que el front de TPI no incluye y no se van a
+  instalar. Sin ellas esas pantallas se ven sin estilo; el mundo 3D (iframe) y los estilos propios de
+  cada componente no dependen de eso.
 - **Lint y formato**: el código todavía no cumple `npm run lint:all` de TPI (ESLint tipado, Prettier, Stylelint).
-- **Componentes conectados**: varios componentes de `ui/` inyectan servicios (`ranking-panel`, `avatar-panel`,
-  `inventory-modal`, `hud`, `node-canvas`, `save-feedback-toast`, `ranking-detail`, `dungeon-shop-modal`) y deberían pasar a recibir
-  datos por `input()` desde su página.
-- **Código sin usar**: no se alcanza desde las rutas `pages/role-home-page`, `pages/course-editor-page`,
-  `pages/section-editor-page`, `pages/student-map-page` y los componentes que solo usan esas páginas.
+- **Componentes conectados**: algunos componentes de `ui/` inyectan servicios (`ranking-panel`, `ranking-detail`,
+  `avatar-panel`, `dungeon-shop-modal`) y deberían pasar a recibir datos por `input()` desde su página.

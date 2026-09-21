@@ -183,7 +183,6 @@ export class Archipelago3dService {
 
   // Navigable 3D boat and Docking State
   private boatGroup!: THREE.Group;
-  private boatModel: THREE.Object3D | null = null;
   private boatPlaceholder: THREE.Group | null = null;
   private boatHeading = 0; // radians
   private boatSpeed = 0;
@@ -242,7 +241,6 @@ export class Archipelago3dService {
     this.autoPilotTarget = null;
     this.autoPilotPath = [];
     this.mouseTarget = null;
-    this.boatModel = null;
     this.boatPlaceholder = null;
     this.boatSpeed = 0;
     this.isSailing = false;
@@ -1914,7 +1912,6 @@ export class Archipelago3dService {
         this.boatPlaceholder = null;
       }
 
-      this.boatModel = shipScene;
       this.boatGroup.add(shipScene);
     } catch (err) {
       console.warn('[Archipelago3D] Could not load ship-large.glb, keeping the procedural boat:', err);
@@ -2931,7 +2928,6 @@ export class Archipelago3dService {
       this.boatGroup.clear();
       this.scene?.remove(this.boatGroup);
     }
-    this.boatModel = null;
     this.boatPlaceholder = null;
 
     if (this.renderer) {

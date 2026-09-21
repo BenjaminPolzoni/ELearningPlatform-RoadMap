@@ -2,20 +2,6 @@ export type AttachmentType = 'document' | 'video' | 'link' | 'image' | 'exercise
 
 export type Biome = 'meadow' | 'desert' | 'snow' | 'lava';
 
-export interface BiomeOption {
-  id: Biome;
-  label: string;
-  icon: string;
-  world3d: string;
-}
-
-export const BIOMES_EDUCA: BiomeOption[] = [
-  { id: 'meadow', label: 'Pradera', icon: '🌿', world3d: 'Forest' },
-  { id: 'desert', label: 'Desierto', icon: '🏜️', world3d: 'Desert' },
-  { id: 'snow', label: 'Nieve', icon: '❄️', world3d: 'Snow' },
-  { id: 'lava', label: 'Lava', icon: '🌋', world3d: 'Nether' },
-];
-
 export function educaBiomeToWorld3d(biome?: Biome | string): string {
   switch (biome) {
     case 'desert':

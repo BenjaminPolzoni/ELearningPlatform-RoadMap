@@ -1,4 +1,4 @@
-import type { Subject, Biome, AttachmentType, Section } from '../../data-access/educa/models';
+import type { Biome, AttachmentType, Section } from '../../data-access/educa/models';
 export type { Biome } from '../../data-access/educa/models';
 
 // ponytail: absent = meadow (old worlds not yet migrated)
@@ -763,31 +763,6 @@ export function genSectionWorld(u: Section, subjectId: string): WorldLayout {
     boundR: boundTiles + 2,
     biome,
   };
-}
-
-// compat: generates the world of the first section (the hub decides in the real app)
-export function genWorld(a: Subject): WorldLayout {
-  const u = a.sections[0];
-  if (!u) {
-    return {
-      tiles: [{ q: 0, r: 0 }],
-      waters: [],
-      roads: [],
-      castle: { q: 0, r: 0, model: `${G}/buildings/blue/building_castle_blue.gltf`, ox: 0, oz: 0, rotY: 0, s: 1.3 },
-      hqs: [],
-      modules: [],
-      attachments: [],
-      decor: [],
-      clouds: [],
-      islets: [],
-      ridge: [],
-      volcanoes: [],
-      spawn: { q: 0, r: 0 },
-      boundR: 4,
-      biome: 'meadow',
-    };
-  }
-  return genSectionWorld(u, a.id);
 }
 
 // — Map of the course's islands (hub /play/:id): one island per section —

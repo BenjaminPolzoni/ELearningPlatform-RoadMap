@@ -19,7 +19,7 @@ import { DomSanitizer, SafeHtml, SafeResourceUrl } from '@angular/platform-brows
 import { AvatarService } from '../../data-access/avatar/avatar.service';
 import { RoadmapDataPort } from '../../data-access/roadmap/roadmap-data.port';
 import { RoadmapStore } from '../../data-access/roadmap/roadmap.store';
-import { defaultDescription, NodeStatus, XP_BY_DIFFICULTY } from '../../data-access/roadmap/roadmap.models';
+import { defaultDescription, XP_BY_DIFFICULTY } from '../../data-access/roadmap/roadmap.models';
 import { COURSE_SEED_ID } from '../../data-access/mocks/seed';
 import { toEmbedUrl } from '../../domain/resource-embed.util';
 import { AvatarSpriteComponent } from '../../ui/avatar-sprite/avatar-sprite.component';

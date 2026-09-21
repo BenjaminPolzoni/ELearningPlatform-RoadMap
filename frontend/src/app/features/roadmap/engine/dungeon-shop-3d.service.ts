@@ -37,7 +37,6 @@ export class DungeonShop3dService {
   private torchLights: { light: THREE.PointLight; baseIntensity: number; phase: number }[] = [];
 
   // Seller
-  private vendorMesh: THREE.Object3D | null = null;
   private vendorMixer: THREE.AnimationMixer | null = null;
   private vendorIdleAction: THREE.AnimationAction | null = null;
   private vendorInteractAction: THREE.AnimationAction | null = null;
@@ -952,7 +951,6 @@ export class DungeonShop3dService {
       vendor.rotation.y = -0.22;
       this.ensureModelLighting(vendor);
 
-      this.vendorMesh = vendor;
       this.vendorMixer = new THREE.AnimationMixer(vendor);
 
       const idleClip =

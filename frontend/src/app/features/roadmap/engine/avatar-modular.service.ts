@@ -182,9 +182,6 @@ export class AvatarModularService {
 
   async buildAvatar(config: AvatarModularConfig): Promise<AvatarBuild> {
     const rgb = new Set<THREE.Object3D>();
-    const addRgb = (o: THREE.Object3D): void => {
-      if (o.userData['updateRGB']) rgb.add(o);
-    };
     const topClass = config.topStyle || config.characterClass || 'Knight';
     const base = await this.getCharacterClass(topClass);
     const group = new THREE.Group();
@@ -447,7 +444,7 @@ export class AvatarModularService {
   ): Promise<THREE.Group | null> {
     const found = this.rigFor(model);
     if (!found) return null;
-    const { rig: targetRig, skin: targetSkin } = found;
+    const { skin: targetSkin } = found;
 
     const scaleGeom = (mesh: THREE.SkinnedMesh, s: number, originY: number, originZ: number): THREE.SkinnedMesh => {
       const g = mesh.geometry.clone();
